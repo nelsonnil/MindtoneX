@@ -99,9 +99,9 @@ Objetivo: el iPhone en **silencio** (sin tono normal), la app **Tonos** a pantal
 
 ### Registro (muy útil para enviarme resultados)
 
-37. Otra vez en **Entrar en escena**, o antes de salir: **toca 3 veces rápido** la **esquina superior izquierda** de la pantalla. Se abre un **registro** (texto pequeño encima).
-38. Repite la llamada de prueba (pasos 32–33) con el registro abierto si quieres.
-39. Para guardar el registro: sal de la pantalla negra (paso 36), en **Preparación** entra en **Herramientas** → **Registro de pruebas** → icono de **compartir** (cuadrado con flecha) y envíatelo por **Mail** o **Notas** a ti mismo.
+37. **Antes de la llamada de prueba:** entra en **Entrar en escena** (pantalla negra). **Toca 3 veces rápido** la **esquina superior izquierda** para abrir el **registro** encima (opcional pero muy útil en build 5).
+38. Pide la llamada (paso 32). **No toques** la pantalla al principio — comprueba si la canción arranca sola. Si no suena, entonces toca una vez (como antes).
+39. Después de colgar: sal de la escena (dos dedos), ve a **Herramientas** → **Registro de pruebas** → **Compartir** y envíame el archivo **magic-call-log.txt** (o pégalo en el chat). En build 5 verás líneas con `[CXCall]`, `[AUDIO]`, `[TRIGGER]` y hora exacta: eso dice si iOS avisó de la llamada o no.
 
 ---
 
