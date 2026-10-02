@@ -24,15 +24,12 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.deezerFallback) private var deezerFallback = true
     @AppStorage(Prefs.Key.storeCountry) private var storeCountry = ""
 
-    @AppStorage(Prefs.Key.darwinSignals) private var darwinSignals = true
-    @AppStorage(Prefs.Key.toneIdentifierToTry) private var toneIdentifier = "system:Radar"
     @AppStorage(Prefs.Key.callKitCallerName) private var callKitCallerName = "Ana"
     @AppStorage(Prefs.Key.callKitDelay) private var callKitDelay = 5.0
 
     @AppStorage(Prefs.Key.autoStageRingtone) private var autoStageRingtone = true
     @AppStorage(Prefs.Key.discreetRingtoneUI) private var discreetRingtoneUI = true
     @AppStorage(Prefs.Key.ringtoneUseQuickLook) private var ringtoneUseQuickLook = false
-    @AppStorage(Prefs.Key.attemptRingerMaxOnStage) private var attemptRingerMaxOnStage = false
     @AppStorage(SharePerformFlow.tapToHomeKey) private var tapToHome = true
     @AppStorage(SharePerformFlow.autoHomeKey) private var autoHome = true
     @AppStorage(SharePerformFlow.hapticOnShareKey) private var hapticOnShare = true
@@ -41,13 +38,6 @@ struct SettingsView: View {
     @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
     @ObservedObject private var silentShortcut = SilentShortcut.shared
 
-    @AppStorage(NotesSettings.Key.idleSearchEnabled) private var notesIdleSearch = true
-    @AppStorage(NotesSettings.Key.idleDelay) private var notesIdleDelay = NotesSettings.defaultIdleDelay
-    @AppStorage(NotesSettings.Key.searchOnReturn) private var notesSearchOnReturn = true
-    @AppStorage(NotesSettings.Key.useAIPicker) private var notesUseAI = true
-
-    @State private var confirmToneChange = false
-
     var body: some View {
         Form {
             NavigationLink {
@@ -55,24 +45,12 @@ struct SettingsView: View {
             } label: {
                 Label("Debug log", systemImage: "doc.text.magnifyingglass")
             }
-            NavigationLink {
-                VoiceSettingsView()
-            } label: {
-                Label("AI Voice settings", systemImage: "mic.badge.plus")
-            }
-            NavigationLink {
-                ApiSettingsView()
-            } label: {
-                Label("API / song input", systemImage: "link")
-            }
 
             audioSection
             shortcutSection
             triggerSection
-            notesSection
             previewsSection
             shareRingtoneSection
-            privateSection
             callKitSection
         }
         .navigationTitle("Advanced")
@@ -128,30 +106,6 @@ struct SettingsView: View {
         }
     }
 
-    private var notesSection: some View {
-        Section {
-            Toggle("Search when typing stops", isOn: $notesIdleSearch)
-            if notesIdleSearch {
-                Stepper("Idle delay: \(NotesInputControls.format(notesIdleDelay))", value: $notesIdleDelay,
-                        in: NotesSettings.idleDelayRange, step: 0.5)
-            }
-            Toggle("Search on Return", isOn: $notesSearchOnReturn)
-            Toggle(isOn: $notesUseAI) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Interpret note with AI")
-                    Text(NotesSettings.aiPickerExplanation(isOn: notesUseAI))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .disabled(VoiceSettings.apiKey == nil)
-        } header: {
-            Text("Notes input")
-        } footer: {
-            Text("Notes Perform shows a white note. After the idle delay (or Return, or the checkmark) the note is searched and the song is loaded in the background; the incoming call then plays it like AI Voice. \(NotesSettings.aiPickerOffText) \(NotesSettings.aiPickerOnText) Without an OpenAI key the note is always searched as typed.")
-        }
-    }
-
     private var previewsSection: some View {
         Section {
             Toggle("Deezer fallback previews", isOn: $deezerFallback)
@@ -171,59 +125,15 @@ struct SettingsView: View {
             Toggle("Prepare ringtone file when song is ready", isOn: $autoStageRingtone)
             Toggle("Black flash before Share sheet", isOn: $discreetRingtoneUI)
             Toggle("Use Quick Look instead of Share", isOn: $ringtoneUseQuickLook)
-            Toggle("Go Home via private API (tap black screen)", isOn: $tapToHome)
+            Toggle("Tap black screen to go Home", isOn: $tapToHome)
             Toggle("Go Home automatically after Use as Ringtone", isOn: $autoHome)
                 .disabled(!tapToHome)
             Toggle("Soft vibration when ringtone is added", isOn: $hapticOnShare)
-            if PrivateProbes.isCompiled {
-                Toggle("Try private API: max ringer volume on export", isOn: $attemptRingerMaxOnStage)
-            }
         } header: {
             Text("Share Ringtone export")
         } footer: {
-            Text("Auto-prepare builds the .m4a in the background. Quick Look is an alternate path if “Use as Ringtone” doesn’t appear in Share. Going Home uses an undocumented iOS call (the same as pressing Home). With auto-Home on, the app tries to go Home 6 times in the 2 s after “Use as Ringtone”, but iOS 26 then opens Settings → Ringtone and no app can close it — press Home once. The black-screen tap stays as a backup.")
+            Text("Auto-prepare builds the .m4a in the background. Quick Look is an alternate path if “Use as Ringtone” doesn’t appear in Share. With auto-Home on, the app tries to go Home several times in the 2 s after “Use as Ringtone”, but iOS 26 then opens Settings → Ringtone — press Home once. The black-screen tap stays as a backup.")
         }
-    }
-
-    private var privateSection: some View {
-        Section {
-            if PrivateProbes.isCompiled {
-                Toggle("Log Darwin notifications at launch", isOn: $darwinSignals)
-                Button("Run read-only private API probes") { model.runReadOnlyProbes() }
-                TextField("Tone ID to try", text: $toneIdentifier)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                privateWriteButtons
-            } else {
-                Text("Private experiments are disabled in TestFlight builds.")
-                    .foregroundStyle(.secondary)
-            }
-            ForEach(model.probeResults) { r in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(r.outcome.rawValue) · \(r.name)").font(.footnote.bold())
-                    Text(r.detail).font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
-                }
-            }
-        } header: {
-            Text("Private API experiments")
-        } footer: {
-            Text("For engineering only. These call undocumented iOS APIs and usually fail without jailbreak. Results are copied to the debug log.")
-        }
-    }
-
-    @ViewBuilder
-    private var privateWriteButtons: some View {
-        #if MAGIC_PRIVATE_PROBES
-        Button("Try change default ringtone (ToneLibrary)") { confirmToneChange = true }
-            .confirmationDialog("May change the system default ringtone. Restore afterward.",
-                                isPresented: $confirmToneChange, titleVisibility: .visible) {
-                Button("Try") { model.runToneSet() }
-            }
-        Button("Restore original ringtone") { model.runToneRestore() }
-        Button("Try ringer volume 0") { model.runRingerVolume(0) }
-        Button("Try ringer volume 50%") { model.runRingerVolume(0.5) }
-        Button("Try ringer volume max (lab)") { model.runRingerVolumeMax() }
-        #endif
     }
 
     private var callKitSection: some View {

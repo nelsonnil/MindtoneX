@@ -52,7 +52,7 @@ struct AdvancedDisclosureCard: View {
                     Text("Advanced")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Settings, debug log, voice & API")
+                    Text("Audio, triggers, Share export, debug log")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .lineLimit(1)
@@ -165,12 +165,6 @@ struct AdvancedDisclosureCard: View {
                 toolRow("All advanced settings", icon: "gearshape.2.fill", sheet: .advanced)
                 divider
                 toolRow("Debug log", icon: "doc.text.magnifyingglass", sheet: .debugLog)
-                divider
-                toolRow("AI Voice & API key", icon: "mic.badge.plus", sheet: .voiceSettings)
-                divider
-                toolRow("API / song input", icon: "link", sheet: .apiSettings)
-                divider
-                toolRow("Voice debug", icon: "waveform.badge.magnifyingglass", sheet: .voiceDebug)
             }
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

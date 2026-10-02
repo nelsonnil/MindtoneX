@@ -7,8 +7,6 @@ struct SongInputStrip: View {
     @Binding var inputModeRaw: String
     @FocusState.Binding var queryFocused: Bool
 
-    @State private var showVoiceDebug = false
-
     private var inputMode: VoiceSettings.InputMode {
         VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual
     }
@@ -31,19 +29,13 @@ struct SongInputStrip: View {
                 case .manual:
                     manualField
                 case .aiVoice:
-                    aiVoiceCompact
+                    AiVoiceInputPanel()
                 case .notes:
                     NotesInputControls()
                 case .api:
                     ApiInputPanel()
                 }
             }
-        }
-        .sheet(isPresented: $showVoiceDebug) {
-            NavigationStack {
-                VoiceDebugSheet()
-            }
-            .presentationDetents([.large])
         }
     }
 
@@ -73,31 +65,6 @@ struct SongInputStrip: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
-                if mode == .aiVoice { showVoiceDebug = true }
-            }
-        )
-    }
-
-    private func disabledChip(_ title: String, icon: String, subtitle: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            Text(subtitle)
-                .font(.caption2.weight(.bold))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.white.opacity(0.08))
-                .clipShape(Capsule())
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .foregroundStyle(OracleTheme.textSecondary.opacity(0.5))
-        .overlay { Capsule().stroke(OracleTheme.cardBorder, style: StrokeStyle(lineWidth: 1, dash: [3, 3])) }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title) input, coming soon")
     }
 
     private var manualField: some View {
@@ -153,74 +120,6 @@ struct SongInputStrip: View {
                 Label(message, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
-            }
-        }
-    }
-
-    private var aiVoiceCompact: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if !VoiceSettings.isConfigured {
-                Label("Add an API key in Advanced → AI Voice & API key", systemImage: "key.fill")
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.coral)
-            }
-
-            HStack(spacing: 10) {
-                if voice.isActive {
-                    Button(role: .destructive) { voice.stopTest() } label: {
-                        Label("Stop", systemImage: "stop.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                } else {
-                    Button {
-                        model.clearSongForNextPerformance()
-                        Task { await voice.start(context: .test) }
-                    } label: {
-                        Label("Listen test", systemImage: "mic.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(OracleTheme.indigo)
-                    .disabled(!VoiceSettings.isConfigured)
-                }
-                Button("Voice debug") { showVoiceDebug = true }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(OracleTheme.textSecondary)
-            }
-
-            if voice.isActive {
-                LevelMeter(level: voice.level)
-            }
-
-            if let pick = voice.lockedPick ?? voice.candidate {
-                Text(pick.label)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(2)
-            }
-
-            VoiceLockingControls()
-        }
-    }
-
-}
-
-struct VoiceDebugSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var model: AppModel
-
-    var body: some View {
-        ScrollView {
-            VoiceInputCard()
-                .environmentObject(model)
-                .padding()
-        }
-        .background(OracleTheme.bgTop)
-        .navigationTitle("Voice debug")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }
             }
         }
     }

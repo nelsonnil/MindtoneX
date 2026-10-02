@@ -32,6 +32,7 @@
 		30F3F5FD1AB46F5425A32DAC /* PerformHowItWorks.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D59D5299CAA7B77CB2C3AA /* PerformHowItWorks.swift */; };
 		85F6D79B25939ED4B41AEA24 /* SharePerformFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C064E79F67C658F38085349B /* SharePerformFlow.swift */; };
 		09990063243AC32A46FD2AAB /* AppModel+Voice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A066E573AE570E750E77BA48 /* AppModel+Voice.swift */; };
+		AA0000450000000000000045 /* AiVoiceInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000440000000000000044 /* AiVoiceInputPanel.swift */; };
 		4295017D9E15BA7C2F1E84E1 /* LiveTranscribers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136D4996F85A04F04C18549D /* LiveTranscribers.swift */; };
 		A26C9B17C125A880A9E7D985 /* MicCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 719F536F6580F110E57FEAF5 /* MicCapture.swift */; };
 		C652859F762A767FCE73A0FB /* SongPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEB827245D07D21B631D6F1 /* SongPicker.swift */; };
@@ -96,6 +97,7 @@
 		C064E79F67C658F38085349B /* SharePerformFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharePerformFlow.swift"; sourceTree = "<group>"; };
 		AA0000420000000000000042 /* FakePostCallVolumeGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakePostCallVolumeGate.swift; sourceTree = "<group>"; };
 		A066E573AE570E750E77BA48 /* AppModel+Voice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Voice.swift"; sourceTree = "<group>"; };
+		AA0000440000000000000044 /* AiVoiceInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiVoiceInputPanel.swift; sourceTree = "<group>"; };
 		136D4996F85A04F04C18549D /* LiveTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LiveTranscribers.swift"; sourceTree = "<group>"; };
 		719F536F6580F110E57FEAF5 /* MicCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MicCapture.swift"; sourceTree = "<group>"; };
 		1EEB827245D07D21B631D6F1 /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongPicker.swift"; sourceTree = "<group>"; };
@@ -305,6 +307,7 @@
 			isa = PBXGroup;
 			children = (
 				A066E573AE570E750E77BA48 /* AppModel+Voice.swift */,
+				AA0000440000000000000044 /* AiVoiceInputPanel.swift */,
 				136D4996F85A04F04C18549D /* LiveTranscribers.swift */,
 				719F536F6580F110E57FEAF5 /* MicCapture.swift */,
 				1EEB827245D07D21B631D6F1 /* SongPicker.swift */,
@@ -417,6 +420,7 @@
 				85F6D79B25939ED4B41AEA24 /* SharePerformFlow.swift in Sources */,
 				AA0000430000000000000043 /* FakePostCallVolumeGate.swift in Sources */,
 				09990063243AC32A46FD2AAB /* AppModel+Voice.swift in Sources */,
+				AA0000450000000000000045 /* AiVoiceInputPanel.swift in Sources */,
 				BB0000020000000000000002 /* ApiSettings.swift in Sources */,
 				BB0000040000000000000004 /* ApiSongSession.swift in Sources */,
 				BB0000060000000000000006 /* ApiSettingsView.swift in Sources */,
@@ -506,7 +510,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -568,7 +572,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -630,7 +634,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

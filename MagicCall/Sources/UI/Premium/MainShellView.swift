@@ -93,11 +93,6 @@ struct MainShellView: View {
                 NavigationStack { SettingsView() }
             case .debugLog:
                 NavigationStack { DebugLogView() }
-            case .voiceSettings:
-                NavigationStack { VoiceSettingsView() }
-            case .voiceDebug:
-                NavigationStack { VoiceDebugSheet() }
-                    .presentationDetents([.large])
             case .apiSettings:
                 ApiSettingsSheet()
             }

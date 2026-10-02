@@ -8,8 +8,6 @@ enum OracleSheet: Identifiable {
     case favoritesSetup
     case advanced
     case debugLog
-    case voiceSettings
-    case voiceDebug
     case apiSettings
 
     var id: String {
@@ -21,8 +19,6 @@ enum OracleSheet: Identifiable {
         case .favoritesSetup: return "favorites"
         case .advanced: return "advanced"
         case .debugLog: return "debugLog"
-        case .voiceSettings: return "voiceSettings"
-        case .voiceDebug: return "voiceDebug"
         case .apiSettings: return "apiSettings"
         }
     }
@@ -45,8 +41,8 @@ struct GuideSheet: View {
                     NavigationLink("Share Favorites") { FavoritesSetupSheet() }
                 }
                 Section("Song input") {
-                    NavigationLink("AI Voice & API key") { VoiceSettingsView() }
-                    NavigationLink("API / song input") { ApiSettingsView() }
+                    Text("On the home screen, choose **Manual**, **AI Voice**, **Notes**, or **API** under Song input. AI Voice includes your API key, locking, and listen test in one place. API uses **Settings** on the API chip.")
+                        .font(.footnote)
                 }
                 Section("Performance") {
                     oracleTextBlock(PerformCopy.fakeTiming)
