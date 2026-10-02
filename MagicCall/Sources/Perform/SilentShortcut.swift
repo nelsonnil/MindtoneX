@@ -13,7 +13,7 @@ final class SilentShortcut: ObservableObject {
 
     /// iCloud share links (https://www.icloud.com/shortcuts/…) — tap **Get** on the mode card.
     /// Paste Nelson’s links here when ready, e.g. `URL(string: "https://www.icloud.com/shortcuts/…")!`
-    static let silentOnInstallURL: URL? = nil
+    static let silentOnInstallURL: URL? = URL(string: "https://www.icloud.com/shortcuts/69761e3c5bac4b63a86489c3cdd159e1")
     static let silentOffInstallURL: URL? = nil
     static let createShortcutURL = URL(string: "shortcuts://create-shortcut")!
 
