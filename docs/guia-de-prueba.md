@@ -36,7 +36,7 @@ Objetivo: cuando te llamen, el iPhone suene con **esa canción como tono de llam
 12. **Apaga el modo silencio** (la campana debe sonar, no solo vibrar):
     - Si tu iPhone tiene **botón de Acción**: mantenlo pulsado hasta que **no** esté en silencio, **o**
     - **Ajustes** → **Sonidos y vibraciones** → **Modo silencio** → **desactivado**.
-13. Sube también el volumen del **tono de llamada**: **Ajustes** → **Sonidos y vibraciones** → en **Tono y alertas**, mueve la barra hacia la derecha.
+13. Sube también el volumen del **tono de llamada**: **Ajustes** → **Sonidos y vibraciones** → **Tono y alertas**. Puedes mover la barra, o activar **Cambiar con botones** y subir con los botones laterales mientras suena el tono de prueba. (La app no puede subir esto de forma fiable; hay que hacerlo aquí.)
 
 ### Pasos en la app
 
@@ -93,25 +93,26 @@ Objetivo: el iPhone en **silencio** (sin tono normal), la app **Tonos** a pantal
     - ¿Oyes la **canción** por el altavoz del iPhone?
     - ¿Suena también el **tono normal** del iPhone? (no debería, si el silencio está bien)
     - ¿La canción **se corta** enseguida o sigue hasta que cuelgas o rechazas?
-34. Si **no** suena la canción sola: **toca una vez** en cualquier parte de la pantalla negra (eso la enciende manualmente) y dime si entonces sí suena.
-35. Para **salir** de la pantalla negra: apoya **dos dedos** en la pantalla y **mantén 1,5 segundos** (como un “mantener pulsado” con dos dedos). Volverás a **Preparación**.
+34. En la **build 4**, cuando suena la canción (sola o al tocar), la app intenta subir el **volumen de música** al máximo y volver a dejarlo como estaba al colgar. Aun así conviene subir el volumen multimedia antes (paso 6).
+35. Si **no** suena la canción sola: **toca una vez** en cualquier parte de la pantalla negra (eso la enciende manualmente) y dime si entonces sí suena.
+36. Para **salir** de la pantalla negra: apoya **dos dedos** en la pantalla y **mantén 1,5 segundos** (como un “mantener pulsado” con dos dedos). Volverás a **Preparación**.
 
 ### Registro (muy útil para enviarme resultados)
 
-36. Otra vez en **Entrar en escena**, o antes de salir: **toca 3 veces rápido** la **esquina superior izquierda** de la pantalla. Se abre un **registro** (texto pequeño encima).
-37. Repite la llamada de prueba (pasos 32–33) con el registro abierto si quieres.
-38. Para guardar el registro: sal de la pantalla negra (paso 35), en **Preparación** entra en **Herramientas** → **Registro de pruebas** → icono de **compartir** (cuadrado con flecha) y envíatelo por **Mail** o **Notas** a ti mismo.
+37. Otra vez en **Entrar en escena**, o antes de salir: **toca 3 veces rápido** la **esquina superior izquierda** de la pantalla. Se abre un **registro** (texto pequeño encima).
+38. Repite la llamada de prueba (pasos 32–33) con el registro abierto si quieres.
+39. Para guardar el registro: sal de la pantalla negra (paso 36), en **Preparación** entra en **Herramientas** → **Registro de pruebas** → icono de **compartir** (cuadrado con flecha) y envíatelo por **Mail** o **Notas** a ti mismo.
 
 ---
 
 ## Qué enviarme después (copia y responde)
 
-39. Modelo de iPhone y versión de iOS (ej.: iPhone 16, iOS 26.0.1).
-40. Nombre de la canción que probaste.
-41. **Prueba 1:** ¿Apareció **Usar como tono** al compartir? (sí / no / solo desde Archivos). ¿Sonó la canción al llamarte? (sí / no / a medias).
-42. **Prueba 2:** ¿Banner sí o no? ¿Canción sí o no? ¿Se cortó a los cuántos segundos? ¿Tuviste que tocar la pantalla?
-43. El archivo o texto del **Registro de pruebas** (sobre todo la Prueba 2).
-44. Si puedes, un **vídeo corto** de la Prueba 2 (pantalla + lo que se oye).
+40. Modelo de iPhone y versión de iOS (ej.: iPhone 16, iOS 26.0.1).
+41. Nombre de la canción que probaste.
+42. **Prueba 1:** ¿Apareció **Usar como tono** al compartir? (sí / no / solo desde Archivos). ¿Sonó la canción al llamarte? (sí / no / a medias).
+43. **Prueba 2:** ¿Banner sí o no? ¿Canción sí o no? ¿Se cortó a los cuántos segundos? ¿Tuviste que tocar la pantalla?
+44. El archivo o texto del **Registro de pruebas** (sobre todo la Prueba 2).
+45. Si puedes, un **vídeo corto** de la Prueba 2 (pantalla + lo que se oye).
 
 ---
 
