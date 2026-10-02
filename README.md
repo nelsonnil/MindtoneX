@@ -151,7 +151,7 @@ solo dispara si hay una llamada sonando de verdad. En el Registro: `[TRIGGER] �
 Build 13 — **Modo silencio automático con Atajos**. iOS no deja a las apps cambiar el modo silencio,
 así que Perform ejecuta un atajo tuyo (`shortcuts://x-callback-url/run-shortcut`) y Atajos vuelve a la
 app con `magiccall://perform` (esquema de URL registrado en el Info.plist):
-- Fake Ringtone → atajo **MagicCall Silent On**; Share Ringtone → **MagicCall Silent Off**.
+- Fake Ringtone → atajo **Ringtone Oracle Silent On**; Share Ringtone → **Ringtone Oracle Silent Off**.
 - Crear cada atajo (una vez): Atajos › **+** › acción **Ajustar modo silencio** (Set Silent Mode) en
   Activado / Desactivado › nombre exacto › OK. No hay archivo `.shortcut` listo en el Context (iOS solo
   importa atajos firmados); si alguien te pasa un enlace de iCloud, ábrelo y pulsa *Añadir atajo*.
@@ -161,6 +161,11 @@ app con `magiccall://perform` (esquema de URL registrado en el Info.plist):
 - Si el atajo falla o se cancela, Perform sigue igualmente y el aviso sale después en la pantalla de
   preparación (nunca durante Perform). Si Atajos no devuelve la llamada, la app sigue a los 1,5 s de volver.
   En el Registro: `[SHORTCUT]`.
+
+Build 14 — **marca Ringtone Oracle**. Los atajos se llaman ahora exactamente **Ringtone Oracle Silent On**
+y **Ringtone Oracle Silent Off** (si ya creaste los de "MagicCall…", renómbralos en Atajos). Dentro de la
+app el título es *Ringtone Oracle*; en la pantalla de inicio sigue apareciendo **Tonos**
+(`CFBundleDisplayName`), y el bundle id, el esquema de URL (`magiccall://`) y el proyecto Xcode no cambian.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
 (`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
 

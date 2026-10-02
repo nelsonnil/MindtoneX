@@ -131,7 +131,7 @@ final class MicTester: ObservableObject {
         result = nil
         guard await MicCapture.requestPermission() else {
             ok = false
-            result = "Microphone access is off. Turn it on in iPhone Settings → Privacy & Security → Microphone → MagicCall."
+            result = "Microphone access is off. Turn it on in iPhone Settings → Privacy & Security → Microphone → \(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Tonos")."
             return
         }
         peak = 0

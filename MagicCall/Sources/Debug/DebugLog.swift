@@ -65,7 +65,7 @@ final class DebugLog: ObservableObject {
 
     func logDeviceHeader() {
         let device = UIDevice.current
-        log("=== MagicCall \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] ?? "?") (\(Bundle.main.infoDictionary?["CFBundleVersion"] ?? "?")) ===")
+        log("=== Ringtone Oracle \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] ?? "?") (\(Bundle.main.infoDictionary?["CFBundleVersion"] ?? "?")) ===")
         log("Dispositivo: \(DebugLog.hardwareModel()) · \(device.systemName) \(device.systemVersion) · región \(Locale.current.region?.identifier ?? "?")")
         #if MAGIC_PRIVATE_PROBES
         log("Compilado CON experimentos privados (MAGIC_PRIVATE_PROBES)")

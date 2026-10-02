@@ -38,7 +38,7 @@ struct SilentShortcutCard: View {
                     "Name the shortcut exactly **\(SilentShortcut.silentOnName)** and tap **Done**.",
                     "Repeat with Silent Mode **Off** and the name **\(SilentShortcut.silentOffName)**.",
                 ],
-                footer: "Got a ready-made shortcut file or iCloud link? Open it and tap **Add Shortcut** — keep the name exactly as it is.\n\nWhen you press **Perform**, Shortcuts flashes on screen for a moment, then MagicCall comes straight back to the black screen. **Press Perform before the spectator is watching.**"
+                footer: "Got a ready-made shortcut file or iCloud link? Open it and tap **Add Shortcut** — keep the name exactly as it is.\n\nWhen you press **Perform**, Shortcuts flashes on screen for a moment, then Ringtone Oracle comes straight back to the black screen. **Press Perform before the spectator is watching.**"
             )
 
             HStack {

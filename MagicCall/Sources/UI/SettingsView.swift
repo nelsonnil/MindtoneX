@@ -101,7 +101,7 @@ struct SettingsView: View {
         } header: {
             Text("Silent Mode shortcuts")
         } footer: {
-            Text("Perform opens Shortcuts (it flashes briefly) and comes back to MagicCall by itself. Turn these on after installing the shortcuts — see the setup card on the main screen.")
+            Text("Perform opens Shortcuts (it flashes briefly) and comes back to Ringtone Oracle by itself. Turn these on after installing the shortcuts — see the setup card on the main screen.")
         }
     }
 

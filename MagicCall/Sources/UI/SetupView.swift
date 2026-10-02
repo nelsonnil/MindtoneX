@@ -49,7 +49,7 @@ struct SetupView: View {
                 .padding(.bottom, 28)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("MagicCall")
+            .navigationTitle("Ringtone Oracle")
             .navigationBarTitleDisplayMode(.large)
             .onChange(of: photoItem) { _, newItem in
                 guard let newItem else { return }
@@ -261,7 +261,7 @@ struct SetupView: View {
             checklistRow("Focus / Do Not Disturb: **Off**")
             checklistRow("Bluetooth & AirPods: **Disconnected**")
             checklistRow("Media volume: **Up**")
-            checklistRow("Stay in MagicCall, screen on & unlocked")
+            checklistRow("Stay in Ringtone Oracle, screen on & unlocked")
         }
         .padding(14)
         .background(Color(.secondarySystemGroupedBackground))
