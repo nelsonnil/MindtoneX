@@ -10,12 +10,10 @@ struct ModePickerCard: View {
     }
 
     var body: some View {
-        OracleCard(section: .mode, padding: 6) {
-            VStack(alignment: .leading, spacing: 8) {
+        OracleCard(section: .mode, padding: 10) {
+            VStack(alignment: .leading, spacing: 10) {
                 OracleEyebrow(text: "Mode")
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     segment(.fakeRingtone,
                             title: "Fake Ringtone",
                             subtitle: "Silent · app plays the song",

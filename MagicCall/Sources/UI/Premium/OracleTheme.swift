@@ -169,13 +169,27 @@ struct OracleCard<Content: View>: View {
     var padding: CGFloat = 18
     @ViewBuilder var content: () -> Content
 
+    private static let sectionRailWidth: CGFloat = 3.5
+    /// Inset of the accent rail from the card’s leading edge.
+    private static let sectionRailLeading: CGFloat = 14
+    /// Space between the rail and the card content (avoids segments hugging the gold bar).
+    private static let sectionRailContentGap: CGFloat = 12
+
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: OracleTheme.cardRadius, style: .continuous)
     }
 
+    private var contentInsets: EdgeInsets {
+        guard section != nil else {
+            return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
+        }
+        let leading = Self.sectionRailLeading + Self.sectionRailWidth + Self.sectionRailContentGap
+        return EdgeInsets(top: padding, leading: leading, bottom: padding, trailing: padding)
+    }
+
     var body: some View {
         content()
-            .padding(padding)
+            .padding(contentInsets)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 shape
@@ -214,9 +228,9 @@ struct OracleCard<Content: View>: View {
                 if let section {
                     Capsule(style: .continuous)
                         .fill(section.accent.opacity(0.92))
-                        .frame(width: 3.5)
+                        .frame(width: Self.sectionRailWidth)
                         .padding(.vertical, 14)
-                        .padding(.leading, 1)
+                        .padding(.leading, Self.sectionRailLeading)
                 }
             }
             .shadow(color: .black.opacity(0.40), radius: 18, y: 10)
