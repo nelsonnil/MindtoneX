@@ -83,34 +83,35 @@ Objetivo: el iPhone en **silencio** (sin tono normal), la app **Tonos** a pantal
 28. Toca el botón grande **Entrar en escena**.
 29. La pantalla pasa a **negro** (o el fondo que hayas elegido). **No hay botones visibles** — es normal.
 30. Deja el iPhone en la mano, pantalla encendida, con esa pantalla negra delante. **No bloquees** el iPhone (no apagues la pantalla con el botón lateral).
+31. **Quédate en Tonos** (pantalla negra). **No vayas al escritorio** ni abras otra app. La Prueba 2 funciona con la app **delante**; si sales, puede fallar o llegar tarde.
 
 ### La llamada de prueba
 
-31. Pide a tu amigo que **te llame otra vez** (puede ser el mismo número de antes).
-32. **Observa y anota:**
+32. Pide a tu amigo que **te llame otra vez** (puede ser el mismo número de antes).
+33. **Observa y anota:**
     - ¿Aparece el **banner de llamada** arriba (nombre/número y botones contestar/rechazar)?
     - ¿Oyes la **canción** por el altavoz del iPhone?
     - ¿Suena también el **tono normal** del iPhone? (no debería, si el silencio está bien)
     - ¿La canción **se corta** enseguida o sigue hasta que cuelgas o rechazas?
-33. Si **no** suena la canción sola: **toca una vez** en cualquier parte de la pantalla negra (eso la enciende manualmente) y dime si entonces sí suena.
-34. Para **salir** de la pantalla negra: apoya **dos dedos** en la pantalla y **mantén 1,5 segundos** (como un “mantener pulsado” con dos dedos). Volverás a **Preparación**.
+34. Si **no** suena la canción sola: **toca una vez** en cualquier parte de la pantalla negra (eso la enciende manualmente) y dime si entonces sí suena.
+35. Para **salir** de la pantalla negra: apoya **dos dedos** en la pantalla y **mantén 1,5 segundos** (como un “mantener pulsado” con dos dedos). Volverás a **Preparación**.
 
 ### Registro (muy útil para enviarme resultados)
 
-35. Otra vez en **Entrar en escena**, o antes de salir: **toca 3 veces rápido** la **esquina superior izquierda** de la pantalla. Se abre un **registro** (texto pequeño encima).
-36. Repite la llamada de prueba (pasos 31–32) con el registro abierto si quieres.
-37. Para guardar el registro: sal de la pantalla negra (paso 34), en **Preparación** entra en **Herramientas** → **Registro de pruebas** → icono de **compartir** (cuadrado con flecha) y envíatelo por **Mail** o **Notas** a ti mismo.
+36. Otra vez en **Entrar en escena**, o antes de salir: **toca 3 veces rápido** la **esquina superior izquierda** de la pantalla. Se abre un **registro** (texto pequeño encima).
+37. Repite la llamada de prueba (pasos 32–33) con el registro abierto si quieres.
+38. Para guardar el registro: sal de la pantalla negra (paso 35), en **Preparación** entra en **Herramientas** → **Registro de pruebas** → icono de **compartir** (cuadrado con flecha) y envíatelo por **Mail** o **Notas** a ti mismo.
 
 ---
 
 ## Qué enviarme después (copia y responde)
 
-38. Modelo de iPhone y versión de iOS (ej.: iPhone 16, iOS 26.0.1).
-39. Nombre de la canción que probaste.
-40. **Prueba 1:** ¿Apareció **Usar como tono** al compartir? (sí / no / solo desde Archivos). ¿Sonó la canción al llamarte? (sí / no / a medias).
-41. **Prueba 2:** ¿Banner sí o no? ¿Canción sí o no? ¿Se cortó a los cuántos segundos? ¿Tuviste que tocar la pantalla?
-42. El archivo o texto del **Registro de pruebas** (sobre todo la Prueba 2).
-43. Si puedes, un **vídeo corto** de la Prueba 2 (pantalla + lo que se oye).
+39. Modelo de iPhone y versión de iOS (ej.: iPhone 16, iOS 26.0.1).
+40. Nombre de la canción que probaste.
+41. **Prueba 1:** ¿Apareció **Usar como tono** al compartir? (sí / no / solo desde Archivos). ¿Sonó la canción al llamarte? (sí / no / a medias).
+42. **Prueba 2:** ¿Banner sí o no? ¿Canción sí o no? ¿Se cortó a los cuántos segundos? ¿Tuviste que tocar la pantalla?
+43. El archivo o texto del **Registro de pruebas** (sobre todo la Prueba 2).
+44. Si puedes, un **vídeo corto** de la Prueba 2 (pantalla + lo que se oye).
 
 ---
 

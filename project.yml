@@ -20,7 +20,7 @@ settings:
     # Pon aquí tu Team ID o elígelo en Xcode > Signing & Capabilities.
     DEVELOPMENT_TEAM: ""
     MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "2"
+        CURRENT_PROJECT_VERSION: "3"
 
 targets:
   MagicCall:

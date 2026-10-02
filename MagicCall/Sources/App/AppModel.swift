@@ -307,11 +307,17 @@ final class AppModel: ObservableObject {
             Task { await self.select(track) }
         }
         observe(UIApplication.willResignActiveNotification) { _ in dlog("App → willResignActive") }
-        observe(UIApplication.didEnterBackgroundNotification) { _ in dlog("App → didEnterBackground") }
-        observe(UIApplication.willEnterForegroundNotification) { _ in dlog("App → willEnterForeground") }
+        observe(UIApplication.didEnterBackgroundNotification) { [weak self] _ in
+            dlog("App → didEnterBackground")
+            self?.maintainArmedInBackground()
+        }
+        observe(UIApplication.willEnterForegroundNotification) { [weak self] _ in
+            dlog("App → willEnterForeground")
+            self?.refreshArmedState(reason: "willEnterForeground")
+        }
         observe(UIApplication.didBecomeActiveNotification) { [weak self] _ in
             dlog("App → didBecomeActive")
-            self?.ensureStandby()
+            self?.refreshArmedState(reason: "didBecomeActive")
         }
         observe(UIApplication.protectedDataWillBecomeUnavailableNotification) { _ in dlog("Dispositivo bloqueado (protectedData no disponible)") }
         observe(UIApplication.protectedDataDidBecomeAvailableNotification) { _ in dlog("Dispositivo desbloqueado (protectedData disponible)") }
@@ -336,15 +342,60 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func ensureStandby() {
-        guard isArmed, Prefs.hotStandby, let player = audio.player, !player.isPlaying else { return }
+    /// Vuelve a dejar listo audio + pantalla de escena al regresar a la app.
+    func refreshArmedState(reason: String) {
+        guard isArmed else { return }
+        phase = .stage
+        UIApplication.shared.isIdleTimerDisabled = true
+        do {
+            try audio.configureSession()
+        } catch {
+            dlog("✗ refreshArmedState sesión: \(RingtoneAudioEngine.describe(error))")
+        }
+        if Prefs.hotStandby {
+            if audio.player?.isPlaying != true {
+                audio.startStandby()
+            } else if !isAudible {
+                audio.player?.volume = 0
+            }
+        }
+        syncOngoingIncomingCalls()
+        dlog("↻ Re-armado [\(reason)] · \(audio.snapshot()) · CXCall activas=\(calls.currentCalls.count)")
+    }
+
+    func maintainArmedInBackgroundIfNeeded() {
+        maintainArmedInBackground()
+    }
+
+    /// Con `UIBackgroundModes = audio`, mantener el reproductor en vol. 0 ayuda a no ser suspendido.
+    private func maintainArmedInBackground() {
+        guard isArmed else { return }
         do {
             try AVAudioSession.sharedInstance().setActive(true)
-            audio.startStandby()
-            dlog("Standby restaurado")
         } catch {
-            dlog("✗ No se pudo restaurar standby: \(RingtoneAudioEngine.describe(error))")
+            dlog("✗ background setActive: \(RingtoneAudioEngine.describe(error))")
         }
+        if Prefs.hotStandby, audio.player?.isPlaying != true {
+            audio.startStandby()
+            dlog("↻ Standby reiniciado en background")
+        } else {
+            dlog("Background armado: \(audio.snapshot())")
+        }
+    }
+
+    /// CXCallObserver a menudo no avisa en segundo plano; al volver, miramos llamadas en curso.
+    private func syncOngoingIncomingCalls() {
+        for call in calls.currentCalls where !call.isOutgoing && !call.hasConnected && !call.hasEnded {
+            if incomingCallID != call.uuid {
+                handle(.incoming, uuid: call.uuid)
+            } else if Prefs.autoTrigger && !isAudible {
+                trigger(source: "CXCall al volver")
+            }
+        }
+    }
+
+    private func ensureStandby() {
+        refreshArmedState(reason: "interrupción/standby")
     }
 
     private func startVolumeButtonWatch() {
