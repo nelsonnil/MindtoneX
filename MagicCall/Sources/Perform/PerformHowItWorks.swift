@@ -106,7 +106,7 @@ enum PerformCopy {
 
     static let shareCaveats = [
         "**Silent must be OFF** in this mode — the real ringtone is what plays.",
-        "If iOS shows a confirmation or opens Settings after “Use as Ringtone”, just go Home.",
+        "If iOS opens **Settings → Ringtone** after “Use as Ringtone”, swipe up to Home, or switch back to MagicCall — it jumps Home by itself (or tap the black screen once).",
         "If it doesn’t go Home by itself, tap the black screen; if that doesn’t work either, swipe up from the bottom.",
         "Every performance adds a new ringtone with a slightly different name, so iOS never says “duplicate”. To remove old ones: **Settings → Sounds & Haptics → Ringtone**, swipe left on a ringtone → Delete. The app can’t remove them for you.",
     ]

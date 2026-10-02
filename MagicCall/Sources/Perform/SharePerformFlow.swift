@@ -26,9 +26,19 @@ final class SharePerformFlow: ObservableObject {
 
     private var observers: [NSObjectProtocol] = []
     private var shareOpenedAt: Date?
+    /// Set when “Use as Ringtone” completes: iOS may then bring Settings → Ringtone to the front,
+    /// so the next time the app becomes active it goes Home again instead of showing anything.
+    private var pendingHomeAfterRingtone = false
+    private var shareCompletedAt: Date?
+    private var lastHomeAt: Date?
+    /// A Settings detour after “Use as Ringtone” is short; later returns are a new performance.
+    private static let pendingHomeWindow: TimeInterval = 90
 
     private init() {
         let nc = NotificationCenter.default
+        observers.append(nc.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { SharePerformFlow.shared.appDidBecomeActive() }
+        })
         observers.append(nc.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { SharePerformFlow.shared.appWillResignActive() }
         })
@@ -59,7 +69,7 @@ final class SharePerformFlow: ObservableObject {
 
     func handleTap() {
         switch step {
-        case .waitingForTap:
+        case .waitingForTap, .wentHome:
             goHome(reason: "tap")
         case .shareCancelled:
             dlog("[SHARE PERFORM] tap → re-opening Share sheet")
@@ -78,6 +88,9 @@ final class SharePerformFlow: ObservableObject {
         dlog("[SHARE PERFORM] ↺ reset from step \(step.rawValue)")
         step = .idle
         shareOpenedAt = nil
+        shareCompletedAt = nil
+        lastHomeAt = nil
+        pendingHomeAfterRingtone = false
         RingtoneSharePresenter.onNextCompletion = nil
     }
 
@@ -121,22 +134,41 @@ final class SharePerformFlow: ObservableObject {
             return
         }
         step = .waitingForTap
+        shareCompletedAt = Date()
+        let looksLikeRingtone = (activity ?? "").lowercased().contains("ringtone")
+        dlog("[SHARE PERFORM] completed · ringtone activity=\(looksLikeRingtone)")
         guard Self.autoHome else {
             dlog("[SHARE PERFORM] auto-Home is off → tap the black screen to go Home")
             return
         }
+        pendingHomeAfterRingtone = true
+        goHome(reason: "auto, immediately after Use as Ringtone")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            MainActor.assumeIsolated { SharePerformFlow.shared.autoHomeAfterShare() }
+            MainActor.assumeIsolated { SharePerformFlow.shared.retryHome(reason: "auto +0.3 s") }
         }
     }
 
-    private func autoHomeAfterShare() {
-        guard step == .waitingForTap else { return }
+    /// Repeats the Home jump while “Use as Ringtone” may still be pulling Settings forward.
+    private func retryHome(reason: String) {
+        guard pendingHomeAfterRingtone, step == .waitingForTap || step == .wentHome else { return }
         guard UIApplication.shared.applicationState == .active else {
-            dlog("[SHARE PERFORM] auto-Home skipped: iOS already left the app (\(Self.appState())) — Settings or confirmation shown")
+            dlog("[SHARE PERFORM] \(reason): app not in front (\(Self.appState())) — will go Home when it becomes active again")
             return
         }
-        goHome(reason: "auto after Use as Ringtone")
+        goHome(reason: reason)
+    }
+
+    private func appDidBecomeActive() {
+        guard pendingHomeAfterRingtone, step == .waitingForTap || step == .wentHome else { return }
+        if let done = shareCompletedAt, Date().timeIntervalSince(done) > Self.pendingHomeWindow {
+            pendingHomeAfterRingtone = false
+            dlog("[SHARE PERFORM] back after \(Int(Date().timeIntervalSince(done))) s — Home no longer pending → reset for next performance")
+            AppModel.shared.disarm()
+            return
+        }
+        dlog("[SHARE PERFORM] app active again after Use as Ringtone (maybe back from Settings) → Home")
+        pendingHomeAfterRingtone = false
+        goHome(reason: "became active after Use as Ringtone")
     }
 
     private static func appState() -> String {
@@ -158,8 +190,13 @@ final class SharePerformFlow: ObservableObject {
             dlog("✗ [SHARE PERFORM] suspend not available — swipe up to go Home")
             return
         }
+        if let last = lastHomeAt, Date().timeIntervalSince(last) < 0.5 {
+            dlog("[SHARE PERFORM] \(reason): Home already requested \(Int(Date().timeIntervalSince(last) * 1000)) ms ago — skip")
+            return
+        }
+        lastHomeAt = Date()
         step = .wentHome
-        dlog("[SHARE PERFORM] 5 · \(reason) → Home Screen", sync: true)
+        dlog("[SHARE PERFORM] 5 · \(reason) → Home Screen (app=\(Self.appState()))", sync: true)
         _ = UIApplication.shared.perform(selector)
     }
 
@@ -167,10 +204,16 @@ final class SharePerformFlow: ObservableObject {
         if step == .sharing {
             dlog("[SHARE PERFORM] ⚠️ app left the foreground while Share was open — iOS may have shown a confirmation or opened Settings after “Use as Ringtone”")
         }
+        if pendingHomeAfterRingtone, let done = shareCompletedAt, Date().timeIntervalSince(done) < 3 {
+            dlog("[SHARE PERFORM] willResignActive \(String(format: "%.2f", Date().timeIntervalSince(done))) s after Use as Ringtone (iOS opening Settings?) → Home")
+            goHome(reason: "willResignActive after Use as Ringtone")
+        }
     }
 
     private func appWillEnterForeground() {
         switch step {
+        case .wentHome where pendingHomeAfterRingtone:
+            dlog("[SHARE PERFORM] back in app with Home still pending (likely from Settings) → keep black screen")
         case .wentHome:
             dlog("[SHARE PERFORM] back in app after Home → reset for next performance")
             AppModel.shared.disarm()

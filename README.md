@@ -129,6 +129,9 @@ se apaga el micro → se abre **Compartir** solo → pulsas **Usar como tono** �
 elegir, la pantalla sigue negra y un toque lo vuelve a abrir. Si no va sola a inicio, un toque en la
 pantalla negra la lleva; si tampoco, desliza hacia arriba. Interruptores en *Advanced › Share Ringtone
 export*: *Go Home via private API* y *Go Home automatically after Use as Ringtone*. **Modo silencio desactivado.**
+Build 10: si iOS abre **Ajustes › Tono** tras "Usar como tono", la app pide ir a inicio al instante, otra
+vez a los 0,3 s, al perder el primer plano y, si vuelves a MagicCall en los 90 s siguientes, otra vez al
+volver (sin enseñar la pantalla de preparación). Si aun así se ve la pantalla negra, un toque va a inicio.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
 (`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
 
