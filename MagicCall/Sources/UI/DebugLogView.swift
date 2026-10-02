@@ -5,7 +5,7 @@ struct DebugLogView: View {
 
     var body: some View {
         LogList(entries: log.entries)
-            .navigationTitle("Registro")
+            .navigationTitle("Debug Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -25,13 +25,13 @@ struct DebugOverlay: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(model.isAudible ? "● SONANDO" : "○ en espera")
+                Text(model.isAudible ? "● PLAYING" : "○ waiting")
                     .font(.caption.bold())
                     .foregroundStyle(model.isAudible ? .green : .secondary)
                 Spacer()
-                Button("Disparar") { model.trigger(source: "botón debug") }
-                Button("Parar") { model.silence(reason: "botón debug") }
-                Button("Salir") { model.disarm() }
+                Button("Play") { model.trigger(source: "debug") }
+                Button("Stop") { model.silence(reason: "debug") }
+                Button("Exit") { model.disarm() }
                 Button { model.showDebugOverlay = false } label: { Image(systemName: "xmark.circle.fill") }
             }
             .buttonStyle(.bordered)

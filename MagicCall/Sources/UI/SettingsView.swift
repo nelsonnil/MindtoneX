@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftUI
 
+/// Advanced options for testers who want full control and diagnostics.
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
 
@@ -23,11 +24,6 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.deezerFallback) private var deezerFallback = true
     @AppStorage(Prefs.Key.storeCountry) private var storeCountry = ""
 
-    @AppStorage(Prefs.Key.background) private var background = StageBackground.black.rawValue
-    @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = true
-    @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
-    @AppStorage(Prefs.Key.darkStatusBarText) private var darkStatusBarText = false
-
     @AppStorage(Prefs.Key.darwinSignals) private var darwinSignals = true
     @AppStorage(Prefs.Key.toneIdentifierToTry) private var toneIdentifier = "system:Radar"
     @AppStorage(Prefs.Key.callKitCallerName) private var callKitCallerName = "Ana"
@@ -38,106 +34,100 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.ringtoneUseQuickLook) private var ringtoneUseQuickLook = false
     @AppStorage(Prefs.Key.attemptRingerMaxOnStage) private var attemptRingerMaxOnStage = false
 
-    @State private var photoItem: PhotosPickerItem?
     @State private var confirmToneChange = false
 
     var body: some View {
         Form {
+            NavigationLink {
+                DebugLogView()
+            } label: {
+                Label("Debug log", systemImage: "doc.text.magnifyingglass")
+            }
+
             audioSection
             triggerSection
-            songSection
-            stageSection
+            previewsSection
+            shareRingtoneSection
             privateSection
-            ringtoneSection
             callKitSection
         }
-        .navigationTitle("Ajustes")
-        .onChange(of: photoItem) { _, newItem in
-            guard let photoItem = newItem else { return }
-            Task {
-                if let data = try? await photoItem.loadTransferable(type: Data.self) {
-                    StageImageStore.save(data)
-                    background = StageBackground.image.rawValue
-                    dlog("Fondo de escena: imagen propia guardada (\(data.count / 1024) KB)")
-                }
-            }
-        }
+        .navigationTitle("Advanced")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var audioSection: some View {
         Section {
-            Toggle("prefersNoInterruptionsFromSystemAlerts", isOn: $noInterruptions)
-            Toggle("Standby en caliente (sonar a volumen 0 antes de la llamada)", isOn: $hotStandby)
-            Toggle("Opción .mixWithOthers", isOn: $mixWithOthers)
-            Toggle("Repetir el fragmento en bucle", isOn: $loopClip)
-            Toggle("Parar al contestar", isOn: $stopOnAnswer)
-            Stepper("Duración del fragmento: \(Int(clipSeconds)) s", value: $clipSeconds, in: 4...30, step: 1)
-            Stepper("Empezar en el segundo \(Int(startOffset)) del preview", value: $startOffset, in: 0...25, step: 1)
-            Toggle("Forzar volumen multimedia al armar (MPVolumeView)", isOn: $forceMediaVolume)
+            Toggle("Reduce system alert interruptions", isOn: $noInterruptions)
+            Toggle("Hot standby (play at volume 0 before call)", isOn: $hotStandby)
+            Toggle("Mix with other audio", isOn: $mixWithOthers)
+            Toggle("Loop song clip", isOn: $loopClip)
+            Toggle("Stop when call is answered", isOn: $stopOnAnswer)
+            Stepper("Clip length: \(Int(clipSeconds)) s", value: $clipSeconds, in: 4...30, step: 1)
+            Stepper("Start at second \(Int(startOffset))", value: $startOffset, in: 0...25, step: 1)
+            Toggle("Set media volume when entering stage", isOn: $forceMediaVolume)
             if forceMediaVolume {
-                Slider(value: $mediaVolumeTarget, in: 0.3...1) { Text("Volumen") }
+                Slider(value: $mediaVolumeTarget, in: 0.3...1) { Text("Target volume") }
             }
-            Toggle("Ruta 2: subir volumen multimedia al máximo al sonar (llamada o toque)", isOn: $boostSystemVolumeOnTrigger)
+            Toggle("Boost media volume to max when song starts", isOn: $boostSystemVolumeOnTrigger)
         } header: {
-            Text("Audio")
+            Text("Audio engine")
         } footer: {
-            Text("Con «subir al máximo al sonar» activo, la app guarda tu volumen, lo pone al 100 % cuando empieza la canción y lo restaura al colgar. Usa el MPVolumeView oculto para intentar no mostrar el cartel de volumen. Los cambios de «forzar al armar» se aplican al volver a entrar en escena.")
+            Text("“Reduce system alert interruptions” maps to Apple’s prefersNoInterruptionsFromSystemAlerts — it asks iOS to let your audio continue when a call banner appears. Hot standby keeps the player running silently so playback starts instantly. Boost volume restores your previous level when the call ends.")
         }
     }
 
     private var triggerSection: some View {
         Section {
-            Toggle("Automático al detectar la llamada (CXCallObserver)", isOn: $autoTrigger)
-            Toggle("Toque en pantalla = sonar/parar", isOn: $tapTrigger)
-            Toggle("Botón de volumen = sonar/parar", isOn: $volumeButtonTrigger)
+            Toggle("Auto-start on incoming call", isOn: $autoTrigger)
+            Toggle("Tap screen to start/stop song", isOn: $tapTrigger)
+            Toggle("Volume buttons to start/stop", isOn: $volumeButtonTrigger)
         } header: {
-            Text("Disparo")
+            Text("Fake Ringtone triggers")
         } footer: {
-            Text("También puedes asignar el atajo “Sonar canción” a Toque posterior (Accesibilidad › Tocar) o al botón de Acción.")
+            Text("Auto-start uses CallKit call detection plus audio session signals. Leave on for performances. Tap is a backup if auto-start fails.")
         }
     }
 
-    private var songSection: some View {
+    private var previewsSection: some View {
         Section {
-            Toggle("Deezer como respaldo", isOn: $deezerFallback)
-            Toggle("Caché en disco (ver nota de licencia)", isOn: $diskCache)
-            TextField("Tienda iTunes (vacío = región del iPhone, p. ej. ES, MX, US)", text: $storeCountry)
+            Toggle("Deezer fallback previews", isOn: $deezerFallback)
+            Toggle("Disk cache (testing only)", isOn: $diskCache)
+            TextField("iTunes store country (empty = auto)", text: $storeCountry)
                 .textInputAutocapitalization(.characters)
-            Button("Borrar cachés") { Task { await model.previews.clearCaches() } }
+            Button("Clear preview caches") { Task { await model.previews.clearCaches() } }
         } header: {
-            Text("Previews")
+            Text("Song previews")
+        } footer: {
+            Text("Previews are short clips for instant playback — not full tracks. Country code examples: US, ES, MX.")
         }
     }
 
-    private var stageSection: some View {
+    private var shareRingtoneSection: some View {
         Section {
-            Picker("Fondo", selection: $background) {
-                ForEach(StageBackground.allCases) { Text($0.label).tag($0.rawValue) }
+            Toggle("Prepare ringtone file when song is ready", isOn: $autoStageRingtone)
+            Toggle("Black flash before Share sheet", isOn: $discreetRingtoneUI)
+            Toggle("Use Quick Look instead of Share", isOn: $ringtoneUseQuickLook)
+            if PrivateProbes.isCompiled {
+                Toggle("Try private API: max ringer volume on export", isOn: $attemptRingerMaxOnStage)
             }
-            PhotosPicker(selection: $photoItem, matching: .images) {
-                Label("Elegir imagen de fondo…", systemImage: "photo")
-            }
-            Toggle("Tapar la barra de estado de la imagen", isOn: $maskStatusBar)
-            Toggle("Ocultar barra de estado", isOn: $hideStatusBar)
-            Toggle("Texto oscuro en barra de estado", isOn: $darkStatusBarText)
         } header: {
-            Text("Escena")
+            Text("Share Ringtone export")
         } footer: {
-            Text("Truco: haz una captura de tu pantalla de inicio y úsala de fondo. Con el banner real encima parece que el iPhone estaba simplemente en la pantalla de inicio. No ocultes la barra de estado: la real (hora, batería) es lo más creíble.")
+            Text("Auto-prepare builds the .m4a in the background. Quick Look is an alternate path if “Use as Ringtone” doesn’t appear in Share.")
         }
     }
 
     private var privateSection: some View {
         Section {
             if PrivateProbes.isCompiled {
-                Toggle("Escuchar notificaciones Darwin al iniciar", isOn: $darwinSignals)
-                Button("Ejecutar pruebas de solo lectura") { model.runReadOnlyProbes() }
-                TextField("Identificador de tono a probar", text: $toneIdentifier)
+                Toggle("Log Darwin notifications at launch", isOn: $darwinSignals)
+                Button("Run read-only private API probes") { model.runReadOnlyProbes() }
+                TextField("Tone ID to try", text: $toneIdentifier)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                 privateWriteButtons
             } else {
-                Text("Este build se compiló sin experimentos privados (configuración TestFlight).")
+                Text("Private experiments are disabled in TestFlight builds.")
                     .foregroundStyle(.secondary)
             }
             ForEach(model.probeResults) { r in
@@ -147,55 +137,40 @@ struct SettingsView: View {
                 }
             }
         } header: {
-            Text("Experimentos privados")
+            Text("Private API experiments")
         } footer: {
-            Text("Esperado: casi todo bloqueado por sandbox/entitlements. El resultado exacto en iOS 26 es justo lo que necesitamos saber. Todo queda en el registro.")
+            Text("For engineering only. These call undocumented iOS APIs and usually fail without jailbreak. Results are copied to the debug log.")
         }
     }
 
     @ViewBuilder
     private var privateWriteButtons: some View {
         #if MAGIC_PRIVATE_PROBES
-        Button("Intentar cambiar el tono de llamada (ToneLibrary)") { confirmToneChange = true }
-            .confirmationDialog("Intentará cambiar el tono por defecto del sistema. Si funciona, usa “Restaurar” después.",
+        Button("Try change default ringtone (ToneLibrary)") { confirmToneChange = true }
+            .confirmationDialog("May change the system default ringtone. Restore afterward.",
                                 isPresented: $confirmToneChange, titleVisibility: .visible) {
-                Button("Intentar") { model.runToneSet() }
+                Button("Try") { model.runToneSet() }
             }
-        Button("Restaurar tono original") { model.runToneRestore() }
-        Button("Intentar volumen de timbre a 0 (AVSystemController)") { model.runRingerVolume(0) }
-        Button("Intentar volumen de timbre a 0,5") { model.runRingerVolume(0.5) }
-        Button("Intentar timbre al máximo (Ruta 1 · experimental)") { model.runRingerVolumeMax() }
+        Button("Restore original ringtone") { model.runToneRestore() }
+        Button("Try ringer volume 0") { model.runRingerVolume(0) }
+        Button("Try ringer volume 50%") { model.runRingerVolume(0.5) }
+        Button("Try ringer volume max (lab)") { model.runRingerVolumeMax() }
         #endif
-    }
-
-    private var ringtoneSection: some View {
-        Section {
-            Toggle("Preparar tono al buscar canción", isOn: $autoStageRingtone)
-            Toggle("Pantalla negra antes de Compartir", isOn: $discreetRingtoneUI)
-            Toggle("Usar Vista previa en lugar de Compartir directo", isOn: $ringtoneUseQuickLook)
-            if PrivateProbes.isCompiled {
-                Toggle("Al preparar tono: intentar subir volumen del timbre (privado)", isOn: $attemptRingerMaxOnStage)
-            }
-        } header: {
-            Text("Ruta 1 · menos toques")
-        } footer: {
-            Text("Deja activado «Preparar tono al buscar». «Vista previa» puede ayudar si «Usar como tono» no sale en Compartir. El volumen del timbre no se puede subir de forma fiable desde la app: si el interruptor privado no hace nada, usa Ajustes › Sonidos y vibración › Tono y alertas › «Cambiar con botones» y sube con los botones laterales.")
-        }
     }
 
     private var callKitSection: some View {
         Section {
-            TextField("Nombre que mostrará", text: $callKitCallerName)
-            Stepper("Retraso: \(Int(callKitDelay)) s", value: $callKitDelay, in: 2...30, step: 1)
-            Button("Programar llamada simulada (y entrar en escena)") {
+            TextField("Simulated caller name", text: $callKitCallerName)
+            Stepper("Delay: \(Int(callKitDelay)) s", value: $callKitDelay, in: 2...30, step: 1)
+            Button("Schedule fake CallKit call + enter stage") {
                 model.scheduleCallKitFallback()
-                model.arm()
+                model.performFakeRingtone()
             }
             .disabled(model.loadState != .ready)
         } header: {
-            Text("Respaldo CallKit (NO es la llamada real)")
+            Text("CallKit fallback (not a real phone call)")
         } footer: {
-            Text("Solo para comparar o como plan B. iOS muestra el nombre de la app en la llamada y no es la llamada del espectador.")
+            Text("Shows Apple’s fake incoming UI for comparison. Spectators will see the app name — not for real performances.")
         }
     }
 }

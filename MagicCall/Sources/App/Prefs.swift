@@ -37,6 +37,22 @@ enum Prefs {
         static let autoStageRingtone = "ringtone.autoStageOnSearch"
         static let discreetRingtoneUI = "ringtone.discreetUI"
         static let ringtoneUseQuickLook = "ringtone.useQuickLook"
+
+        static let performanceMode = "ui.performanceMode"
+    }
+
+    enum PerformanceMode: String, CaseIterable, Identifiable {
+        case fakeRingtone
+        case shareRingtone
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .fakeRingtone: return "Fake Ringtone"
+            case .shareRingtone: return "Share Ringtone"
+            }
+        }
     }
 
     /// Archivo único reutilizado en cada actuación (≤30 s).
@@ -72,6 +88,7 @@ enum Prefs {
             Key.autoStageRingtone: true,
             Key.discreetRingtoneUI: true,
             Key.ringtoneUseQuickLook: false,
+            Key.performanceMode: PerformanceMode.fakeRingtone.rawValue,
         ])
     }
 
@@ -80,6 +97,10 @@ enum Prefs {
     static var ringtoneUseQuickLook: Bool { d.bool(forKey: Key.ringtoneUseQuickLook) }
 
     private static var d: UserDefaults { .standard }
+
+    static var performanceMode: PerformanceMode {
+        PerformanceMode(rawValue: d.string(forKey: Key.performanceMode) ?? "") ?? .fakeRingtone
+    }
 
     static var noInterruptions: Bool { d.bool(forKey: Key.noInterruptions) }
     static var mixWithOthers: Bool { d.bool(forKey: Key.mixWithOthers) }
@@ -123,9 +144,9 @@ enum StageBackground: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .black: return "Negro"
-        case .gradient: return "Degradado oscuro"
-        case .image: return "Imagen propia (p. ej. captura de tu pantalla de inicio)"
+        case .black: return "Solid black"
+        case .gradient: return "Dark gradient"
+        case .image: return "Your screenshot"
         }
     }
 }

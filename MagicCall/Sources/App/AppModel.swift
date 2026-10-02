@@ -187,6 +187,26 @@ final class AppModel: ObservableObject {
 
     // MARK: Escena
 
+    /// Fake Ringtone: full-screen stage, auto-play on incoming call.
+    func performFakeRingtone() {
+        arm()
+    }
+
+    /// Share Ringtone: export clip and open the system share sheet (Use as Ringtone).
+    func performShareRingtone() async {
+        guard loadState == .ready, let track = selected else { return }
+        if !ringtoneStaged || exportedRingtone == nil
+            || !FileManager.default.fileExists(atPath: exportedRingtone?.path ?? "") {
+            await stageRingtoneFile(showShare: false, discreet: false)
+        }
+        guard exportedRingtone != nil else {
+            dlog("✗ Share Ringtone: export failed")
+            return
+        }
+        presentRingtoneShare(for: track)
+        dlog("Share Ringtone: share sheet presented for Perform")
+    }
+
     func arm() {
         guard loadState == .ready else {
             dlog("No se puede armar: no hay canción lista")
@@ -302,12 +322,18 @@ final class AppModel: ObservableObject {
         case .connected:
             if uuid == incomingCallID && Prefs.stopOnAnswer { silence(reason: "contestada") }
         case .ended:
-            if uuid == incomingCallID {
-                silence(reason: "llamada terminada")
+            let wasOurs = uuid == incomingCallID
+            if isArmed && (wasOurs || isAudible) {
+                silence(reason: "call ended")
                 SystemVolume.shared.restoreSavedIfNeeded()
+            }
+            if wasOurs {
                 incomingCallID = nil
                 callSignalActive = false
                 incomingDetectedAt = 0
+            }
+            if isArmed && calls.currentCalls.allSatisfy(\.hasEnded) {
+                callSignalActive = false
             }
         case .outgoing, .onHold:
             break

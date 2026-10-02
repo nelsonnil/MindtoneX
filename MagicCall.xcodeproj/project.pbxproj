@@ -28,6 +28,7 @@
 		C4A84B05EE00F8A14BB48FC6 /* DebugLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B810F1343436DAAD6202B2E1 /* DebugLogView.swift */; };
 		CC20F35DDD0E7784082D0FD7 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4327EF1CCFA6B6427A4B0D85 /* SetupView.swift */; };
 		D02E775CDE9544B43A79D499 /* UIWindow+MagicCall.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D33B9D6604B6A2334D1E28 /* UIWindow+MagicCall.swift */; };
+		F1A2B3C4D5E6789012345671 /* UIIllustrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A2B3C4D5E6789012345671 /* UIIllustrations.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +52,7 @@
 		BE6CC08F1371815B8ECC08D6 /* DebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLog.swift; sourceTree = "<group>"; };
 		C3733964AB91EF91B6CA3950 /* MCObjC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MCObjC.h; sourceTree = "<group>"; };
 		C5D33B9D6604B6A2334D1E28 /* UIWindow+MagicCall.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIWindow+MagicCall.swift"; sourceTree = "<group>"; };
+		E1A2B3C4D5E6789012345671 /* UIIllustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIIllustrations.swift; sourceTree = "<group>"; };
 		D4AE31BF04AE2B60A80AB388 /* CallKitFallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallKitFallback.swift; sourceTree = "<group>"; };
 		DEA922A0D263D3309553D389 /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		E3138D1D5022FAD8B230768B /* PrivateProbes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateProbes.swift; sourceTree = "<group>"; };
@@ -190,6 +192,7 @@
 				9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */,
 				4327EF1CCFA6B6427A4B0D85 /* SetupView.swift */,
 				3305BEFC5DE85E1D1E566060 /* StageView.swift */,
+				E1A2B3C4D5E6789012345671 /* UIIllustrations.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -232,11 +235,11 @@
 			};
 			buildConfigurationList = 72BFE609F2870A138A133383 /* Build configuration list for PBXProject "MagicCall" */;
 			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = es;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
-				es,
+				en,
 			);
 			mainGroup = 36D38DAE55EBBD072CD7EB9F;
 			minimizedProjectReferenceProxies = 1;
@@ -285,6 +288,7 @@
 				A4614B1A536192430CFD5A9C /* StageView.swift in Sources */,
 				4C3EAD437CDD61E9E5E6DFE6 /* SystemVolume.swift in Sources */,
 				D02E775CDE9544B43A79D499 /* UIWindow+MagicCall.swift in Sources */,
+				F1A2B3C4D5E6789012345671 /* UIIllustrations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -326,7 +330,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -388,7 +392,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -450,7 +454,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
