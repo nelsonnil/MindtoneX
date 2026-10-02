@@ -147,6 +147,20 @@ Build 12 — **Fake Ringtone, fin de la llamada**: cuando el espectador cuelga, 
 avisos de audio, reintentos, botones de volumen), libera la sesión de audio y restaura el volumen. No vuelve
 a sonar nada hasta salir de Perform (dos dedos 1,5 s). El final de una interrupción ya no reanuda el audio:
 solo dispara si hay una llamada sonando de verdad. En el Registro: `[TRIGGER] ■ PERFORMED …`.
+
+Build 13 — **Modo silencio automático con Atajos**. iOS no deja a las apps cambiar el modo silencio,
+así que Perform ejecuta un atajo tuyo (`shortcuts://x-callback-url/run-shortcut`) y Atajos vuelve a la
+app con `magiccall://perform` (esquema de URL registrado en el Info.plist):
+- Fake Ringtone → atajo **MagicCall Silent On**; Share Ringtone → **MagicCall Silent Off**.
+- Crear cada atajo (una vez): Atajos › **+** › acción **Ajustar modo silencio** (Set Silent Mode) en
+  Activado / Desactivado › nombre exacto › OK. No hay archivo `.shortcut` listo en el Context (iOS solo
+  importa atajos firmados); si alguien te pasa un enlace de iCloud, ábrelo y pulsa *Añadir atajo*.
+- Después pulsa **“I’ve installed them — turn on”** en la tarjeta *Silent Mode shortcuts* (o en
+  *Advanced*). Hay botón **Test** en los dos sitios.
+- Atajos aparece un instante en pantalla: pulsa Perform **antes** de que mire el espectador.
+- Si el atajo falla o se cancela, Perform sigue igualmente y el aviso sale después en la pantalla de
+  preparación (nunca durante Perform). Si Atajos no devuelve la llamada, la app sigue a los 1,5 s de volver.
+  En el Registro: `[SHORTCUT]`.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
 (`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
 

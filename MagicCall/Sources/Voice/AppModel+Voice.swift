@@ -4,8 +4,18 @@ import UIKit
 extension AppModel {
     var usesVoiceInput: Bool { VoiceSettings.inputMode == .aiVoice }
 
-    /// Perform button for both modes and both song inputs.
+    /// Perform button for both modes and both song inputs. Runs the Silent On/Off Shortcut first
+    /// when enabled, and continues when Shortcuts returns to the app.
     func perform() {
+        let mode = Prefs.performanceMode
+        if SilentShortcut.isEnabled(for: mode) {
+            SilentShortcut.shared.runBeforePerform(mode: mode) { [weak self] in self?.performNow() }
+        } else {
+            performNow()
+        }
+    }
+
+    private func performNow() {
         let voice = usesVoiceInput
         dlog("══ PERFORM ══ mode=\(Prefs.performanceMode.title) input=\(VoiceSettings.inputMode.title)")
         switch Prefs.performanceMode {

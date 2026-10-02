@@ -39,6 +39,8 @@
 		89D05D830FAE9AE7E676E4D8 /* VoiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 577D20CD9D11B283EB37294A /* VoiceSettings.swift */; };
 		0E0ADF8C19CDBE98648567C5 /* VoiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7EA318B9C2EC36A7FA3816C /* VoiceSettingsView.swift */; };
 		585AC343960B24E3E4BC65BD /* VoiceSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3786727696B22A692F5C69D /* VoiceSongSession.swift */; };
+		B7991EA68474061E01D04616 /* SilentShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = E050CA4E65BC817983D87C6E /* SilentShortcut.swift */; };
+		728EECDB8B001133FF4F0696 /* SilentShortcutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1739526C750AA0036D5F293 /* SilentShortcutCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -78,6 +80,8 @@
 		577D20CD9D11B283EB37294A /* VoiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceSettings.swift"; sourceTree = "<group>"; };
 		A7EA318B9C2EC36A7FA3816C /* VoiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceSettingsView.swift"; sourceTree = "<group>"; };
 		C3786727696B22A692F5C69D /* VoiceSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceSongSession.swift"; sourceTree = "<group>"; };
+		E050CA4E65BC817983D87C6E /* SilentShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SilentShortcut.swift"; sourceTree = "<group>"; };
+		E1739526C750AA0036D5F293 /* SilentShortcutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SilentShortcutCard.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -222,6 +226,8 @@
 		0FE05D205315F370F0853866 /* Perform */ = {
 			isa = PBXGroup;
 			children = (
+				E1739526C750AA0036D5F293 /* SilentShortcutCard.swift */,
+				E050CA4E65BC817983D87C6E /* SilentShortcut.swift */,
 				E7D59D5299CAA7B77CB2C3AA /* PerformHowItWorks.swift */,
 				C064E79F67C658F38085349B /* SharePerformFlow.swift */,
 			);
@@ -314,6 +320,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				728EECDB8B001133FF4F0696 /* SilentShortcutCard.swift in Sources */,
+				B7991EA68474061E01D04616 /* SilentShortcut.swift in Sources */,
 				30F3F5FD1AB46F5425A32DAC /* PerformHowItWorks.swift in Sources */,
 				85F6D79B25939ED4B41AEA24 /* SharePerformFlow.swift in Sources */,
 				09990063243AC32A46FD2AAB /* AppModel+Voice.swift in Sources */,
@@ -386,7 +394,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -448,7 +456,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -510,7 +518,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

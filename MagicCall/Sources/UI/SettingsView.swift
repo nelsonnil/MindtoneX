@@ -37,6 +37,10 @@ struct SettingsView: View {
     @AppStorage(SharePerformFlow.autoHomeKey) private var autoHome = true
     @AppStorage(SharePerformFlow.hapticOnShareKey) private var hapticOnShare = true
 
+    @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
+    @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
+    @ObservedObject private var silentShortcut = SilentShortcut.shared
+
     @State private var confirmToneChange = false
 
     var body: some View {
@@ -53,6 +57,7 @@ struct SettingsView: View {
             }
 
             audioSection
+            shortcutSection
             triggerSection
             previewsSection
             shareRingtoneSection
@@ -81,6 +86,22 @@ struct SettingsView: View {
             Text("Audio engine")
         } footer: {
             Text("“Reduce system alert interruptions” maps to Apple’s prefersNoInterruptionsFromSystemAlerts — it asks iOS to let your audio continue when a call banner appears. Hot standby keeps the player running silently so playback starts instantly. Boost volume restores your previous level when the call ends.")
+        }
+    }
+
+    private var shortcutSection: some View {
+        Section {
+            Toggle("Fake Ringtone: run “\(SilentShortcut.silentOnName)”", isOn: $silentOnEnabled)
+            Button("Test silent shortcut (On)") { silentShortcut.test(mode: .fakeRingtone) }
+            Toggle("Share Ringtone: run “\(SilentShortcut.silentOffName)”", isOn: $silentOffEnabled)
+            Button("Test silent shortcut (Off)") { silentShortcut.test(mode: .shareRingtone) }
+            if let result = silentShortcut.lastTestResult {
+                Text(result).font(.caption).foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Silent Mode shortcuts")
+        } footer: {
+            Text("Perform opens Shortcuts (it flashes briefly) and comes back to MagicCall by itself. Turn these on after installing the shortcuts — see the setup card on the main screen.")
         }
     }
 

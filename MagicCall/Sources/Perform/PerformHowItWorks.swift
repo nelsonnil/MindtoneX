@@ -108,14 +108,14 @@ enum PerformCopy {
     }
 
     static let shareCaveats = [
-        "**Silent must be OFF** in this mode — the real ringtone is what plays.",
+        "**Silent must be OFF** in this mode — the real ringtone is what plays. With the “MagicCall Silent Off” shortcut installed, Perform turns it off for you.",
         "iOS always opens **Settings → Ringtone** after “Use as Ringtone”. Apps can’t prevent or close it — one Home press (or swipe up) is needed.",
         "Sometimes the app manages to jump Home before Settings appears; if you land back on the black screen, tap it once to go Home.",
         "Every performance adds a new ringtone with a slightly different name, so iOS never says “duplicate”. To remove old ones: **Settings → Sounds & Haptics → Ringtone**, swipe left on a ringtone → Delete. The app can’t remove them for you.",
     ]
 
     static let fakeTiming = [
-        "Turn **Silent ON** before you press Perform.",
+        "**Silent must be ON.** With the “MagicCall Silent On” shortcut installed, Perform turns it on for you (Shortcuts flashes briefly — press Perform before the spectator is watching). Otherwise turn it on by hand.",
         "Stay on the black (or screenshot) screen and keep the phone unlocked — don’t press the side button.",
         "Keep talking while the spectator names the song and while you give them your number; ask them to call you.",
         "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you hold two fingers for 1.5 s to leave.",

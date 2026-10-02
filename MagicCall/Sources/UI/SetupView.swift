@@ -34,6 +34,8 @@ struct SetupView: View {
                     POCBanner()
                     comingSoonSection
 
+                    SilentShortcutCard(mode: mode)
+
                     switch mode {
                     case .fakeRingtone:
                         fakeRingtoneContent
