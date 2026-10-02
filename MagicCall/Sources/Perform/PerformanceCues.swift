@@ -134,116 +134,127 @@ struct PerformStatusDot: View {
     }
 }
 
-// MARK: Main-screen cards
+// MARK: Main-screen card
 
-struct VibrationCueCard: View {
+/// Vibration + stage status dot — discrete cues when the song is ready during Perform.
+struct PerformanceFeedbackCard: View {
     @AppStorage(PerformanceCues.Key.vibrateOnLock) private var vibrateOnLock = true
     @AppStorage(PerformanceCues.Key.vibrationStyle) private var styleRaw = PerformanceCues.VibrationStyle.alert.rawValue
-
-    var body: some View {
-        OracleCard {
-            VStack(alignment: .leading, spacing: 12) {
-                OracleEyebrow(text: "Vibration")
-                CueRows {
-                    CueRow {
-                        Toggle(isOn: $vibrateOnLock) { CueLabel("Vibration when song locks") }
-                            .toggleStyle(.switch)
-                            .tint(OracleTheme.gold)
-                    }
-                    if vibrateOnLock {
-                        CueDivider()
-                        CueRow {
-                            HStack {
-                                CueLabel("Pattern")
-                                Spacer(minLength: 8)
-                                Picker("Pattern", selection: $styleRaw) {
-                                    ForEach(PerformanceCues.VibrationStyle.allCases) { Text($0.title).tag($0.rawValue) }
-                                }
-                                .labelsHidden()
-                                .tint(OracleTheme.gold)
-                                Button {
-                                    PerformanceCues.vibrate(PerformanceCues.VibrationStyle(rawValue: styleRaw) ?? .alert)
-                                } label: {
-                                    Image(systemName: "iphone.radiowaves.left.and.right")
-                                }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(OracleTheme.gold)
-                                .accessibilityLabel("Test vibration")
-                            }
-                        }
-                    }
-                }
-                CueFooter("All song inputs. Fires when AI Voice or API locks the song, or when Notes finds it during Perform. Manual songs are ready before Perform, so there is nothing to signal. Long buzz is the strongest but iOS may skip it while the microphone is on.")
-            }
-            .animation(.easeInOut(duration: 0.2), value: vibrateOnLock)
-        }
-    }
-}
-
-struct StatusDotCard: View {
-    @AppStorage(PerformanceCues.Key.dotEnabled) private var enabled = false
-    @AppStorage(PerformanceCues.Key.dotSize) private var size = PerformanceCues.defaultDotSize
+    @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
+    @AppStorage(PerformanceCues.Key.dotSize) private var dotSize = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
     @AppStorage(PerformanceCues.Key.dotTiming) private var timingRaw = PerformanceCues.DotTiming.songReady.rawValue
 
-    private var color: Binding<Color> {
+    private var dotColor: Binding<Color> {
         Binding(get: { Color(hex: colorHex) ?? .green },
                 set: { colorHex = $0.hexString })
     }
 
     var body: some View {
         OracleCard {
-            VStack(alignment: .leading, spacing: 12) {
-                OracleEyebrow(text: "Status dot")
-                CueRows {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    OracleEyebrow(text: "Feedback")
+                    Text("Quiet cues so you know the song is ready — without looking at the status bar.")
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                vibrationSection
+                statusDotSection
+            }
+            .animation(.easeInOut(duration: 0.2), value: vibrateOnLock)
+            .animation(.easeInOut(duration: 0.2), value: dotEnabled)
+        }
+    }
+
+    private var vibrationSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            CueSectionTitle("Vibration")
+            CueRows {
+                CueRow {
+                    Toggle(isOn: $vibrateOnLock) { CueLabel("When song locks") }
+                        .toggleStyle(.switch)
+                        .tint(OracleTheme.gold)
+                }
+                if vibrateOnLock {
+                    CueDivider()
                     CueRow {
-                        Toggle(isOn: $enabled) { CueLabel("Show status dot") }
-                            .toggleStyle(.switch)
+                        HStack {
+                            CueLabel("Pattern")
+                            Spacer(minLength: 8)
+                            Picker("Pattern", selection: $styleRaw) {
+                                ForEach(PerformanceCues.VibrationStyle.allCases) { Text($0.title).tag($0.rawValue) }
+                            }
+                            .labelsHidden()
                             .tint(OracleTheme.gold)
+                            Button {
+                                PerformanceCues.vibrate(PerformanceCues.VibrationStyle(rawValue: styleRaw) ?? .alert)
+                            } label: {
+                                Image(systemName: "iphone.radiowaves.left.and.right")
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(OracleTheme.gold)
+                            .accessibilityLabel("Test vibration")
+                        }
                     }
-                    if enabled {
-                        CueDivider()
-                        CueRow {
-                            HStack {
-                                CueLabel("Show")
-                                Spacer(minLength: 8)
-                                Picker("Show", selection: $timingRaw) {
-                                    ForEach(PerformanceCues.DotTiming.allCases) { Text($0.title).tag($0.rawValue) }
-                                }
+                }
+            }
+            CueFooter("AI Voice, API, or Notes during Perform. Manual input is already ready before you start.")
+        }
+    }
+
+    private var statusDotSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            CueSectionTitle("Status dot")
+            CueRows {
+                CueRow {
+                    Toggle(isOn: $dotEnabled) { CueLabel("Show on stage") }
+                        .toggleStyle(.switch)
+                        .tint(OracleTheme.gold)
+                }
+                if dotEnabled {
+                    CueDivider()
+                    CueRow {
+                        HStack {
+                            CueLabel("Show")
+                            Spacer(minLength: 8)
+                            Picker("Show", selection: $timingRaw) {
+                                ForEach(PerformanceCues.DotTiming.allCases) { Text($0.title).tag($0.rawValue) }
+                            }
+                            .labelsHidden()
+                            .tint(OracleTheme.gold)
+                        }
+                    }
+                    CueDivider()
+                    CueRow {
+                        HStack {
+                            CueLabel("Size \(Int(dotSize)) pt")
+                            Spacer(minLength: 8)
+                            Circle()
+                                .fill(dotColor.wrappedValue)
+                                .frame(width: dotSize, height: dotSize)
+                                .frame(width: 26)
+                            Stepper("", value: $dotSize, in: PerformanceCues.dotSizeRange, step: 1)
                                 .labelsHidden()
                                 .tint(OracleTheme.gold)
-                            }
                         }
-                        CueDivider()
-                        CueRow {
-                            HStack {
-                                CueLabel("Dot size \(Int(size)) pt")
-                                Spacer(minLength: 8)
-                                Circle()
-                                    .fill(color.wrappedValue)
-                                    .frame(width: size, height: size)
-                                    .frame(width: 26)
-                                Stepper("", value: $size, in: PerformanceCues.dotSizeRange, step: 1)
-                                    .labelsHidden()
-                                    .tint(OracleTheme.gold)
-                            }
-                        }
-                        CueDivider()
-                        CueRow {
-                            VStack(alignment: .leading, spacing: 10) {
-                                ColorPicker(selection: color, supportsOpacity: true) { CueLabel("Color") }
-                                HStack(spacing: 10) {
-                                    ForEach(PerformanceCues.colorPresets) { preset in
-                                        presetSwatch(preset)
-                                    }
+                    }
+                    CueDivider()
+                    CueRow {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ColorPicker(selection: dotColor, supportsOpacity: true) { CueLabel("Color") }
+                            HStack(spacing: 10) {
+                                ForEach(PerformanceCues.colorPresets) { preset in
+                                    presetSwatch(preset)
                                 }
                             }
                         }
                     }
                 }
-                CueFooter("Top-right corner of the stage in every mode (black screen, wallpaper or Notes). “When song is ready” lights it once the song is loaded — after the lock for AI Voice and API.")
             }
-            .animation(.easeInOut(duration: 0.2), value: enabled)
+            CueFooter("Top-right on the stage (black screen, wallpaper, or Notes). “When song is ready” follows AI Voice / API lock.")
         }
     }
 
@@ -292,6 +303,18 @@ private struct CueRow<Content: View>: View {
 private struct CueDivider: View {
     var body: some View {
         Divider().overlay(OracleTheme.cardBorder).padding(.leading, 14)
+    }
+}
+
+private struct CueSectionTitle: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(OracleTheme.textSecondary)
+            .tracking(0.6)
     }
 }
 

@@ -51,8 +51,7 @@ struct MainShellView: View {
                     )
                 }
 
-                StatusDotCard()
-                VibrationCueCard()
+                PerformanceFeedbackCard()
 
                 AdvancedDisclosureCard { activeSheet = $0 }
             }
