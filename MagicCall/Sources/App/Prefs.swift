@@ -30,7 +30,14 @@ enum Prefs {
         static let toneIdentifierToTry = "probe.toneIdentifierToTry"
         static let callKitCallerName = "callkit.callerName"
         static let callKitDelay = "callkit.delay"
+
+        static let autoStageRingtone = "ringtone.autoStageOnSearch"
+        static let discreetRingtoneUI = "ringtone.discreetUI"
+        static let ringtoneUseQuickLook = "ringtone.useQuickLook"
     }
+
+    /// Archivo único reutilizado en cada actuación (≤30 s).
+    static let stagedRingtoneFilename = "Actuacion.m4a"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -57,8 +64,15 @@ enum Prefs {
             Key.toneIdentifierToTry: "system:Radar",
             Key.callKitCallerName: "Ana",
             Key.callKitDelay: 5.0,
+            Key.autoStageRingtone: true,
+            Key.discreetRingtoneUI: true,
+            Key.ringtoneUseQuickLook: false,
         ])
     }
+
+    static var autoStageRingtone: Bool { d.bool(forKey: Key.autoStageRingtone) }
+    static var discreetRingtoneUI: Bool { d.bool(forKey: Key.discreetRingtoneUI) }
+    static var ringtoneUseQuickLook: Bool { d.bool(forKey: Key.ringtoneUseQuickLook) }
 
     private static var d: UserDefaults { .standard }
 

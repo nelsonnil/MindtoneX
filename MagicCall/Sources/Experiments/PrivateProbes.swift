@@ -292,7 +292,7 @@ enum PrivateProbes {
                 let keys = userInfo.map { ($0 as NSDictionary).allKeys.map { "\($0)" }.joined(separator: ",") } ?? ""
                 dlog("[CT] \(n) keys=[\(keys)]")
             }
-            unsafeBitCast(addObserver, to: AddObserver.self)(center, nil, callback, nil, nil, .deliverImmediately)
+            addObserver(center, nil, callback, nil, nil, .deliverImmediately)
             telephonyObserverInstalled = true
         }
         if let ex { return record(Result(name: "CTTelephonyCenter", outcome: .blocked, detail: "NSException \(ex)")) }

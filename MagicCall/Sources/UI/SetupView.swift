@@ -113,21 +113,31 @@ struct SetupView: View {
 
     private var realRingtoneSection: some View {
         Section {
+            if model.ringtoneStaged {
+                Label("Tono listo en el iPhone (archivo \(Prefs.stagedRingtoneFilename))", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.footnote)
+            }
+            Button {
+                Task { await model.applyRingtoneNow() }
+            } label: {
+                Label("Aplicar tono ahora (recomendado)", systemImage: "bell.badge.fill")
+                    .frame(maxWidth: .infinity)
+                    .font(.headline)
+            }
+            .disabled(model.loadState != .ready)
             Button {
                 Task { await model.prepareRealRingtone() }
             } label: {
-                Label("Crear tono real y abrir Compartir", systemImage: "bell.badge")
+                Label("Preparar de nuevo y abrir Compartir", systemImage: "arrow.clockwise")
             }
             .disabled(model.loadState != .ready)
-            if let url = model.exportedRingtone {
-                Text("Guardado en Archivos › En mi iPhone › Tonos › Canciones › \(url.lastPathComponent)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         } header: {
             Text("Ruta 1 · tono real (iOS 26)")
         } footer: {
-            Text("En Compartir elige “Usar como tono” (quizá en “Más”). Si no aparece, ve a Archivos › En mi iPhone › Tonos › Canciones, mantén pulsado el archivo › Compartir › Usar como tono. Para esta ruta el modo silencio debe estar DESACTIVADO. Después, restaura tu tono en Ajustes › Sonidos.")
+            Text("""
+            Configuración única (5 min): la primera vez que salga Compartir, desliza a la izquierda → Más → Editar → en «Usar como tono» pulsa ⭐ Favoritos → Listo. Después, en cada actuación: busca la canción (el tono se prepara solo) → «Aplicar tono ahora» → 1 toque en «Usar como tono». Modo silencio OFF. Restaura tu tono en Ajustes › Sonidos cuando acabes.
+            """)
         }
     }
 

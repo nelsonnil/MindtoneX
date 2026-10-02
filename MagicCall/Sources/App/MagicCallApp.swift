@@ -14,6 +14,9 @@ struct MagicCallApp: App {
             }
             .environmentObject(model)
             .environmentObject(DebugLog.shared)
+            .fullScreenCover(isPresented: $model.showingDiscreetRingtonePrep) {
+                RingtoneDisguiseView()
+            }
         }
     }
 }

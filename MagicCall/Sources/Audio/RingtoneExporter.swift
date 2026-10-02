@@ -36,7 +36,8 @@ enum RingtoneExporter {
         let length = min(maxSeconds, duration - begin)
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let output = directory.appendingPathComponent(safeFileName(title) + ".m4a")
+        // Nombre fijo: el menú Compartir recuerda Favoritos por app; menos cambios visibles.
+        let output = directory.appendingPathComponent(Prefs.stagedRingtoneFilename)
         try? FileManager.default.removeItem(at: output)
 
         guard let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
@@ -65,23 +66,12 @@ enum RingtoneExporter {
     }
 
     @MainActor
-    static func presentShareSheet(for url: URL) {
-        guard let root = UIApplication.mcKeyWindow?.rootViewController else {
-            dlog("✗ No hay ventana para presentar Compartir")
-            return
-        }
-        var top = root
-        while let presented = top.presentedViewController { top = presented }
-        let sheet = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        sheet.completionWithItemsHandler = { activity, completed, _, error in
-            dlog("Compartir: actividad=\(activity?.rawValue ?? "ninguna") completado=\(completed)\(error.map { " error=\($0.localizedDescription)" } ?? "")")
-        }
-        top.present(sheet, animated: true)
-        dlog("Hoja Compartir abierta. Busca “Usar como tono” (puede estar en “Más”).")
+    static func presentShareSheet(for url: URL, displayTitle: String) {
+        RingtoneSharePresenter.present(url: url, title: displayTitle)
     }
 
-    private static func safeFileName(_ s: String) -> String {
-        let cleaned = s.components(separatedBy: CharacterSet(charactersIn: "/\\:?%*|\"<>")).joined(separator: " ")
-        return String(cleaned.prefix(60)).trimmingCharacters(in: .whitespaces)
+    @MainActor
+    static func presentQuickLook(for url: URL, displayTitle: String) {
+        RingtoneSharePresenter.presentQuickLook(url: url, title: displayTitle)
     }
 }

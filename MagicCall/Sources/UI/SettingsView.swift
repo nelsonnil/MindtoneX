@@ -32,6 +32,10 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.callKitCallerName) private var callKitCallerName = "Ana"
     @AppStorage(Prefs.Key.callKitDelay) private var callKitDelay = 5.0
 
+    @AppStorage(Prefs.Key.autoStageRingtone) private var autoStageRingtone = true
+    @AppStorage(Prefs.Key.discreetRingtoneUI) private var discreetRingtoneUI = true
+    @AppStorage(Prefs.Key.ringtoneUseQuickLook) private var ringtoneUseQuickLook = false
+
     @State private var photoItem: PhotosPickerItem?
     @State private var confirmToneChange = false
 
@@ -42,6 +46,7 @@ struct SettingsView: View {
             songSection
             stageSection
             privateSection
+            ringtoneSection
             callKitSection
         }
         .navigationTitle("Ajustes")
@@ -157,6 +162,18 @@ struct SettingsView: View {
         Button("Intentar volumen de timbre a 0 (AVSystemController)") { model.runRingerVolume(0) }
         Button("Intentar volumen de timbre a 0,5") { model.runRingerVolume(0.5) }
         #endif
+    }
+
+    private var ringtoneSection: some View {
+        Section {
+            Toggle("Preparar tono al buscar canción", isOn: $autoStageRingtone)
+            Toggle("Pantalla negra antes de Compartir", isOn: $discreetRingtoneUI)
+            Toggle("Usar Vista previa en lugar de Compartir directo", isOn: $ringtoneUseQuickLook)
+        } header: {
+            Text("Ruta 1 · menos toques")
+        } footer: {
+            Text("Deja activado «Preparar tono al buscar». «Vista previa» puede ayudar si «Usar como tono» no sale en Compartir; pruébalo una vez.")
+        }
     }
 
     private var callKitSection: some View {

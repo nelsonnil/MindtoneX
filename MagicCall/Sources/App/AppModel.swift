@@ -39,6 +39,8 @@ final class AppModel: ObservableObject {
     private var incomingDetectedAt: CFTimeInterval = 0
     private var currentAudio: (data: Data, hint: String)?
     @Published private(set) var exportedRingtone: URL?
+    @Published var showingDiscreetRingtonePrep = false
+    @Published private(set) var ringtoneStaged = false
 
     private init() {
         Prefs.registerDefaults()
@@ -86,10 +88,14 @@ final class AppModel: ObservableObject {
             try audio.load(data: data, fileTypeHint: track.fileTypeHint)
             currentAudio = (data, track.fileTypeHint)
             exportedRingtone = nil
+            ringtoneStaged = false
             let downloadMs = PreviewService.ms(since: t0)
             timings = [searchMs.map { "búsqueda \($0) ms" }, "audio listo \(downloadMs) ms"].compactMap { $0 }.joined(separator: " · ")
             loadState = .ready
             dlog("Listo: \(track.title) — \(track.artist). \(timings)")
+            if Prefs.autoStageRingtone {
+                Task { await stageRingtoneFile(showShare: false, discreet: false) }
+            }
             if isArmed {
                 try? audio.configureSession()
                 if Prefs.hotStandby { audio.startStandby() }
@@ -115,18 +121,62 @@ final class AppModel: ObservableObject {
 
     // MARK: Tono real (iOS 26 "Usar como tono")
 
-    func prepareRealRingtone() async {
+    /// Exporta el clip y, si `showShare`, abre Compartir o Vista previa.
+    func stageRingtoneFile(showShare: Bool, discreet: Bool) async {
         guard let audio = currentAudio, let track = selected else { return }
+        if discreet && Prefs.discreetRingtoneUI { showingDiscreetRingtonePrep = true }
+
         let t0 = CACurrentMediaTime()
         do {
             let url = try await RingtoneExporter.export(data: audio.data, fileTypeHint: audio.hint,
                                                        title: "\(track.title) - \(track.artist)",
                                                        startAt: Prefs.startOffset)
             exportedRingtone = url
-            dlog("Tono listo en \(PreviewService.ms(since: t0)) ms → \(url.path)")
-            RingtoneExporter.presentShareSheet(for: url)
+            ringtoneStaged = true
+            dlog("Tono preparado en \(PreviewService.ms(since: t0)) ms → \(url.lastPathComponent)")
+            guard showShare else {
+                endDiscreetRingtonePrep(discreet)
+                return
+            }
+            presentRingtoneShare(for: track)
+            endDiscreetRingtonePrep(discreet)
         } catch {
             dlog("✗ Exportar tono: \(error.localizedDescription)")
+            endDiscreetRingtonePrep(discreet)
+        }
+    }
+
+    @MainActor
+    private func endDiscreetRingtonePrep(_ discreet: Bool) {
+        guard discreet && Prefs.discreetRingtoneUI else { return }
+        DispatchQueue.main.async { self.showingDiscreetRingtonePrep = false }
+    }
+
+    func prepareRealRingtone() async {
+        await stageRingtoneFile(showShare: true, discreet: true)
+    }
+
+    /// Solo abre Compartir si el archivo ya se preparó al buscar la canción.
+    func applyRingtoneNow() async {
+        guard selected != nil else { return }
+        if ringtoneStaged, let url = exportedRingtone, FileManager.default.fileExists(atPath: url.path),
+           let track = selected {
+            if Prefs.discreetRingtoneUI { showingDiscreetRingtonePrep = true }
+            presentRingtoneShare(for: track)
+            endDiscreetRingtonePrep(true)
+            return
+        }
+        await stageRingtoneFile(showShare: true, discreet: true)
+    }
+
+    @MainActor
+    private func presentRingtoneShare(for track: PreviewTrack) {
+        guard let url = exportedRingtone else { return }
+        let title = "\(track.title) — \(track.artist)"
+        if Prefs.ringtoneUseQuickLook {
+            RingtoneExporter.presentQuickLook(for: url, displayTitle: title)
+        } else {
+            RingtoneExporter.presentShareSheet(for: url, displayTitle: title)
         }
     }
 
