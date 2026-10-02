@@ -1,9 +1,10 @@
-import PhotosUI
 import SwiftUI
 
-/// Advanced options for testers who want full control and diagnostics.
+/// Technical tuning opened from the home Advanced card — not a second copy of Song input, Mode, or Feedback.
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
+
+    @AppStorage(Prefs.Key.performanceMode) private var performanceModeRaw = Prefs.PerformanceMode.fakeRingtone.rawValue
 
     @AppStorage(Prefs.Key.noInterruptions) private var noInterruptions = true
     @AppStorage(Prefs.Key.mixWithOthers) private var mixWithOthers = false
@@ -34,26 +35,19 @@ struct SettingsView: View {
     @AppStorage(SharePerformFlow.autoHomeKey) private var autoHome = true
     @AppStorage(SharePerformFlow.hapticOnShareKey) private var hapticOnShare = true
 
-    @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
-    @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
-    @ObservedObject private var silentShortcut = SilentShortcut.shared
+    private var mode: Prefs.PerformanceMode {
+        Prefs.PerformanceMode(rawValue: performanceModeRaw) ?? .fakeRingtone
+    }
 
     var body: some View {
         Form {
-            NavigationLink {
-                DebugLogView()
-            } label: {
-                Label("Debug log", systemImage: "doc.text.magnifyingglass")
-            }
-
             audioSection
-            shortcutSection
-            triggerSection
+            if mode == .fakeRingtone { triggerSection }
+            if mode == .shareRingtone { shareRingtoneSection }
             previewsSection
-            shareRingtoneSection
             callKitSection
         }
-        .navigationTitle("Advanced")
+        .navigationTitle("Engine & lab")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -74,23 +68,7 @@ struct SettingsView: View {
         } header: {
             Text("Audio engine")
         } footer: {
-            Text("“Reduce system alert interruptions” maps to Apple’s prefersNoInterruptionsFromSystemAlerts — it asks iOS to let your audio continue when a call banner appears. Hot standby keeps the player running silently so playback starts instantly. Boost volume restores your previous level when the call ends.")
-        }
-    }
-
-    private var shortcutSection: some View {
-        Section {
-            Toggle("Fake Ringtone: run “\(SilentShortcut.silentOnName)”", isOn: $silentOnEnabled)
-            Button("Test silent shortcut (On)") { silentShortcut.test(mode: .fakeRingtone) }
-            Toggle("Share Ringtone: run “\(SilentShortcut.silentOffName)”", isOn: $silentOffEnabled)
-            Button("Test silent shortcut (Off)") { silentShortcut.test(mode: .shareRingtone) }
-            if let result = silentShortcut.lastTestResult {
-                Text(result).font(.caption).foregroundStyle(.secondary)
-            }
-        } header: {
-            Text("Silent Mode shortcuts")
-        } footer: {
-            Text("Perform opens Shortcuts (it flashes briefly) and comes back to Ringtone Oracle by itself. Turn these on after installing the shortcuts — see the setup card on the main screen.")
+            Text("Defaults work for most shows. Hot standby starts playback instantly when a call arrives.")
         }
     }
 
@@ -102,7 +80,7 @@ struct SettingsView: View {
         } header: {
             Text("Fake Ringtone triggers")
         } footer: {
-            Text("Auto-start uses CallKit call detection plus audio session signals. Leave on for performances. Tap is a backup if auto-start fails.")
+            Text("Leave auto-start on for performances. Tap is a backup if detection fails.")
         }
     }
 
@@ -114,9 +92,7 @@ struct SettingsView: View {
                 .textInputAutocapitalization(.characters)
             Button("Clear preview caches") { Task { await model.previews.clearCaches() } }
         } header: {
-            Text("Song previews")
-        } footer: {
-            Text("Previews are short clips for instant playback — not full tracks. Country code examples: US, ES, MX.")
+            Text("Song previews (lab)")
         }
     }
 
@@ -132,7 +108,7 @@ struct SettingsView: View {
         } header: {
             Text("Share Ringtone export")
         } footer: {
-            Text("Auto-prepare builds the .m4a in the background. Quick Look is an alternate path if “Use as Ringtone” doesn’t appear in Share. With auto-Home on, the app tries to go Home several times in the 2 s after “Use as Ringtone”, but iOS 26 then opens Settings → Ringtone — press Home once. The black-screen tap stays as a backup.")
+            Text("iOS 26 opens Settings → Ringtone after “Use as Ringtone” — press Home once if needed.")
         }
     }
 
@@ -146,9 +122,7 @@ struct SettingsView: View {
             }
             .disabled(model.loadState != .ready)
         } header: {
-            Text("CallKit fallback (not a real phone call)")
-        } footer: {
-            Text("Shows Apple’s fake incoming UI for comparison. Spectators will see the app name — not for real performances.")
+            Text("CallKit lab (not a real call)")
         }
     }
 }

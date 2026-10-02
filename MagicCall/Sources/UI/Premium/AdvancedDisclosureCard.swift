@@ -1,20 +1,16 @@
 import SwiftUI
 
-/// Collapsible "Advanced" card at the bottom of the home screen: stage status-bar options,
-/// song details and entry points to settings, debug log and voice/API.
+/// Optional home-screen extras: screenshot status-bar blur, debug log, and technical tuning sheet.
+/// Song input, Mode, and Feedback own everything else.
 struct AdvancedDisclosureCard: View {
-    @EnvironmentObject private var model: AppModel
-
     @AppStorage("ui.advancedExpanded") private var expanded = false
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
     @AppStorage(Prefs.Key.background) private var stageBackground = StageBackground.black.rawValue
-    @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     var onOpen: (OracleSheet) -> Void
 
-    private var isManual: Bool {
-        (VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual) == .manual
-    }
+    private var stageKind: StageBackground { StageBackground(rawValue: stageBackground) ?? .black }
+    private var showsScreenshotBlur: Bool { stageKind == .image }
 
     var body: some View {
         OracleCard(section: .advanced, padding: 0) {
@@ -22,11 +18,16 @@ struct AdvancedDisclosureCard: View {
                 header
 
                 if expanded {
-                    VStack(alignment: .leading, spacing: 18) {
-                        stageStatusBarSection
-                        if isManual, model.loadState == .ready || !model.results.isEmpty {
-                            songSection
+                    VStack(alignment: .leading, spacing: 14) {
+                        if showsScreenshotBlur {
+                            screenshotBlurRow
+                        } else {
+                            Text("Nothing extra for this stage background. Status bar behavior is automatic — see the Mode card.")
+                                .font(.caption)
+                                .foregroundStyle(OracleTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
+
                         toolsSection
                     }
                     .padding(.horizontal, 18)
@@ -52,7 +53,7 @@ struct AdvancedDisclosureCard: View {
                     Text("Advanced")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Audio, triggers, Share export, debug log")
+                    Text("Optional blur, debug log, engine tuning")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .lineLimit(1)
@@ -72,128 +73,37 @@ struct AdvancedDisclosureCard: View {
         .accessibilityValue(expanded ? "Expanded" : "Collapsed")
     }
 
-    // MARK: Sections
-
-    private var stageStatusBarSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            OracleEyebrow(text: "Stage status bar")
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "wand.and.stars")
-                    .foregroundStyle(OracleTheme.gold)
-                    .font(.subheadline)
-                    .padding(.top, 2)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Automatic")
-                        .font(.subheadline)
-                        .foregroundStyle(OracleTheme.textPrimary)
-                    Text(autoStatusBarDetail)
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
-            }
-            toggleRow("Blur cover on screenshot",
-                      detail: "Optional. Only if your wallpaper still shows a stale status bar under the live one. Off by default.",
-                      isOn: $maskStatusBar)
-        }
-    }
-
-    private var autoStatusBarDetail: String {
-        switch StageBackground(rawValue: stageBackground) ?? .black {
-        case .black:
-            return "Solid black stage: status bar is hidden during Perform. Notes (white sheet) always keeps the status bar visible."
-        case .gradient:
-            return "Dark gradient stage: status bar stays visible with light text during Perform."
-        case .image:
-            guard StageImageStore.statusBarLuminance() != nil else {
-                return "Screenshot wallpaper: status bar visible; text color follows the top of your image. No blur unless Blur cover is on."
-            }
-            let dark = StageImageStore.wantsDarkStatusBarText()
-            return "Screenshot wallpaper: status bar visible with \(dark ? "dark" : "white") text (from wallpaper luminance). No blur unless Blur cover is on."
-        }
-    }
-
-    private var songSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            OracleEyebrow(text: "Song")
-            if let track = model.selected, model.loadState == .ready {
-                Text("\(track.source.rawValue) · \(model.timings)")
-                    .font(.caption.monospaced())
-                    .foregroundStyle(OracleTheme.textSecondary)
-            }
-            if !model.results.isEmpty {
-                VStack(spacing: 0) {
-                    ForEach(Array(model.results.prefix(6))) { track in
-                        Button {
-                            Task { await model.select(track) }
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(track.title)
-                                        .font(.footnote.weight(.medium))
-                                        .foregroundStyle(OracleTheme.textPrimary)
-                                    Text("\(track.artist) · \(track.source.rawValue)")
-                                        .font(.caption2)
-                                        .foregroundStyle(OracleTheme.textSecondary)
-                                }
-                                .lineLimit(1)
-                                Spacer()
-                                if track == model.selected {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(OracleTheme.gold)
-                                }
-                            }
-                            .padding(.vertical, 8)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        if track.id != model.results.prefix(6).last?.id {
-                            Divider().overlay(OracleTheme.cardBorder)
-                        }
-                    }
-                }
-                .padding(.horizontal, 12)
-                .background(Color.white.opacity(0.04))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-        }
-    }
-
-    private var toolsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            OracleEyebrow(text: "Tools")
-            VStack(spacing: 0) {
-                toolRow("All advanced settings", icon: "gearshape.2.fill", sheet: .advanced)
-                divider
-                toolRow("Debug log", icon: "doc.text.magnifyingglass", sheet: .debugLog)
-            }
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-            }
-        }
-    }
-
-    // MARK: Rows
-
-    private var divider: some View {
-        Divider().overlay(OracleTheme.cardBorder).padding(.leading, 46)
-    }
-
-    private func toggleRow(_ title: String, detail: String, isOn: Binding<Bool>) -> some View {
-        Toggle(isOn: isOn) {
+    private var screenshotBlurRow: some View {
+        Toggle(isOn: $maskStatusBar) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text("Blur cover on screenshot")
                     .font(.subheadline)
                     .foregroundStyle(OracleTheme.textPrimary)
-                Text(detail)
+                Text("Only if a stale status bar still shows through your wallpaper. Off by default.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
             }
         }
         .toggleStyle(.switch)
         .tint(OracleTheme.gold)
+    }
+
+    private var toolsSection: some View {
+        VStack(spacing: 0) {
+            toolRow("Debug log", icon: "doc.text.magnifyingglass", sheet: .debugLog)
+            divider
+            toolRow("Engine & lab settings", icon: "gearshape.2.fill", sheet: .advanced)
+        }
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+    }
+
+    private var divider: some View {
+        Divider().overlay(OracleTheme.cardBorder).padding(.leading, 46)
     }
 
     private func toolRow(_ title: String, icon: String, sheet: OracleSheet) -> some View {

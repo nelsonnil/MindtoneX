@@ -27,8 +27,6 @@ enum OracleSheet: Identifiable {
 struct GuideSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(VoiceSettings.Key.lockDelay) private var lockDelay = VoiceSettings.defaultLockDelay
-    @State private var showAdvanced = false
-
     var body: some View {
         NavigationStack {
             List {
@@ -52,9 +50,6 @@ struct GuideSheet: View {
                     Text("If the song doesn’t play, check Silent mode, Focus, Bluetooth, and media volume. Export the debug log from the Advanced card at the bottom of the home screen.")
                         .font(.footnote)
                 }
-                Section {
-                    Button("Advanced settings") { showAdvanced = true }
-                }
             }
             .navigationTitle("User Guide")
             .navigationBarTitleDisplayMode(.large)
@@ -62,9 +57,6 @@ struct GuideSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
-            }
-            .sheet(isPresented: $showAdvanced) {
-                NavigationStack { SettingsView() }
             }
         }
     }

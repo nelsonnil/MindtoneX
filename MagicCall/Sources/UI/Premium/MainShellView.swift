@@ -21,9 +21,7 @@ struct MainShellView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                HeroLogoView {
-                    activeSheet = .advanced
-                }
+                HeroLogoView()
 
                 ModePickerCard(modeRaw: $performanceModeRaw)
 
