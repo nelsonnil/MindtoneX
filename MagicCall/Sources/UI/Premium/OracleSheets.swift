@@ -103,7 +103,7 @@ struct FakeDetailSheet: View {
 
                 TipCard(title: "Performance tip / timing", icon: "clock", tint: OracleTheme.indigo, lines: PerformCopy.fakeTiming)
 
-                Text("On the black screen: stay in this app, keep the phone unlocked. Exit with a **two-finger hold** (1.5 s). Optional: triple-tap the top-left corner for the debug log.")
+                Text("On the black screen: stay in this app, keep the phone unlocked. Exit with a **two-finger swipe down** (start mid-screen, not at the top edge). Optional: triple-tap the top-left corner for the debug log.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
             }

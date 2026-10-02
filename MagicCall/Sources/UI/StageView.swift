@@ -26,7 +26,7 @@ struct StageView: View {
                         model.toggleManual()
                     }
                 },
-                onTwoFingerHold: { model.disarm() }
+                onTwoFingerSwipeDown: { model.disarm() }
             )
             .ignoresSafeArea()
 
@@ -49,42 +49,45 @@ struct StageView: View {
     }
 }
 
-/// UIKit para tener un "mantener con dos dedos" real; SwiftUI no distingue número de dedos.
+/// UIKit para tener un deslizamiento real con dos dedos; SwiftUI no distingue número de dedos.
 struct StageGestureLayer: UIViewRepresentable {
     let onTap: () -> Void
-    let onTwoFingerHold: () -> Void
+    let onTwoFingerSwipeDown: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
         view.backgroundColor = .clear
+        view.isMultipleTouchEnabled = true
 
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tap))
         tap.numberOfTouchesRequired = 1
 
-        let hold = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.hold(_:)))
-        hold.numberOfTouchesRequired = 2
-        hold.minimumPressDuration = 1.5
+        let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipeDown(_:)))
+        swipe.numberOfTouchesRequired = 2
+        swipe.direction = .down
 
         view.addGestureRecognizer(tap)
-        view.addGestureRecognizer(hold)
+        view.addGestureRecognizer(swipe)
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
         context.coordinator.onTap = onTap
-        context.coordinator.onTwoFingerHold = onTwoFingerHold
+        context.coordinator.onTwoFingerSwipeDown = onTwoFingerSwipeDown
     }
 
     final class Coordinator: NSObject {
         var onTap: () -> Void = {}
-        var onTwoFingerHold: () -> Void = {}
+        var onTwoFingerSwipeDown: () -> Void = {}
 
         @objc func tap() { onTap() }
 
-        @objc func hold(_ recognizer: UILongPressGestureRecognizer) {
-            if recognizer.state == .began { onTwoFingerHold() }
+        @objc func swipeDown(_ recognizer: UISwipeGestureRecognizer) {
+            guard recognizer.state == .ended else { return }
+            dlog("[STAGE] two-finger swipe down → leave Perform")
+            onTwoFingerSwipeDown()
         }
     }
 }

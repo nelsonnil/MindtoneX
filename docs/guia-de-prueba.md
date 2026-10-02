@@ -95,7 +95,7 @@ Objetivo: el iPhone en **silencio** (sin tono normal), la app **Tonos** a pantal
     - ¿La canción **se corta** enseguida o sigue hasta que cuelgas o rechazas?
 34. En la **build 4**, cuando suena la canción (sola o al tocar), la app intenta subir el **volumen de música** al máximo y volver a dejarlo como estaba al colgar. Aun así conviene subir el volumen multimedia antes (paso 6).
 35. Si **no** suena la canción sola: **toca una vez** en cualquier parte de la pantalla negra (eso la enciende manualmente) y dime si entonces sí suena.
-36. Para **salir** de la pantalla negra: apoya **dos dedos** en la pantalla y **mantén 1,5 segundos** (como un “mantener pulsado” con dos dedos). Volverás a **Preparación**.
+36. Para **salir** de la pantalla negra: **desliza hacia abajo con dos dedos** empezando en el centro de la pantalla (no desde el borde superior, que abre el Centro de notificaciones). Volverás a **Preparación**.
 
 ### Registro (muy útil para enviarme resultados)
 

@@ -118,6 +118,6 @@ enum PerformCopy {
         "**Silent must be ON.** With the “Ringtone Oracle Silent On” shortcut installed, Perform turns it on for you (Shortcuts flashes briefly — press Perform before the spectator is watching). Otherwise turn it on by hand.",
         "Stay on the black (or screenshot) screen and keep the phone unlocked — don’t press the side button.",
         "Keep talking while the spectator names the song and while you give them your number; ask them to call you.",
-        "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you hold two fingers for 1.5 s to leave.",
+        "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you swipe down with two fingers to leave.",
     ]
 }

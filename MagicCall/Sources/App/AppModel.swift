@@ -270,7 +270,7 @@ final class AppModel: ObservableObject {
         isAudible = false
         SystemVolume.shared.restoreSavedIfNeeded()
         audio.deactivateSession()
-        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — all triggers, retries and polling off; player stopped; session released. Leave Perform (two-finger hold) to reset.")
+        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — all triggers, retries and polling off; player stopped; session released. Leave Perform (two-finger swipe down) to reset.")
     }
 
     /// AI Voice: forget the previous spectator's song so the next Perform starts empty.

@@ -80,7 +80,7 @@ App Store Connect, así que no pasa el escaneo de APIs privadas.
 - **Toque** en cualquier sitio = sonar / parar (disparo manual).
 - La llamada real se detecta sola y dispara la canción (`CXCallObserver`), si está activado.
 - **3 toques en la esquina superior izquierda** = abre/cierra el registro superpuesto.
-- **Mantener dos dedos 1,5 s** = salir de escena.
+- **Deslizar hacia abajo con dos dedos** (desde el centro, no desde el borde superior) = salir de escena y volver a ajustes.
 - Opcional: **Ajustes › Accesibilidad › Tocar › Toque posterior › Doble toque → "Sonar canción"**
   (atajo que la app publica automáticamente) para disparar sin tocar la pantalla.
 
@@ -145,7 +145,7 @@ Truco de actuación: al aparecer Ajustes, pulsa Inicio (o desliza hacia arriba) 
 Build 12 — **Fake Ringtone, fin de la llamada**: cuando el espectador cuelga, la app entra en estado
 **PERFORMED**: para la canción, apaga todos los disparadores de respaldo (sondeo CXCall, interrupciones,
 avisos de audio, reintentos, botones de volumen), libera la sesión de audio y restaura el volumen. No vuelve
-a sonar nada hasta salir de Perform (dos dedos 1,5 s). El final de una interrupción ya no reanuda el audio:
+a sonar nada hasta salir de Perform (deslizar hacia abajo con dos dedos). El final de una interrupción ya no reanuda el audio:
 solo dispara si hay una llamada sonando de verdad. En el Registro: `[TRIGGER] ■ PERFORMED …`.
 
 Build 13 — **Modo silencio automático con Atajos**. iOS no deja a las apps cambiar el modo silencio,
