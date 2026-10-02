@@ -69,11 +69,11 @@ final class NotesSongSession: ObservableObject {
     // MARK: Writing
 
     func textChanged(_ newText: String) {
-        guard isActive, !isLocked else { return }
+        guard isActive else { return }
         text = newText
         idleTimer?.invalidate()
         idleTimer = nil
-        guard NotesSettings.idleSearchEnabled else { return }
+        guard !isLocked, NotesSettings.idleSearchEnabled else { return }
         let delay = NotesSettings.idleDelay
         idleTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.submit(reason: "idle \(Self.seconds(delay))") }
