@@ -2,7 +2,6 @@ import SwiftUI
 
 /// Single home-screen surface for AI Voice: API key, engine/models, locking, and live listen debug.
 struct AiVoiceInputPanel: View {
-    @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
 
     @AppStorage(VoiceSettings.Key.engine) private var engineRaw = VoiceSettings.Engine.openAIRealtime.rawValue
