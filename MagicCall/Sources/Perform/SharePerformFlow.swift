@@ -141,21 +141,32 @@ final class SharePerformFlow: ObservableObject {
             dlog("[SHARE PERFORM] auto-Home is off → tap the black screen to go Home")
             return
         }
+        if Self.hapticOnShare {
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.8)
+            dlog("[SHARE PERFORM] haptic cue: ringtone added")
+        }
         pendingHomeAfterRingtone = true
-        goHome(reason: "auto, immediately after Use as Ringtone")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            MainActor.assumeIsolated { SharePerformFlow.shared.retryHome(reason: "auto +0.3 s") }
+        // iOS 26 opens Settings → Sounds & Haptics → Ringtone right after “Use as Ringtone” and a
+        // third-party app can’t close Settings; these attempts only help if we beat or follow it.
+        for (i, delay) in Self.homeAttemptDelays.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                MainActor.assumeIsolated {
+                    SharePerformFlow.shared.retryHome(attempt: i + 1, delay: delay)
+                }
+            }
         }
     }
 
-    /// Repeats the Home jump while “Use as Ringtone” may still be pulling Settings forward.
-    private func retryHome(reason: String) {
+    private static let homeAttemptDelays: [TimeInterval] = [0, 0.15, 0.35, 0.7, 1.2, 2.0]
+
+    static let hapticOnShareKey = "share.hapticOnShare"
+    static var hapticOnShare: Bool { bool(hapticOnShareKey) }
+
+    private func retryHome(attempt: Int, delay: TimeInterval) {
         guard pendingHomeAfterRingtone, step == .waitingForTap || step == .wentHome else { return }
-        guard UIApplication.shared.applicationState == .active else {
-            dlog("[SHARE PERFORM] \(reason): app not in front (\(Self.appState())) — will go Home when it becomes active again")
-            return
-        }
-        goHome(reason: reason)
+        let label = "auto attempt \(attempt)/\(Self.homeAttemptDelays.count) at +\(String(format: "%.2f", delay)) s"
+        dlog("[SHARE PERFORM] \(label) · app=\(Self.appState())")
+        goHome(reason: label, force: true)
     }
 
     private func appDidBecomeActive() {
@@ -180,7 +191,7 @@ final class SharePerformFlow: ObservableObject {
         }
     }
 
-    private func goHome(reason: String) {
+    private func goHome(reason: String, force: Bool = false) {
         guard Self.tapToHome else {
             dlog("[SHARE PERFORM] tap-to-Home is off in Advanced — swipe up to go Home")
             return
@@ -190,7 +201,7 @@ final class SharePerformFlow: ObservableObject {
             dlog("✗ [SHARE PERFORM] suspend not available — swipe up to go Home")
             return
         }
-        if let last = lastHomeAt, Date().timeIntervalSince(last) < 0.5 {
+        if !force, let last = lastHomeAt, Date().timeIntervalSince(last) < 0.5 {
             dlog("[SHARE PERFORM] \(reason): Home already requested \(Int(Date().timeIntervalSince(last) * 1000)) ms ago — skip")
             return
         }

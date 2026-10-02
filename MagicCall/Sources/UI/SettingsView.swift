@@ -35,6 +35,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.attemptRingerMaxOnStage) private var attemptRingerMaxOnStage = false
     @AppStorage(SharePerformFlow.tapToHomeKey) private var tapToHome = true
     @AppStorage(SharePerformFlow.autoHomeKey) private var autoHome = true
+    @AppStorage(SharePerformFlow.hapticOnShareKey) private var hapticOnShare = true
 
     @State private var confirmToneChange = false
 
@@ -117,13 +118,14 @@ struct SettingsView: View {
             Toggle("Go Home via private API (tap black screen)", isOn: $tapToHome)
             Toggle("Go Home automatically after Use as Ringtone", isOn: $autoHome)
                 .disabled(!tapToHome)
+            Toggle("Soft vibration when ringtone is added", isOn: $hapticOnShare)
             if PrivateProbes.isCompiled {
                 Toggle("Try private API: max ringer volume on export", isOn: $attemptRingerMaxOnStage)
             }
         } header: {
             Text("Share Ringtone export")
         } footer: {
-            Text("Auto-prepare builds the .m4a in the background. Quick Look is an alternate path if “Use as Ringtone” doesn’t appear in Share. Going Home uses an undocumented iOS call (the same as pressing Home). With auto-Home on, the app goes Home 0.3 s after “Use as Ringtone” finishes; the black-screen tap stays as a backup. If neither works, swipe up.")
+            Text("Auto-prepare builds the .m4a in the background. Quick Look is an alternate path if “Use as Ringtone” doesn’t appear in Share. Going Home uses an undocumented iOS call (the same as pressing Home). With auto-Home on, the app tries to go Home 6 times in the 2 s after “Use as Ringtone”, but iOS 26 then opens Settings → Ringtone and no app can close it — press Home once. The black-screen tap stays as a backup.")
         }
     }
 

@@ -381,6 +381,9 @@ struct SetupView: View {
             HowItWorksCard(title: "How Share Ringtone Perform works", icon: "list.number",
                            steps: PerformCopy.shareSteps(voice: inputMode == .aiVoice, lockSeconds: Int(lockDelay)))
 
+            TipCard(title: "Performance tip: one Home press", icon: "house.fill", tint: .red,
+                    lines: [PerformCopy.shareHomeStep])
+
             TipCard(title: "Performance tip / timing", icon: "clock", tint: .orange,
                     lines: PerformCopy.shareTiming(lockSeconds: Int(lockDelay)))
 

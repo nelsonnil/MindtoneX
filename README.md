@@ -132,6 +132,15 @@ export*: *Go Home via private API* y *Go Home automatically after Use as Rington
 Build 10: si iOS abre **Ajustes › Tono** tras "Usar como tono", la app pide ir a inicio al instante, otra
 vez a los 0,3 s, al perder el primer plano y, si vuelves a MagicCall en los 90 s siguientes, otra vez al
 volver (sin enseñar la pantalla de preparación). Si aun así se ve la pantalla negra, un toque va a inicio.
+
+Build 11 — **hace falta pulsar Inicio una vez**. iOS 26 abre siempre **Ajustes › Sonidos y vibraciones ›
+Tono** justo después de "Usar como tono" (así lo describen Apple y la prensa: MacRumors, Macworld,
+AppleInsider), y ninguna app puede cerrar Ajustes ni evitarlo. La app vibra suave al añadirse el tono
+(se puede apagar en *Advanced*) y lo intenta 6 veces (0, 0,15, 0,35, 0,7, 1,2 y 2 s) por si consigue
+adelantarse; cada intento queda en el Registro. Vías estudiadas sin éxito: Quick Look (misma extensión
+del sistema, también abre Ajustes), Archivos (igual), API pública de tonos (no existe en iOS; ToneLibrary
+es privada y está en los experimentos, normalmente bloqueada sin jailbreak).
+Truco de actuación: al aparecer Ajustes, pulsa Inicio (o desliza hacia arriba) mientras sigues hablando.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
 (`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
 

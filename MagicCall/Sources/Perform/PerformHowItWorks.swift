@@ -89,25 +89,28 @@ enum PerformCopy {
         }
         steps += [
             "The Share pop-up opens by itself. Tap **Use as Ringtone** (in Favorites).",
-            "Right after **Use as Ringtone**, the app goes to your Home Screen **by itself**. If you closed the pop-up without choosing, the screen stays black — tap it to open the pop-up again.",
-            "The real ringtone is now set, so the call rings with the song from anywhere.",
+            "You feel a soft vibration: the ringtone is added. iOS now opens **Settings → Ringtone** by itself — **press Home once (or swipe up)**. The app can’t close Settings for you.",
+            "The real ringtone is now set, so the call rings with the song from anywhere. If you closed the pop-up without choosing, the screen stays black — tap it to open the pop-up again.",
         ]
         return steps
     }
 
+    /// Shown as its own highlighted card: the one manual step left in Share Ringtone.
+    static let shareHomeStep = "After **Use as Ringtone**, iOS jumps to **Settings → Ringtone**. Press **Home once** (or swipe up). The ringtone is already added — to the spectator it just looks like you’re closing something and going to your Home Screen, while you keep talking."
+
     static func shareTiming(lockSeconds: Int) -> [String] {
         [
             "Ask the spectator to name a song. Wait about \(lockSeconds) seconds — the Share pop-up appears.",
-            "Tap **Use as Ringtone** (in Favorites).",
-            "The app jumps to your Home Screen by itself — to the spectator it just looks like you’re unlocking your phone.",
+            "Tap **Use as Ringtone** (in Favorites). Soft vibration = done.",
+            "Settings opens: **press Home once (or swipe up)**. It looks like you’re just unlocking or tidying your phone.",
             "While you do all this, keep talking: tell them you’ll give them your number and ask them to call you. With natural timing, nothing looks unusual.",
         ]
     }
 
     static let shareCaveats = [
         "**Silent must be OFF** in this mode — the real ringtone is what plays.",
-        "If iOS opens **Settings → Ringtone** after “Use as Ringtone”, swipe up to Home, or switch back to MagicCall — it jumps Home by itself (or tap the black screen once).",
-        "If it doesn’t go Home by itself, tap the black screen; if that doesn’t work either, swipe up from the bottom.",
+        "iOS always opens **Settings → Ringtone** after “Use as Ringtone”. Apps can’t prevent or close it — one Home press (or swipe up) is needed.",
+        "Sometimes the app manages to jump Home before Settings appears; if you land back on the black screen, tap it once to go Home.",
         "Every performance adds a new ringtone with a slightly different name, so iOS never says “duplicate”. To remove old ones: **Settings → Sounds & Haptics → Ringtone**, swipe left on a ringtone → Delete. The app can’t remove them for you.",
     ]
 
