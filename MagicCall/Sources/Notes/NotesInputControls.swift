@@ -26,7 +26,8 @@ struct NotesInputControls: View {
                 rowDivider
                 toggleRow("Search on Return", isOn: $searchOnReturn)
                 rowDivider
-                toggleRow("Use AI to read the note", isOn: $useAIPicker)
+                toggleRow("Interpret note with AI", detail: NotesSettings.aiPickerExplanation(isOn: useAIPicker),
+                          isOn: $useAIPicker)
                     .disabled(VoiceSettings.apiKey == nil)
                 rowDivider
                 toggleRow("Soft vibration when the song is ready", isOn: $hapticOnReady)
@@ -49,7 +50,7 @@ struct NotesInputControls: View {
     private var footer: String {
         var parts = ["The checkmark always searches. Each new search replaces the last one until the call arrives; a call with nothing searched yet searches the note right away."]
         if VoiceSettings.apiKey == nil {
-            parts.append("Without an OpenAI key the note is searched exactly as written.")
+            parts.append("“Interpret note with AI” needs an OpenAI key (Advanced → AI Voice settings); until then the note is searched exactly as typed.")
         }
         parts.append("Leave Perform: long-press the back button or swipe down with two fingers.")
         return parts.joined(separator: " ")
@@ -73,11 +74,19 @@ struct NotesInputControls: View {
         .padding(.vertical, 12)
     }
 
-    private func toggleRow(_ title: String, isOn: Binding<Bool>) -> some View {
+    private func toggleRow(_ title: String, detail: String? = nil, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(OracleTheme.textPrimary)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(OracleTheme.textPrimary)
+                if let detail {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
         .toggleStyle(.switch)
         .tint(OracleTheme.gold)

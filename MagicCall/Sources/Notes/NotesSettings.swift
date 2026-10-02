@@ -25,6 +25,11 @@ enum NotesSettings {
     static var useAIPicker: Bool { bool(Key.useAIPicker, default: true) }
     static var hapticOnReady: Bool { bool(Key.hapticOnReady, default: false) }
 
+    static let aiPickerOffText = "Off: uses the note text exactly as typed to find the song."
+    static let aiPickerOnText = "On: sends the note to the same AI as AI Voice, which fixes spelling and works out which song the spectator meant."
+
+    static func aiPickerExplanation(isOn: Bool) -> String { isOn ? aiPickerOnText : aiPickerOffText }
+
     static var aiAvailable: Bool { useAIPicker && VoiceSettings.apiKey != nil }
 
     static func summary() -> String {

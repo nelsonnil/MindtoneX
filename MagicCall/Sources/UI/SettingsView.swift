@@ -132,13 +132,20 @@ struct SettingsView: View {
                         in: NotesSettings.idleDelayRange, step: 0.5)
             }
             Toggle("Search on Return", isOn: $notesSearchOnReturn)
-            Toggle("Use AI to read the note", isOn: $notesUseAI)
-                .disabled(VoiceSettings.apiKey == nil)
+            Toggle(isOn: $notesUseAI) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Interpret note with AI")
+                    Text(NotesSettings.aiPickerExplanation(isOn: notesUseAI))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .disabled(VoiceSettings.apiKey == nil)
             Toggle("Soft vibration when the song is ready", isOn: $notesHaptic)
         } header: {
             Text("Notes input")
         } footer: {
-            Text("Notes Perform shows a white note. After the idle delay (or Return, or the checkmark) the note is searched and the song is loaded in the background; the incoming call then plays it like AI Voice. With an OpenAI key the AI turns the note into “title artist”; otherwise the note is searched as written.")
+            Text("Notes Perform shows a white note. After the idle delay (or Return, or the checkmark) the note is searched and the song is loaded in the background; the incoming call then plays it like AI Voice. \(NotesSettings.aiPickerOffText) \(NotesSettings.aiPickerOnText) Without an OpenAI key the note is always searched as typed.")
         }
     }
 
