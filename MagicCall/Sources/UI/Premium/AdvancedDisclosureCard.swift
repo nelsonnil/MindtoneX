@@ -6,9 +6,8 @@ struct AdvancedDisclosureCard: View {
     @EnvironmentObject private var model: AppModel
 
     @AppStorage("ui.advancedExpanded") private var expanded = false
-    @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = true
     @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
-    @AppStorage(Prefs.Key.darkStatusBarText) private var darkStatusBarText = false
+    @AppStorage(Prefs.Key.background) private var stageBackground = StageBackground.black.rawValue
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     var onOpen: (OracleSheet) -> Void
@@ -78,16 +77,32 @@ struct AdvancedDisclosureCard: View {
     private var stageStatusBarSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             OracleEyebrow(text: "Stage status bar")
-            toggleRow("Cover status bar in screenshot",
-                      detail: "Blurs the fake time/battery in your image so only the real status bar shows.",
-                      isOn: $maskStatusBar)
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "wand.and.stars")
+                    .foregroundStyle(OracleTheme.gold)
+                    .font(.subheadline)
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Automatic")
+                        .font(.subheadline)
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    Text(autoStatusBarDetail)
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                }
+            }
             toggleRow("Hide status bar",
                       detail: "Hides the system status bar entirely during the act.",
                       isOn: $hideStatusBar)
-            toggleRow("Dark status bar text",
-                      detail: "Use on light wallpapers so clock and icons stay readable.",
-                      isOn: $darkStatusBarText)
         }
+    }
+
+    private var autoStatusBarDetail: String {
+        guard StageBackground(rawValue: stageBackground) == .image, StageImageStore.statusBarLuminance() != nil else {
+            return "White text on the dark stage. With a screenshot, the old status bar is covered and the text color follows your wallpaper."
+        }
+        let dark = StageImageStore.wantsDarkStatusBarText()
+        return "Old status bar in your screenshot is covered. Detected a \(dark ? "light" : "dark") wallpaper → \(dark ? "dark" : "white") text."
     }
 
     private var songSection: some View {

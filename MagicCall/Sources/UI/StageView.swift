@@ -7,13 +7,15 @@ struct StageView: View {
     @EnvironmentObject private var model: AppModel
     @AppStorage(Prefs.Key.background) private var background = StageBackground.black.rawValue
     @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
-    @AppStorage(Prefs.Key.darkStatusBarText) private var darkStatusBarText = false
-    @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = true
+
+    private var darkStatusBarText: Bool {
+        StageBackground(rawValue: background) == .image && StageImageStore.wantsDarkStatusBarText()
+    }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             StageBackgroundView(kind: StageBackground(rawValue: background) ?? .black,
-                                maskStatusBar: maskStatusBar)
+                                maskStatusBar: true)
                 .ignoresSafeArea()
 
             StageGestureLayer(
@@ -95,8 +97,58 @@ enum StageImageStore {
 
     static func load() -> UIImage? { UIImage(contentsOfFile: url.path) }
 
+    private static let luminanceKey = "stage.statusBarLuminance"
+
     static func save(_ data: Data) {
         try? data.write(to: url, options: .atomic)
+        UserDefaults.standard.removeObject(forKey: luminanceKey)
+        if let image = UIImage(data: data) {
+            UserDefaults.standard.set(topLuminance(of: image), forKey: luminanceKey)
+        }
+    }
+
+    /// Average luminance (0–1) of the screenshot strip behind the status bar; nil without an image.
+    static func statusBarLuminance() -> Double? {
+        if let cached = UserDefaults.standard.object(forKey: luminanceKey) as? Double { return cached }
+        guard let image = load() else { return nil }
+        let value = topLuminance(of: image)
+        UserDefaults.standard.set(value, forKey: luminanceKey)
+        return value
+    }
+
+    /// True when the status bar should use dark text. 0.179 is where black and white text have equal contrast.
+    static func wantsDarkStatusBarText() -> Bool {
+        (statusBarLuminance() ?? 0) > 0.179
+    }
+
+    private static func topLuminance(of image: UIImage, fraction: CGFloat = 0.07) -> Double {
+        guard let cg = image.cgImage else { return 0 }
+        let stripHeight = max(1, CGFloat(cg.height) * fraction)
+        guard let strip = cg.cropping(to: CGRect(x: 0, y: 0, width: CGFloat(cg.width), height: stripHeight)) else { return 0 }
+
+        let w = 24, h = 4
+        var pixels = [UInt8](repeating: 0, count: w * h * 4)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let ctx = CGContext(data: buffer.baseAddress, width: w, height: h, bitsPerComponent: 8,
+                                      bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            ctx.interpolationQuality = .medium
+            ctx.draw(strip, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        guard drawn else { return 0 }
+
+        func linear(_ v: UInt8) -> Double {
+            let c = Double(v) / 255
+            return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+        }
+        var total = 0.0
+        for i in stride(from: 0, to: pixels.count, by: 4) {
+            total += 0.2126 * linear(pixels[i]) + 0.7152 * linear(pixels[i + 1]) + 0.0722 * linear(pixels[i + 2])
+        }
+        let value = total / Double(w * h)
+        dlog("Stage status bar luminance \(String(format: "%.3f", value)) → \(value > 0.179 ? "dark" : "white") text")
+        return value
     }
 }
 
