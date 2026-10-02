@@ -51,6 +51,9 @@ struct MainShellView: View {
                     )
                 }
 
+                StatusDotCard()
+                VibrationCueCard()
+
                 AdvancedDisclosureCard { activeSheet = $0 }
             }
             .padding(.horizontal, 16)

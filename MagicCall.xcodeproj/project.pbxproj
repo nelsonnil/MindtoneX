@@ -61,6 +61,7 @@
 		BB0000040000000000000004 /* ApiSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000003 /* ApiSongSession.swift */; };
 		BB0000060000000000000006 /* ApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000050000000000000005 /* ApiSettingsView.swift */; };
 		BB0000080000000000000008 /* ApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000070000000000000007 /* ApiInputPanel.swift */; };
+		AA0000410000000000000041 /* PerformanceCues.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000400000000000000040 /* PerformanceCues.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -122,6 +123,7 @@
 		BB0000030000000000000003 /* ApiSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSongSession.swift; sourceTree = "<group>"; };
 		BB0000050000000000000005 /* ApiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettingsView.swift; sourceTree = "<group>"; };
 		BB0000070000000000000007 /* ApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiInputPanel.swift; sourceTree = "<group>"; };
+		AA0000400000000000000040 /* PerformanceCues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceCues.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -287,6 +289,7 @@
 		0FE05D205315F370F0853866 /* Perform */ = {
 			isa = PBXGroup;
 			children = (
+				AA0000400000000000000040 /* PerformanceCues.swift */,
 				E1739526C750AA0036D5F293 /* SilentShortcutCard.swift */,
 				E050CA4E65BC817983D87C6E /* SilentShortcut.swift */,
 				E7D59D5299CAA7B77CB2C3AA /* PerformHowItWorks.swift */,
@@ -404,6 +407,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA0000410000000000000041 /* PerformanceCues.swift in Sources */,
 				728EECDB8B001133FF4F0696 /* SilentShortcutCard.swift in Sources */,
 				B7991EA68474061E01D04616 /* SilentShortcut.swift in Sources */,
 				30F3F5FD1AB46F5425A32DAC /* PerformHowItWorks.swift in Sources */,
@@ -498,7 +502,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -560,7 +564,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -622,7 +626,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

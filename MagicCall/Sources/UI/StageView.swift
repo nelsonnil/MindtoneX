@@ -14,11 +14,14 @@ struct StageView: View {
     }
 
     var body: some View {
-        if notes.isActive {
-            NotesPerformView()
-        } else {
-            callStage
+        Group {
+            if notes.isActive {
+                NotesPerformView()
+            } else {
+                callStage
+            }
         }
+        .overlay(alignment: .topTrailing) { PerformStatusDot() }
     }
 
     private var callStage: some View {

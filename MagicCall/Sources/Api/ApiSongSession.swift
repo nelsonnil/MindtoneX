@@ -172,9 +172,7 @@ final class ApiSongSession: ObservableObject {
         lockedReading = reading
         state = .locked
         dlog("[API] 🔒 locked “\(reading.label)” after \(pollCount) polls")
-        if ApiSettings.hapticOnLock && context == .perform {
-            UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.7)
-        }
+        if context == .perform { PerformanceCues.songLocked(source: "API") }
         AppModel.shared.apiSongLocked(context: context)
     }
 

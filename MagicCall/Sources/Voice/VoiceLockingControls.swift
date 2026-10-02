@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// Lock delay, minimum confidence and haptic — shown in the AI Voice song-input area (not Advanced).
+/// Lock delay and minimum confidence — shown in the AI Voice song-input area (not Advanced).
 struct VoiceLockingControls: View {
     @AppStorage(VoiceSettings.Key.lockDelay) private var lockDelay = VoiceSettings.defaultLockDelay
     @AppStorage(VoiceSettings.Key.minConfidence) private var minConfidence = VoiceSettings.defaultMinConfidence
-    @AppStorage(VoiceSettings.Key.hapticOnLock) private var hapticOnLock = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -19,8 +18,6 @@ struct VoiceLockingControls: View {
                 lockDelayRow
                 rowDivider
                 confidenceRow
-                rowDivider
-                hapticRow
             }
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -65,17 +62,5 @@ struct VoiceLockingControls: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-    }
-
-    private var hapticRow: some View {
-        Toggle(isOn: $hapticOnLock) {
-            Text("Soft vibration when the song locks")
-                .font(.subheadline)
-                .foregroundStyle(OracleTheme.textPrimary)
-        }
-        .toggleStyle(.switch)
-        .tint(OracleTheme.gold)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
     }
 }

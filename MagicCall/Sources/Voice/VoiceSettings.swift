@@ -12,7 +12,6 @@ enum VoiceSettings {
         static let language = "voice.language"
         static let lockDelay = "voice.lockDelay"
         static let minConfidence = "voice.minConfidence"
-        static let hapticOnLock = "voice.hapticOnLock"
     }
 
     enum InputMode: String, CaseIterable, Identifiable {
@@ -113,7 +112,6 @@ enum VoiceSettings {
     static var language: Language { Language(rawValue: d.string(forKey: Key.language) ?? "") ?? .spanishEnglish }
     static var lockDelay: Double { d.object(forKey: Key.lockDelay) == nil ? defaultLockDelay : d.double(forKey: Key.lockDelay) }
     static var minConfidence: Double { d.object(forKey: Key.minConfidence) == nil ? defaultMinConfidence : d.double(forKey: Key.minConfidence) }
-    static var hapticOnLock: Bool { d.object(forKey: Key.hapticOnLock) == nil ? true : d.bool(forKey: Key.hapticOnLock) }
 
     static var apiKey: String? { nonEmpty(Keychain.get(account: keychainAccount)) }
 

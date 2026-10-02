@@ -8,7 +8,6 @@ struct ApiSettingsView: View {
     @AppStorage(ApiSettings.Key.customURL) private var customURL = ""
     @AppStorage(ApiSettings.Key.customField) private var customField = ApiSettings.defaultCustomField
     @AppStorage(ApiSettings.Key.customHeaderName) private var customHeaderName = ""
-    @AppStorage(ApiSettings.Key.hapticOnLock) private var hapticOnLock = true
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
     @ObservedObject private var session = ApiSongSession.shared
 
@@ -64,7 +63,6 @@ struct ApiSettingsView: View {
             }
 
             Section {
-                Toggle("Soft vibration when the song locks", isOn: $hapticOnLock)
                 if inputModeRaw != VoiceSettings.InputMode.api.rawValue {
                     Button("Use API as song input") { inputModeRaw = VoiceSettings.InputMode.api.rawValue }
                 }

@@ -163,9 +163,7 @@ final class NotesSongSession: ObservableObject {
     }
 
     private func songReady() {
-        if NotesSettings.hapticOnReady, context == .perform {
-            UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.6)
-        }
+        if context == .perform { PerformanceCues.songLocked(source: "Notes") }
         AppModel.shared.notesSongReady(context: context)
     }
 

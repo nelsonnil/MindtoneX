@@ -10,7 +10,6 @@ enum ApiSettings {
         static let customURL = "api.custom.url"
         static let customField = "api.custom.field"
         static let customHeaderName = "api.custom.headerName"
-        static let hapticOnLock = "api.hapticOnLock"
     }
 
     enum Provider: String, CaseIterable, Identifiable {
@@ -52,7 +51,6 @@ enum ApiSettings {
     static let defaultCustomField = "song"
     static var customField: String { trimmed(d.string(forKey: Key.customField) ?? defaultCustomField) }
     static var customHeaderName: String { trimmed(d.string(forKey: Key.customHeaderName)) }
-    static var hapticOnLock: Bool { d.object(forKey: Key.hapticOnLock) == nil ? true : d.bool(forKey: Key.hapticOnLock) }
 
     static var customHeaderValue: String? {
         let value = trimmed(Keychain.get(account: customHeaderAccount))

@@ -45,7 +45,6 @@ struct SettingsView: View {
     @AppStorage(NotesSettings.Key.idleDelay) private var notesIdleDelay = NotesSettings.defaultIdleDelay
     @AppStorage(NotesSettings.Key.searchOnReturn) private var notesSearchOnReturn = true
     @AppStorage(NotesSettings.Key.useAIPicker) private var notesUseAI = true
-    @AppStorage(NotesSettings.Key.hapticOnReady) private var notesHaptic = false
 
     @State private var confirmToneChange = false
 
@@ -146,7 +145,6 @@ struct SettingsView: View {
                 }
             }
             .disabled(VoiceSettings.apiKey == nil)
-            Toggle("Soft vibration when the song is ready", isOn: $notesHaptic)
         } header: {
             Text("Notes input")
         } footer: {

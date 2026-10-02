@@ -308,10 +308,7 @@ final class VoiceSongSession: ObservableObject {
         lockDeadline = nil
         state = .locked
         dlog("[VOICE] 🔒 locked \(pick.label) · \(Self.percent(pick.confidence)) · \(reason) · mic running=\(mic.isRunning)")
-        if VoiceSettings.hapticOnLock && context == .perform {
-            let haptic = UIImpactFeedbackGenerator(style: .soft)
-            haptic.impactOccurred(intensity: 0.7)
-        }
+        if context == .perform { PerformanceCues.songLocked(source: "AI Voice") }
         // During a ringing call the session category must not change (see RingtoneAudioEngine).
         if !duringCall { VoiceAudioSession.recordCategoryActive = false }
         AppModel.shared.voiceDidLock(context: context, duringCall: duringCall)

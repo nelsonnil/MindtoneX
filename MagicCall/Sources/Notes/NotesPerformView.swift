@@ -44,7 +44,6 @@ struct NotesPerformView: View {
         }
         .statusBarHidden(false)
         .preferredColorScheme(.light)
-        .persistentSystemOverlays(.hidden)
         .animation(.easeInOut(duration: 0.2), value: model.showDebugOverlay)
     }
 
@@ -52,7 +51,7 @@ struct NotesPerformView: View {
         HStack {
             Image(systemName: "chevron.left")
                 .font(.system(size: 24, weight: .regular))
-                .foregroundStyle(.black)
+                .foregroundColor(.black)
                 .frame(width: 50, height: 50)
                 .background(Circle().fill(Color.white))
                 .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
@@ -75,21 +74,18 @@ struct NotesPerformView: View {
                         .font(.system(size: 24, weight: .semibold))
                 }
             }
-            .foregroundStyle(Color.black.opacity(0.62))
+            .foregroundColor(.black.opacity(0.62))
             .frame(width: 112, height: 50)
             .background(Capsule().fill(Color.white))
             .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
             .simultaneousGesture(TapGesture(count: 3).onEnded { model.showDebugOverlay.toggle() })
 
-            Spacer()
-
             Button {
                 session.donePressed()
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             } label: {
                 Image(systemName: "checkmark")
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundColor(.white)
                     .frame(width: 50, height: 50)
                     .background(Circle().fill(Self.gold))
                     .shadow(color: Self.gold.opacity(0.35), radius: 12, y: 4)
@@ -104,7 +100,7 @@ struct NotesPerformView: View {
 }
 
 /// UITextView matching G-Sensor `NotesNativeTextView`: 22 pt black text, gold caret, no insets,
-/// keyboard up ~250 ms after appearing and no swipe-to-dismiss.
+/// keyboard up 250 ms after appearing, re-focused on every update, no swipe-to-dismiss.
 struct NotesNativeTextView: UIViewRepresentable {
     let text: String
     let onChange: (String) -> Void
@@ -119,18 +115,15 @@ struct NotesNativeTextView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> AutoFocusTextView {
         let view = AutoFocusTextView()
-        view.backgroundColor = .white
-        view.textColor = .black
+        view.backgroundColor = .clear
         view.font = .systemFont(ofSize: 22, weight: .regular)
+        view.textColor = .black
         view.tintColor = NotesPerformView.goldUIColor
-        view.textContainerInset = .zero
-        view.textContainer.lineFragmentPadding = 0
-        view.keyboardDismissMode = .none
-        view.keyboardAppearance = .light
         view.autocorrectionType = .yes
         view.spellCheckingType = .yes
-        view.autocapitalizationType = .sentences
-        view.alwaysBounceVertical = true
+        view.keyboardDismissMode = .none
+        view.textContainerInset = .zero
+        view.textContainer.lineFragmentPadding = 0
         view.delegate = context.coordinator
         view.text = text
 
@@ -145,6 +138,9 @@ struct NotesNativeTextView: UIViewRepresentable {
     func updateUIView(_ uiView: AutoFocusTextView, context: Context) {
         context.coordinator.parent = self
         if uiView.text != text { uiView.text = text }
+        if !uiView.isFirstResponder, uiView.window != nil {
+            DispatchQueue.main.async { uiView.becomeFirstResponder() }
+        }
     }
 
     final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {

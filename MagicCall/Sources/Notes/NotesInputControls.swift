@@ -6,7 +6,6 @@ struct NotesInputControls: View {
     @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
     @AppStorage(NotesSettings.Key.searchOnReturn) private var searchOnReturn = true
     @AppStorage(NotesSettings.Key.useAIPicker) private var useAIPicker = true
-    @AppStorage(NotesSettings.Key.hapticOnReady) private var hapticOnReady = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -29,8 +28,6 @@ struct NotesInputControls: View {
                 toggleRow("Interpret note with AI", detail: NotesSettings.aiPickerExplanation(isOn: useAIPicker),
                           isOn: $useAIPicker)
                     .disabled(VoiceSettings.apiKey == nil)
-                rowDivider
-                toggleRow("Soft vibration when the song is ready", isOn: $hapticOnReady)
             }
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

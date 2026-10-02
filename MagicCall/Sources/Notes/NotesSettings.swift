@@ -7,7 +7,6 @@ enum NotesSettings {
         static let idleDelay = "notes.idleDelay"
         static let searchOnReturn = "notes.searchOnReturn"
         static let useAIPicker = "notes.useAIPicker"
-        static let hapticOnReady = "notes.hapticOnReady"
     }
 
     static let defaultIdleDelay = 3.0
@@ -23,7 +22,6 @@ enum NotesSettings {
     static var searchOnReturn: Bool { bool(Key.searchOnReturn, default: true) }
     /// With an OpenAI key, the AI reads the note and returns a clean “title artist” query.
     static var useAIPicker: Bool { bool(Key.useAIPicker, default: true) }
-    static var hapticOnReady: Bool { bool(Key.hapticOnReady, default: false) }
 
     static let aiPickerOffText = "Off: uses the note text exactly as typed to find the song."
     static let aiPickerOnText = "On: sends the note to the same AI as AI Voice, which fixes spelling and works out which song the spectator meant."
@@ -33,7 +31,7 @@ enum NotesSettings {
     static var aiAvailable: Bool { useAIPicker && VoiceSettings.apiKey != nil }
 
     static func summary() -> String {
-        "idle=\(idleSearchEnabled ? "\(idleDelay)s" : "off") return=\(searchOnReturn) ai=\(aiAvailable) haptic=\(hapticOnReady)"
+        "idle=\(idleSearchEnabled ? "\(idleDelay)s" : "off") return=\(searchOnReturn) ai=\(aiAvailable)"
     }
 
     private static func bool(_ key: String, default value: Bool) -> Bool {
