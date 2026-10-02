@@ -5,7 +5,6 @@ struct ShareModeCard: View {
     @State private var isSharePerforming = false
 
     var onInfo: () -> Void
-    var onShortcutsSetup: () -> Void
     var onFavoritesInfo: () -> Void
 
     var body: some View {
@@ -21,7 +20,7 @@ struct ShareModeCard: View {
 
                 Divider().overlay(OracleTheme.cardBorder)
 
-                ShortcutsInstallPanel(mode: .shareRingtone, onInstallGuide: onShortcutsSetup)
+                ShortcutsInstallPanel(mode: .shareRingtone)
 
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "star.fill")

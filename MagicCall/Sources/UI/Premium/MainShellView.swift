@@ -33,13 +33,11 @@ struct MainShellView: View {
                         FakeModeCard(
                             background: $background,
                             photoItem: $photoItem,
-                            onInfo: { activeSheet = .fakeDetails },
-                            onShortcutsSetup: { activeSheet = .shortcutsSetup }
+                            onInfo: { activeSheet = .fakeDetails }
                         )
                     case .shareRingtone:
                         ShareModeCard(
                             onInfo: { activeSheet = .shareDetails },
-                            onShortcutsSetup: { activeSheet = .shortcutsSetup },
                             onFavoritesInfo: { activeSheet = .favoritesSetup }
                         )
                     }

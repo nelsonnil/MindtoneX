@@ -5,8 +5,6 @@ struct FakeModeCard: View {
     @Binding var background: String
     @Binding var photoItem: PhotosPickerItem?
     var onInfo: () -> Void
-    var onShortcutsSetup: () -> Void
-
     var body: some View {
         OracleCard {
             VStack(alignment: .leading, spacing: 16) {
@@ -20,7 +18,7 @@ struct FakeModeCard: View {
 
                 Divider().overlay(OracleTheme.cardBorder)
 
-                ShortcutsInstallPanel(mode: .fakeRingtone, onInstallGuide: onShortcutsSetup)
+                ShortcutsInstallPanel(mode: .fakeRingtone)
 
                 stageRow
             }

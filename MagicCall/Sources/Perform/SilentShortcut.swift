@@ -11,8 +11,8 @@ final class SilentShortcut: ObservableObject {
     static let silentOnName = "Ringtone Oracle Silent On"
     static let silentOffName = "Ringtone Oracle Silent Off"
 
-    /// iCloud share links (https://www.icloud.com/shortcuts/…) for one-tap install. Leave nil until
-    /// the shortcuts are published; the UI then falls back to the step-by-step install guide.
+    /// iCloud share links (https://www.icloud.com/shortcuts/…) — tap **Get** on the mode card.
+    /// Paste Nelson’s links here when ready, e.g. `URL(string: "https://www.icloud.com/shortcuts/…")!`
     static let silentOnInstallURL: URL? = nil
     static let silentOffInstallURL: URL? = nil
     static let createShortcutURL = URL(string: "shortcuts://create-shortcut")!

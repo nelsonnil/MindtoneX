@@ -163,6 +163,21 @@ struct ShareDetailSheet: View {
     }
 }
 
+/// Manual steps only — download lives on the mode card (Get).
+struct ManualShortcutStepsSheet: View {
+    let mode: Prefs.PerformanceMode
+
+    var body: some View {
+        ScrollView {
+            SilentShortcutCard(mode: mode, manualStepsOnly: true)
+                .padding()
+        }
+        .background(OracleTheme.bgTop)
+        .navigationTitle("Build shortcut")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 struct ShortcutsSetupSheet: View {
     @AppStorage(Prefs.Key.performanceMode) private var performanceModeRaw = Prefs.PerformanceMode.fakeRingtone.rawValue
 
@@ -170,65 +185,8 @@ struct ShortcutsSetupSheet: View {
         Prefs.PerformanceMode(rawValue: performanceModeRaw) ?? .fakeRingtone
     }
 
-    @Environment(\.openURL) private var openURL
-
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(mode == .fakeRingtone
-                         ? "Fake Ringtone needs Silent ON"
-                         : "Share Ringtone needs Silent OFF")
-                        .font(.subheadline.weight(.semibold))
-                    if mode == .fakeRingtone {
-                        installButton(SilentShortcut.silentOnName, url: SilentShortcut.silentOnInstallURL)
-                    } else {
-                        installButton(SilentShortcut.silentOffName, url: SilentShortcut.silentOffInstallURL)
-                    }
-                    Button {
-                        openURL(SilentShortcut.createShortcutURL)
-                    } label: {
-                        Label("Open Shortcuts to create it", systemImage: "plus.square.on.square")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(OracleTheme.gold)
-                }
-                .padding(14)
-                .background(Color.white.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                SilentShortcutCard(mode: mode)
-            }
-            .padding()
-        }
-        .background(OracleTheme.bgTop)
-        .navigationTitle("Shortcuts setup")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    @ViewBuilder
-    private func installButton(_ name: String, url: URL?) -> some View {
-        if let url {
-            Button {
-                openURL(url)
-            } label: {
-                Label("Add “\(name)”", systemImage: "arrow.down.circle.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(OracleTheme.gold)
-            .foregroundStyle(Color(red: 0.12, green: 0.10, blue: 0.05))
-        } else {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "square.stack.3d.up.fill")
-                    .foregroundStyle(OracleTheme.gold)
-                    .font(.caption)
-                    .padding(.top, 2)
-                Text("**\(name)** — create it in Shortcuts with the steps below (one-tap download link coming soon).")
-                    .font(.footnote)
-            }
-        }
+        ManualShortcutStepsSheet(mode: mode)
     }
 }
 

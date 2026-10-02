@@ -1,116 +1,96 @@
 import SwiftUI
 
-/// Compact shortcut status for the main mode cards; full install steps live in sheets.
-struct SilentShortcutStatusRow: View {
-    let mode: Prefs.PerformanceMode
-    @ObservedObject private var shortcut = SilentShortcut.shared
-    @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
-    @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
-    var onSetup: () -> Void
-
-    private var enabledForMode: Bool { mode == .fakeRingtone ? silentOnEnabled : silentOffEnabled }
-    private var shortcutName: String { mode == .fakeRingtone ? SilentShortcut.silentOnName : SilentShortcut.silentOffName }
-    private var label: String {
-        mode == .fakeRingtone ? "Auto silent via Shortcut" : "Auto Silent Off via Shortcut"
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let hint = shortcut.hint {
-                ShortcutHintBanner(hint: hint) { shortcut.hint = nil }
-            }
-
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(enabledForMode ? Color.green : OracleTheme.textSecondary)
-                    .frame(width: 8, height: 8)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(label)
-                        .font(.subheadline.weight(.medium))
-                    Text(enabledForMode ? "Perform runs “\(shortcutName)”" : "Shortcut not enabled")
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
-                Spacer()
-                if !enabledForMode {
-                    Button("Setup", action: onSetup)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(OracleTheme.gold)
-                } else {
-                    Button("Test") { shortcut.test(mode: mode) }
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
-            }
-        }
-    }
-}
-
-/// Download / install entry point for the one Silent shortcut a mode needs:
-/// Fake Ringtone → Silent On, Share Ringtone → Silent Off.
+/// Download / install for the one Silent shortcut this mode needs (Fake → Silent On, Share → Silent Off).
 struct ShortcutsInstallPanel: View {
     let mode: Prefs.PerformanceMode
     @ObservedObject private var shortcut = SilentShortcut.shared
     @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
     @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
     @Environment(\.openURL) private var openURL
-    var onInstallGuide: () -> Void
+    @State private var showManualSteps = false
 
     private var isFake: Bool { mode == .fakeRingtone }
     private var enabled: Bool { isFake ? silentOnEnabled : silentOffEnabled }
+    private var shortcutName: String { isFake ? SilentShortcut.silentOnName : SilentShortcut.silentOffName }
+    private var installURL: URL? { isFake ? SilentShortcut.silentOnInstallURL : SilentShortcut.silentOffInstallURL }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                OracleEyebrow(text: "Shortcut")
-                Spacer()
-                Button(action: onInstallGuide) {
-                    Label("Install guide", systemImage: "book.pages")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(OracleTheme.gold)
-            }
-
+        VStack(alignment: .leading, spacing: 12) {
             if let hint = shortcut.hint {
                 ShortcutHintBanner(hint: hint) { shortcut.hint = nil }
             }
 
-            shortcutRow(name: isFake ? SilentShortcut.silentOnName : SilentShortcut.silentOffName,
-                        role: isFake ? "Turns Silent ON before Perform" : "Turns Silent OFF before Perform",
-                        enabled: enabled,
-                        installURL: isFake ? SilentShortcut.silentOnInstallURL : SilentShortcut.silentOffInstallURL)
-                .background(Color.white.opacity(0.04))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-                }
+            Text(.init(installExplanation))
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 10) {
-                if !enabled {
-                    Button("I’ve installed it — turn on") {
-                        if isFake { silentOnEnabled = true } else { silentOffEnabled = true }
-                    }
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(OracleTheme.gold)
-                } else {
-                    Label("Perform runs it first", systemImage: "checkmark.circle.fill")
+            shortcutRow
+
+            Toggle(isOn: autoRunBinding) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Run shortcut before Perform")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    Text("Turns Silent \(isFake ? "ON" : "OFF") automatically so you don’t forget.")
                         .font(.caption)
-                        .foregroundStyle(.green)
-                    Spacer()
-                    Button("Test") { shortcut.test(mode: mode) }
-                        .font(.caption.weight(.semibold))
                         .foregroundStyle(OracleTheme.textSecondary)
                 }
+            }
+            .toggleStyle(.switch)
+            .tint(OracleTheme.gold)
+
+            HStack(spacing: 10) {
+                if enabled {
+                    Label("Enabled for Perform", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+                Spacer()
+                Button("Test") { shortcut.test(mode: mode) }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .disabled(!enabled)
             }
             if let result = shortcut.lastTestResult {
                 Text(result).font(.caption2).foregroundStyle(OracleTheme.textSecondary)
             }
+
+            if installURL != nil {
+                Button("Build the shortcut yourself instead") { showManualSteps = true }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.gold)
+            }
+        }
+        .sheet(isPresented: $showManualSteps) {
+            NavigationStack {
+                ManualShortcutStepsSheet(mode: mode)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showManualSteps = false }
+                        }
+                    }
+            }
         }
     }
 
-    private func shortcutRow(name: String, role: String, enabled: Bool, installURL: URL?) -> some View {
+    private var installExplanation: String {
+        if installURL != nil {
+            return "One-time: tap **Get** to add the shortcut, or build it yourself. You can also turn Silent \(isFake ? "on" : "off") by hand before each show — the toggle below is optional but helps you avoid mistakes."
+        }
+        return "Install the shortcut once (download link coming soon), or build it yourself. You can always set Silent \(isFake ? "on" : "off") manually; turn on the toggle below to run the shortcut automatically before each Perform."
+    }
+
+    private var autoRunBinding: Binding<Bool> {
+        Binding(
+            get: { enabled },
+            set: { newValue in
+                if isFake { silentOnEnabled = newValue } else { silentOffEnabled = newValue }
+            }
+        )
+    }
+
+    private var shortcutRow: some View {
         HStack(spacing: 12) {
             Image(systemName: "square.stack.3d.up.fill")
                 .font(.footnote)
@@ -119,24 +99,18 @@ struct ShortcutsInstallPanel: View {
                 .background(OracleTheme.gold.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text(name)
+                Text(shortcutName)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(OracleTheme.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
-                Text(enabled ? "\(role) · enabled" : role)
+                Text(isFake ? "Silent ON for Fake Ringtone" : "Silent OFF for Share Ringtone")
                     .font(.caption2)
-                    .foregroundStyle(enabled ? Color.green : OracleTheme.textSecondary)
+                    .foregroundStyle(OracleTheme.textSecondary)
             }
             Spacer(minLength: 8)
-            Button {
-                if let installURL {
-                    openURL(installURL)
-                } else {
-                    onInstallGuide()
-                }
-            } label: {
-                Label("Get", systemImage: "arrow.down.circle.fill")
+            Button(action: getTapped) {
+                Label(installURL == nil ? "Manual" : "Get", systemImage: installURL == nil ? "book.pages" : "arrow.down.circle.fill")
                     .labelStyle(.titleAndIcon)
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
@@ -146,10 +120,24 @@ struct ShortcutsInstallPanel: View {
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Get \(name)")
+            .accessibilityLabel(installURL == nil ? "Manual shortcut steps" : "Download \(shortcutName)")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+    }
+
+    private func getTapped() {
+        if let installURL {
+            openURL(installURL)
+        } else {
+            showManualSteps = true
+        }
     }
 }
 
