@@ -100,9 +100,7 @@ struct StageBackgroundView: View {
 
     /// La vista ignora el área segura, así que se lee del window real.
     static var statusBarHeight: CGFloat {
-        UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.keyWindow }
-            .first?.safeAreaInsets.top ?? 59
+        UIApplication.mcKeyWindow?.safeAreaInsets.top ?? 59
     }
 
     var body: some View {

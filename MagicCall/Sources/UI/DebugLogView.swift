@@ -62,7 +62,7 @@ private struct LogList: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .onChange(of: entries.count) {
+            .onChange(of: entries.count) { _, _ in
                 if let last = entries.last { proxy.scrollTo(last.id, anchor: .bottom) }
             }
         }

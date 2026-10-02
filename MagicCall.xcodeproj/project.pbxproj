@@ -25,6 +25,7 @@
 		BEC014E4012EE7481D2D4B24 /* PreviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94C29E2CCBFC1086588445F6 /* PreviewService.swift */; };
 		C4A84B05EE00F8A14BB48FC6 /* DebugLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B810F1343436DAAD6202B2E1 /* DebugLogView.swift */; };
 		CC20F35DDD0E7784082D0FD7 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4327EF1CCFA6B6427A4B0D85 /* SetupView.swift */; };
+		D02E775CDE9544B43A79D499 /* UIWindow+MagicCall.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D33B9D6604B6A2334D1E28 /* UIWindow+MagicCall.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 		B810F1343436DAAD6202B2E1 /* DebugLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogView.swift; sourceTree = "<group>"; };
 		BE6CC08F1371815B8ECC08D6 /* DebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLog.swift; sourceTree = "<group>"; };
 		C3733964AB91EF91B6CA3950 /* MCObjC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MCObjC.h; sourceTree = "<group>"; };
+		C5D33B9D6604B6A2334D1E28 /* UIWindow+MagicCall.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIWindow+MagicCall.swift"; sourceTree = "<group>"; };
 		D4AE31BF04AE2B60A80AB388 /* CallKitFallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallKitFallback.swift; sourceTree = "<group>"; };
 		DEA922A0D263D3309553D389 /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		E3138D1D5022FAD8B230768B /* PrivateProbes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateProbes.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 				32440B4086E44C2CF9A8EBB5 /* MagicCall-Bridging-Header.h */,
 				C3733964AB91EF91B6CA3950 /* MCObjC.h */,
 				778066FED077319EC23EDCEE /* MCObjC.m */,
+				C5D33B9D6604B6A2334D1E28 /* UIWindow+MagicCall.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -273,6 +276,7 @@
 				CC20F35DDD0E7784082D0FD7 /* SetupView.swift in Sources */,
 				A4614B1A536192430CFD5A9C /* StageView.swift in Sources */,
 				4C3EAD437CDD61E9E5E6DFE6 /* SystemVolume.swift in Sources */,
+				D02E775CDE9544B43A79D499 /* UIWindow+MagicCall.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

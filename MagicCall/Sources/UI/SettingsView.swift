@@ -45,8 +45,8 @@ struct SettingsView: View {
             callKitSection
         }
         .navigationTitle("Ajustes")
-        .onChange(of: photoItem) {
-            guard let photoItem else { return }
+        .onChange(of: photoItem) { _, newItem in
+            guard let photoItem = newItem else { return }
             Task {
                 if let data = try? await photoItem.loadTransferable(type: Data.self) {
                     StageImageStore.save(data)

@@ -46,11 +46,19 @@ enum RingtoneExporter {
         session.outputFileType = .m4a
         session.timeRange = CMTimeRange(start: CMTime(seconds: begin, preferredTimescale: 600),
                                         duration: CMTime(seconds: length, preferredTimescale: 600))
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            session.exportAsynchronously { continuation.resume() }
-        }
-        guard session.status == .completed else {
-            throw ExportError.failed(session.error?.localizedDescription ?? "estado \(session.status.rawValue)")
+        if #available(iOS 18.0, *) {
+            do {
+                try await session.export(to: output, as: .m4a)
+            } catch {
+                throw ExportError.failed(error.localizedDescription)
+            }
+        } else {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                session.exportAsynchronously { continuation.resume() }
+            }
+            guard session.status == .completed else {
+                throw ExportError.failed(session.error?.localizedDescription ?? "estado \(session.status.rawValue)")
+            }
         }
         dlog("Tono exportado: \(output.lastPathComponent) · \(String(format: "%.1f", length)) s desde \(String(format: "%.1f", begin)) s")
         return output
@@ -58,9 +66,7 @@ enum RingtoneExporter {
 
     @MainActor
     static func presentShareSheet(for url: URL) {
-        guard let root = UIApplication.shared.connectedScenes
-            .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
-            .first?.rootViewController else {
+        guard let root = UIApplication.mcKeyWindow?.rootViewController else {
             dlog("✗ No hay ventana para presentar Compartir")
             return
         }

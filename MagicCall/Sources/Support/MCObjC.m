@@ -2,7 +2,7 @@
 
 @implementation MCObjC
 
-+ (NSString *)tryBlock:(void (NS_NOESCAPE ^)(void))block {
++ (NSString *)performSafely:(void (NS_NOESCAPE ^)(void))block {
     @try {
         block();
         return nil;

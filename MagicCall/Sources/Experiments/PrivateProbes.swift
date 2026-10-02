@@ -5,7 +5,7 @@ import UIKit
 ///
 /// - Solo se compilan con MAGIC_PRIVATE_PROBES (configs Debug/Release; NO en TestFlight).
 /// - Se invocan por reflexión (dlopen + NSClassFromString + IMP), nunca se enlazan.
-/// - Cada llamada arriesgada se envuelve en MCObjC.tryBlock y se registra con `sync: true`
+/// - Cada llamada arriesgada se envuelve en MCObjC.performSafely y se registra con `sync: true`
 ///   ANTES de ejecutarse, para que si el proceso muere quede la última línea en el log.
 /// - Los nombres de selectores vienen de class-dumps públicos de iOS 11–17. NO están
 ///   verificados en iOS 26: por eso cada experimento vuelca primero los métodos que existen
@@ -111,7 +111,7 @@ enum PrivateProbes {
 
     static func protect(_ label: String, _ body: () -> Void) -> String? {
         dlog("[PRIVADO] → \(label)", sync: true)
-        return MCObjC.tryBlock(body)
+        return MCObjC.performSafely(body)
     }
 
     // MARK: ToneLibrary
@@ -273,16 +273,20 @@ enum PrivateProbes {
         guard !telephonyObserverInstalled else {
             return record(Result(name: "CTTelephonyCenter", outcome: .readOnly, detail: "ya instalado; haz una llamada y mira el log"))
         }
-        guard load("/System/Library/Frameworks/CoreTelephony.framework/CoreTelephony"),
-              let getDefault = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "CTTelephonyCenterGetDefault"),
-              let addObserver = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "CTTelephonyCenterAddObserver")
+        let ctPath = "/System/Library/Frameworks/CoreTelephony.framework/CoreTelephony"
+        guard load(ctPath),
+              let ctHandle = dlopen(ctPath, RTLD_NOW),
+              let getDefaultPtr = dlsym(ctHandle, "CTTelephonyCenterGetDefault"),
+              let addObserverPtr = dlsym(ctHandle, "CTTelephonyCenterAddObserver")
         else {
             return record(Result(name: "CTTelephonyCenter", outcome: .missing, detail: "símbolos no encontrados"))
         }
         typealias GetDefault = @convention(c) () -> UnsafeRawPointer?
         typealias AddObserver = @convention(c) (UnsafeRawPointer?, UnsafeRawPointer?, CFNotificationCallback, CFString?, UnsafeRawPointer?, CFNotificationSuspensionBehavior) -> Void
+        let getDefault = unsafeBitCast(getDefaultPtr, to: GetDefault.self)
+        let addObserver = unsafeBitCast(addObserverPtr, to: AddObserver.self)
         let ex = protect("CTTelephonyCenterAddObserver(nil name)") {
-            let center = unsafeBitCast(getDefault, to: GetDefault.self)()
+            let center = getDefault()
             let callback: CFNotificationCallback = { _, _, name, _, userInfo in
                 let n = name.map { $0.rawValue as String } ?? "nil"
                 let keys = userInfo.map { ($0 as NSDictionary).allKeys.map { "\($0)" }.joined(separator: ",") } ?? ""

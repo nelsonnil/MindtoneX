@@ -13,7 +13,8 @@ final class CallKitFallback: NSObject, CXProviderDelegate {
 
     private func makeProvider() -> CXProvider {
         if let provider { return provider }
-        let config = CXProviderConfiguration()
+        let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "MagicCall"
+        let config = CXProviderConfiguration(localizedName: appName)
         config.supportsVideo = false
         config.maximumCallGroups = 1
         config.maximumCallsPerCallGroup = 1
