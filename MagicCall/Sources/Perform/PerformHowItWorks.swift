@@ -89,7 +89,7 @@ enum PerformCopy {
         }
         steps += [
             "The Share pop-up opens by itself. Tap **Use as Ringtone** (in Favorites).",
-            "When the pop-up closes the screen is black again. **Tap anywhere** — the app goes to your Home Screen.",
+            "Right after **Use as Ringtone**, the app goes to your Home Screen **by itself**. If you closed the pop-up without choosing, the screen stays black — tap it to open the pop-up again.",
             "The real ringtone is now set, so the call rings with the song from anywhere.",
         ]
         return steps
@@ -99,7 +99,7 @@ enum PerformCopy {
         [
             "Ask the spectator to name a song. Wait about \(lockSeconds) seconds — the Share pop-up appears.",
             "Tap **Use as Ringtone** (in Favorites).",
-            "Tap the black screen to go to your Home Screen — to the spectator it just looks like you’re unlocking your phone.",
+            "The app jumps to your Home Screen by itself — to the spectator it just looks like you’re unlocking your phone.",
             "While you do all this, keep talking: tell them you’ll give them your number and ask them to call you. With natural timing, nothing looks unusual.",
         ]
     }
@@ -107,7 +107,7 @@ enum PerformCopy {
     static let shareCaveats = [
         "**Silent must be OFF** in this mode — the real ringtone is what plays.",
         "If iOS shows a confirmation or opens Settings after “Use as Ringtone”, just go Home.",
-        "If the tap doesn’t take you Home, swipe up from the bottom.",
+        "If it doesn’t go Home by itself, tap the black screen; if that doesn’t work either, swipe up from the bottom.",
         "Every performance adds a new ringtone with a slightly different name, so iOS never says “duplicate”. To remove old ones: **Settings → Sounds & Haptics → Ringtone**, swipe left on a ringtone → Delete. The app can’t remove them for you.",
     ]
 

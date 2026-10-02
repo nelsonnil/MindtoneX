@@ -124,9 +124,11 @@ igual que `.playback`). Al bloquear vuelve a `.playback`. iOS muestra un **punto
 micrófono está encendido; desaparece al bloquear.
 
 **Share Ringtone + Perform**: pantalla negra → (AI Voice escucha y bloquea, o usa la canción escrita) →
-se apaga el micro → se abre **Compartir** solo → pulsas **Usar como tono** → un toque en la pantalla
-negra te lleva a la pantalla de inicio (usa una llamada privada de iOS, se puede desactivar en
-*Advanced › Tap black screen to go Home*; si falla, desliza hacia arriba). **Modo silencio desactivado.**
+se apaga el micro → se abre **Compartir** solo → pulsas **Usar como tono** → a los 0,3 s la app se va
+**sola** a la pantalla de inicio (build 9; usa una llamada privada de iOS). Si cierras Compartir sin
+elegir, la pantalla sigue negra y un toque lo vuelve a abrir. Si no va sola a inicio, un toque en la
+pantalla negra la lleva; si tampoco, desliza hacia arriba. Interruptores en *Advanced › Share Ringtone
+export*: *Go Home via private API* y *Go Home automatically after Use as Ringtone*. **Modo silencio desactivado.**
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
 (`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
 

@@ -416,7 +416,7 @@ struct SetupView: View {
             .buttonStyle(.bordered)
             .disabled(model.loadState != .ready || isSharePerforming)
 
-            Text("Perform shows a black screen, opens Share by itself when the song is ready, and one tap afterwards goes to your Home Screen. The test button opens Share right here without the black screen.")
+            Text("Perform shows a black screen, opens Share by itself when the song is ready, and goes to your Home Screen by itself after Use as Ringtone. The test button opens Share right here without the black screen.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }

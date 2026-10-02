@@ -1,18 +1,24 @@
 import UIKit
 
 /// Share Ringtone performance: black screen → (AI Voice listens and locks) → Share sheet opens
-/// by itself → performer taps “Use as Ringtone” → one tap on the black screen goes Home.
+/// by itself → performer taps “Use as Ringtone” → the app goes Home by itself (or one tap on the
+/// black screen as a fallback).
 @MainActor
 final class SharePerformFlow: ObservableObject {
     static let shared = SharePerformFlow()
 
     static let tapToHomeKey = "share.tapToHome"
-    static var tapToHome: Bool {
-        UserDefaults.standard.object(forKey: tapToHomeKey) == nil ? true : UserDefaults.standard.bool(forKey: tapToHomeKey)
+    static var tapToHome: Bool { bool(tapToHomeKey) }
+
+    static let autoHomeKey = "share.autoHomeAfterShare"
+    static var autoHome: Bool { bool(autoHomeKey) }
+
+    private static func bool(_ key: String) -> Bool {
+        UserDefaults.standard.object(forKey: key) == nil ? true : UserDefaults.standard.bool(forKey: key)
     }
 
     enum Step: String {
-        case idle, listening, preparing, sharing, waitingForTap, wentHome
+        case idle, listening, preparing, sharing, shareCancelled, waitingForTap, wentHome
     }
 
     @Published private(set) var step: Step = .idle
@@ -54,10 +60,14 @@ final class SharePerformFlow: ObservableObject {
     func handleTap() {
         switch step {
         case .waitingForTap:
-            goHome()
+            goHome(reason: "tap")
+        case .shareCancelled:
+            dlog("[SHARE PERFORM] tap → re-opening Share sheet")
+            step = .preparing
+            Task { await openShare() }
         case .sharing where UIApplication.mcKeyWindow?.rootViewController?.presentedViewController == nil:
             dlog("[SHARE PERFORM] share closed (no callback) → tap counts")
-            goHome()
+            goHome(reason: "tap (no callback)")
         default:
             dlog("[SHARE PERFORM] tap ignored at step \(step.rawValue)")
         }
@@ -104,11 +114,41 @@ final class SharePerformFlow: ObservableObject {
     private func shareFinished(activity: String?, completed: Bool) {
         guard step == .sharing else { return }
         let secs = shareOpenedAt.map { String(format: "%.1f", Date().timeIntervalSince($0)) } ?? "?"
-        dlog("[SHARE PERFORM] 4 · Share closed after \(secs) s · activity=\(activity ?? "none") completed=\(completed) · black screen, waiting for tap")
+        dlog("[SHARE PERFORM] 4 · Share closed after \(secs) s · activity=\(activity ?? "none") completed=\(completed) · app=\(Self.appState())")
+        guard completed else {
+            step = .shareCancelled
+            dlog("[SHARE PERFORM] not completed → black screen; tap to open Share again")
+            return
+        }
         step = .waitingForTap
+        guard Self.autoHome else {
+            dlog("[SHARE PERFORM] auto-Home is off → tap the black screen to go Home")
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            MainActor.assumeIsolated { SharePerformFlow.shared.autoHomeAfterShare() }
+        }
     }
 
-    private func goHome() {
+    private func autoHomeAfterShare() {
+        guard step == .waitingForTap else { return }
+        guard UIApplication.shared.applicationState == .active else {
+            dlog("[SHARE PERFORM] auto-Home skipped: iOS already left the app (\(Self.appState())) — Settings or confirmation shown")
+            return
+        }
+        goHome(reason: "auto after Use as Ringtone")
+    }
+
+    private static func appState() -> String {
+        switch UIApplication.shared.applicationState {
+        case .active: return "active"
+        case .inactive: return "inactive"
+        case .background: return "background"
+        @unknown default: return "?"
+        }
+    }
+
+    private func goHome(reason: String) {
         guard Self.tapToHome else {
             dlog("[SHARE PERFORM] tap-to-Home is off in Advanced — swipe up to go Home")
             return
@@ -119,7 +159,7 @@ final class SharePerformFlow: ObservableObject {
             return
         }
         step = .wentHome
-        dlog("[SHARE PERFORM] 5 · tap → Home Screen", sync: true)
+        dlog("[SHARE PERFORM] 5 · \(reason) → Home Screen", sync: true)
         _ = UIApplication.shared.perform(selector)
     }
 
@@ -131,10 +171,10 @@ final class SharePerformFlow: ObservableObject {
 
     private func appWillEnterForeground() {
         switch step {
-        case .wentHome, .waitingForTap:
-            dlog("[SHARE PERFORM] back in app after Home (from \(step.rawValue)) → reset for next performance")
+        case .wentHome:
+            dlog("[SHARE PERFORM] back in app after Home → reset for next performance")
             AppModel.shared.disarm()
-        case .sharing:
+        case .sharing, .shareCancelled, .waitingForTap:
             dlog("[SHARE PERFORM] back in app at step \(step.rawValue)")
         default:
             break
