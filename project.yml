@@ -35,6 +35,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.nelson.magiccall
         PRODUCT_NAME: MagicCall
         INFOPLIST_FILE: MagicCall/Resources/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: RingtoneX
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_OBJC_BRIDGING_HEADER: MagicCall/Sources/Support/MagicCall-Bridging-Header.h
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

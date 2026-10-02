@@ -169,7 +169,7 @@ app con `magiccall://perform` (esquema de URL registrado en el Info.plist):
 
 Build 14 — **marca Ringtone Oracle**. Los atajos se llaman ahora exactamente **Ringtone Oracle Silent On**
 y **Ringtone Oracle Silent Off** (si ya creaste los de "MagicCall…", renómbralos en Atajos). Dentro de la
-app el título es *Ringtone Oracle*; en la pantalla de inicio sigue apareciendo **Tonos**
+app el título es *Ringtone Oracle*; en la pantalla de inicio aparece **RingtoneX**
 (`CFBundleDisplayName`), y el bundle id, el esquema de URL (`magiccall://`) y el proyecto Xcode no cambian.
 
 Build 16 — **UI premium**: pantalla principal oscura (`MainShellView`), hero con logo v2-03 sin título, dock flotante Fake/Share + Guide, chips Manual / AI Voice / API Soon, tarjetas compactas y textos largos en sheets. Build number en `project.yml` / Xcode.
