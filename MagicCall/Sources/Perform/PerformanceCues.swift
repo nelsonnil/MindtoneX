@@ -181,23 +181,34 @@ struct FeedbackCard: View {
                 }
                 if vibrateOnLock {
                     CueDivider()
-                    CueRow {
-                        HStack {
-                            CueLabel("Pattern")
-                            Spacer(minLength: 8)
-                            Picker("Pattern", selection: $styleRaw) {
-                                ForEach(PerformanceCues.VibrationStyle.allCases) { Text($0.title).tag($0.rawValue) }
+                    CueRow(verticalPadding: 12) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(alignment: .center, spacing: 8) {
+                                CueLabel("Pattern")
+                                Spacer(minLength: 8)
+                                Button {
+                                    PerformanceCues.vibrate(PerformanceCues.VibrationStyle(rawValue: styleRaw) ?? .alert)
+                                } label: {
+                                    Image(systemName: "iphone.radiowaves.left.and.right")
+                                        .font(.body.weight(.medium))
+                                        .frame(width: 36, height: 36)
+                                        .background(Color.white.opacity(0.06))
+                                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(OracleTheme.gold)
+                                .accessibilityLabel("Test vibration")
                             }
+                            Picker("Pattern", selection: $styleRaw) {
+                                ForEach(PerformanceCues.VibrationStyle.allCases) { style in
+                                    Text(style.title).tag(style.rawValue)
+                                }
+                            }
+                            .pickerStyle(.menu)
                             .labelsHidden()
                             .tint(OracleTheme.gold)
-                            Button {
-                                PerformanceCues.vibrate(PerformanceCues.VibrationStyle(rawValue: styleRaw) ?? .alert)
-                            } label: {
-                                Image(systemName: "iphone.radiowaves.left.and.right")
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(OracleTheme.gold)
-                            .accessibilityLabel("Test vibration")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
@@ -217,15 +228,19 @@ struct FeedbackCard: View {
                 }
                 if dotEnabled {
                     CueDivider()
-                    CueRow {
-                        HStack {
+                    CueRow(verticalPadding: 12) {
+                        VStack(alignment: .leading, spacing: 10) {
                             CueLabel("Show")
-                            Spacer(minLength: 8)
                             Picker("Show", selection: $timingRaw) {
-                                ForEach(PerformanceCues.DotTiming.allCases) { Text($0.title).tag($0.rawValue) }
+                                ForEach(PerformanceCues.DotTiming.allCases) { timing in
+                                    Text(timing.title).tag(timing.rawValue)
+                                }
                             }
+                            .pickerStyle(.menu)
                             .labelsHidden()
                             .tint(OracleTheme.gold)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                     CueDivider()
@@ -292,12 +307,14 @@ private struct CueRows<Content: View>: View {
 }
 
 private struct CueRow<Content: View>: View {
+    var verticalPadding: CGFloat = 10
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         content()
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.vertical, verticalPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
