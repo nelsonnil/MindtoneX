@@ -1,0 +1,340 @@
+Using CallKit - How to Integrate Voice and Video Calling Into iOS Apps
+
+# Using CallKit: How to Integrate Voice and Video Calling Into iOS Apps
+
+CallKit lets users make and receive calls with VoIP (Voice over Interner Protocol) apps using the iPhone's Phone app interface on iOS. 
+
+ 
+
+Amos G. Published December 9, 2022 · Updated September 20, 2024
+
+In this tutorial, you will learn to build a sample iOS application demonstrating how to integrate the Apple CallKit framework with iOS apps. You can download the sample app from Github.
+
+## What is CallKit?
+
+CallKit helps developers to integrate and adopt native iOS video and voice calling into their VoIP apps. If you want to add CalKit support for an iOS project, you should import the framework and implement its classes and objects to handle incoming, outgoing, and active calls.
+
+## Overview
+
+CallKit provides you with out-of-the-box UI and removes the pain of building a custom UI from scratch. It works with both UIKit and SwiftUI. Using CallKit makes incoming and outgoing calls display the first-class citizen phone UI for iOS to users. For example, third-party iOS VOIP applications with the integration of CallKit adopt the default iOS UI elements such as accept, cancel, and mute buttons for calling. It assists in providing consistent and familiar audio and video calling experiences.
+
+Additionally, the CallKit API displays incoming calls on the iOS device's lock screen even when the app is closed. It manages and handles information about calls and contacts using the All and Missed Recents categories of the device's Phone app.
+
+## CallKit Features
+
+- User notifications on the device's lock when it is locked.
+- Incoming calls: During an incoming call, CallKit offers a native full-screen UI for devices that do not support Dynamic Island.
+- On iPhone 14 Pro and Max, it displays incoming calls in Dynamic Island. You can interact with the Dynamic Island view by tapping it to show the full-screen UI.
+- Active call: In active call mode, the system provides rich and native iOS controls for initiating call actions such as canceling, muting, and accepting/answering calls.
+- Custom ringtone support.
+- Start and manage calls from the Recents category of the Phone app. The available call management options include Do Not Disturb, Block this Caller, and Share Contact
+- It elevates third-party VOIP apps such as WhatsApp with a native UI experience. For example, when you integrate CallKit with your app. Incoming call notifications from the app will look and feel the same as incoming notifications from the iOS Phone app.
+
+## Clone and Explore the Sample iOS App
+
+In this article, you will create a demo iOS app (StreamCall) that can make and receive VOIP calls. Download the finished demo app from GitHub and run it on an iOS device to see how it works. After running the app, the first screen that appears is the incoming call. If you run it on iPhone 14 Pro or Max, the incoming call will appear in Dynamic Island. Tapping it in Dynamic Island displays it in full-screen mode, as demonstrated in the video below.
+
+## Understanding the CallKit Classes and API Details
+
+The two primary classes CallKit uses for its operations are the `CXProvider` and `CXCallController`.
+
+CXProvider The `CXProvider` class handles non-user actions and out-of-band notifications like incoming calls. In addition, it keeps records of connected, ended, and rejected calls.
+
+CXCallController The demo app called StreamCall you will build in this tutorial will use the class CXCallController to inform the system about all the local actions the user performs. For instance, this class handles user requests such as initiating outgoing calls, answering a call, and ending a call.
+
+## Create a New UIKit Project and Set info.plist
+
+In this section, you will create a new iOS (UIKit) demo app called StreamCall using Xcode and link to the CallKit framework to provide the calling functionality.
+
+1. Launch Xcode and create a new iOS application. Select App from the Application category and click next.
+
+2. Enter your preferred name for the project and click next. This demo uses StreamCall as the project name.
+
+3. Select a location to save the app and click Create.
+4. Since this is a calling application, you can enable it to work in the background of iOS. Before the app can run in the background, the system requires you to set the background services. If you do not configure the following background execution mode, the CallKit framework will not work. 
+
+- Select the project folder in Xcode's Project Navigator. This folder contains the name of your app StreamCall.
+- Click the Info category and select the app name StreamCall under TARGETS.
+- Click the plus button + and choose Requires background modes from the options.
+
+- Specify the Type as String and the Value as App provides Voice over IP services.
+
+## Receiving, Connecting, and Ending Calls
+
+The following architectural diagram represents the basic operating principle of the flow of incoming calls.
+
+During an incoming call, the demo app StreamCall creates a `CXCallUpdate`. The `CXProvider` class will send the call update to the system for publication to the user. The user will then see the result as an incoming call interface, demonstrated in the diagram above.
+
+Accepting an Incoming Call When the user accepts the call by tapping the Accept button, it triggers an answer action and sends it to the system. The system uses `CXAnswerCallAction` to inform the `CXProvider` class about the answer and connects the call.
+
+Ending a Connected Call When the user taps the close button to end the call, it triggers the end action and sends it to the `CXCallController` class. The `CXCallController` packages the end-call action into `CXTransaction(CXEndCallAction)` and transports it to the system. The system delivers a `CXEndCallAction` to the `CXProvider` class to end the call successfully.
+
+How to Receive an Incoming Call To receive an incoming call, open the Swift file ViewController.swift, `import CallKit`, and add the following code snippets.
+
+Note: The code implementation in the following sections is valid only as of the time this tutorial was written. For code snippets, examples, and the latest guides, refer to the iOS documentation for up-to-date CallKit integration with our SwiftUI Video SDK.
+
+1. Add the class `ViewController` and make it conform to the `UIViewController` and `CXProviderDelegate` protocols. *
+
+```
+class ViewController: UIViewController, CXProviderDelegate {
+    override func viewDidLoad() {
+    }
+}
+```
+
+2. In the closure of the `viewDidLoad` method, create an incoming call update object. This object stores different types of information about the caller. You can use it in setting whether the call has a video.
+
+```
+let update = CXCallUpdate()
+```
+
+3. Specify the type of information to display about the caller during an incoming call. The different types of information available include `.generic`. For example, you could use the caller's name for the generic type. During an incoming call, the name displays to the other user. Other available information types are emails and phone numbers.
+
+```
+update.remoteHandle = CXHandle(type: .generic, value: "Amos Gyamfi")
+//update.remoteHandle = CXHandle(type: .emailAddress, value: "amosgyamfi@gmail.com")
+//update.remoteHandle = CXHandle(type: .phoneNumber, value: "+35846599990")
+```
+
+4. Create and set configurations about how the calling application should behave.
+
+```
+let config = CallKit.CXProviderConfiguration()
+config.includesCallsInRecents = true;
+config.supportsVideo = true;
+```
+
+5. Create a CXProvider instance and set its delegate
+
+```
+let provider = CXProvider(configuration: config)
+provider.setDelegate(self, queue: nil)
+```
+
+6. Post local notification to the user that there is an incoming call. When using CallKit, you do not need to rely on only displaying incoming calls using the local notification API because it helps to show incoming calls to users using the native full-screen incoming call UI on iOS. Add the helper method below `reportIncomingCall` to show the full-screen UI. It must contain `UUID()` that helps to identify the caller using a random identifier. You should also provide the `CXCallUpdate` comprising metadata information about the incoming call. You can also check for errors to see if everything works fine.
+
+```
+provider.reportNewIncomingCall(with: UUID(), update: update, completion: { error in })
+```
+
+7. What happens when the user accepts the call by pressing the incoming call button? You should implement the method below and call the fulfill method if the call is successful.
+
+```
+func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
+        action.fulfill()
+        return
+    }
+```
+
+8. Finally, what happens when the user taps the reject button? Call the fail method if the call is unsuccessful. It checks the call based on the UUID. It uses the network to connect to the end call method you provide.
+
+```
+func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
+        action.fail()
+        return
+    }
+```
+
+## Putting All the Above Code Snippets Together
+
+Replace the content of ViewController.swift with the code below.
+
+```
+//Incoming Call
+import UIKit
+import CallKit
+
+class ViewController: UIViewController, CXProviderDelegate {
+
+    override func viewDidLoad() {
+        // 1: Create an incoming call update object. This object stores different types of information about the caller. You can use it in setting whether the call has a video.
+        let update = CXCallUpdate()
+
+        // Specify the type of information to display about the caller during an incoming call. The different types of information available include .generic. For example, you could use the caller's name for the generic type. During an incoming call, the name displays to the other user. Other available information types are emails and phone numbers.
+        update.remoteHandle = CXHandle(type: .generic, value: "Amos Gyamfi")
+        //update.remoteHandle = CXHandle(type: .emailAddress, value: "amosgyamfi@gmail.com")
+        //update.remoteHandle = CXHandle(type: .phoneNumber, value: "a+35846599990")
+
+        // 2: Create and set configurations about how the calling application should behave
+        let config = CallKit.CXProviderConfiguration()
+        config.iconTemplateImageData = UIImage(named: "amosbw")!.pngData()
+        config.includesCallsInRecents = true;
+        config.supportsVideo = true;
+        update.hasVideo = true
+
+        // Provide a custom ringtone
+        config.ringtoneSound = "ES_CellRingtone23.mp3";
+
+        // 3: Create a CXProvider instance and set its delegate
+        let provider = CXProvider(configuration: config)
+        provider.setDelegate(self, queue: nil)
+
+        // 4. Post local notification to the user that there is an incoming call. When using CallKit, you do not need to rely on only displaying incoming calls using the local notification API because it helps to show incoming calls to users using the native full-screen incoming call UI on iOS. Add the helper method below reportIncomingCall to show the full-screen UI. It must contain UUID() that helps to identify the caller using a random identifier. You should also provide the CXCallUpdate that comprises metadata information about the incoming call. You can also check for errors to see if everything works fine.
+        provider.reportNewIncomingCall(with: UUID(), update: update, completion: { error in })
+    }
+
+    func providerDidReset(_ provider: CXProvider) {
+    }
+
+    // What happens when the user accepts the call by pressing the incoming call button? You should implement the method below and call the fulfill method if the call is successful.
+    func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
+        action.fulfill()
+        return
+    }
+
+    // What happens when the user taps the reject button? Call the fail method if the call is unsuccessful. It checks the call based on the UUID. It uses the network to connect to the end call method you provide.
+    func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
+        action.fail()
+        return
+    }
+
+}
+```
+
+The sample code above displays the incoming call notification in Dynamic Island on iPhone 14 Pro and Max. Tapping the incoming call notification shows the native full-screen incoming call UI.
+
+## How to Make Outgoing Calls
+
+When you integrate CallKit with your app, it allows users to initiate a call using:
+
+- A button control within the outgoing call screen
+- A URL that supports Universal Links and
+- Siri.
+
+When the user taps the start call button to initiate a call, the demo app (StreamCall) receives a start call intent and creates an action for the call. The `CXController` class sends the start call action to the system. The start call action has a `UUID()` that helps identify the call uniquely and a handle that defines the recipient. You can specify the recipient using a phone number, an email, or a name. The system takes the start action to the `CXProvider` object. When the `CXProvider` object receives and approves the `CXStartCallAction`, the app presents the native outgoing call UI to the user.
+
+Here is how to establish a basic outgoing call functionality for the app. There are other methods you can implement for the outgoing call. For example, you can add the end call method to terminate the call when the user taps the corresponding button control.
+
+Make An Outgoing Call An outgoing call undergoes four states: starting, started, connecting, and connected. You implement the call using the Swift file ViewController.swift with the following steps.
+
+1. In the body `viewDidLoad`, create a provider configuration.
+
+```
+// 1. Add a provider configuration
+        let config = CallKit.CXProviderConfiguration()
+        let provider = CXProvider(configuration: config)
+        provider.setDelegate(self, queue: nil)
+```
+
+2. Create a start call action and configure it with UUID and the user's handle. The handle parameter is a string that represents the recipient.
+
+```
+let callController = CXCallController()
+```
+
+3. Specify the UUID, recipient, start-call action, and transaction of the call. The UUID helps to identify the call uniquely. You can use email, phone number, or a name to specify the recipient. The transaction determines which call to put on hold for multiple calls.
+
+```
+// Allows to uniquely identify the call
+        let uuid = UUID()
+        // CXHandle specifies the recipient
+        let recipient = CXHandle(type: .generic, value: "Demo Outgoing Call")
+        let startCallAction = CXStartCallAction(call: uuid, handle: recipient)
+        let transaction = CXTransaction(action: startCallAction)
+```
+
+4. During an outgoing call, the app must request a `CXStartCallAction` from the `CXCallController` as a transaction. The transaction object helps to hold a call when multiple calls are attempting to occur at the same time. In addition, you should provide action errors to send appropriate messages when something goes wrong. For example, you could check for bad connectivity during an outgoing call.
+
+```
+callController.request(transaction, completion: { error in
+            if let error = error {
+                print("Error requesting transaction: (error)")
+            } else {
+                print("Requested transaction successfully")
+            }
+        })
+```
+
+## Putting All the Above Codes Together For the Outgoing Call
+
+```
+// How to make outgoing calls
+ import UIKit
+ import CallKit
+
+ class ViewController: UIViewController, CXProviderDelegate {
+ func providerDidReset(_ provider: CXProvider) {
+
+ }
+
+ override func viewDidLoad() {
+
+ // 1. Add a provider configuration
+ let config = CallKit.CXProviderConfiguration()
+ let provider = CXProvider(configuration: config)
+ provider.setDelegate(self, queue: nil)
+ // 2. Create a start call action and configure it with UUID and the user's handle. The handle parameter is a string that represents the recipient
+ let callController = CXCallController()
+ // Allows to uniquely identify the call
+ let uuid = UUID()
+ // CXHandle specifies the recipient
+ let recipient = CXHandle(type: .generic, value: "Demo Outgoing Call")
+ let startCallAction = CXStartCallAction(call: uuid, handle: recipient)
+ let transaction = CXTransaction(action: startCallAction)
+
+ // To make an outgoing call, the app requests a CXStartCallAction from the CXCallController as a transaction. The transaction object helps to hold a call when there are multiple calls attempting to occur at the same time.
+ callController.request(transaction, completion: { error in
+ if let error = error {
+ print("Error requesting transaction: (error)")
+ } else {
+ print("Requested transaction successfully")
+ }
+ })
+
+ // How to connect an outgoing call after a certain time interval
+ DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+ // Show the call is connected after 10 seconds
+ provider.reportOutgoingCall(with: callController.callObserver.calls[0].uuid, connectedAt: nil)
+                 }
+         }
+ }
+```
+
+The code above creates a native UI for the outgoing call.
+
+How To Show an Outgoing Call Is Connected After a Certain Time Interval During an incoming call, the call gets connected after the user taps the accept button. When sending an outgoing call, you can use the `DispatchQueue.main.asyncAfter' method to schedule and connect it after a specified period. After this specified time, the call duration timer will start counting. You can use the following code to implement this method.
+
+```
+// How to connect an outgoing call after a certain time interval
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+            // Show the call is connected after 10 seconds
+            provider.reportOutgoingCall(with: callController.callObserver.calls[0].uuid, connectedAt: nil)
+        }
+```
+
+The video below demonstrates a connected outgoing call with a count-up timer.
+
+## Basic CallKit Customization Options
+
+When you provide CallKit support for an app, it allows customization through its provider configuration object. The configuration object helps you to specify whether the app supports video. During an incoming call, CallKit uses the ringtone the user sets in the setting of the iOS device. You can use the configuration object to replace the ringtone for incoming calls.
+
+How to Change the System Ringtone The configuration provider object in CallKit provides easy ways to customize the audio or video calling to create exceptional experiences. You can swap the call icon, change the call mode, use a custom ringtone, and set whether you prefer call history to store in the Phone app's Recents category. CallKit uses the default ringtone users set for incoming calls on their iOS devices. To change the ringtone of the CallKit app:
+
+1. Drag your custom sound to the Project Navigator in Xcode.
+2. Check the options Copy items if needed, Create folder references, and Add to targets. The action you just performed copies the sound to the project bundle.
+
+3. You override the default ringtone by setting the ringtone property using the configuration provider `config.ringtoneSound = "ES_CellRingtone23.mp3"`. That creates an instance of the configuration provider that sets the custom ringtone for the incoming call screen. The sound effect in the following video (ES_CellRingtone23.mp3) used to set the ringtone property was downloaded from Epidemic Sound.
+
+## Using PushKit: How To Receive Notifications While the App Is Closed
+
+PushKit is a framework that allows VoIP applications that support CallKit to receive notifications about incoming calls while the app is closed or running in the background. It offers developers the best notification abilities than the regular push notifications systems on iOS. It allows users to change user names and customize avatars on the app. Additionally, it helps users answer incoming calls while the app is in the background or closed.
+
+To use PushKit for an iOS app, you should import the PushKit framework and implement the `PKPushRegistryDelegate` protocol in your app's delegate file to enable the app to handle incoming push notifications. The second part of this tutorial will cover PushKit implementation.
+
+CallKit is Apple's framework that helps developers to integrate their VoIP apps and services with the native phone app's look and feel and experience on iOS. With CallKit, you can provide a seamless user experience for your customers, allowing them to make and receive calls from your app just like they would with the phone app on iOS. Are you building an audio or video application in the future, or are you working on a project that requires a VoIP service, check out and sign up for early access to Stream video.
+
+Table of contents
+
+- What is CallKit?
+- Overview
+- CallKit Features
+- Clone and Explore the Sample iOS App
+- Understanding the CallKit Classes and API Details
+- Create a New UIKit Project and Set info.plist
+- Receiving, Connecting, and Ending Calls
+- Putting All the Above Code Snippets Together
+- How to Make Outgoing Calls
+- Putting All the Above Codes Together For the Outgoing Call
+- Basic CallKit Customization Options
+- Using PushKit: How To Receive Notifications While the App Is Closed
+- Recap

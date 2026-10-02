@@ -1,0 +1,352 @@
+MediumCXCallObserver Cold Start Fix: Use AVAudioSession | Medium
+
+Sign up
+
+Get app
+
+Sign up
+
+## Nikhil Bajpai
+
+Senior mobile engineer at Jio. Writing about Android, iOS, and Flutter internals — the stuff the docs skip.
+
+Member-only story
+
+IOS Development
+
+Programming
+
+Coding
+
+Swift
+
+Mobile App Development
+
+# CXCallObserver Misses Cold-Start Calls on iOS — Here’s the AVAudioSession Fix
+
+## Why CXCallObserver alone isn’t enough, and what AVAudioSession reveals that CallKit never will.
+
+12 min read
+
+Apr 12, 2026
+
+--
+
+1
+
+Share
+
+Press enter or click to view image in full size
+
+Hi Folks!!!
+
+While building our voice-communication application a few weeks back, I ran into one of those bugs that make you feel like the OS is personally trolling you. The feature was simple: detect when the user’s phone is on a call, and show an interrupt screen. I wired up CXCallObserver, tested it — worked like a charm. Shipped a build to QA. An hour later, the report came back: “Overlay never appears when you’re already on a call and open the app fresh.”
+
+Cold start. I’d completely missed the cold start. And the more I dug into why, the more I realised this wasn’t a simple oversight — it was two entirely different questions masquerading as one. This article is about those two questions, how iOS answers them differently, and how to build something that handles both correctly.
+
+CXCallObserver tells you what changed. AVAudioSession tells you what is — and on a cold start, only one of them shows up to work.
+
+### Let’s be honest about the assumption most of us make
+
+When you think “detect if the user is on a call”, your first instinct is probably CallKit.`CXCallObserver`, observe the delegate, boom — all done. And you're not wrong — for the happy path.
+
+But here’s the thing: CallKit tells you when call state changes. It doesn’t tell you what the state is when you show up late. If your app launches while the user is already mid-call, the delegate has nothing to fire — the state change already happened before you were even in the room. You missed the party. The user is on a call, your`CXCallObserver` is sitting there blissfully unaware, and your overlay never appears.
+
+That’s the cold start problem. And solving it requires asking a completely different question to a completely different system API.
+
+By the end of this article, you’ll understand exactly what each API is measuring, why they answer different questions, and how to combine them into a detection helper that’s reliable across both launch scenarios.
+
+### What You’ll Learn
+
+- What`CXCallObserver` actually monitors — and where it silently fails
+- What`AVAudioSession` mic availability actually tells you
+- Why “is there a call?” and “is the mic locked?” are not the same question
+- How to combine both into a single`AudioHelper` that handles warm start and cold start
+- Why the mic availability check must run off the main thread (and what happens if you don’t)
+- Why`CXCallObserver` needs a debounce — and what happens if you skip it
+- The specific`AVAudioSession` error codes iOS throws during an active call
+
+### The Doorbell vs. The Locked Door
+
+Imagine you’re waiting for a delivery. You’ve got a doorbell — whenever someone arrives, it rings. That’s`CXCallObserver`. It fires when something changes. If you're home when the delivery arrives, you hear it. But if you were out and someone had already delivered a package and left, the doorbell never rings for you. You walk in the door and have no idea there's a package on the porch.
+
+Now, imagine you also have a door that gets automatically bolted whenever the porch is occupied. You can just try the bolt — if it’s locked, something’s out there. That’s`AVAudioSession`. It's not listening for events. It's just checking the current state: right now, is something holding the mic?
+
+Think of it this way:
+
+API Answers Works on Fails on`CXCallObserver`"Did the call state just change?" Warm start Cold start`AVAudioSession` mic check: "Is the mic currently unavailable?" Cold start (Indirect on warm start)
+
+`CXCallObserver`→ Event-based detection
+
+- Listens for call state changes
+- Works only if your app is already running
+- If the app launches after the call started → it knows nothing
+
+`AVAudioSession`→ State-based detection
+
+- Doesn’t care about events
+- Checks the current system state (mic availability)
+- If the mic is blocked → something (a call) is using it
+
+In short: CXCallObserver tells you what changed. AVAudioSession tells you what is happening right now.
+
+Neither alone is complete. Together, they cover the full surface.
+
+Press enter or click to view image in full size
+
+Image courtsey of LLM
+
+### Two APIs, Two Mental Models
+
+What Are These Things?
+
+`CXCallObserver` detects iOS call state changes in real time, but cannot report calls that began before your app launched. It's part of CallKit — Apple's framework for integrating with the phone system. It gives you a delegate callback whenever a call changes state: connecting, connected, disconnecting, or ended. It also has a`calls` property that lists all current calls. The keyword is current — it reflects whatever has happened since your observer was set up.
+
+For cold-start call detection on iOS,`AVAudioSession.setActive()` is the reliable alternative — if a phone call is active, the activation throws because the call holds the mic exclusively. AVAudioSession is the system's audio routing layer. Every app that wants to use the mic or speakers negotiates with it. The crucial behaviour: if you try to activate an audio session while a phone call is already holding the mic exclusively, the activation throws an error. The mic is locked. The system says no.
+
+So: CallKit tells you about call events. AVAudioSession tells you about mic availability.
+
+Where does each one break down?
+
+`CXCallObserver` is event-driven. The delegate method`callChanged` fires when a call transitions between states — perfect for a warm start. You're running, a call comes in, the delegate fires, you react.
+
+But on a cold start, your app launches into an already-active call. There’s no state transition to observe.`callObserver.calls` does expose currently active calls at any point in time, and calling`updateCallState()` immediately in`init` should catch this — but in practice, there's a race. In my testing on iPhone 13 (iOS 17.4),`CXCallObserver.calls` returned an empty array on cold start in 7 out of 10 runs, even with an active call. The observer needs a moment to sync with the system's call state, and on a fresh launch, it can't be relied on.
+
+`AVAudioSession` takes a different approach. It doesn't listen — it measures. When you call`setActive(true)`, the audio session either activates successfully (mic is free) or throws (something else owns it). A phone call holds the audio session exclusively in`.voiceChat` mode, which means a simple try/catch gives you a definitive answer: right now, is a phone call using the mic?
+
+```
+// What isMicrophoneAvailable() is really asking:// "If I try to claim the mic right now, will the OS let me?"func isMicrophoneAvailable() -> Bool {    let session = AVAudioSession.sharedInstance()    do {        // Match the category a phone call uses — so the conflict is real if one exists        try session.setCategory(.playAndRecord, mode: .voiceChat, options: [])                // This is the actual probe        try session.setActive(true, options: [])                // Release immediately — we never wanted the mic, just the answer        try session.setActive(false)        return true    } catch let error as NSError {        // Activation failed — something (likely a call) holds the mic        // Common error codes during an active phone call:        //   560030580 — AVAudioSessionErrorCodeCannotInterruptOthers        //   561017449 — kAudioSessionIncompatibleCategory        //   AVAudioSessionErrorCodeSiriIsRecording (if Siri is active)        print("AVAudioSession activation failed: \(error.domain) — \(error.code)")        return false    }}
+```
+
+Here’s what’s happening above:
+
+- `setCategory(.playAndRecord, mode: .voiceChat)`— puts our session in voice chat mode, which is what a phone call uses. We're matching the category, so the conflict is real if one exists.
+- `setActive(true)`— the actual probe. If a phone call is active, this throws an error code`560030580`(cannot interrupt others) or a resource busy error.
+- `setActive(false)`— We immediately deactivate. We never wanted the mic; we just needed to know if it was taken.
+
+Why this approach over querying CallKit’s`calls` array directly? Because`calls` can be empty on a cold start, even when a call is genuinely active. The mic check has no such race — if the call is active, the mic is locked, full stop.
+
+Press enter or click to view image in full size
+
+the complete`isMicrophoneAvailable()` probe flowchart.
+
+### Limitations I Ran Into
+
+There are two important limitations to understand before you ship this.
+
+Limitation 1: The mic check can have false positives. If another app (Spotify with mic on, a third-party VoIP app) is holding the audio session,`isMicrophoneAvailable()` returns`false` even though there's no phone call. For most apps, this is acceptable — if the mic is locked for any reason, you probably want to know. But for a high-precision use case, cross-reference both signals:`isSystemCallOngoing`(mic locked) AND`isCallActive`(CallKit confirmed it) must both be`true` before showing an interruption.
+
+Limitation 2: The mic check is blocking.`AVAudioSession.setActive` is a synchronous call that involves kernel-level resource negotiation. In my testing on iPhone 13 (iOS 17.4),`setActive(true)` averaged 180ms under normal conditions and reached 340ms under memory pressure. Call it on the main thread, and you'll block your UI at launch. This is why`detectCallOnLaunch` dispatches to a background queue:
+
+```
+private func detectCallOnLaunch() {    // Don't do this — blocks the main thread at launch for 150–340ms    // let callOngoing = !isMicrophoneAvailable()    // Background queue for the blocking I/O,        // then back to main for @Published update        DispatchQueue.global(qos: .userInitiated).async { [weak self] in            guard let self else { return }            let callOngoing = !self.isMicrophoneAvailable()            DispatchQueue.main.async {                self.isSystemCallOngoing = callOngoing            }        }    }
+```
+
+Why`[weak self]`?`AudioHelper` is a class (reference type). If the user dismisses whatever owns the helper between the dispatch and the callback, a strong capture would keep the object alive and still try to publish.`weak + guard let self` let’s it gracefully go — ARC 101, but critical here.
+
+### Building the AudioHelper — Step by Step
+
+Step 1: Wire CXCallObserver with an Explicit Queue
+
+```
+// Explicit main queue — don't pass nilcallObserver.setDelegate(self, queue: .main)
+```
+
+When you pass`nil`, CallKit picks an unspecified queue. In practice, this is often a background queue — which means your`@Published` property updates happen off the main thread, a SwiftUI runtime warning waiting to happen. Pass`.main` explicitly, and it eliminates the ambiguity.
+
+Step 2: Debounce the Delegate Callback
+
+CallKit fires`callChanged` multiple times during a single call lifecycle. A call being answered might trigger:`isOutgoing`→`isOnHold`→`hasConnected`. That's three rapid-fire callbacks. Without debouncing, your UI could flash states — a bad experience. In my testing, a 100ms debounce window eliminated all UI flicker across 20 call connect/disconnect cycles.
+
+```
+func callObserver(_ callObserver: CXCallObserver, callChanged call: CXCall) {    debounceTask?.cancel()    let task = DispatchWorkItem { [weak self] in        self?.updateCallState()    }    debounceTask = task    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: task)}
+```
+
+The`DispatchWorkItem` is cancellable. Each new`callChanged` event cancels the previous pending read. After 100ms of silence, the final state is read. Same pattern as search-as-you-type debouncing — nothing novel, but critical here.
+
+Step 3: Combine Both Signals in the View Layer
+
+```
+// In ContentView — the overlay triggerprivate var activeScenario: CallScenario? {    guard !overlayDismissed else { return nil }    if audioHelper.isCallActive { return .warmStart }        // CXCallObserver fired — live signal wins    if audioHelper.isSystemCallOngoing { return .coldStart } // Mic was locked on launch — cold-start fallback    return nil}
+```
+
+`isCallActive` wins priority — it's the live signal.`isSystemCallOngoing` is the cold-start fallback. If both are somehow true (edge case: mic locked AND CallKit caught a change), we show the more actionable warm-start overlay.
+
+Press enter or click to view image in full size
+
+isCallActive wins priority — it is the live signal. isSystemCallOngoing is the cold-start fallback.
+
+### Mistakes I Made (And How to Avoid Them)
+
+First: Calling the Mic Check on the Main Thread
+
+```
+// This blocks your UI at every app launch for 150–340msoverride init() {    super.init()    isSystemCallOngoing = !isMicrophoneAvailable() // Blocks main thread}
+```
+
+`AVAudioSession.setActive` involves kernel-level resource negotiation. On a fresh launch, this averaged 180ms in my testing and spiked to 340ms under memory pressure — long enough for the OS to flag your app as unresponsive. Always dispatch to a background queue (shown in Step 2 above).
+
+Second: Forgetting to Deactivate the Session After Probing
+
+```
+// Activates the audio session and leaves it permanently activetry session.setActive(true, options: [])return true // Session is now holding the mic — you've claimed it--------------------// Immediately release after the probetry session.setActive(true, options: [])try session.setActive(false) // Release - we only needed the answerreturn true
+```
+
+If you forget`setActive(false)`, Your app now holds the audio session for the rest of its lifecycle. This can prevent phone calls from reclaiming full audio control, cause issues with other audio-using apps, and, in some cases, interfere with the very calls you're trying to detect.
+
+Third: Relying Only on`callObserver.calls` in`init`
+
+```
+// Unreliable on cold startoverride init() {    super.init()    callObserver.setDelegate(self, queue: .main)    isCallActive = callObserver.calls.contains { !$0.hasEnded }    // Returns empty array in 7/10 cold-start runs — even with an active call}
+```
+
+`CXCallObserver.calls` is populated asynchronously. On a freshly launched app, querying it in`init` frequently returns empty even when the user is mid-call. This is exactly why the`AVAudioSession` probe exists as a separate, independent cold-start signal.
+
+### Production Gotchas (Learned the Hard Way)
+
+VoIP apps can trigger false positives. If another app is using the mic — a third-party calling app, a podcast recorder, Siri — your cold-start check may falsely detect a “call.” For high-precision use cases, only show the overlay when both`isSystemCallOngoing` AND`isCallActive` are true. If you need to distinguish a phone call from a VoIP call, you can inspect`call.isOutgoing` and`call.hasConnected` in the CallKit delegate, to narrow it further.
+
+Simulator results are unreliable. CallKit + audio session behaviour doesn’t correctly mirror real hardware in the iOS Simulator. Build and test on a real device — preferably two, so you can call one from the other. The timing numbers in this article (`180ms`,`340ms`) were measured on a real iPhone 13 running iOS 17.4.
+
+Call events fire in bursts on connect. Without debouncing, your UI will flicker when calls connect. In QA testing, we consistently observed 3 rapid-fire`callChanged` callbacks for a single answered call — without the 100ms debounce, the overlay appeared, disappeared, and reappeared in quick succession.
+
+The mic check fires on every cold launch. Including when there’s no call. On older devices or under memory pressure, this adds a small but real delay. If your app has a splash screen or loading gate, consider whether that window is enough to let the async mic check complete before the main UI appears. If not, the initial`isSystemCallOngoing = false` state is correct (no call assumed), and the view updates when the async result comes back.
+
+The`overlayDismissed` flag resets on every cold launch by design. We store it in`@State`, which resets when the app is relaunched. If a user kills the app while on a call and relaunches, the overlay should appear again. If you need to persist "already dismissed this call session" across launches, store a call session ID in`UserDefaults` and cross-reference it.
+
+### Key Takeaways
+
+Let’s wrap up what we covered:
+
+- `CXCallObserver.calls` is unreliable on cold start — it returns empty in the majority of fresh-launch runs even with an active call, due to an async sync race.
+- `AVAudioSession.setActive()` blocks for 150–340ms on iOS — never call it on the main thread; always dispatch to`.userInitiated` background queue.
+- iOS phone calls claim`AVAudioSession` in`.voiceChat` mode exclusively — making`setActive` The only reliable cold-start probe.
+- A 100ms debounce eliminates all UI flicker from rapid-fire`callChanged` callbacks during call connect/disconnect sequences.
+- Always release the audio session immediately after probing — activate → check → deactivate. Leaving it active can interfere with the very calls you’re detecting.
+- Together,`isCallActive`(CallKit) +`isSystemCallOngoing`(AVAudioSession) Give you complete coverage — events for warm start, state for cold start.
+
+The`AudioHelper` We built here is small — under 70 lines — but every decision exists for a reason rooted in how iOS actually manages audio sessions and call state. Understanding why those decisions exist is what makes the difference between code that works in a demo and code that works in production.
+
+That’s all for today! This was my approach and understanding of how we tackled this issue. If it helped you save some debugging time, a quick clap would mean a lot — it helps more iOS developers discover this article.
+
+Have you hit the cold-start problem in a different context — maybe with audio recording, VoIP, or background tasks? Drop it in the comments — I’d love to hear how you solved it.
+
+If you found this useful, feel free to follow me for more deep dives on iOS, Android, Flutter, and the weird corners of mobile development where the docs don’t quite tell the whole story.
+
+GitHub for the full implementation → https://github.com/bajpaiNikhil/VoiceCallAleartPOC
+
+Let’s connect on LinkedIn → Nikhil Bajpai
+
+Until next time — have fun.Nikhil Bajpai
+
+IOS Development
+
+Programming
+
+Coding
+
+Swift
+
+Mobile App Development
+
+## Written by Nikhil Bajpai
+
+Senior mobile engineer at Jio. Writing about Android, iOS, and Flutter internals — the stuff the docs skip.
+
+## Responses (1)
+
+```
+Best article on the topic. Clearly highlight how an oversight which does not look an oversight can cause a feature rewrite . When I read it feels even ios folks forgot about it and later added it xD
+```
+
+--
+
+1 reply
+
+Reply
+
+## More from Nikhil Bajpai
+
+·
+
+Jun 28
+
+## I Built a GPT From Scratch on a MacBook — Days 1–5: From a Bigram to a Working Self-Attention Head
+
+### A from-first-principles walkthrough of building a Transformer’s core mechanism by hand in PyTorch — with real code, real training numbers…
+
+·
+
+Apr 25
+
+## I Learned Swift as an Android Developer — Here’s the Translation Guide I Wish Existed
+
+### A Kotlin-to-Swift mapping covering value types, optionals, enums, and guard let — for developers who don’t need the basics explained. Part…
+
+·
+
+Jun 25, 2024
+
+## Mastering the Sliding Window Technique: A Comprehensive Guide
+
+### Optimize Your Coding Interview with the Sliding Window Technique
+
+·
+
+Apr 4
+
+## Compose Slot Table Explained: I Read the Runtime Source, So You Don’t Have To
+
+### Gap buffers, positional memoization, and recomposition — verified from the official Android design docs, with real code and interview tips.
+
+See all from Nikhil Bajpai
+
+## Recommended from Medium
+
+·
+
+Jun 22
+
+## Senior Android Interview Questions & Answers (2026 Edition)
+
+### Modern Android interviews in 2026 are much less focused on “What is an Activity?” and much more focused on architecture, scalability…
+
+·
+
+May 31
+
+## AI for iOS Developers: The Complete Roadmap
+
+### How to use AI to build iOS apps faster, and how to build AI features into your apps. Explained step by step, beginner to advanced.
+
+·
+
+4d ago
+
+## TDD Is Dead. Long Live TDD.
+
+### Test-driven development died of mock depth. In SwiftUI the acronym comes back with a new meaning — and keeps the old promise: the feature…
+
+·
+
+Mar 1
+
+## Building a Clean Contacts Manager in iOS with Swift (Save, Search, Delete + Permissions)
+
+### Creating a clean entry point that ensures predictable behavior and safer contact creation.
+
+·
+
+May 21
+
+## How to stop your iOS app from getting slower over time
+
+### The performance test I wish I’d written six months earlier
+
+·
+
+Feb 6
+
+## Swift Questions That Sound Easy — But Eliminate Senior Candidates
+
+### Senior iOS interviews rarely fail people on complicated questions.

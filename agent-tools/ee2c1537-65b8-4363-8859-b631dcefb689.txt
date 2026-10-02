@@ -1,0 +1,176 @@
+[Help/Support] iMazing Error Code -42 - Help & Support - iOSGods
+
+# Help/Support iMazing Error Code -42 
+
+ By Xx AK47 xX May 12, 2019 in Help & Support 
+
+### Xx AK47 xX 3.8k iPhone 6 Plus 12.2 
+
+ Posted May 12, 2019 
+
+### Xx AK47 xX 3.8k 
+
+ Posted May 12, 2019 
+
+ Been away for a couple years, I'm trying to use imazing to backup app data so I can go back to creating SaveGame cheats. Here is the issue. 
+
+ Was reading to update IOS, but I need this version. (Its jailbroken) 
+
+```
+ May 13 15:06:29 Jakes-iPhone BackupAgent2(libMobileGestalt.dylib)[1162] <Notice>: elided platform fast path for key: re6Zb+zwFKJNlkQTUeT+/w
+	May 13 15:06:29 Jakes-iPhone BackupAgent2(libMobileGestalt.dylib)[1162] <Notice>: elided platform fast path for key: nFRqKto/RuQAV1P+0/qkBA
+	May 13 15:06:29 Jakes-iPhone BackupAgent2(libMobileGestalt.dylib)[1162] <Notice>: elided platform fast path for key: VasUgeSzVyHdB27g2XpN0g
+	May 13 15:06:29 Jakes-iPhone BackupAgent2[1162] <Notice>: Device UDID: <private>
+	May 13 15:06:29 Jakes-iPhone BackupAgent2(liblockdown.dylib)[1162] <Notice>: unlock_with_escrow: <private>
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MobileKeyBag)[1162] <Notice>: MKBKeyBagUnlock: unlocked bag 1
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MobileBackup)[1162] <Notice>: Loading system domains
+	May 13 15:06:30 Jakes-iPhone BackupAgent2[1162] <Notice>: Action: Backup
+	May 13 15:06:30 Jakes-iPhone BackupAgent2[1162] <Notice>: Starting backup
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MobileBackup)[1162] <Notice>: DeviceID="14529cc9a28446b09a154755331cce41326bdff8", DeviceName="<private>", ProductType="iPhone8,2", BuildVersion="16E227"
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MobileBackup)[1162] <Notice>: Removing safe harbors created before Sat Apr 13 15:06:30 2019
+	May 13 15:06:30 Jakes-iPhone SpringBoard(FrontBoard)[52] <Notice>: Adding: <FBProcess: 0x281dcee20; BackupAgent2; pid: 1162>
+	May 13 15:06:30 Jakes-iPhone BackupAgent2[1162] <Notice>: No demoted apps found on device. Skipping
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MobileBackup)[1162] <Notice>: Opened /System/Library/PrivateFrameworks/AirTrafficDevice.framework/AirTrafficDevice
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/AirFair.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(libMobileGestalt.dylib)[1162] <Notice>: elided platform fast path for key: re6Zb+zwFKJNlkQTUeT+/w
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle FPAirFair in 0.01s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/AirFair2.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(libMobileGestalt.dylib)[1162] <Notice>: elided platform fast path for key: re6Zb+zwFKJNlkQTUeT+/w
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(CoreServices)[1162] <Notice>: Establishing xpc connection to lsd
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle AF2SyncClient in 0.01s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/Apps.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(CoreServices)[1162] <Notice>: Received <private>, xpc connection established
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle AppsClient in 0.00s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/Books.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle BooksClient in 0.00s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/LogsPlugin.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle LogsClient in 0.00s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/MobileSlideShow.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle PLSyncClient in 0.04s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/MusicLibrary.syncBundle'
+	May 13 15:06:30 Jakes-iPhone tccd[104] <Error>: Refusing client without bundle identifier (file:///usr/libexec/BackupAgent2)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MusicLibrary)[1162] <Notice>: Media library service <NSXPCConnection: 0x282734750> connection to service named com.apple.medialibraryd.xpc closed.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MusicLibrary)[1162] <Error>: Error fetching language resources. (Error = Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.medialibraryd.xpc" UserInfo={NSDebugDescription=connection to service named com.apple.medialibraryd.xpc}) Falling back to building resources in-process.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MusicLibrary)[1162] <Notice>: <private>|Migrating media sync settings. version=2, latest version=2
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoMusicSync)[1162] <Notice>: [NMSyncDefaults] Begin batch updates.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x28151d280)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoMusicSync)[1162] <Notice>: [NMSyncDefaults] Begin batch updates.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x28150ad20)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoMusicSync)[1162] <Notice>: [NMSyncDefaults] The old musicRecommendations information has not been removed yet.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x28150ad00)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: synchronizeNanoDomain: ((null)); keys: (<private>)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x28150ad00)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoMusicSync)[1162] <Notice>: [NMSyncDefaults] End batch updates.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x28150ac00)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x28151ce20)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x28151ce20)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoMusicSync)[1162] <Notice>: [NMSyncDefaults] End batch updates.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x28150ab80)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoMusicSync)[1162] <Notice>: [NMSMediaSettingsSynchronizer] Begin observing setting updates.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoMusicSync)[1162] <Notice>: [NMSMediaSettingsSynchronizer] Already have default Green Tea cellular settings
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoMusicSync)[1162] <Notice>: [NMSMediaSettingsSynchronizer] Observing podcasts user defaults <private> at <private>
+	May 13 15:06:30 Jakes-iPhone tccd[104] <Error>: Refusing client without bundle identifier (file:///usr/libexec/BackupAgent2)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MusicLibrary)[1162] <Notice>: Media library service <NSXPCConnection: 0x282734750> connection to service named com.apple.medialibraryd.xpc closed.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MusicLibrary)[1162] <Error>: Could not validate database at path /var/mobile/Media/iTunes_Control/iTunes/MediaLibrary.sqlitedb. There was an error waiting for a reply from the media library service. Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.medialibraryd.xpc" UserInfo={NSDebugDescription=connection to service named com.apple.medialibraryd.xpc}
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MusicLibrary)[1162] <Notice>: Database validation FAILED with error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.medialibraryd.xpc" UserInfo={NSDebugDescription=connection to service named com.apple.medialibraryd.xpc}
+	May 13 15:06:30 Jakes-iPhone tccd[104] <Error>: Refusing client without bundle identifier (file:///usr/libexec/BackupAgent2)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MediaPlayer)[1162] <Error>: -[MPMediaLibrary init]: app not authorized for access
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MediaPlayer)[1162] <Error>: Not authorized, skipping filter predicate application
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(MediaPlayer)[1162] <Error>: Not authorized, skipping filter predicate application
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(iTunesCloud)[1162] <Notice>: Power state changed. isCharging=1
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(CoreTelephony)[1162] <Notice>: CCMonitor created
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(CoreTelephony)[1162] <Notice>: Calling _CTServerConnectionCopyDataStatus(): for 0: Data status: <private>
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(iTunesCloud)[1162] <Notice>: Network reachability changed. networkType=1000, telephonyDataIndicator=kCTRegistrationDataIndicator4G, isRemoteServerLikelyReachable=1, currentNetworkLinkHighQuality=1 (_cellularLinkQuality=50), _wifiAssociated=0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle MLSyncClient in 0.04s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/PlayActivity.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle PASSyncClient in 0.01s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/ProofingPlugin.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTraffic)[1162] <Notice>: <private>
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle ProofingPlugin in 0.00s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/SMS.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle CKATClient in 0.01s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/Tones.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: Failed to resolve pairing ID ((null)) or data store ((null)) for active device
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(NanoPreferencesSync)[1162] <Notice>: self: (0x2815112c0)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Notice>: <TLToneManager: 0x283133cc0>: _tonesFromManifestPath:(/var/mobile/Media/iTunes_Control/iTunes/Ringtones.plist) mediaDirectoryPath:(/var/mobile/Media/iTunes_Control/Ringtones): About to load tones.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Error>: <TLToneManager: 0x283133cc0>: _tonesFromManifestPath:(/var/mobile/Media/iTunes_Control/iTunes/Ringtones.plist) mediaDirectoryPath:(/var/mobile/Media/iTunes_Control/Ringtones): Couldn't load manifest: Error Domain=NSCocoaErrorDomain Code=260 "The file \M-b\M^@\M^\Ringtones.plist\M-b\M^@\M^] couldn\M-b\M^@\M^Yt be opened because there is no such file." UserInfo={NSFilePath=/var/mobile/Media/iTunes_Control/iTunes/Ringtones.plist, NSUnderlyingError=0x281b4afa0 {Error Domain=NSPOSIXErrorDomain Code=2 "No such file or directory"}}
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Notice>: <TLToneManager: 0x283133cc0>: _tonesFromManifestPath:(/var/mobile/Media/iTunes_Control/iTunes/Ringtones.plist) mediaDirectoryPath:(/var/mobile/Media/iTunes_Control/Ringtones): Couldn't find any tone entries in the manifest: (null)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Notice>: <TLToneManager: 0x283133cc0>: _tonesFromManifestPath:(/var/mobile/Media/iTunes_Control/iTunes/Ringtones.plist) mediaDirectoryPath:(/var/mobile/Media/iTunes_Control/Ringtones): Loaded 0 tones from 0 entries in the manifest.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Notice>: <TLToneManager: 0x283133cc0>: _tonesFromManifestPath:(/var/mobile/Media/Purchases/Ringtones.plist) mediaDirectoryPath:(/var/mobile/Media/Purchases): About to load tones.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Error>: <TLToneManager: 0x283133cc0>: _tonesFromManifestPath:(/var/mobile/Media/Purchases/Ringtones.plist) mediaDirectoryPath:(/var/mobile/Media/Purchases): Couldn't load manifest: Error Domain=NSCocoaErrorDomain Code=260 "The file \M-b\M^@\M^\Ringtones.plist\M-b\M^@\M^] couldn\M-b\M^@\M^Yt be opened because there is no such file." UserInfo={NSFilePath=/var/mobile/Media/Purchases/Ringtones.plist, NSUnderlyingError=0x281b44960 {Error Domain=NSPOSIXErrorDomain Code=2 "No such file or directory"}}
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Notice>: <TLToneManager: 0x283133cc0>: _tonesFromManifestPath:(/var/mobile/Media/Purchases/Ringtones.plist) mediaDirectoryPath:(/var/mobile/Media/Purchases): Couldn't find any tone entries in the manifest: (null)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Notice>: <TLToneManager: 0x283133cc0>: _tonesFromManifestPath:(/var/mobile/Media/Purchases/Ringtones.plist) mediaDirectoryPath:(/var/mobile/Media/Purchases): Loaded 0 tones from 0 entries in the manifest.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(ToneLibrary)[1162] <Notice>: <TLToneManager: 0x283133cc0>: -_load...: Loaded 0 tones.
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle ToneSyncClient in 0.03s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/UserDataPlugin.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle UserDataClient in 0.00s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loading bundle at path '/System/Library/SyncBundles/VoiceMemos.syncBundle'
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded bundle VoiceMemosSyncClient in 0.02s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(AirTrafficDevice)[1162] <Notice>: Loaded all clients in 0.19s
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|preparing for backup
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : jp.naver.line to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.wiz.weed.game to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.google.GoogleMobile to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.youqm.cpweb to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.enchantedcloud.photovault to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.yourcompany.PPClient to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.google.chrome.ios to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.facebook.Facebook to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.mastercard.directexpress to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.audiobooks.ios to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.microsoft.Office.Outlook to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : org.kp.m to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : org.ghc.MyGroupHealth.Mobile to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.tencent.xin to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.geeker.kod to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.lighting.commander to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.huawei.iosclone to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.playrix.gardenscapes-sweethome to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|Updated DeviceBasedVPP state for : com.midasplayer.apps.candycrushsodasaga to 0
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Apps)[1162] <Notice>: <private>|finished preparing for backup
+	May 13 15:06:30 Jakes-iPhone BackupAgent2(Tones)[1162] <Notice>: <private>|backing up files: (
+	    "Media/Purchases/Ringtones.plist",
+	    "Media/iTunes_Control/iTunes/Ringtones.plist"
+	)
+	May 13 15:06:30 Jakes-iPhone BackupAgent2[1162] <Notice>: Backup status: <private>
+	May 13 15:06:30 Jakes-iPhone BackupAgent2[1162] <Notice>: Resuming after failure during 'uploading' phase
+	May 13 15:06:30 Jakes-iPhone BackupAgent2[1162] <Notice>: Creating keybag
+	May 13 15:06:31 Jakes-iPhone BackupAgent2[1162] <Notice>: Performing a full backup
+	May 13 15:06:31 Jakes-iPhone BackupAgent2[1162] <Error>: Exporting keychain to /var/Keychains/keychain-backup.plist failed: no password
+	May 13 15:06:32 Jakes-iPhone BackupAgent2(libMobileGestalt.dylib)[1162] <Notice>: elided platform fast path for key: re6Zb+zwFKJNlkQTUeT+/w
+	May 13 15:06:33 Jakes-iPhone kernel(Sandbox)[0] <Error>: Sandbox: BackupAgent2(1162) System Policy: deny(1) file-unmount
+	May 13 15:06:33 Jakes-iPhone BackupAgent2(MobileBackup)[1162] <Notice>: Successfully snapshotted path /private/var/ with snapshot name <private>
+	May 13 15:06:33 Jakes-iPhone BackupAgent2[1162] <Notice>: Filesystem snapshot completed in 0.051s
+	May 13 15:06:33 Jakes-iPhone BackupAgent2[1162] <Notice>: Snapshot <private> was mounted successfully at /.ba/
+	May 13 15:06:39 Jakes-iPhone BackupAgent2[1162] <Notice>: Unsupported file type (0010000): <private>
+	May 13 15:06:39 Jakes-iPhone BackupAgent2[1162] <Notice>: Unsupported file type (0010000): <private>
+	May 13 15:06:40 Jakes-iPhone BackupAgent2[1162] <Notice>: Scanned in 9.708 s
+	May 13 15:06:40 Jakes-iPhone BackupAgent2[1162] <Notice>: Error getting free space of drive: <private>
+	May 13 15:06:47 Jakes-iPhone BackupAgent2[1162] <Error>: Error uploading "<private>" to "<private>": <private>
+	May 13 15:06:47 Jakes-iPhone BackupAgent2[1162] <Error>: Backup error - <private>
+	May 13 15:06:47 Jakes-iPhone BackupAgent2[1162] <Notice>: Closing manifest DB without removing it
+	May 13 15:06:47 Jakes-iPhone powerd[35] <Notice>: Process BackupAgent2.1162 Released NoIdleSleepAssertion "BackupAgent2" age:00:00:17  id:4295006022 [System: PrevIdle SysAct]
+	May 13 15:06:47 Jakes-iPhone BackupAgent2(MobileBackup)[1162] <Notice>: Removing temporay directory: <private>
+	May 13 15:06:47 Jakes-iPhone BackupAgent2(MobileBackup)[1162] <Notice>: Unmounted snapshot named <private> at: /.ba/
+	May 13 15:06:47 Jakes-iPhone BackupAgent2(MobileBackup)[1162] <Notice>: Deleted snapshot: <private>
+	May 13 15:06:47 Jakes-iPhone SpringBoard(FrontBoard)[52] <Notice>: Removing: <FBProcess: 0x281dcee20; BackupAgent2; pid: -1>[/CODE]
+
+```
+
+ EDIT: Same error on my iPhone 6+ on IOS 12.2 
+
+ 
+
+ ALSO, ive just noticed it doesn't allow me in Itunes to backup either device 
+
+ 
+
+ Starting to think this is a permission issue.. anyone have guidance where backupagent is located 
+
+ This topic is now archived and is closed to further replies.
