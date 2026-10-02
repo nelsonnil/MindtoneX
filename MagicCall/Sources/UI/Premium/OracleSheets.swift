@@ -176,14 +176,19 @@ struct ShortcutsSetupSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Install shortcuts")
+                    Text(mode == .fakeRingtone
+                         ? "Fake Ringtone needs Silent ON"
+                         : "Share Ringtone needs Silent OFF")
                         .font(.subheadline.weight(.semibold))
-                    installButton(SilentShortcut.silentOnName, url: SilentShortcut.silentOnInstallURL)
-                    installButton(SilentShortcut.silentOffName, url: SilentShortcut.silentOffInstallURL)
+                    if mode == .fakeRingtone {
+                        installButton(SilentShortcut.silentOnName, url: SilentShortcut.silentOnInstallURL)
+                    } else {
+                        installButton(SilentShortcut.silentOffName, url: SilentShortcut.silentOffInstallURL)
+                    }
                     Button {
                         openURL(SilentShortcut.createShortcutURL)
                     } label: {
-                        Label("Open Shortcuts to create them", systemImage: "plus.square.on.square")
+                        Label("Open Shortcuts to create it", systemImage: "plus.square.on.square")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)

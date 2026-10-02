@@ -46,18 +46,23 @@ struct SilentShortcutStatusRow: View {
     }
 }
 
-/// Download / install entry point for both Ringtone Oracle Silent shortcuts.
+/// Download / install entry point for the one Silent shortcut a mode needs:
+/// Fake Ringtone → Silent On, Share Ringtone → Silent Off.
 struct ShortcutsInstallPanel: View {
+    let mode: Prefs.PerformanceMode
     @ObservedObject private var shortcut = SilentShortcut.shared
     @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
     @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
     @Environment(\.openURL) private var openURL
     var onInstallGuide: () -> Void
 
+    private var isFake: Bool { mode == .fakeRingtone }
+    private var enabled: Bool { isFake ? silentOnEnabled : silentOffEnabled }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                OracleEyebrow(text: "Shortcuts")
+                OracleEyebrow(text: "Shortcut")
                 Spacer()
                 Button(action: onInstallGuide) {
                     Label("Install guide", systemImage: "book.pages")
@@ -71,35 +76,30 @@ struct ShortcutsInstallPanel: View {
                 ShortcutHintBanner(hint: hint) { shortcut.hint = nil }
             }
 
-            VStack(spacing: 0) {
-                shortcutRow(name: SilentShortcut.silentOnName,
-                            role: "Used by Fake Ringtone",
-                            enabled: silentOnEnabled,
-                            installURL: SilentShortcut.silentOnInstallURL)
-                Divider().overlay(OracleTheme.cardBorder).padding(.leading, 44)
-                shortcutRow(name: SilentShortcut.silentOffName,
-                            role: "Used by Share Ringtone",
-                            enabled: silentOffEnabled,
-                            installURL: SilentShortcut.silentOffInstallURL)
-            }
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-            }
+            shortcutRow(name: isFake ? SilentShortcut.silentOnName : SilentShortcut.silentOffName,
+                        role: isFake ? "Turns Silent ON before Perform" : "Turns Silent OFF before Perform",
+                        enabled: enabled,
+                        installURL: isFake ? SilentShortcut.silentOnInstallURL : SilentShortcut.silentOffInstallURL)
+                .background(Color.white.opacity(0.04))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+                }
 
             HStack(spacing: 10) {
-                if !(silentOnEnabled && silentOffEnabled) {
-                    Button("I’ve installed them — turn on") { SilentShortcut.enableBoth() }
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(OracleTheme.gold)
+                if !enabled {
+                    Button("I’ve installed it — turn on") {
+                        if isFake { silentOnEnabled = true } else { silentOffEnabled = true }
+                    }
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(OracleTheme.gold)
                 } else {
-                    Label("Perform runs Silent Off first", systemImage: "checkmark.circle.fill")
+                    Label("Perform runs it first", systemImage: "checkmark.circle.fill")
                         .font(.caption)
                         .foregroundStyle(.green)
                     Spacer()
-                    Button("Test") { shortcut.test(mode: .shareRingtone) }
+                    Button("Test") { shortcut.test(mode: mode) }
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(OracleTheme.textSecondary)
                 }

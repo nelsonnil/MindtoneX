@@ -20,7 +20,7 @@ struct FakeModeCard: View {
 
                 Divider().overlay(OracleTheme.cardBorder)
 
-                SilentShortcutStatusRow(mode: .fakeRingtone, onSetup: onShortcutsSetup)
+                ShortcutsInstallPanel(mode: .fakeRingtone, onInstallGuide: onShortcutsSetup)
 
                 stageRow
             }

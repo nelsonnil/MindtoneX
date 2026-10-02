@@ -21,7 +21,7 @@ struct ShareModeCard: View {
 
                 Divider().overlay(OracleTheme.cardBorder)
 
-                ShortcutsInstallPanel(onInstallGuide: onShortcutsSetup)
+                ShortcutsInstallPanel(mode: .shareRingtone, onInstallGuide: onShortcutsSetup)
 
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "star.fill")
