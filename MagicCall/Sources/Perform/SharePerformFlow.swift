@@ -51,7 +51,7 @@ final class SharePerformFlow: ObservableObject {
         let model = AppModel.shared
         step = input == .manual ? .preparing : .listening
         model.phase = .stage
-        UIApplication.shared.isIdleTimerDisabled = true
+        AppModel.setScreenAwakeWhileInForeground(true)
         let screen = input == .notes ? "Notes screen" : "black screen"
         dlog("[SHARE PERFORM] 1 · \(screen) · input=\(input.title) · song=\(model.selected.map { "\($0.title) — \($0.artist)" } ?? "none yet")")
         switch input {

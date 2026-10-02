@@ -49,6 +49,11 @@ final class AppModel: ObservableObject {
     @Published var showingDiscreetRingtonePrep = false
     @Published private(set) var ringtoneStaged = false
 
+    /// Evita auto-lock mientras la app está visible (setup, Perform, overlays). En background se restaura.
+    static func setScreenAwakeWhileInForeground(_ awake: Bool) {
+        UIApplication.shared.isIdleTimerDisabled = awake
+    }
+
     private init() {
         Prefs.registerDefaults()
         DebugLog.shared.logDeviceHeader()
@@ -244,7 +249,7 @@ final class AppModel: ObservableObject {
         isArmed = true
         isAudible = false
         phase = .stage
-        UIApplication.shared.isIdleTimerDisabled = true
+        Self.setScreenAwakeWhileInForeground(true)
         dlog("══ ARMADO ══ \(selected.map { "\($0.title) — \($0.artist)" } ?? "?") · \(Prefs.summary())")
     }
 
@@ -259,7 +264,6 @@ final class AppModel: ObservableObject {
         isAudible = false
         phase = .setup
         showDebugOverlay = false
-        UIApplication.shared.isIdleTimerDisabled = false
         performed = false
         hadCallWhileArmed = false
         resetVoicePerformance()
@@ -440,6 +444,7 @@ final class AppModel: ObservableObject {
         observe(UIApplication.willResignActiveNotification) { _ in dlog("App → willResignActive") }
         observe(UIApplication.didEnterBackgroundNotification) { [weak self] _ in
             dlog("App → didEnterBackground")
+            Self.setScreenAwakeWhileInForeground(false)
             self?.maintainArmedInBackground()
         }
         observe(UIApplication.willEnterForegroundNotification) { [weak self] _ in
@@ -448,6 +453,7 @@ final class AppModel: ObservableObject {
         }
         observe(UIApplication.didBecomeActiveNotification) { [weak self] _ in
             dlog("App → didBecomeActive")
+            Self.setScreenAwakeWhileInForeground(true)
             self?.refreshArmedState(reason: "didBecomeActive")
         }
         observe(UIApplication.protectedDataWillBecomeUnavailableNotification) { _ in dlog("Dispositivo bloqueado (protectedData no disponible)") }
@@ -498,7 +504,7 @@ final class AppModel: ObservableObject {
     func refreshArmedState(reason: String) {
         guard isArmed else { return }
         phase = .stage
-        UIApplication.shared.isIdleTimerDisabled = true
+        Self.setScreenAwakeWhileInForeground(true)
         do {
             try audio.configureSession()
         } catch {

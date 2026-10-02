@@ -21,14 +21,20 @@ struct MagicCallApp: App {
             .fullScreenCover(isPresented: $model.showingDiscreetRingtonePrep) {
                 RingtoneDisguiseView()
             }
+            .onAppear {
+                AppModel.setScreenAwakeWhileInForeground(true)
+            }
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
                 case .active:
+                    AppModel.setScreenAwakeWhileInForeground(true)
                     model.refreshArmedState(reason: "scenePhase.active")
                 case .background:
+                    AppModel.setScreenAwakeWhileInForeground(false)
                     dlog("scenePhase → background")
                     model.maintainArmedInBackgroundIfNeeded()
                 case .inactive:
+                    AppModel.setScreenAwakeWhileInForeground(true)
                     dlog("[APP] scenePhase → inactive")
                     model.onSceneBecameInactive()
                 @unknown default:
