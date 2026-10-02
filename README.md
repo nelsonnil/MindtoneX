@@ -49,15 +49,20 @@ El informe completo de investigación está en [`docs/magic-call-research-report
 El esquema **MagicCall** usa la configuración *Debug* (y *Release* al archivar), las dos con
 `MAGIC_PRIVATE_PROBES`, así que los experimentos privados están incluidos.
 
-### TestFlight (sin experimentos privados)
+### TestFlight (solo probadores internos, con experimentos privados)
 
-Apple escanea todo binario que se sube a App Store Connect (también para TestFlight interno) y
-rechaza las referencias a APIs privadas (error **ITMS-90338**). Por eso existe el esquema
-**MagicCall-TestFlight**, que compila sin `MAGIC_PRIVATE_PROBES`:
+Desde la build 17 la configuración **TestFlight** incluye `MAGIC_PRIVATE_PROBES`. Apple escanea
+todo binario que se sube (también para TestFlight interno) y rechaza las referencias *enlazadas* a
+APIs privadas (error **ITMS-90338**). Aquí todas se llaman en tiempo de ejecución por nombre
+(`dlopen`, `NSClassFromString`, `NSSelectorFromString`), como el `suspend` de Share Ringtone, que
+ya iba en todas las builds; eso normalmente no lo detecta el escaneo, pero no está garantizado.
 
 1. Elige el esquema **MagicCall-TestFlight** y el destino **Any iOS Device (arm64)**.
 2. **Product › Archive** → **Distribute App** → **TestFlight & App Store** → subir.
-3. Las rutas 1 y 2 y el plan B funcionan igual; solo desaparecen los experimentos privados.
+3. Si llega un correo **ITMS-90338**, vuelve a poner `SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""` en
+   TestFlight (`project.yml` y el proyecto) y sube otra vez.
+4. Reparte solo a **probadores internos** (usuarios de App Store Connect): no pasan Beta App Review.
+   Para probadores externos o App Store, quita `MAGIC_PRIVATE_PROBES`.
 
 ### Ad hoc (con experimentos privados, sin pasar por Apple)
 
