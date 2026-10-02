@@ -161,6 +161,8 @@ struct AdvancedDisclosureCard: View {
                 divider
                 toolRow("AI Voice & API key", icon: "mic.badge.plus", sheet: .voiceSettings)
                 divider
+                toolRow("API / song input", icon: "link", sheet: .apiSettings)
+                divider
                 toolRow("Voice debug", icon: "waveform.badge.magnifyingglass", sheet: .voiceDebug)
             }
             .background(Color.white.opacity(0.04))

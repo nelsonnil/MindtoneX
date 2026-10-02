@@ -3,6 +3,12 @@ import SwiftUI
 /// Fixed bottom bar: one always-visible readiness strip above the mode-colored Perform CTA.
 struct PerformBottomBar: View {
     @EnvironmentObject private var model: AppModel
+    @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
+    @AppStorage(ApiSettings.Key.provider) private var apiProviderRaw = ApiSettings.Provider.inject.rawValue
+    @AppStorage(ApiSettings.Key.injectID) private var injectID = ""
+    @AppStorage(ApiSettings.Key.elipsURL) private var elipsURL = ""
+    @AppStorage(ApiSettings.Key.customURL) private var customURL = ""
+    @AppStorage(ApiSettings.Key.customField) private var customField = ApiSettings.defaultCustomField
     let mode: Prefs.PerformanceMode
 
     var body: some View {
@@ -38,8 +44,14 @@ struct PerformBottomBar: View {
 struct ReadinessStatusBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
+    @ObservedObject private var api = ApiSongSession.shared
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
     @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
+    @AppStorage(ApiSettings.Key.provider) private var apiProviderRaw = ApiSettings.Provider.inject.rawValue
+    @AppStorage(ApiSettings.Key.injectID) private var injectID = ""
+    @AppStorage(ApiSettings.Key.elipsURL) private var elipsURL = ""
+    @AppStorage(ApiSettings.Key.customURL) private var customURL = ""
+    @AppStorage(ApiSettings.Key.customField) private var customField = ApiSettings.defaultCustomField
     @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
     @AppStorage(NotesSettings.Key.idleSearchEnabled) private var idleSearchEnabled = true
     @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
@@ -97,6 +109,29 @@ struct ReadinessStatusBar: View {
                 return Status(tone: .ready, icon: "lock.fill", text: "Locked · \(pick)")
             default:
                 return Status(tone: .ready, icon: "mic.circle.fill", text: "Ready · AI Voice picks the song on Perform")
+            }
+        case .api:
+            let name = ApiSettings.provider.title
+            guard ApiSettings.isConfigured else {
+                return Status(tone: .warning, icon: "key.fill", text: "API needs setup — \(ApiSettings.setupHint)")
+            }
+            if api.isActive, api.isStruggling {
+                return Status(tone: .warning, icon: "wifi.exclamationmark", text: "\(name) not reachable — retrying")
+            }
+            switch api.state {
+            case .connecting:
+                return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Connecting to \(name)…")
+            case .watching:
+                return Status(tone: .working, icon: "dot.radiowaves.left.and.right", text: "Waiting for the spectator’s search…")
+            case .loading(let label):
+                return Status(tone: .working, icon: "arrow.down.circle", text: "Found “\(label)” · loading…")
+            case .locked:
+                let title = model.selected.map { "\($0.title) — \($0.artist)" } ?? api.lockedReading?.label ?? "song"
+                return Status(tone: .ready, icon: "lock.fill", text: "Locked · \(title)")
+            case .failed(let message):
+                return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: message)
+            case .idle:
+                return Status(tone: .ready, icon: "link.circle.fill", text: "Ready · \(name) picks the song on Perform")
             }
         case .notes:
             let when = [idleSearchEnabled ? "after \(NotesInputControls.format(idleDelay)) idle" : nil,
