@@ -51,7 +51,8 @@ struct MainShellView: View {
                     )
                 }
 
-                PerformanceFeedbackCard()
+                // One Feedback block (vibration + status dot) — not separate cards.
+                FeedbackCard()
 
                 AdvancedDisclosureCard { activeSheet = $0 }
             }

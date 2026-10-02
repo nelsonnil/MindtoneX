@@ -137,7 +137,8 @@ struct PerformStatusDot: View {
 // MARK: Main-screen card
 
 /// Vibration + stage status dot — discrete cues when the song is ready during Perform.
-struct PerformanceFeedbackCard: View {
+/// Single home card: vibration + stage status dot (replaces separate StatusDot / Vibration cards).
+struct FeedbackCard: View {
     @AppStorage(PerformanceCues.Key.vibrateOnLock) private var vibrateOnLock = true
     @AppStorage(PerformanceCues.Key.vibrationStyle) private var styleRaw = PerformanceCues.VibrationStyle.alert.rawValue
     @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
