@@ -26,7 +26,6 @@ enum Prefs {
 
         static let background = "stage.background"
         static let maskStatusBar = "stage.maskStatusBar"
-        static let hideStatusBar = "stage.hideStatusBar"
         static let darkStatusBarText = "stage.darkStatusBarText"
 
         static let darwinSignals = "probe.darwinSignals"
@@ -76,7 +75,6 @@ enum Prefs {
             Key.storeCountry: "",
             Key.background: StageBackground.black.rawValue,
             Key.maskStatusBar: false,
-            Key.hideStatusBar: false,
             Key.darkStatusBarText: false,
             Key.darwinSignals: true,
             Key.toneIdentifierToTry: "system:Radar",

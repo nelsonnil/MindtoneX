@@ -7,11 +7,15 @@ struct StageView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var notes = NotesSongSession.shared
     @AppStorage(Prefs.Key.background) private var background = StageBackground.black.rawValue
-    @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
 
+    private var stageKind: StageBackground { StageBackground(rawValue: background) ?? .black }
+
+    /// Solid black Fake stage: hide status bar. Gradient, screenshot, and Notes: always show (adaptive text on wallpaper).
+    private var hidesStatusBarForStage: Bool { stageKind == .black }
+
     private var darkStatusBarText: Bool {
-        StageBackground(rawValue: background) == .image && StageImageStore.wantsDarkStatusBarText()
+        stageKind == .image && StageImageStore.wantsDarkStatusBarText()
     }
 
     var body: some View {
@@ -27,8 +31,7 @@ struct StageView: View {
 
     private var callStage: some View {
         ZStack(alignment: .topLeading) {
-            StageBackgroundView(kind: StageBackground(rawValue: background) ?? .black,
-                                maskStatusBar: maskStatusBar)
+            StageBackgroundView(kind: stageKind, maskStatusBar: maskStatusBar)
                 .ignoresSafeArea()
 
             StageGestureLayer(
@@ -55,7 +58,7 @@ struct StageView: View {
                 DebugOverlay().transition(.opacity)
             }
         }
-        .statusBarHidden(hideStatusBar)
+        .statusBarHidden(hidesStatusBarForStage)
         .preferredColorScheme(darkStatusBarText ? .light : .dark)
         .persistentSystemOverlays(.hidden)
         .animation(.easeInOut(duration: 0.2), value: model.showDebugOverlay)

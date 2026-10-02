@@ -6,7 +6,6 @@ struct AdvancedDisclosureCard: View {
     @EnvironmentObject private var model: AppModel
 
     @AppStorage("ui.advancedExpanded") private var expanded = false
-    @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
     @AppStorage(Prefs.Key.background) private var stageBackground = StageBackground.black.rawValue
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
@@ -93,20 +92,24 @@ struct AdvancedDisclosureCard: View {
                 }
             }
             toggleRow("Blur cover on screenshot",
-                      detail: "Only if your wallpaper still shows an old status bar under the real one. Off by default.",
+                      detail: "Optional. Only if your wallpaper still shows a stale status bar under the live one. Off by default.",
                       isOn: $maskStatusBar)
-            toggleRow("Hide status bar",
-                      detail: "Hides the system status bar entirely during the act.",
-                      isOn: $hideStatusBar)
         }
     }
 
     private var autoStatusBarDetail: String {
-        guard StageBackground(rawValue: stageBackground) == .image, StageImageStore.statusBarLuminance() != nil else {
-            return "White text on dark stages. With a screenshot, status bar text color follows the top of your wallpaper — no blur unless you turn on Blur cover."
+        switch StageBackground(rawValue: stageBackground) ?? .black {
+        case .black:
+            return "Solid black stage: status bar is hidden during Perform. Notes (white sheet) always keeps the status bar visible."
+        case .gradient:
+            return "Dark gradient stage: status bar stays visible with light text during Perform."
+        case .image:
+            guard StageImageStore.statusBarLuminance() != nil else {
+                return "Screenshot wallpaper: status bar visible; text color follows the top of your image. No blur unless Blur cover is on."
+            }
+            let dark = StageImageStore.wantsDarkStatusBarText()
+            return "Screenshot wallpaper: status bar visible with \(dark ? "dark" : "white") text (from wallpaper luminance). No blur unless Blur cover is on."
         }
-        let dark = StageImageStore.wantsDarkStatusBarText()
-        return "Screenshot wallpaper: \(dark ? "light" : "dark") top area → \(dark ? "dark" : "white") status bar text. No blur strip unless Blur cover is on."
     }
 
     private var songSection: some View {
