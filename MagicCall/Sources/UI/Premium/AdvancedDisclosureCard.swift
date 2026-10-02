@@ -17,7 +17,7 @@ struct AdvancedDisclosureCard: View {
     }
 
     var body: some View {
-        OracleCard(padding: 0) {
+        OracleCard(section: .advanced, padding: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 header
 
@@ -44,9 +44,9 @@ struct AdvancedDisclosureCard: View {
             HStack(spacing: 12) {
                 Image(systemName: "slider.horizontal.3")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(OracleTheme.gold)
+                    .foregroundStyle(OracleHomeSection.advanced.accent)
                     .frame(width: 36, height: 36)
-                    .background(OracleTheme.gold.opacity(0.12))
+                    .background(OracleHomeSection.advanced.accent.opacity(0.14))
                     .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Advanced")

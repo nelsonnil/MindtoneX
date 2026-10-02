@@ -20,7 +20,7 @@ struct MainShellView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 HeroLogoView {
                     activeSheet = .advanced
                 }
@@ -44,7 +44,7 @@ struct MainShellView: View {
                 }
                 .animation(.easeInOut(duration: 0.25), value: performanceModeRaw)
 
-                OracleCard {
+                OracleCard(section: .songInput) {
                     SongInputStrip(
                         inputModeRaw: $inputModeRaw,
                         queryFocused: $queryFocused

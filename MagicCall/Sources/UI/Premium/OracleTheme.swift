@@ -48,6 +48,11 @@ enum OracleTheme {
         mode == .fakeRingtone ? goldGradient : warmGradient
     }
 
+    // MARK: Home section identity (Mode · Song · Feedback · Advanced)
+
+    static let sectionTeal = Color(red: 0.32, green: 0.78, blue: 0.72)
+    static let sectionSlate = Color(red: 0.58, green: 0.54, blue: 0.72)
+
     // MARK: Adaptive label color
 
     /// WCAG relative luminance (0 = black, 1 = white).
@@ -125,38 +130,111 @@ struct OracleBackdrop: View {
     }
 }
 
+/// Visual tier on the home screen — each block gets its own accent wash and rail.
+enum OracleHomeSection {
+    case mode
+    case songInput
+    case feedback
+    case advanced
+
+    var accent: Color {
+        switch self {
+        case .mode: OracleTheme.gold
+        case .songInput: OracleTheme.indigo
+        case .feedback: OracleTheme.sectionTeal
+        case .advanced: OracleTheme.sectionSlate
+        }
+    }
+
+    var fillWash: Color { accent.opacity(0.11) }
+
+    var borderTint: Color { accent.opacity(0.28) }
+
+    var shadowTint: Color { accent.opacity(0.12) }
+}
+
+private struct OracleSectionAccentKey: EnvironmentKey {
+    static let defaultValue: Color? = nil
+}
+
+extension EnvironmentValues {
+    var oracleSectionAccent: Color? {
+        get { self[OracleSectionAccentKey.self] }
+        set { self[OracleSectionAccentKey.self] = newValue }
+    }
+}
+
 struct OracleCard<Content: View>: View {
+    var section: OracleHomeSection?
     var padding: CGFloat = 18
     @ViewBuilder var content: () -> Content
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: OracleTheme.cardRadius, style: .continuous)
+    }
 
     var body: some View {
         content()
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
-                RoundedRectangle(cornerRadius: OracleTheme.cardRadius, style: .continuous)
+                shape
                     .fill(.ultraThinMaterial)
                     .opacity(0.35)
             }
-            .background(OracleTheme.cardFill)
-            .clipShape(RoundedRectangle(cornerRadius: OracleTheme.cardRadius, style: .continuous))
+            .background {
+                ZStack(alignment: .top) {
+                    OracleTheme.cardFill
+                    if let section {
+                        LinearGradient(
+                            colors: [section.fillWash, section.fillWash.opacity(0.35), .clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    }
+                }
+            }
+            .clipShape(shape)
             .overlay {
-                RoundedRectangle(cornerRadius: OracleTheme.cardRadius, style: .continuous)
-                    .strokeBorder(OracleTheme.cardStroke, lineWidth: 1)
+                shape.strokeBorder(OracleTheme.cardStroke, lineWidth: 1)
+            }
+            .overlay {
+                if let section {
+                    shape.strokeBorder(
+                        LinearGradient(
+                            colors: [section.borderTint, OracleTheme.cardBorder, OracleTheme.cardBorder],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+                }
+            }
+            .overlay(alignment: .leading) {
+                if let section {
+                    Capsule(style: .continuous)
+                        .fill(section.accent.opacity(0.92))
+                        .frame(width: 3.5)
+                        .padding(.vertical, 14)
+                        .padding(.leading, 1)
+                }
             }
             .shadow(color: .black.opacity(0.40), radius: 18, y: 10)
+            .shadow(color: section?.shadowTint ?? .clear, radius: 14, y: 6)
+            .environment(\.oracleSectionAccent, section?.accent)
     }
 }
 
 /// Small uppercase caption used as a section label inside cards.
 struct OracleEyebrow: View {
     let text: String
+    @Environment(\.oracleSectionAccent) private var sectionAccent
 
     var body: some View {
         Text(text.uppercased())
             .font(.caption2.weight(.semibold))
             .tracking(1.2)
-            .foregroundStyle(OracleTheme.textSecondary)
+            .foregroundStyle(sectionAccent ?? OracleTheme.textSecondary)
     }
 }
 

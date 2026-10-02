@@ -151,7 +151,7 @@ struct PerformanceFeedbackCard: View {
     }
 
     var body: some View {
-        OracleCard {
+        OracleCard(section: .feedback) {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     OracleEyebrow(text: "Feedback")
@@ -308,12 +308,13 @@ private struct CueDivider: View {
 
 private struct CueSectionTitle: View {
     let text: String
+    @Environment(\.oracleSectionAccent) private var sectionAccent
     init(_ text: String) { self.text = text }
 
     var body: some View {
         Text(text.uppercased())
             .font(.caption2.weight(.semibold))
-            .foregroundStyle(OracleTheme.textSecondary)
+            .foregroundStyle((sectionAccent ?? OracleTheme.textSecondary).opacity(0.88))
             .tracking(0.6)
     }
 }

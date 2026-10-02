@@ -8,7 +8,7 @@ struct ShareModeCard: View {
     var onFavoritesInfo: () -> Void
 
     var body: some View {
-        OracleCard {
+        OracleCard(section: .mode) {
             VStack(alignment: .leading, spacing: 16) {
                 ModeDetailHeader(
                     title: "Share Ringtone",

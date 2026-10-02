@@ -10,16 +10,21 @@ struct ModePickerCard: View {
     }
 
     var body: some View {
-        OracleCard(padding: 6) {
-            HStack(spacing: 6) {
-                segment(.fakeRingtone,
-                        title: "Fake Ringtone",
-                        subtitle: "Silent · app plays the song",
-                        icon: "bell.slash.fill")
-                segment(.shareRingtone,
-                        title: "Share Ringtone",
-                        subtitle: "Real iOS ringtone",
-                        icon: "bell.badge.fill")
+        OracleCard(section: .mode, padding: 6) {
+            VStack(alignment: .leading, spacing: 8) {
+                OracleEyebrow(text: "Mode")
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                HStack(spacing: 6) {
+                    segment(.fakeRingtone,
+                            title: "Fake Ringtone",
+                            subtitle: "Silent · app plays the song",
+                            icon: "bell.slash.fill")
+                    segment(.shareRingtone,
+                            title: "Share Ringtone",
+                            subtitle: "Real iOS ringtone",
+                            icon: "bell.badge.fill")
+                }
             }
         }
         .accessibilityElement(children: .contain)

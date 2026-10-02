@@ -6,7 +6,7 @@ struct FakeModeCard: View {
     @Binding var photoItem: PhotosPickerItem?
     var onInfo: () -> Void
     var body: some View {
-        OracleCard {
+        OracleCard(section: .mode) {
             VStack(alignment: .leading, spacing: 16) {
                 ModeDetailHeader(
                     title: "Fake Ringtone",
