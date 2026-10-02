@@ -20,8 +20,8 @@ struct SongInputStrip: View {
                 HStack(spacing: 8) {
                     inputChip("Manual", icon: "keyboard", mode: .manual)
                     inputChip("AI Voice", icon: "mic.fill", mode: .aiVoice)
+                    inputChip("Notes", icon: "note.text", mode: .notes)
                     disabledChip("API", icon: "link", subtitle: "Soon")
-                    disabledChip("Notes", icon: "note.text", subtitle: "Soon")
                 }
             }
 
@@ -31,6 +31,8 @@ struct SongInputStrip: View {
                     manualField
                 case .aiVoice:
                     aiVoiceCompact
+                case .notes:
+                    NotesInputControls()
                 }
             }
         }

@@ -41,6 +41,12 @@ struct SettingsView: View {
     @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
     @ObservedObject private var silentShortcut = SilentShortcut.shared
 
+    @AppStorage(NotesSettings.Key.idleSearchEnabled) private var notesIdleSearch = true
+    @AppStorage(NotesSettings.Key.idleDelay) private var notesIdleDelay = NotesSettings.defaultIdleDelay
+    @AppStorage(NotesSettings.Key.searchOnReturn) private var notesSearchOnReturn = true
+    @AppStorage(NotesSettings.Key.useAIPicker) private var notesUseAI = true
+    @AppStorage(NotesSettings.Key.hapticOnReady) private var notesHaptic = false
+
     @State private var confirmToneChange = false
 
     var body: some View {
@@ -59,6 +65,7 @@ struct SettingsView: View {
             audioSection
             shortcutSection
             triggerSection
+            notesSection
             previewsSection
             shareRingtoneSection
             privateSection
@@ -114,6 +121,24 @@ struct SettingsView: View {
             Text("Fake Ringtone triggers")
         } footer: {
             Text("Auto-start uses CallKit call detection plus audio session signals. Leave on for performances. Tap is a backup if auto-start fails.")
+        }
+    }
+
+    private var notesSection: some View {
+        Section {
+            Toggle("Search when typing stops", isOn: $notesIdleSearch)
+            if notesIdleSearch {
+                Stepper("Idle delay: \(NotesInputControls.format(notesIdleDelay))", value: $notesIdleDelay,
+                        in: NotesSettings.idleDelayRange, step: 0.5)
+            }
+            Toggle("Search on Return", isOn: $notesSearchOnReturn)
+            Toggle("Use AI to read the note", isOn: $notesUseAI)
+                .disabled(VoiceSettings.apiKey == nil)
+            Toggle("Soft vibration when the song is ready", isOn: $notesHaptic)
+        } header: {
+            Text("Notes input")
+        } footer: {
+            Text("Notes Perform shows a white note. After the idle delay (or Return, or the checkmark) the note is searched and the song is loaded in the background; the incoming call then plays it like AI Voice. With an OpenAI key the AI turns the note into “title artist”; otherwise the note is searched as written.")
         }
     }
 

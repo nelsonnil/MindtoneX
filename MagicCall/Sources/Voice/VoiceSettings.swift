@@ -18,12 +18,14 @@ enum VoiceSettings {
     enum InputMode: String, CaseIterable, Identifiable {
         case manual
         case aiVoice
+        case notes
 
         var id: String { rawValue }
         var title: String {
             switch self {
             case .manual: return "Manual"
             case .aiVoice: return "AI Voice"
+            case .notes: return "Notes"
             }
         }
     }

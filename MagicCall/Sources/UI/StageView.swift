@@ -5,6 +5,7 @@ import UIKit
 /// El banner real de llamada de iOS aparece encima de esto.
 struct StageView: View {
     @EnvironmentObject private var model: AppModel
+    @ObservedObject private var notes = NotesSongSession.shared
     @AppStorage(Prefs.Key.background) private var background = StageBackground.black.rawValue
     @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
 
@@ -13,6 +14,14 @@ struct StageView: View {
     }
 
     var body: some View {
+        if notes.isActive {
+            NotesPerformView()
+        } else {
+            callStage
+        }
+    }
+
+    private var callStage: some View {
         ZStack(alignment: .topLeading) {
             StageBackgroundView(kind: StageBackground(rawValue: background) ?? .black,
                                 maskStatusBar: true)

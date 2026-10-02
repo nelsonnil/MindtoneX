@@ -176,6 +176,8 @@ Build 16 — **UI premium**: pantalla principal oscura (`MainShellView`), hero c
 
 Build 17 — **UI premium v2**: fondo oscuro multicapa (índigo/negro/púrpura) con glow suave tras el logo; botón circular **Guide** arriba a la derecha; tarjeta de modo **Fake Ringtone | Share Ringtone** bajo el logo; barra inferior fija con **barra de estado** (texto negro/blanco según luminancia del fondo) y **Perform**; panel de descarga de atajos *Ringtone Oracle Silent On/Off* en Share (enlaces iCloud en `SilentShortcut.silentOnInstallURL` / `silentOffInstallURL`, vacíos → guía); chip **Notes · Soon**; tarjeta plegable **Advanced** (barra de estado del escenario, otras coincidencias, ajustes completos, debug log, AI Voice/API, voice debug, atajos, favoritos). **Barra de estado del escenario automática**: con captura siempre se tapa la barra vieja y el color del texto (negro/blanco) se detecta por la luminancia de la franja superior; solo queda manual "Hide status bar".
 
+Build 19 — **Notes (entrada de canción)**: el chip **Notes** ya funciona. Con Notes + **Perform** se abre una nota en blanco copiada de G-Sensor `NotesView` (fondo blanco, botón atrás redondo, cápsula compartir/⋯, check dorado; texto 22 pt, cursor dorado, teclado sube solo). El espectador escribe; tras **N s sin escribir** (interruptor + stepper, por defecto 3 s), al pulsar **Intro** (interruptor) o el **check**, la nota se busca y la canción se precarga en segundo plano. Fake Ringtone: la llamada entrante la reproduce igual que AI Voice. Share Ringtone: en cuanto está lista se abre Compartir. Con clave OpenAI la IA convierte la nota en "título artista" (interruptor *Use AI to read the note*); sin clave se busca tal cual. Salir: mantener pulsado el botón atrás o deslizar con dos dedos hacia abajo. Triple toque en la cápsula ⋯ = debug. Ajustes en la tira *Song input* y en *Advanced → Notes input* (claves `notes.*`).
+
 Build 15 — **icono**: campana dorada sobre fondo crema (concepto v2-03), en `Assets.xcassets/AppIcon.appiconset`
 (1024 para la App Store + todos los tamaños de iPhone). El nombre bajo el icono sigue siendo **Tonos**.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
@@ -227,6 +229,7 @@ MagicCall/Sources/Calls     CallMonitor (CXCallObserver)
 MagicCall/Sources/Songs     PreviewService (iTunes → Deezer, caché, latencias)
 MagicCall/Sources/UI        Preparación, escena, ajustes, registro
 MagicCall/Sources/Voice     AI Voice: micrófono, transcripción (OpenAI/Apple), elección de canción, ajustes
+MagicCall/Sources/Notes     Notes: pantalla tipo Notas, búsqueda por inactividad/Intro, ajustes
 MagicCall/Sources/Perform   Flujo Perform de Share Ringtone y textos "How it works"
 MagicCall/Sources/Intents   App Intents para Toque posterior / botón de Acción
 MagicCall/Sources/Experiments  APIs privadas, CallKit, volumen

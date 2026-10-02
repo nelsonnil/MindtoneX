@@ -41,6 +41,9 @@ struct ReadinessStatusBar: View {
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
     @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
     @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
+    @AppStorage(NotesSettings.Key.idleSearchEnabled) private var idleSearchEnabled = true
+    @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
+    @AppStorage(NotesSettings.Key.searchOnReturn) private var searchOnReturn = true
 
     let mode: Prefs.PerformanceMode
 
@@ -95,6 +98,11 @@ struct ReadinessStatusBar: View {
             default:
                 return Status(tone: .ready, icon: "mic.circle.fill", text: "Ready · AI Voice picks the song on Perform")
             }
+        case .notes:
+            let when = [idleSearchEnabled ? "after \(NotesInputControls.format(idleDelay)) idle" : nil,
+                        searchOnReturn ? "on Return" : nil].compactMap { $0 }
+            let detail = when.isEmpty ? "searches on ✓ or call" : "searches \(when.joined(separator: " / "))"
+            return Status(tone: .ready, icon: "note.text", text: "Ready · Notes \(detail)")
         }
     }
 

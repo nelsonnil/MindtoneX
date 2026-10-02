@@ -47,24 +47,37 @@ final class SharePerformFlow: ObservableObject {
         })
     }
 
-    func start(withVoice: Bool) {
+    func start(input: VoiceSettings.InputMode) {
         let model = AppModel.shared
-        step = withVoice ? .listening : .preparing
+        step = input == .manual ? .preparing : .listening
         model.phase = .stage
         UIApplication.shared.isIdleTimerDisabled = true
-        dlog("[SHARE PERFORM] 1 · black screen · input=\(withVoice ? "AI Voice" : "Manual") · song=\(model.selected.map { "\($0.title) — \($0.artist)" } ?? "none yet")")
-        if withVoice {
+        let screen = input == .notes ? "Notes screen" : "black screen"
+        dlog("[SHARE PERFORM] 1 · \(screen) · input=\(input.title) · song=\(model.selected.map { "\($0.title) — \($0.artist)" } ?? "none yet")")
+        switch input {
+        case .aiVoice:
             Task { await VoiceSongSession.shared.start(context: .perform) }
-        } else {
+        case .notes:
+            NotesSongSession.shared.start(context: .perform)
+        case .manual:
             Task { await openShare() }
         }
     }
 
-    func voiceLocked() {
+    /// AI Voice locked a song, or Notes loaded one.
+    func songLocked() {
         guard step == .listening else { return }
         step = .preparing
         dlog("[SHARE PERFORM] 2 · song locked → preparing ringtone")
         Task { await openShare() }
+    }
+
+    /// Steps where the Share sheet has been shown and a tap on the stage means something.
+    var acceptsStageTap: Bool {
+        switch step {
+        case .sharing, .shareCancelled, .waitingForTap, .wentHome: return true
+        default: return false
+        }
     }
 
     func handleTap() {

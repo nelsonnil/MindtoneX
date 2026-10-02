@@ -53,6 +53,10 @@
 		AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000110000000000000011 /* SilentShortcutStatusRow.swift */; };
 		AA0000140000000000000014 /* PerformBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000130000000000000013 /* PerformBottomBar.swift */; };
 		AA0000160000000000000016 /* AdvancedDisclosureCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000150000000000000015 /* AdvancedDisclosureCard.swift */; };
+		AA0000230000000000000023 /* NotesSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000220000000000000022 /* NotesSettings.swift */; };
+		AA0000250000000000000025 /* NotesSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000240000000000000024 /* NotesSongSession.swift */; };
+		AA0000270000000000000027 /* NotesPerformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000260000000000000026 /* NotesPerformView.swift */; };
+		AA0000290000000000000029 /* NotesInputControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000280000000000000028 /* NotesInputControls.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -106,6 +110,10 @@
 		AA0000110000000000000011 /* SilentShortcutStatusRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentShortcutStatusRow.swift; sourceTree = "<group>"; };
 		AA0000130000000000000013 /* PerformBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformBottomBar.swift; sourceTree = "<group>"; };
 		AA0000150000000000000015 /* AdvancedDisclosureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedDisclosureCard.swift; sourceTree = "<group>"; };
+		AA0000220000000000000022 /* NotesSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSettings.swift; sourceTree = "<group>"; };
+		AA0000240000000000000024 /* NotesSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSongSession.swift; sourceTree = "<group>"; };
+		AA0000260000000000000026 /* NotesPerformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesPerformView.swift; sourceTree = "<group>"; };
+		AA0000280000000000000028 /* NotesInputControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesInputControls.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -217,6 +225,7 @@
 				31B4E312D30B2DE9EFB3E3A5 /* Debug */,
 				46B89EE582F954AA05B2FF8F /* Experiments */,
 				EC06A23E0F798A1BAFB9AAA3 /* Intents */,
+				AA0000210000000000000021 /* Notes */,
 				0FE05D205315F370F0853866 /* Perform */,
 				C2D2244203C15A72F60667AA /* Songs */,
 				5569EF424C4C19731177A663 /* Support */,
@@ -291,6 +300,17 @@
 				C3786727696B22A692F5C69D /* VoiceSongSession.swift */,
 			);
 			path = Voice;
+			sourceTree = "<group>";
+		};
+		AA0000210000000000000021 /* Notes */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000220000000000000022 /* NotesSettings.swift */,
+				AA0000240000000000000024 /* NotesSongSession.swift */,
+				AA0000260000000000000026 /* NotesPerformView.swift */,
+				AA0000280000000000000028 /* NotesInputControls.swift */,
+			);
+			path = Notes;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -376,6 +396,10 @@
 				89D05D830FAE9AE7E676E4D8 /* VoiceSettings.swift in Sources */,
 				0E0ADF8C19CDBE98648567C5 /* VoiceSettingsView.swift in Sources */,
 				AA0000180000000000000018 /* VoiceLockingControls.swift in Sources */,
+				AA0000230000000000000023 /* NotesSettings.swift in Sources */,
+				AA0000250000000000000025 /* NotesSongSession.swift in Sources */,
+				AA0000270000000000000027 /* NotesPerformView.swift in Sources */,
+				AA0000290000000000000029 /* NotesInputControls.swift in Sources */,
 				585AC343960B24E3E4BC65BD /* VoiceSongSession.swift in Sources */,
 				2759F7EDE468921282C2E330 /* AppModel.swift in Sources */,
 				96026EC11D4C033E96585955 /* CallKitFallback.swift in Sources */,
@@ -450,7 +474,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -512,7 +536,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -574,7 +598,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

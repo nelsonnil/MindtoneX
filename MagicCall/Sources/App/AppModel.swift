@@ -106,6 +106,10 @@ final class AppModel: ObservableObject {
             if isArmed {
                 try? audio.configureSession()
                 if Prefs.hotStandby { audio.startStandby() }
+                if !isAudible, hasLikelyIncomingCallSignal() {
+                    dlog("[TRIGGER] song became ready while a call is ringing")
+                    attemptAutoTrigger(source: "songReady.duringCall")
+                }
             }
         } catch {
             loadState = .failed(error.localizedDescription)
@@ -295,6 +299,7 @@ final class AppModel: ObservableObject {
 
     func trigger(source: String) {
         VoiceSongSession.shared.callArrived(source: source)
+        NotesSongSession.shared.callArrived(source: source)
         guard isArmed else {
             dlog("[TRIGGER] “\(source)” ignorado: no armado")
             return
@@ -371,6 +376,7 @@ final class AppModel: ObservableObject {
             callSignalActive = true
             hadCallWhileArmed = true
             VoiceSongSession.shared.callArrived(source: "CXCallObserver.incoming")
+            NotesSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             attemptAutoTrigger(source: "CXCallObserver.incoming")
         case .connected:
             if uuid == incomingCallID && Prefs.stopOnAnswer { silence(reason: "contestada") }
