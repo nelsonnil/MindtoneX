@@ -46,13 +46,19 @@ enum PerformanceCues {
     static let dotSizeRange: ClosedRange<Double> = 4...24
     static let defaultDotColor = "#34C759FF"
 
-    static let colorPresets: [(name: String, hex: String)] = [
-        ("Green", "#34C759FF"),
-        ("Red", "#FF3B30FF"),
-        ("Gold", "#E8BA05FF"),
-        ("White", "#FFFFFFFF"),
-        ("Gray", "#8E8E93FF"),
-        ("Black", "#000000FF"),
+    struct ColorPreset: Identifiable {
+        let name: String
+        let hex: String
+        var id: String { hex }
+    }
+
+    static let colorPresets: [ColorPreset] = [
+        ColorPreset(name: "Green", hex: "#34C759FF"),
+        ColorPreset(name: "Red", hex: "#FF3B30FF"),
+        ColorPreset(name: "Gold", hex: "#E8BA05FF"),
+        ColorPreset(name: "White", hex: "#FFFFFFFF"),
+        ColorPreset(name: "Gray", hex: "#8E8E93FF"),
+        ColorPreset(name: "Black", hex: "#000000FF"),
     ]
 
     private static var d: UserDefaults { .standard }
@@ -227,7 +233,7 @@ struct StatusDotCard: View {
                             VStack(alignment: .leading, spacing: 10) {
                                 ColorPicker(selection: color, supportsOpacity: true) { CueLabel("Color") }
                                 HStack(spacing: 10) {
-                                    ForEach(PerformanceCues.colorPresets, id: \.hex) { preset in
+                                    ForEach(PerformanceCues.colorPresets) { preset in
                                         presetSwatch(preset)
                                     }
                                 }
@@ -241,7 +247,7 @@ struct StatusDotCard: View {
         }
     }
 
-    private func presetSwatch(_ preset: (name: String, hex: String)) -> some View {
+    private func presetSwatch(_ preset: PerformanceCues.ColorPreset) -> some View {
         let selected = colorHex.uppercased() == preset.hex
         return Button {
             colorHex = preset.hex
