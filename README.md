@@ -167,6 +167,8 @@ y **Ringtone Oracle Silent Off** (si ya creaste los de "MagicCall…", renómbra
 app el título es *Ringtone Oracle*; en la pantalla de inicio sigue apareciendo **Tonos**
 (`CFBundleDisplayName`), y el bundle id, el esquema de URL (`magiccall://`) y el proyecto Xcode no cambian.
 
+Build 16 — **UI premium**: pantalla principal oscura (`MainShellView`), hero con logo v2-03 sin título, dock flotante Fake/Share + Guide, chips Manual / AI Voice / API Soon, tarjetas compactas y textos largos en sheets. Build number en `project.yml` / Xcode.
+
 Build 15 — **icono**: campana dorada sobre fondo crema (concepto v2-03), en `Assets.xcassets/AppIcon.appiconset`
 (1024 para la App Store + todos los tamaños de iPhone). El nombre bajo el icono sigue siendo **Tonos**.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta

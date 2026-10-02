@@ -41,6 +41,15 @@
 		585AC343960B24E3E4BC65BD /* VoiceSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3786727696B22A692F5C69D /* VoiceSongSession.swift */; };
 		B7991EA68474061E01D04616 /* SilentShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = E050CA4E65BC817983D87C6E /* SilentShortcut.swift */; };
 		728EECDB8B001133FF4F0696 /* SilentShortcutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1739526C750AA0036D5F293 /* SilentShortcutCard.swift */; };
+		AA0000020000000000000002 /* MainShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000001 /* MainShellView.swift */; };
+		AA0000040000000000000004 /* HeroLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000030000000000000003 /* HeroLogoView.swift */; };
+		AA0000060000000000000006 /* FloatingModeDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000050000000000000005 /* FloatingModeDock.swift */; };
+		AA0000080000000000000008 /* SongInputStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000070000000000000007 /* SongInputStrip.swift */; };
+		AA00000A000000000000000A /* FakeModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000090000000000000009 /* FakeModeCard.swift */; };
+		AA00000C000000000000000C /* ShareModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000B000000000000000B /* ShareModeCard.swift */; };
+		AA00000E000000000000000E /* OracleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000D000000000000000D /* OracleSheets.swift */; };
+		AA0000100000000000000010 /* OracleTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000F000000000000000F /* OracleTheme.swift */; };
+		AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000110000000000000011 /* SilentShortcutStatusRow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -82,6 +91,15 @@
 		C3786727696B22A692F5C69D /* VoiceSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceSongSession.swift"; sourceTree = "<group>"; };
 		E050CA4E65BC817983D87C6E /* SilentShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SilentShortcut.swift"; sourceTree = "<group>"; };
 		E1739526C750AA0036D5F293 /* SilentShortcutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SilentShortcutCard.swift"; sourceTree = "<group>"; };
+		AA0000010000000000000001 /* MainShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainShellView.swift; sourceTree = "<group>"; };
+		AA0000030000000000000003 /* HeroLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroLogoView.swift; sourceTree = "<group>"; };
+		AA0000050000000000000005 /* FloatingModeDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingModeDock.swift; sourceTree = "<group>"; };
+		AA0000070000000000000007 /* SongInputStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongInputStrip.swift; sourceTree = "<group>"; };
+		AA0000090000000000000009 /* FakeModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeModeCard.swift; sourceTree = "<group>"; };
+		AA00000B000000000000000B /* ShareModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareModeCard.swift; sourceTree = "<group>"; };
+		AA00000D000000000000000D /* OracleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleSheets.swift; sourceTree = "<group>"; };
+		AA00000F000000000000000F /* OracleTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleTheme.swift; sourceTree = "<group>"; };
+		AA0000110000000000000011 /* SilentShortcutStatusRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentShortcutStatusRow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -219,8 +237,25 @@
 				4327EF1CCFA6B6427A4B0D85 /* SetupView.swift */,
 				3305BEFC5DE85E1D1E566060 /* StageView.swift */,
 				E1A2B3C4D5E6789012345671 /* UIIllustrations.swift */,
+				AA0000200000000000000020 /* Premium */,
 			);
 			path = UI;
+			sourceTree = "<group>";
+		};
+		AA0000200000000000000020 /* Premium */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000001 /* MainShellView.swift */,
+				AA0000030000000000000003 /* HeroLogoView.swift */,
+				AA0000050000000000000005 /* FloatingModeDock.swift */,
+				AA0000070000000000000007 /* SongInputStrip.swift */,
+				AA0000090000000000000009 /* FakeModeCard.swift */,
+				AA00000B000000000000000B /* ShareModeCard.swift */,
+				AA00000D000000000000000D /* OracleSheets.swift */,
+				AA00000F000000000000000F /* OracleTheme.swift */,
+				AA0000110000000000000011 /* SilentShortcutStatusRow.swift */,
+			);
+			path = Premium;
 			sourceTree = "<group>";
 		};
 		0FE05D205315F370F0853866 /* Perform */ = {
@@ -353,6 +388,15 @@
 				4C3EAD437CDD61E9E5E6DFE6 /* SystemVolume.swift in Sources */,
 				D02E775CDE9544B43A79D499 /* UIWindow+MagicCall.swift in Sources */,
 				F1A2B3C4D5E6789012345671 /* UIIllustrations.swift in Sources */,
+				AA0000020000000000000002 /* MainShellView.swift in Sources */,
+				AA0000040000000000000004 /* HeroLogoView.swift in Sources */,
+				AA0000060000000000000006 /* FloatingModeDock.swift in Sources */,
+				AA0000080000000000000008 /* SongInputStrip.swift in Sources */,
+				AA00000A000000000000000A /* FakeModeCard.swift in Sources */,
+				AA00000C000000000000000C /* ShareModeCard.swift in Sources */,
+				AA00000E000000000000000E /* OracleSheets.swift in Sources */,
+				AA0000100000000000000010 /* OracleTheme.swift in Sources */,
+				AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -394,7 +438,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -456,7 +500,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -518,7 +562,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
