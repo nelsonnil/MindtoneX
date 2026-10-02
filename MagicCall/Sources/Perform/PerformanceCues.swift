@@ -11,7 +11,6 @@ enum PerformanceCues {
         static let dotEnabled = "cues.statusDot.enabled"
         static let dotSize = "cues.statusDot.size"
         static let dotColor = "cues.statusDot.color"
-        static let dotTiming = "cues.statusDot.timing"
     }
 
     enum VibrationStyle: String, CaseIterable, Identifiable {
@@ -25,19 +24,6 @@ enum PerformanceCues {
             case .alert: return "Strong — 3 taps"
             case .heavyDouble: return "Heavy — 2 taps"
             case .longBuzz: return "Long buzz"
-            }
-        }
-    }
-
-    enum DotTiming: String, CaseIterable, Identifiable {
-        case songReady
-        case always
-
-        var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .songReady: return "When song is ready"
-            case .always: return "Always in Perform"
             }
         }
     }
@@ -104,7 +90,6 @@ struct PerformStatusDot: View {
     @AppStorage(PerformanceCues.Key.dotEnabled) private var enabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var size = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
-    @AppStorage(PerformanceCues.Key.dotTiming) private var timingRaw = PerformanceCues.DotTiming.songReady.rawValue
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     private var songReady: Bool {
@@ -117,8 +102,7 @@ struct PerformStatusDot: View {
     }
 
     private var visible: Bool {
-        guard enabled else { return false }
-        return PerformanceCues.DotTiming(rawValue: timingRaw) == .always || songReady
+        enabled && songReady
     }
 
     var body: some View {
@@ -144,8 +128,6 @@ struct FeedbackCard: View {
     @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var dotSize = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
-    @AppStorage(PerformanceCues.Key.dotTiming) private var timingRaw = PerformanceCues.DotTiming.songReady.rawValue
-
     private var dotColor: Binding<Color> {
         Binding(get: { Color(hex: colorHex) ?? .green },
                 set: { colorHex = $0.hexString })
@@ -222,27 +204,11 @@ struct FeedbackCard: View {
             CueSectionTitle("Status dot")
             CueRows {
                 CueRow {
-                    Toggle(isOn: $dotEnabled) { CueLabel("Show on stage") }
+                    Toggle(isOn: $dotEnabled) { CueLabel("When song is ready") }
                         .toggleStyle(.switch)
                         .tint(OracleTheme.gold)
                 }
                 if dotEnabled {
-                    CueDivider()
-                    CueRow(verticalPadding: 12) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            CueLabel("Show")
-                            Picker("Show", selection: $timingRaw) {
-                                ForEach(PerformanceCues.DotTiming.allCases) { timing in
-                                    Text(timing.title).tag(timing.rawValue)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .labelsHidden()
-                            .tint(OracleTheme.gold)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
                     CueDivider()
                     CueRow {
                         HStack {
@@ -270,7 +236,7 @@ struct FeedbackCard: View {
                     }
                 }
             }
-            CueFooter("Top-right on the stage (black screen, wallpaper, or Notes). “When song is ready” follows AI Voice / API lock.")
+            CueFooter("Top-right on the stage (black screen, wallpaper, or Notes). The dot appears only once the song is loaded and locked (AI Voice / API) or ready (Manual / Notes).")
         }
     }
 
