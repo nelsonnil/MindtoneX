@@ -33,7 +33,7 @@ El informe completo de investigación está en [`docs/magic-call-research-report
 ## 2. Compilar e instalar desde Xcode (recomendado, con experimentos privados)
 
 1. Clona el repositorio y abre **`MagicCall.xcodeproj`** con doble clic.
-   - (Opcional) Si cambias `project.yml`, regenera el proyecto con `brew install xcodegen && xcodegen`.
+   - Tras editar código o `project.yml`, **regenera siempre** el proyecto: `xcodegen generate --spec project.yml` (el `.xcodeproj` no se mantiene a mano).
 2. En el navegador del proyecto selecciona **MagicCall** (icono azul) → target **MagicCall** →
    pestaña **Signing & Capabilities**:
    - Marca **Automatically manage signing**.

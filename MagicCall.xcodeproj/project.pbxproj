@@ -12,7 +12,9 @@
 		1A496C1D95A030425C92AF6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B6949E0964299D0E2E8531C7 /* Assets.xcassets */; };
 		2759F7EDE468921282C2E330 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */; };
 		2E7126CCE44C14489C54AA8E /* MagicCallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5F46051981A4C204711045 /* MagicCallApp.swift */; };
+		30CF1BD0AF300884CF55328D /* RingtoneSharePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041A68340E90792EDFC50A97 /* RingtoneSharePresenter.swift */; };
 		4C3EAD437CDD61E9E5E6DFE6 /* SystemVolume.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ED684AAD9C91EABD24A1D3 /* SystemVolume.swift */; };
+		4D745440E4E871C0E45D380E /* RingtoneDisguiseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B61D2102F758F8505B68544E /* RingtoneDisguiseView.swift */; };
 		924BA1D7520A74BEAA0986A7 /* MCObjC.m in Sources */ = {isa = PBXBuildFile; fileRef = 778066FED077319EC23EDCEE /* MCObjC.m */; };
 		96026EC11D4C033E96585955 /* CallKitFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4AE31BF04AE2B60A80AB388 /* CallKitFallback.swift */; };
 		99C1146710877380EBC55FD9 /* CallMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303BA173088357A9233FE003 /* CallMonitor.swift */; };
@@ -29,6 +31,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		041A68340E90792EDFC50A97 /* RingtoneSharePresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneSharePresenter.swift; sourceTree = "<group>"; };
 		27CA62E6FADC4DE40154C670 /* RingtoneExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneExporter.swift; sourceTree = "<group>"; };
 		303BA173088357A9233FE003 /* CallMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallMonitor.swift; sourceTree = "<group>"; };
 		32440B4086E44C2CF9A8EBB5 /* MagicCall-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MagicCall-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -42,6 +45,7 @@
 		8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneAudioEngine.swift; sourceTree = "<group>"; };
 		94C29E2CCBFC1086588445F6 /* PreviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewService.swift; sourceTree = "<group>"; };
 		9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B61D2102F758F8505B68544E /* RingtoneDisguiseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneDisguiseView.swift; sourceTree = "<group>"; };
 		B6949E0964299D0E2E8531C7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B810F1343436DAAD6202B2E1 /* DebugLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogView.swift; sourceTree = "<group>"; };
 		BE6CC08F1371815B8ECC08D6 /* DebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLog.swift; sourceTree = "<group>"; };
@@ -123,6 +127,7 @@
 			children = (
 				8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */,
 				27CA62E6FADC4DE40154C670 /* RingtoneExporter.swift */,
+				041A68340E90792EDFC50A97 /* RingtoneSharePresenter.swift */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -181,6 +186,7 @@
 			isa = PBXGroup;
 			children = (
 				B810F1343436DAAD6202B2E1 /* DebugLogView.swift */,
+				B61D2102F758F8505B68544E /* RingtoneDisguiseView.swift */,
 				9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */,
 				4327EF1CCFA6B6427A4B0D85 /* SetupView.swift */,
 				3305BEFC5DE85E1D1E566060 /* StageView.swift */,
@@ -219,7 +225,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					505AFC5C4964632A09807C63 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = 6XSHKM2M34;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -271,7 +277,9 @@
 				BEC014E4012EE7481D2D4B24 /* PreviewService.swift in Sources */,
 				AD247EA0DE5232DC20B60C86 /* PrivateProbes.swift in Sources */,
 				0FC1EC7B4985F1F6545DE135 /* RingtoneAudioEngine.swift in Sources */,
+				4D745440E4E871C0E45D380E /* RingtoneDisguiseView.swift in Sources */,
 				B4ED244091544ED3F9E5F476 /* RingtoneExporter.swift in Sources */,
+				30CF1BD0AF300884CF55328D /* RingtoneSharePresenter.swift in Sources */,
 				A83A9558500EF1F623A00951 /* SettingsView.swift in Sources */,
 				CC20F35DDD0E7784082D0FD7 /* SetupView.swift in Sources */,
 				A4614B1A536192430CFD5A9C /* StageView.swift in Sources */,
@@ -318,9 +326,9 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -380,9 +388,9 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -442,9 +450,9 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;

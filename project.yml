@@ -18,9 +18,9 @@ settings:
     TARGETED_DEVICE_FAMILY: "1"
     CODE_SIGN_STYLE: Automatic
     # Pon aquí tu Team ID o elígelo en Xcode > Signing & Capabilities.
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "6XSHKM2M34"
     MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "3"
+    CURRENT_PROJECT_VERSION: "3"
 
 targets:
   MagicCall:
