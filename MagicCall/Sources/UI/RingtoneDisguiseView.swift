@@ -6,7 +6,7 @@ struct RingtoneDisguiseView: View {
         Color.black
             .ignoresSafeArea()
             .overlay {
-                Text("Un momento…")
+                Text("One moment…")
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.35))
             }
