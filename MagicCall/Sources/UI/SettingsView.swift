@@ -13,6 +13,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.stopOnAnswer) private var stopOnAnswer = true
     @AppStorage(Prefs.Key.forceMediaVolume) private var forceMediaVolume = false
     @AppStorage(Prefs.Key.mediaVolumeTarget) private var mediaVolumeTarget = 0.8
+    @AppStorage(Prefs.Key.boostSystemVolumeOnTrigger) private var boostSystemVolumeOnTrigger = true
 
     @AppStorage(Prefs.Key.autoTrigger) private var autoTrigger = true
     @AppStorage(Prefs.Key.tapTrigger) private var tapTrigger = true
@@ -35,6 +36,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.autoStageRingtone) private var autoStageRingtone = true
     @AppStorage(Prefs.Key.discreetRingtoneUI) private var discreetRingtoneUI = true
     @AppStorage(Prefs.Key.ringtoneUseQuickLook) private var ringtoneUseQuickLook = false
+    @AppStorage(Prefs.Key.attemptRingerMaxOnStage) private var attemptRingerMaxOnStage = false
 
     @State private var photoItem: PhotosPickerItem?
     @State private var confirmToneChange = false
@@ -75,10 +77,11 @@ struct SettingsView: View {
             if forceMediaVolume {
                 Slider(value: $mediaVolumeTarget, in: 0.3...1) { Text("Volumen") }
             }
+            Toggle("Ruta 2: subir volumen multimedia al máximo al sonar (llamada o toque)", isOn: $boostSystemVolumeOnTrigger)
         } header: {
             Text("Audio")
         } footer: {
-            Text("Los cambios se aplican al volver a entrar en escena. Prueba primero con los valores por defecto; luego cambia UNA cosa cada vez y anota el resultado.")
+            Text("Con «subir al máximo al sonar» activo, la app guarda tu volumen, lo pone al 100 % cuando empieza la canción y lo restaura al colgar. Usa el MPVolumeView oculto para intentar no mostrar el cartel de volumen. Los cambios de «forzar al armar» se aplican al volver a entrar en escena.")
         }
     }
 
@@ -161,6 +164,7 @@ struct SettingsView: View {
         Button("Restaurar tono original") { model.runToneRestore() }
         Button("Intentar volumen de timbre a 0 (AVSystemController)") { model.runRingerVolume(0) }
         Button("Intentar volumen de timbre a 0,5") { model.runRingerVolume(0.5) }
+        Button("Intentar timbre al máximo (Ruta 1 · experimental)") { model.runRingerVolumeMax() }
         #endif
     }
 
@@ -169,10 +173,13 @@ struct SettingsView: View {
             Toggle("Preparar tono al buscar canción", isOn: $autoStageRingtone)
             Toggle("Pantalla negra antes de Compartir", isOn: $discreetRingtoneUI)
             Toggle("Usar Vista previa en lugar de Compartir directo", isOn: $ringtoneUseQuickLook)
+            if PrivateProbes.isCompiled {
+                Toggle("Al preparar tono: intentar subir volumen del timbre (privado)", isOn: $attemptRingerMaxOnStage)
+            }
         } header: {
             Text("Ruta 1 · menos toques")
         } footer: {
-            Text("Deja activado «Preparar tono al buscar». «Vista previa» puede ayudar si «Usar como tono» no sale en Compartir; pruébalo una vez.")
+            Text("Deja activado «Preparar tono al buscar». «Vista previa» puede ayudar si «Usar como tono» no sale en Compartir. El volumen del timbre no se puede subir de forma fiable desde la app: si el interruptor privado no hace nada, usa Ajustes › Sonidos y vibración › Tono y alertas › «Cambiar con botones» y sube con los botones laterales.")
         }
     }
 

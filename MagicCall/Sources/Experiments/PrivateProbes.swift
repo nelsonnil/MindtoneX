@@ -248,6 +248,26 @@ enum PrivateProbes {
         return record(Result(name: "Volumen de timbre (escritura)", outcome: outcome, detail: detail))
     }
 
+    /// Ruta 1: intenta timbre al máximo y vuelve a leer. iOS suele bloquearlo: la alternativa práctica
+    /// es Ajustes › Sonidos y vibración › Tono y alertas › «Cambiar con botones» y subir con los botones físicos.
+    static func ringerVolumeMaxExperiment() -> [Result] {
+        let before = ringtoneVolumeRead()
+        let write = ringtoneVolumeSet(1.0)
+        let after = ringtoneVolumeRead()
+        var note = Result(
+            name: "Timbre al máximo (conclusión)",
+            outcome: write.outcome == .worked ? .readOnly : .blocked,
+            detail: """
+            Apple separa el volumen del timbre del volumen multimedia. En builds normales (sin jailbreak) \
+            AVSystemController casi nunca deja fijarlo desde una app de terceros aunque el selector exista. \
+            Si no oyes diferencia: en Ajustes › Sonidos y vibración › Tono y alertas activa «Cambiar con botones» \
+            y sube el volumen con los botones laterales mientras suena el tono de prueba.
+            """
+        )
+        note = record(note)
+        return [before, write, after, note]
+    }
+
     // MARK: TelephonyUtilities / CoreTelephony
 
     static func tuCallCenterRead() -> Result {

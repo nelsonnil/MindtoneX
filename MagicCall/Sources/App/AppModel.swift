@@ -134,6 +134,7 @@ final class AppModel: ObservableObject {
             exportedRingtone = url
             ringtoneStaged = true
             dlog("Tono preparado en \(PreviewService.ms(since: t0)) ms → \(url.lastPathComponent)")
+            attemptRingerVolumeMaxIfEnabled(context: "preparar tono")
             guard showShare else {
                 endDiscreetRingtonePrep(discreet)
                 return
@@ -206,6 +207,7 @@ final class AppModel: ObservableObject {
     }
 
     func disarm() {
+        SystemVolume.shared.restoreSavedIfNeeded()
         audio.stop()
         audio.deactivateSession()
         volumeObservation = nil
@@ -226,6 +228,7 @@ final class AppModel: ObservableObject {
             dlog("Disparo “\(source)” ignorado: ya suena")
             return
         }
+        applySystemVolumeBoostForTrigger()
         let t0 = CACurrentMediaTime()
         let ok = audio.makeAudible()
         isAudible = ok
@@ -272,6 +275,7 @@ final class AppModel: ObservableObject {
         case .ended:
             if uuid == incomingCallID {
                 silence(reason: "llamada terminada")
+                SystemVolume.shared.restoreSavedIfNeeded()
                 incomingCallID = nil
             }
         case .outgoing, .onHold:
@@ -432,7 +436,28 @@ final class AppModel: ObservableObject {
     func runRingerVolume(_ value: Float) {
         probeResults = [PrivateProbes.ringtoneVolumeSet(value), PrivateProbes.ringtoneVolumeRead()]
     }
+
+    func runRingerVolumeMax() {
+        probeResults = PrivateProbes.ringerVolumeMaxExperiment()
+    }
     #endif
+
+    /// Ruta 1: intento opcional de subir el volumen del timbre (API privada; puede no hacer nada).
+    private func attemptRingerVolumeMaxIfEnabled(context: String) {
+        #if MAGIC_PRIVATE_PROBES
+        guard Prefs.attemptRingerMaxOnStage else { return }
+        let results = PrivateProbes.ringerVolumeMaxExperiment()
+        probeResults = results
+        dlog("Ruta 1 [\(context)]: intento volumen timbre al máximo — \(results.map { $0.outcome.rawValue }.joined(separator: ", "))")
+        #endif
+    }
+
+    /// Ruta 2: sube el volumen multimedia del sistema al 100 % al disparar (llamada o toque manual).
+    private func applySystemVolumeBoostForTrigger() {
+        guard Prefs.boostSystemVolumeOnTrigger else { return }
+        ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
+        SystemVolume.shared.captureAndBoostToMaximum()
+    }
 
     func scheduleCallKitFallback() {
         CallKitFallback.shared.scheduleIncoming(callerName: Prefs.callKitCallerName, after: Prefs.callKitDelay)

@@ -12,6 +12,9 @@ enum Prefs {
         static let stopOnAnswer = "audio.stopOnAnswer"
         static let forceMediaVolume = "audio.forceMediaVolume"
         static let mediaVolumeTarget = "audio.mediaVolumeTarget"
+        static let boostSystemVolumeOnTrigger = "audio.boostSystemVolumeOnTrigger"
+
+        static let attemptRingerMaxOnStage = "ringtone.attemptRingerMaxOnStage"
 
         static let autoTrigger = "trigger.autoOnCall"
         static let tapTrigger = "trigger.tap"
@@ -50,6 +53,8 @@ enum Prefs {
             Key.stopOnAnswer: true,
             Key.forceMediaVolume: false,
             Key.mediaVolumeTarget: 0.8,
+            Key.boostSystemVolumeOnTrigger: true,
+            Key.attemptRingerMaxOnStage: false,
             Key.autoTrigger: true,
             Key.tapTrigger: true,
             Key.volumeButtonTrigger: false,
@@ -85,6 +90,8 @@ enum Prefs {
     static var stopOnAnswer: Bool { d.bool(forKey: Key.stopOnAnswer) }
     static var forceMediaVolume: Bool { d.bool(forKey: Key.forceMediaVolume) }
     static var mediaVolumeTarget: Double { d.double(forKey: Key.mediaVolumeTarget) }
+    static var boostSystemVolumeOnTrigger: Bool { d.bool(forKey: Key.boostSystemVolumeOnTrigger) }
+    static var attemptRingerMaxOnStage: Bool { d.bool(forKey: Key.attemptRingerMaxOnStage) }
     static var autoTrigger: Bool { d.bool(forKey: Key.autoTrigger) }
     static var tapTrigger: Bool { d.bool(forKey: Key.tapTrigger) }
     static var volumeButtonTrigger: Bool { d.bool(forKey: Key.volumeButtonTrigger) }
@@ -104,7 +111,8 @@ enum Prefs {
             "clip=\(clipSeconds)s offset=\(startOffset)s loop=\(loopClip)",
             "stopOnAnswer=\(stopOnAnswer)",
             "auto=\(autoTrigger) tap=\(tapTrigger) volBtn=\(volumeButtonTrigger)",
-            "forceVol=\(forceMediaVolume)(\(mediaVolumeTarget))",
+            "forceVol=\(forceMediaVolume)(\(mediaVolumeTarget)) boostOnTrigger=\(boostSystemVolumeOnTrigger)",
+            "ringerMaxOnStage=\(attemptRingerMaxOnStage)",
             "diskCache=\(diskCache) deezer=\(deezerFallback) store=\(storeCountry.isEmpty ? "auto" : storeCountry)",
         ].joined(separator: " · ")
     }
