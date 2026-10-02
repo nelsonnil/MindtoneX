@@ -62,6 +62,7 @@
 		BB0000060000000000000006 /* ApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000050000000000000005 /* ApiSettingsView.swift */; };
 		BB0000080000000000000008 /* ApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000070000000000000007 /* ApiInputPanel.swift */; };
 		AA0000410000000000000041 /* PerformanceCues.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000400000000000000040 /* PerformanceCues.swift */; };
+		AA0000430000000000000043 /* FakePostCallVolumeGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000420000000000000042 /* FakePostCallVolumeGate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +94,7 @@
 		F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		E7D59D5299CAA7B77CB2C3AA /* PerformHowItWorks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PerformHowItWorks.swift"; sourceTree = "<group>"; };
 		C064E79F67C658F38085349B /* SharePerformFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharePerformFlow.swift"; sourceTree = "<group>"; };
+		AA0000420000000000000042 /* FakePostCallVolumeGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakePostCallVolumeGate.swift; sourceTree = "<group>"; };
 		A066E573AE570E750E77BA48 /* AppModel+Voice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Voice.swift"; sourceTree = "<group>"; };
 		136D4996F85A04F04C18549D /* LiveTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LiveTranscribers.swift"; sourceTree = "<group>"; };
 		719F536F6580F110E57FEAF5 /* MicCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MicCapture.swift"; sourceTree = "<group>"; };
@@ -294,6 +296,7 @@
 				E050CA4E65BC817983D87C6E /* SilentShortcut.swift */,
 				E7D59D5299CAA7B77CB2C3AA /* PerformHowItWorks.swift */,
 				C064E79F67C658F38085349B /* SharePerformFlow.swift */,
+				AA0000420000000000000042 /* FakePostCallVolumeGate.swift */,
 			);
 			path = Perform;
 			sourceTree = "<group>";
@@ -412,6 +415,7 @@
 				B7991EA68474061E01D04616 /* SilentShortcut.swift in Sources */,
 				30F3F5FD1AB46F5425A32DAC /* PerformHowItWorks.swift in Sources */,
 				85F6D79B25939ED4B41AEA24 /* SharePerformFlow.swift in Sources */,
+				AA0000430000000000000043 /* FakePostCallVolumeGate.swift in Sources */,
 				09990063243AC32A46FD2AAB /* AppModel+Voice.swift in Sources */,
 				BB0000020000000000000002 /* ApiSettings.swift in Sources */,
 				BB0000040000000000000004 /* ApiSongSession.swift in Sources */,
@@ -502,7 +506,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -564,7 +568,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -626,7 +630,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

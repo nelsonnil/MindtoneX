@@ -55,6 +55,9 @@ final class AppModel: ObservableObject {
     }
 
     private init() {
+        #if DEBUG
+        FakePostCallVolumeGateSelfTest.run()
+        #endif
         Prefs.registerDefaults()
         DebugLog.shared.logDeviceHeader()
         calls.onEvent = { [weak self] event, call in
@@ -241,7 +244,7 @@ final class AppModel: ObservableObject {
         }
         if Prefs.hotStandby { audio.startStandby() }
         calls.reassertDelegate()
-        startVolumeButtonWatch()
+        ensureVolumeButtonWatch()
         performed = false
         hadCallWhileArmed = false
         autoTriggerCooldownUntil = 0
@@ -270,22 +273,29 @@ final class AppModel: ObservableObject {
         dlog("══ DESARMADO ══")
     }
 
-    /// Terminal state after the spectator's call ends: nothing may play again (no triggers,
-    /// retries, polling, standby or interruption resume) until the performer leaves Perform.
+    /// After the spectator hangs up in Fake Ringtone: stop playback, allow volume → Share, stay on
+    /// stage armed for another call with the same locked song. Share Ringtone Perform is unaffected.
     private func enterPerformedState(reason: String) {
         guard isArmed, !performed else { return }
         performed = true
-        isArmed = false
-        stopCallPolling()
         callSignalActive = false
-        autoTriggerCooldownUntil = .greatestFiniteMagnitude
-        volumeObservation = nil
+        incomingCallID = nil
+        incomingDetectedAt = 0
+        hadCallWhileArmed = false
+        autoTriggerCooldownUntil = 0
         audio.stop()
         audio.player?.currentTime = 0
         isAudible = false
         SystemVolume.shared.restoreSavedIfNeeded()
         audio.deactivateSession()
-        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — all triggers, retries and polling off; player stopped; session released. Leave Perform (two-finger swipe down) to reset.")
+        if Prefs.hotStandby, loadState == .ready {
+            do { try audio.configureSession() } catch {
+                dlog("✗ post-call standby sesión: \(RingtoneAudioEngine.describe(error))")
+            }
+            audio.startStandby()
+        }
+        ensureVolumeButtonWatch()
+        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; volume → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
     }
 
     /// AI Voice: forget the previous spectator's song so the next Perform starts empty.
@@ -307,6 +317,10 @@ final class AppModel: ObservableObject {
         ApiSongSession.shared.callArrived(source: source)
         guard isArmed else {
             dlog("[TRIGGER] “\(source)” ignorado: no armado")
+            return
+        }
+        guard !performed else {
+            dlog("[TRIGGER] “\(source)” ignorado: post-llamada (volumen → Compartir o nueva llamada)")
             return
         }
         guard !isAudible else {
@@ -375,6 +389,10 @@ final class AppModel: ObservableObject {
             guard isArmed else {
                 dlog("[TRIGGER] CXCall incoming ignored: not armed\(performed ? " (performed — waiting for exit)" : "")")
                 return
+            }
+            if performed {
+                performed = false
+                dlog("[TRIGGER] new incoming call in Perform — replay same locked song")
             }
             incomingCallID = uuid
             incomingDetectedAt = CACurrentMediaTime()
@@ -636,15 +654,31 @@ final class AppModel: ObservableObject {
         refreshArmedState(reason: "interrupción/standby")
     }
 
-    private func startVolumeButtonWatch() {
+    private func ensureVolumeButtonWatch() {
+        guard volumeObservation == nil else { return }
         volumeObservation = AVAudioSession.sharedInstance().observe(\.outputVolume, options: [.old, .new]) { [weak self] _, change in
             onMain(after: 0) {
                 guard let self else { return }
                 let old = change.oldValue ?? 0
                 let new = change.newValue ?? 0
                 dlog("Volumen multimedia \(String(format: "%.2f", old)) → \(String(format: "%.2f", new))")
-                guard Prefs.volumeButtonTrigger, self.isArmed,
-                      CACurrentMediaTime() > self.ignoreVolumeChangesUntil else { return }
+                guard CACurrentMediaTime() > self.ignoreVolumeChangesUntil else { return }
+                if FakePostCallVolumeGate.shouldOpenShareOnVolume(
+                    performanceMode: Prefs.performanceMode,
+                    phase: self.phase,
+                    performed: self.performed,
+                    isArmed: self.isArmed
+                ) {
+                    self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
+                    dlog("[TRIGGER] volumen post-llamada → Compartir tono")
+                    Task { await self.applyRingtoneNow() }
+                    return
+                }
+                guard FakePostCallVolumeGate.shouldTogglePlayOnVolume(
+                    volumeButtonTrigger: Prefs.volumeButtonTrigger,
+                    isArmed: self.isArmed,
+                    performed: self.performed
+                ) else { return }
                 self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.6
                 SystemVolume.shared.set(old)
                 self.toggleManual()
