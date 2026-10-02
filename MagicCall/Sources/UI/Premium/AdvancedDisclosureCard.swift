@@ -7,6 +7,7 @@ struct AdvancedDisclosureCard: View {
 
     @AppStorage("ui.advancedExpanded") private var expanded = false
     @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
+    @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
     @AppStorage(Prefs.Key.background) private var stageBackground = StageBackground.black.rawValue
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
@@ -91,6 +92,9 @@ struct AdvancedDisclosureCard: View {
                         .foregroundStyle(OracleTheme.textSecondary)
                 }
             }
+            toggleRow("Blur cover on screenshot",
+                      detail: "Only if your wallpaper still shows an old status bar under the real one. Off by default.",
+                      isOn: $maskStatusBar)
             toggleRow("Hide status bar",
                       detail: "Hides the system status bar entirely during the act.",
                       isOn: $hideStatusBar)
@@ -99,10 +103,10 @@ struct AdvancedDisclosureCard: View {
 
     private var autoStatusBarDetail: String {
         guard StageBackground(rawValue: stageBackground) == .image, StageImageStore.statusBarLuminance() != nil else {
-            return "White text on the dark stage. With a screenshot, the old status bar is covered and the text color follows your wallpaper."
+            return "White text on dark stages. With a screenshot, status bar text color follows the top of your wallpaper — no blur unless you turn on Blur cover."
         }
         let dark = StageImageStore.wantsDarkStatusBarText()
-        return "Old status bar in your screenshot is covered. Detected a \(dark ? "light" : "dark") wallpaper → \(dark ? "dark" : "white") text."
+        return "Screenshot wallpaper: \(dark ? "light" : "dark") top area → \(dark ? "dark" : "white") status bar text. No blur strip unless Blur cover is on."
     }
 
     private var songSection: some View {

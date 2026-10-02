@@ -75,7 +75,7 @@ enum Prefs {
             Key.deezerFallback: true,
             Key.storeCountry: "",
             Key.background: StageBackground.black.rawValue,
-            Key.maskStatusBar: true,
+            Key.maskStatusBar: false,
             Key.hideStatusBar: false,
             Key.darkStatusBarText: false,
             Key.darwinSignals: true,

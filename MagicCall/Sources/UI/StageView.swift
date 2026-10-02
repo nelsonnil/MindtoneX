@@ -8,6 +8,7 @@ struct StageView: View {
     @ObservedObject private var notes = NotesSongSession.shared
     @AppStorage(Prefs.Key.background) private var background = StageBackground.black.rawValue
     @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
+    @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
 
     private var darkStatusBarText: Bool {
         StageBackground(rawValue: background) == .image && StageImageStore.wantsDarkStatusBarText()
@@ -27,7 +28,7 @@ struct StageView: View {
     private var callStage: some View {
         ZStack(alignment: .topLeading) {
             StageBackgroundView(kind: StageBackground(rawValue: background) ?? .black,
-                                maskStatusBar: true)
+                                maskStatusBar: maskStatusBar)
                 .ignoresSafeArea()
 
             StageGestureLayer(
@@ -192,8 +193,7 @@ struct StageBackgroundView: View {
                             .scaledToFill()
                             .frame(width: geo.size.width, height: geo.size.height)
                             .clipped()
-                        // Una captura de pantalla incluye su propia barra de estado (hora vieja).
-                        // La tapamos con una versión desenfocada para que solo se vea la real.
+                        // Optional: blur strip to hide a stale status bar baked into the screenshot (Advanced → off by default).
                         if maskStatusBar {
                             Image(uiImage: image)
                                 .resizable()
