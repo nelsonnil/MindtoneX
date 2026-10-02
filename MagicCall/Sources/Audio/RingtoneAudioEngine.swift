@@ -82,6 +82,18 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
         clipEnd = min(p.duration, clipStart + max(2, Prefs.clipSeconds))
     }
 
+    /// Setup-screen preview: same start as ringtone export, up to `maxSeconds` (iOS ringtone cap ~28 s).
+    /// Returns how long playback should run before stopping.
+    @discardableResult
+    func configureSetupPreview(maxSeconds: TimeInterval = 28) -> TimeInterval {
+        guard let p = player else { return maxSeconds }
+        clipStart = min(max(0, Prefs.startOffset), max(0, p.duration - 1))
+        let available = max(0, p.duration - clipStart)
+        let length = min(max(2, maxSeconds), available)
+        clipEnd = clipStart + length
+        return clipEnd - clipStart
+    }
+
     // MARK: Control
 
     /// Reproduce en silencio para mantener la sesión viva y el decodificador caliente.

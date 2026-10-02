@@ -44,6 +44,7 @@ final class AppModel: ObservableObject {
     private var hadCallWhileArmed = false
     private(set) var performed = false
     private var currentAudio: (data: Data, hint: String)?
+    private var auditionEndWork: DispatchWorkItem?
     @Published private(set) var exportedRingtone: URL?
     @Published var showingDiscreetRingtonePrep = false
     @Published private(set) var ringtoneStaged = false
