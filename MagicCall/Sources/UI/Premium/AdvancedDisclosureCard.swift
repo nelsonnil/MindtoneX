@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Collapsible "Advanced" card at the bottom of the home screen: stage status-bar options,
-/// song details and entry points to settings, debug log, voice/API and setup sheets.
+/// song details and entry points to settings, debug log and voice/API.
 struct AdvancedDisclosureCard: View {
     @EnvironmentObject private var model: AppModel
 
@@ -52,7 +52,7 @@ struct AdvancedDisclosureCard: View {
                     Text("Advanced")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Settings, debug log, voice & API, favorites")
+                    Text("Settings, debug log, voice & API")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .lineLimit(1)
@@ -162,14 +162,6 @@ struct AdvancedDisclosureCard: View {
                 toolRow("AI Voice & API key", icon: "mic.badge.plus", sheet: .voiceSettings)
                 divider
                 toolRow("Voice debug", icon: "waveform.badge.magnifyingglass", sheet: .voiceDebug)
-                divider
-                toolRow("Silent Mode shortcuts", icon: "square.stack.3d.up.fill", sheet: .shortcutsSetup)
-                divider
-                toolRow("Share Favorites", icon: "star.fill", sheet: .favoritesSetup)
-                divider
-                toolRow("Fake Ringtone checklist", icon: "checklist", sheet: .fakeDetails)
-                divider
-                toolRow("Share Ringtone guide", icon: "bell.badge", sheet: .shareDetails)
             }
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
