@@ -12,8 +12,13 @@ mirror() {
   mkdir -p "$dest"
   for item in "${ITEMS[@]}"; do
     if [ -d "$WS/$item" ]; then
-      rsync -r --delete --checksum --no-perms --no-times --omit-dir-times \
-        --exclude='.DS_Store' --exclude='xcuserdata' "$WS/$item/" "$dest/$item/"
+      local try
+      for try in 1 2 3; do
+        rsync -r --delete --checksum --inplace --no-perms --no-times --omit-dir-times \
+          --exclude='.DS_Store' --exclude='xcuserdata' "$WS/$item/" "$dest/$item/" && break
+        [ "$try" = 3 ] && return 1
+        sleep 3
+      done
     else
       cp -f "$WS/$item" "$dest/$item"
     fi
