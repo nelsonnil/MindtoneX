@@ -143,7 +143,7 @@ struct SongInputStrip: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
-            if model.loadState == .failed(let message) {
+            if case .failed(let message) = model.loadState {
                 Label(message, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
