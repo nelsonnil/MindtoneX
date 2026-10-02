@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Single home-screen surface for AI Voice: API key, engine/models, locking, and live listen debug.
 struct AiVoiceInputPanel: View {
+    @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
 
     @AppStorage(VoiceSettings.Key.engine) private var engineRaw = VoiceSettings.Engine.openAIRealtime.rawValue
@@ -147,9 +148,11 @@ struct AiVoiceInputPanel: View {
                 Spacer()
                 voiceStatusChip
             }
-            Text(.init("Tap **Test** above and talk like on stage. You’ll see what the app hears and which song the AI picks. Nothing is shown during Perform."))
+            Text("Talk like on stage. You’ll see what the app hears and which song the AI picks. Nothing is shown during Perform.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
+
+            livePreviewTestControls
 
             if !configured {
                 Label("Add an API key above, or choose Apple on-device (no key).", systemImage: "key.fill")
@@ -176,6 +179,36 @@ struct AiVoiceInputPanel: View {
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+    }
+
+    private var livePreviewTestControls: some View {
+        HStack(spacing: 10) {
+            if voice.isActive {
+                Button(role: .destructive) { voice.stopTest() } label: {
+                    Label("Stop", systemImage: "stop.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+            } else {
+                Button {
+                    model.clearSongForNextPerformance()
+                    Task { await voice.start(context: .test) }
+                } label: {
+                    Label("Test", systemImage: "mic.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(OracleTheme.indigo)
+                .disabled(!configured)
+            }
+            if voice.hasContent && !voice.isActive {
+                Button { model.resetVoicePerformance() } label: {
+                    Label("Reset", systemImage: "arrow.counterclockwise")
+                }
+                .buttonStyle(.bordered)
+            }
         }
     }
 
@@ -208,7 +241,7 @@ struct AiVoiceInputPanel: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 4) {
                         if voice.lines.isEmpty {
-                            Text(voice.isActive ? "Listening… say something." : "Nothing yet. Tap Test above and talk.")
+                            Text(voice.isActive ? "Listening… say something." : "Nothing yet. Tap Test and talk.")
                                 .foregroundStyle(OracleTheme.textSecondary.opacity(0.7))
                         }
                         ForEach(voice.lines) { line in

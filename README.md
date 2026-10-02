@@ -176,7 +176,9 @@ Build 16 — **UI premium**: pantalla principal oscura (`MainShellView`), hero c
 
 Build 17 — **UI premium v2**: fondo oscuro multicapa (índigo/negro/púrpura) con glow suave tras el logo; botón circular **Guide** arriba a la derecha; tarjeta de modo **Fake Ringtone | Share Ringtone** bajo el logo; barra inferior fija con **barra de estado** (texto negro/blanco según luminancia del fondo) y **Perform**; panel de descarga de atajos *Ringtone Oracle Silent On/Off* en Share (enlaces iCloud en `SilentShortcut.silentOnInstallURL` / `silentOffInstallURL`, vacíos → guía); chip **Notes · Soon**; tarjeta plegable **Advanced** (barra de estado del escenario, otras coincidencias, ajustes completos, debug log, AI Voice/API, voice debug, atajos, favoritos). **Barra de estado del escenario automática**: con captura siempre se tapa la barra vieja y el color del texto (negro/blanco) se detecta por la luminancia de la franja superior; solo queda manual "Hide status bar".
 
-Build 35 — **AI Voice:** single **Test** under Song input chips; no duplicate test buttons inside the panel.
+Build 36 — **AI Voice:** **Test** / **Stop** / **Reset** in **Live preview** only (not above the chips).
+
+Build 35 — **AI Voice:** removed duplicate mic test; single test flow (later moved into Live preview in build 36).
 
 Build 34 — **Advanced card minimal**: optional screenshot blur, debug log, and Engine & lab sheet only; no song alternates, shortcut toggles, or duplicate status-bar copy. Mode-gated triggers/export in the sheet.
 
