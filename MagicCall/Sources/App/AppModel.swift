@@ -133,7 +133,7 @@ final class AppModel: ObservableObject {
         let t0 = CACurrentMediaTime()
         do {
             let url = try await RingtoneExporter.export(data: audio.data, fileTypeHint: audio.hint,
-                                                       title: "\(track.title) - \(track.artist)",
+                                                       title: track.title, artist: track.artist,
                                                        startAt: Prefs.startOffset)
             exportedRingtone = url
             ringtoneStaged = true

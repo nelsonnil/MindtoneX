@@ -130,6 +130,11 @@ negra te lleva a la pantalla de inicio (usa una llamada privada de iOS, se puede
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
 (`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
 
+**Build 8 — "tono duplicado"**: cada tono se exporta con nombre y título únicos (canción + hora + 2 letras,
+p. ej. `Thriller 1142a7.m4a`) y un recorte unas centésimas distinto, para que iOS nunca lo vea repetido.
+La app borra sus propios archivos viejos, pero **no puede borrar los tonos ya añadidos a iOS**: hazlo en
+**Ajustes › Sonidos y vibraciones › Tono de llamada**, desliza a la izquierda sobre el tono › Eliminar.
+
 ## 4. Protocolo de prueba mínimo
 
 Necesitas un segundo teléfono para llamar. Antes de cada bloque, en la app: *Registro › papelera*.

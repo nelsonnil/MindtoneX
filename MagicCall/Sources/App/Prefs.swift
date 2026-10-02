@@ -55,9 +55,6 @@ enum Prefs {
         }
     }
 
-    /// Archivo único reutilizado en cada actuación (≤30 s).
-    static let stagedRingtoneFilename = "Actuacion.m4a"
-
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
             Key.noInterruptions: true,

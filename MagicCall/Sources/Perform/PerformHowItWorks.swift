@@ -108,6 +108,7 @@ enum PerformCopy {
         "**Silent must be OFF** in this mode — the real ringtone is what plays.",
         "If iOS shows a confirmation or opens Settings after “Use as Ringtone”, just go Home.",
         "If the tap doesn’t take you Home, swipe up from the bottom.",
+        "Every performance adds a new ringtone with a slightly different name, so iOS never says “duplicate”. To remove old ones: **Settings → Sounds & Haptics → Ringtone**, swipe left on a ringtone → Delete. The app can’t remove them for you.",
     ]
 
     static let fakeTiming = [
