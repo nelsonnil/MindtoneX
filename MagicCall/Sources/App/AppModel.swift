@@ -113,17 +113,23 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Escucha 3 s del fragmento desde la pantalla de preparación (no en escena).
+    /// Plays the setup-screen preview for the ringtone window (start offset + up to 28 s), not the old 3 s cap.
     func audition() {
         guard loadState == .ready else { return }
+        auditionEndWork?.cancel()
         do { try audio.configureSession() } catch { dlog("✗ Sesión: \(RingtoneAudioEngine.describe(error))") }
+        let seconds = audio.configureSetupPreview(maxSeconds: 28)
         audio.makeAudible()
         isAudible = true
-        onMain(after: 3) { [weak self] in
+        dlog("Audition \(String(format: "%.1f", seconds)) s (ringtone preview window)")
+        let work = DispatchWorkItem { [weak self] in
             guard let self, !self.isArmed else { return }
             self.audio.stop()
+            self.audio.recomputeClip()
             self.isAudible = false
         }
+        auditionEndWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: work)
     }
 
     // MARK: Tono real (iOS 26 "Usar como tono")
