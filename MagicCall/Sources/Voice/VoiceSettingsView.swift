@@ -6,10 +6,6 @@ struct VoiceSettingsView: View {
     @AppStorage(VoiceSettings.Key.transcribeModel) private var transcribeModel = VoiceSettings.transcribeModels[0].id
     @AppStorage(VoiceSettings.Key.pickerModel) private var pickerModel = VoiceSettings.pickerModels[0].id
     @AppStorage(VoiceSettings.Key.language) private var languageRaw = VoiceSettings.Language.spanishEnglish.rawValue
-    @AppStorage(VoiceSettings.Key.lockDelay) private var lockDelay = VoiceSettings.defaultLockDelay
-    @AppStorage(VoiceSettings.Key.minConfidence) private var minConfidence = VoiceSettings.defaultMinConfidence
-    @AppStorage(VoiceSettings.Key.hapticOnLock) private var hapticOnLock = true
-
     @State private var keyDraft = ""
     @State private var savedKeyHint: String?
     @StateObject private var micTest = MicTester()
@@ -71,19 +67,6 @@ struct VoiceSettingsView: View {
                 }
             } header: {
                 Text("AI models")
-            }
-
-            Section {
-                Stepper("Lock after \(Int(lockDelay)) s without changes", value: $lockDelay, in: 2...15, step: 1)
-                VStack(alignment: .leading) {
-                    Text("Minimum confidence: \(VoiceSongSession.percent(minConfidence))")
-                    Slider(value: $minConfidence, in: 0.3...0.9, step: 0.05)
-                }
-                Toggle("Soft vibration when the song locks", isOn: $hapticOnLock)
-            } header: {
-                Text("Locking the song")
-            } footer: {
-                Text("Each new song the AI hears restarts the countdown. Guesses below the minimum confidence are ignored.")
             }
 
             Section {

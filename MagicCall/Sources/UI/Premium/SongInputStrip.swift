@@ -192,6 +192,8 @@ struct SongInputStrip: View {
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(2)
             }
+
+            VoiceLockingControls()
         }
     }
 
