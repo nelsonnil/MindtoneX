@@ -53,6 +53,15 @@ enum OracleTheme {
     static let sectionTeal = Color(red: 0.32, green: 0.78, blue: 0.72)
     static let sectionSlate = Color(red: 0.58, green: 0.54, blue: 0.72)
 
+    /// Home `OracleCard` section rail (must live on a non-generic type — not inside `OracleCard`).
+    static let sectionRailWidth: CGFloat = 3.5
+    static let sectionRailLeading: CGFloat = 14
+    static let sectionRailContentGap: CGFloat = 12
+
+    static var sectionCardLeadingInset: CGFloat {
+        sectionRailLeading + sectionRailWidth + sectionRailContentGap
+    }
+
     // MARK: Adaptive label color
 
     /// WCAG relative luminance (0 = black, 1 = white).
@@ -169,12 +178,6 @@ struct OracleCard<Content: View>: View {
     var padding: CGFloat = 18
     @ViewBuilder var content: () -> Content
 
-    private static let sectionRailWidth: CGFloat = 3.5
-    /// Inset of the accent rail from the card’s leading edge.
-    private static let sectionRailLeading: CGFloat = 14
-    /// Space between the rail and the card content (avoids segments hugging the gold bar).
-    private static let sectionRailContentGap: CGFloat = 12
-
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: OracleTheme.cardRadius, style: .continuous)
     }
@@ -183,7 +186,7 @@ struct OracleCard<Content: View>: View {
         guard section != nil else {
             return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
         }
-        let leading = Self.sectionRailLeading + Self.sectionRailWidth + Self.sectionRailContentGap
+        let leading = OracleTheme.sectionCardLeadingInset
         return EdgeInsets(top: padding, leading: leading, bottom: padding, trailing: padding)
     }
 
@@ -228,9 +231,9 @@ struct OracleCard<Content: View>: View {
                 if let section {
                     Capsule(style: .continuous)
                         .fill(section.accent.opacity(0.92))
-                        .frame(width: Self.sectionRailWidth)
+                        .frame(width: OracleTheme.sectionRailWidth)
                         .padding(.vertical, 14)
-                        .padding(.leading, Self.sectionRailLeading)
+                        .padding(.leading, OracleTheme.sectionRailLeading)
                 }
             }
             .shadow(color: .black.opacity(0.40), radius: 18, y: 10)
