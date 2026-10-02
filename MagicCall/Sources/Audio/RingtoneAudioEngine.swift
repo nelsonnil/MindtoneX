@@ -90,8 +90,16 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
     }
 
     @discardableResult
-    func makeAudible() -> Bool {
-        guard let p = player else { return false }
+    func makeAudible(reconfigureSession: (() throws -> Void)? = nil) -> Bool {
+        guard let p = player else {
+            dlog("[AUDIO] makeAudible: sin reproductor")
+            return false
+        }
+        if let reconfigureSession {
+            do { try reconfigureSession() } catch {
+                dlog("[AUDIO] makeAudible: reconfigure falló \(Self.describe(error))")
+            }
+        }
         recomputeClip()
         fadingAtLoopEdge = false
         p.currentTime = clipStart
@@ -100,19 +108,37 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
             p.volume = 0
             ok = p.play()
             if !ok {
-                // Si el sistema desactivó la sesión, intentamos reactivarla una vez.
                 do {
                     try AVAudioSession.sharedInstance().setActive(true)
                     ok = p.play()
                 } catch {
-                    dlog("✗ Reactivar sesión en disparo falló: \(Self.describe(error))")
+                    dlog("[AUDIO] makeAudible: setActive+play falló \(Self.describe(error))")
                 }
             }
         }
-        p.setVolume(1, fadeDuration: 0.05)
+        if ok {
+            p.setVolume(1, fadeDuration: 0.02)
+        } else {
+            dlog("[AUDIO] makeAudible: play()=false · \(snapshot())")
+        }
         isAudible = ok
         startTimer()
         return ok
+    }
+
+    /// Tras una interrupción del sistema (p. ej. llamada entrante), volver a standby sin perder el reproductor.
+    func markStandbyAfterInterruption() {
+        guard let p = player else { return }
+        isAudible = false
+        p.volume = 0
+        if Prefs.hotStandby {
+            if !p.isPlaying {
+                p.currentTime = clipStart
+                let ok = p.play()
+                dlog("[AUDIO] post-interruption standby play=\(ok)")
+            }
+            startTimer()
+        }
     }
 
     func silence(fade: TimeInterval = 0.25) {

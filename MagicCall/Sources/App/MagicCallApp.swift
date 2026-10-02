@@ -26,7 +26,8 @@ struct MagicCallApp: App {
                     dlog("scenePhase → background")
                     model.maintainArmedInBackgroundIfNeeded()
                 case .inactive:
-                    dlog("scenePhase → inactive")
+                    dlog("[APP] scenePhase → inactive")
+                    model.onSceneBecameInactive()
                 @unknown default:
                     break
                 }

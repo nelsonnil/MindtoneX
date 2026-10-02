@@ -18,11 +18,32 @@ final class CallMonitor: NSObject, CXCallObserverDelegate {
     var onEvent: ((Event, CXCall) -> Void)?
 
     func start() {
+        reassertDelegate()
+    }
+
+    /// Vuelve a registrar el delegado en la cola principal (retención fuerte vía AppModel → CallMonitor).
+    func reassertDelegate() {
         observer.setDelegate(self, queue: .main)
-        dlog("CXCallObserver activo. Llamadas en curso: \(observer.calls.count)")
+        dlog("[CXCall] observer delegate=main retained=\(self) calls=\(observer.calls.count) · \(describeCalls())")
     }
 
     var currentCalls: [CXCall] { observer.calls }
+
+    func describeCalls() -> String {
+        guard !observer.calls.isEmpty else { return "ninguna" }
+        return observer.calls.map { call in
+            let state: String
+            if call.hasEnded { state = "ended" }
+            else if call.hasConnected { state = call.isOnHold ? "hold" : "connected" }
+            else { state = call.isOutgoing ? "outgoing" : "incoming" }
+            return "\(call.uuid.uuidString.prefix(8)):\(state)"
+        }.joined(separator: " ")
+    }
+
+    /// Llamadas entrantes que aún no han conectado ni terminado.
+    func ringingIncomingCalls() -> [CXCall] {
+        observer.calls.filter { !$0.isOutgoing && !$0.hasConnected && !$0.hasEnded }
+    }
 
     func callObserver(_ callObserver: CXCallObserver, callChanged call: CXCall) {
         let event: Event
@@ -44,7 +65,7 @@ final class CallMonitor: NSObject, CXCallObserverDelegate {
         case .background: appState = "background"
         @unknown default: appState = "?"
         }
-        dlog("📞 CXCall \(call.uuid.uuidString.prefix(8)) → \(event.rawValue)\(repeated ? " (repetido)" : "") outgoing=\(call.isOutgoing) connected=\(call.hasConnected) ended=\(call.hasEnded) hold=\(call.isOnHold) app=\(appState) llamadas=\(callObserver.calls.count)")
+        dlog("[CXCall] delegate \(call.uuid.uuidString.prefix(8)) → \(event.rawValue)\(repeated ? " (repetido, sin callback)" : "") out=\(call.isOutgoing) conn=\(call.hasConnected) end=\(call.hasEnded) hold=\(call.isOnHold) app=\(appState) total=\(callObserver.calls.count) · \(describeCalls())")
         guard !repeated else { return }
         onEvent?(event, call)
     }

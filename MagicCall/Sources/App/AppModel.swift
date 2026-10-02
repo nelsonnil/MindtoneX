@@ -37,6 +37,10 @@ final class AppModel: ObservableObject {
     private var ignoreVolumeChangesUntil: CFTimeInterval = 0
     private var incomingCallID: UUID?
     private var incomingDetectedAt: CFTimeInterval = 0
+    private var callPollTimer: Timer?
+    private var lastLoggedCallCount = 0
+    private var autoTriggerCooldownUntil: CFTimeInterval = 0
+    private var callSignalActive = false
     private var currentAudio: (data: Data, hint: String)?
     @Published private(set) var exportedRingtone: URL?
     @Published var showingDiscreetRingtonePrep = false
@@ -198,7 +202,9 @@ final class AppModel: ObservableObject {
             SystemVolume.shared.set(Float(Prefs.mediaVolumeTarget))
         }
         if Prefs.hotStandby { audio.startStandby() }
+        calls.reassertDelegate()
         startVolumeButtonWatch()
+        startCallPolling()
         isArmed = true
         isAudible = false
         phase = .stage
@@ -207,6 +213,8 @@ final class AppModel: ObservableObject {
     }
 
     func disarm() {
+        stopCallPolling()
+        callSignalActive = false
         SystemVolume.shared.restoreSavedIfNeeded()
         audio.stop()
         audio.deactivateSession()
@@ -221,20 +229,44 @@ final class AppModel: ObservableObject {
 
     func trigger(source: String) {
         guard isArmed else {
-            dlog("Disparo “\(source)” ignorado: no está armado")
+            dlog("[TRIGGER] “\(source)” ignorado: no armado")
             return
         }
         guard !isAudible else {
-            dlog("Disparo “\(source)” ignorado: ya suena")
+            dlog("[TRIGGER] “\(source)” ignorado: ya audible")
             return
         }
         applySystemVolumeBoostForTrigger()
         let t0 = CACurrentMediaTime()
-        let ok = audio.makeAudible()
+        logAudioSession(context: "antes de disparo [\(source)]")
+        let ok = audio.makeAudible(reconfigureSession: { try self.audio.configureSession() })
         isAudible = ok
-        let sinceCall = incomingCallID != nil ? " · \(Int((t0 - incomingDetectedAt) * 1000)) ms desde CXCall" : ""
-        dlog("▶︎ DISPARO [\(source)] play=\(ok) en \(PreviewService.ms(since: t0)) ms\(sinceCall) · \(audio.snapshot())")
+        let sinceCall = callSignalActive ? " · \(Int((t0 - incomingDetectedAt) * 1000)) ms desde señal llamada" : ""
+        dlog("[TRIGGER] ▶︎ [\(source)] play=\(ok)\(sinceCall) · \(audio.snapshot())")
+        if !ok { schedulePlayRetries(origin: source) }
         scheduleHealthChecks(label: source)
+    }
+
+    /// Disparo automático (CXCall, interrupción, ruta, sondeo…).
+    private func attemptAutoTrigger(source: String) {
+        guard isArmed, Prefs.autoTrigger else {
+            dlog("[AUTO] \(source) no dispara (arm=\(isArmed) auto=\(Prefs.autoTrigger))")
+            return
+        }
+        if isAudible {
+            dlog("[AUTO] \(source) no dispara: ya audible")
+            return
+        }
+        let now = CACurrentMediaTime()
+        if now < autoTriggerCooldownUntil {
+            dlog("[AUTO] \(source) en cooldown \(Int((autoTriggerCooldownUntil - now) * 1000)) ms")
+            return
+        }
+        autoTriggerCooldownUntil = now + 0.2
+        if incomingDetectedAt == 0 { incomingDetectedAt = now }
+        callSignalActive = true
+        dlog("[AUTO] → trigger desde \(source)")
+        trigger(source: source)
     }
 
     func toggleManual() {
@@ -265,11 +297,8 @@ final class AppModel: ObservableObject {
         case .incoming:
             incomingCallID = uuid
             incomingDetectedAt = CACurrentMediaTime()
-            if isArmed && Prefs.autoTrigger {
-                trigger(source: "CXCallObserver")
-            } else {
-                dlog("Llamada entrante detectada (auto=\(Prefs.autoTrigger), armado=\(isArmed))")
-            }
+            callSignalActive = true
+            attemptAutoTrigger(source: "CXCallObserver.incoming")
         case .connected:
             if uuid == incomingCallID && Prefs.stopOnAnswer { silence(reason: "contestada") }
         case .ended:
@@ -277,6 +306,8 @@ final class AppModel: ObservableObject {
                 silence(reason: "llamada terminada")
                 SystemVolume.shared.restoreSavedIfNeeded()
                 incomingCallID = nil
+                callSignalActive = false
+                incomingDetectedAt = 0
             }
         case .outgoing, .onHold:
             break
@@ -295,15 +326,25 @@ final class AppModel: ObservableObject {
 
         observe(AVAudioSession.interruptionNotification) { [weak self] n in self?.handleInterruption(n) }
         observe(AVAudioSession.routeChangeNotification) { [weak self] n in
+            guard let self else { return }
             let raw = n.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt ?? 0
-            dlog("Ruta cambió (razón \(raw)) → \(RingtoneAudioEngine.routeDescription())")
-            if self?.isArmed == true && !RingtoneAudioEngine.isBuiltInSpeaker() {
-                dlog("⚠️ Salida fuera del altavoz en escena")
+            let prev = n.userInfo?[AVAudioSessionRouteChangePreviousRouteKey]
+            dlog("[ROUTE] cambió reason=\(raw) prev=\(prev != nil) → \(RingtoneAudioEngine.routeDescription()) · \(self.calls.describeCalls())")
+            if self.isArmed && !RingtoneAudioEngine.isBuiltInSpeaker() {
+                dlog("[ROUTE] ⚠️ salida no es altavoz interno")
+            }
+            if self.isArmed, self.hasLikelyIncomingCallSignal() {
+                self.attemptAutoTrigger(source: "routeChange(\(raw))")
             }
         }
-        observe(AVAudioSession.silenceSecondaryAudioHintNotification) { n in
+        observe(AVAudioSession.silenceSecondaryAudioHintNotification) { [weak self] n in
+            guard let self else { return }
             let raw = n.userInfo?[AVAudioSessionSilenceSecondaryAudioHintTypeKey] as? UInt ?? 99
-            dlog("silenceSecondaryAudioHint tipo=\(raw)")
+            dlog("[AUDIO] silenceSecondaryAudioHint=\(raw) · \(self.audio.snapshot())")
+            // 0 = begin (silenciar secundario), 1 = end
+            if self.isArmed, raw == 0 {
+                self.attemptAutoTrigger(source: "silenceSecondaryAudioHint.begin")
+            }
         }
         observe(AVAudioSession.mediaServicesWereResetNotification) { [weak self] _ in
             dlog("⚠️ mediaServicesWereReset: recargando audio")
@@ -334,15 +375,24 @@ final class AppModel: ObservableObject {
         switch type {
         case .began:
             let wasAudible = isAudible
+            logAudioSession(context: "interruption.began reason=\(reasonRaw.map(String.init) ?? "nil")")
+            dlog("[AUDIO] ⛔️ interruption.began audibleAntes=\(wasAudible) · \(audio.snapshot()) · \(calls.describeCalls())")
             isAudible = false
-            dlog("⛔️ INTERRUPCIÓN began (razón \(reasonRaw.map(String.init) ?? "nil")) audible antes=\(wasAudible) · \(audio.snapshot())")
+            audio.markStandbyAfterInterruption()
+            callSignalActive = true
+            incomingDetectedAt = CACurrentMediaTime()
+            attemptAutoTrigger(source: "interruption.began")
         case .ended:
             let optRaw = n.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
             let shouldResume = AVAudioSession.InterruptionOptions(rawValue: optRaw).contains(.shouldResume)
-            dlog("✅ INTERRUPCIÓN ended shouldResume=\(shouldResume)")
-            ensureStandby()
+            dlog("[AUDIO] ✅ interruption.ended shouldResume=\(shouldResume) · \(calls.describeCalls())")
+            if isArmed, hasLikelyIncomingCallSignal(), !isAudible {
+                attemptAutoTrigger(source: "interruption.ended")
+            } else {
+                ensureStandby()
+            }
         @unknown default:
-            dlog("Interrupción tipo desconocido \(raw)")
+            dlog("[AUDIO] interruption tipo=\(raw)")
         }
     }
 
@@ -363,8 +413,9 @@ final class AppModel: ObservableObject {
                 audio.player?.volume = 0
             }
         }
+        calls.reassertDelegate()
         syncOngoingIncomingCalls()
-        dlog("↻ Re-armado [\(reason)] · \(audio.snapshot()) · CXCall activas=\(calls.currentCalls.count)")
+        dlog("[APP] ↻ re-armado [\(reason)] · \(audio.snapshot()) · CXCall=\(calls.describeCalls())")
     }
 
     func maintainArmedInBackgroundIfNeeded() {
@@ -389,11 +440,85 @@ final class AppModel: ObservableObject {
 
     /// CXCallObserver a menudo no avisa en segundo plano; al volver, miramos llamadas en curso.
     private func syncOngoingIncomingCalls() {
-        for call in calls.currentCalls where !call.isOutgoing && !call.hasConnected && !call.hasEnded {
+        let ringing = calls.ringingIncomingCalls()
+        if !ringing.isEmpty {
+            callSignalActive = true
+            if incomingDetectedAt == 0 { incomingDetectedAt = CACurrentMediaTime() }
+        }
+        for call in ringing {
             if incomingCallID != call.uuid {
                 handle(.incoming, uuid: call.uuid)
-            } else if Prefs.autoTrigger && !isAudible {
-                trigger(source: "CXCall al volver")
+            } else if !isAudible {
+                attemptAutoTrigger(source: "CXCall.sync")
+            }
+        }
+    }
+
+    private func hasLikelyIncomingCallSignal() -> Bool {
+        !calls.ringingIncomingCalls().isEmpty || callSignalActive
+    }
+
+    func onSceneBecameInactive() {
+        dlog("[APP] scenePhase inactive · \(calls.describeCalls()) · \(audio.snapshot())")
+        guard isArmed else { return }
+        calls.reassertDelegate()
+        syncOngoingIncomingCalls()
+        if hasLikelyIncomingCallSignal() {
+            attemptAutoTrigger(source: "scenePhase.inactive")
+        }
+    }
+
+    private func startCallPolling() {
+        stopCallPolling()
+        let timer = Timer(timeInterval: 0.35, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.pollCallsWhileArmed() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        callPollTimer = timer
+        dlog("[CXCall] sondeo cada 350 ms mientras armado")
+    }
+
+    private func stopCallPolling() {
+        callPollTimer?.invalidate()
+        callPollTimer = nil
+        lastLoggedCallCount = 0
+    }
+
+    private func pollCallsWhileArmed() {
+        guard isArmed else { return }
+        let count = calls.currentCalls.count
+        if count != lastLoggedCallCount {
+            dlog("[CXCall] poll count \(lastLoggedCallCount)→\(count) · \(calls.describeCalls()) app=\(appStateLabel())")
+            lastLoggedCallCount = count
+        }
+        syncOngoingIncomingCalls()
+        if !calls.ringingIncomingCalls().isEmpty, !isAudible {
+            attemptAutoTrigger(source: "CXCall.poll")
+        }
+    }
+
+    private func appStateLabel() -> String {
+        switch UIApplication.shared.applicationState {
+        case .active: return "active"
+        case .inactive: return "inactive"
+        case .background: return "background"
+        @unknown default: return "?"
+        }
+    }
+
+    private func logAudioSession(context: String) {
+        let s = AVAudioSession.sharedInstance()
+        dlog("[AUDIO] \(context) cat=\(s.category.rawValue) active otherAudio=\(s.isOtherAudioPlaying) secondarySilenceHint=\(s.secondaryAudioShouldBeSilencedHint) outVol=\(String(format: "%.2f", s.outputVolume))")
+    }
+
+    private func schedulePlayRetries(origin: String) {
+        for delay in [0.1, 0.28, 0.55] {
+            onMain(after: delay) { [weak self] in
+                guard let self, self.isArmed, !self.isAudible else { return }
+                guard self.hasLikelyIncomingCallSignal() || origin.contains("toque") else { return }
+                self.autoTriggerCooldownUntil = 0
+                dlog("[TRIGGER] reintento +\(delay)s [\(origin)]")
+                self.trigger(source: "\(origin).retry")
             }
         }
     }
