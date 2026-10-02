@@ -80,11 +80,16 @@ enum PerformCopy {
         ]
     }
 
-    static func shareSteps(voice: Bool, lockSeconds: Int) -> [String] {
+    static func shareSteps(input: VoiceSettings.InputMode, lockSeconds: Int) -> [String] {
         var steps = ["Press **Perform** — the screen goes black."]
-        if voice {
+        switch input {
+        case .aiVoice:
             steps.append("The app listens while the spectator names a song (same \(lockSeconds)-second lock as above), then stops the microphone.")
-        } else {
+        case .api:
+            steps.append("Ask the spectator to search a song in \(ApiSettings.provider.title). The app checks every \(Int(ApiSettings.pollInterval)) seconds and locks their search as soon as the preview is loaded.")
+        case .notes:
+            steps.append("A white note opens instead. The song written in it is searched and loaded in the background.")
+        case .manual:
             steps.append("The app uses the song you typed above.")
         }
         steps += [

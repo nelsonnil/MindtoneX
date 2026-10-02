@@ -61,6 +61,11 @@ struct SettingsView: View {
             } label: {
                 Label("AI Voice settings", systemImage: "mic.badge.plus")
             }
+            NavigationLink {
+                ApiSettingsView()
+            } label: {
+                Label("API / song input", systemImage: "link")
+            }
 
             audioSection
             shortcutSection

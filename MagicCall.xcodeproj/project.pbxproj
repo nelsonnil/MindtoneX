@@ -57,6 +57,10 @@
 		AA0000250000000000000025 /* NotesSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000240000000000000024 /* NotesSongSession.swift */; };
 		AA0000270000000000000027 /* NotesPerformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000260000000000000026 /* NotesPerformView.swift */; };
 		AA0000290000000000000029 /* NotesInputControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000280000000000000028 /* NotesInputControls.swift */; };
+		BB0000020000000000000002 /* ApiSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000001 /* ApiSettings.swift */; };
+		BB0000040000000000000004 /* ApiSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000003 /* ApiSongSession.swift */; };
+		BB0000060000000000000006 /* ApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000050000000000000005 /* ApiSettingsView.swift */; };
+		BB0000080000000000000008 /* ApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000070000000000000007 /* ApiInputPanel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -114,6 +118,10 @@
 		AA0000240000000000000024 /* NotesSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSongSession.swift; sourceTree = "<group>"; };
 		AA0000260000000000000026 /* NotesPerformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesPerformView.swift; sourceTree = "<group>"; };
 		AA0000280000000000000028 /* NotesInputControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesInputControls.swift; sourceTree = "<group>"; };
+		BB0000010000000000000001 /* ApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettings.swift; sourceTree = "<group>"; };
+		BB0000030000000000000003 /* ApiSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSongSession.swift; sourceTree = "<group>"; };
+		BB0000050000000000000005 /* ApiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettingsView.swift; sourceTree = "<group>"; };
+		BB0000070000000000000007 /* ApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiInputPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -220,6 +228,7 @@
 			isa = PBXGroup;
 			children = (
 				9FF1C4C7A77B04B62ED7949E /* App */,
+				BB0000200000000000000020 /* Api */,
 				81D45F486E9CD99D614BA4C4 /* Audio */,
 				20E28B94AB89346A94B87FBD /* Calls */,
 				31B4E312D30B2DE9EFB3E3A5 /* Debug */,
@@ -313,6 +322,17 @@
 			path = Notes;
 			sourceTree = "<group>";
 		};
+		BB0000200000000000000020 /* Api */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000001 /* ApiSettings.swift */,
+				BB0000030000000000000003 /* ApiSongSession.swift */,
+				BB0000050000000000000005 /* ApiSettingsView.swift */,
+				BB0000070000000000000007 /* ApiInputPanel.swift */,
+			);
+			path = Api;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -389,6 +409,10 @@
 				30F3F5FD1AB46F5425A32DAC /* PerformHowItWorks.swift in Sources */,
 				85F6D79B25939ED4B41AEA24 /* SharePerformFlow.swift in Sources */,
 				09990063243AC32A46FD2AAB /* AppModel+Voice.swift in Sources */,
+				BB0000020000000000000002 /* ApiSettings.swift in Sources */,
+				BB0000040000000000000004 /* ApiSongSession.swift in Sources */,
+				BB0000060000000000000006 /* ApiSettingsView.swift in Sources */,
+				BB0000080000000000000008 /* ApiInputPanel.swift in Sources */,
 				4295017D9E15BA7C2F1E84E1 /* LiveTranscribers.swift in Sources */,
 				A26C9B17C125A880A9E7D985 /* MicCapture.swift in Sources */,
 				C652859F762A767FCE73A0FB /* SongPicker.swift in Sources */,
@@ -474,7 +498,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -536,7 +560,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -598,7 +622,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -641,6 +665,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MagicCall/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RingtoneX;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -665,6 +690,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MagicCall/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RingtoneX;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -689,6 +715,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = MagicCall/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RingtoneX;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

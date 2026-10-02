@@ -3,6 +3,7 @@ import SwiftUI
 struct SongInputStrip: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
+    @ObservedObject private var api = ApiSongSession.shared
     @Binding var inputModeRaw: String
     @FocusState.Binding var queryFocused: Bool
 
@@ -21,7 +22,7 @@ struct SongInputStrip: View {
                     inputChip("Manual", icon: "keyboard", mode: .manual)
                     inputChip("AI Voice", icon: "mic.fill", mode: .aiVoice)
                     inputChip("Notes", icon: "note.text", mode: .notes)
-                    disabledChip("API", icon: "link", subtitle: "Soon")
+                    inputChip("API", icon: "link", mode: .api)
                 }
             }
 
@@ -33,6 +34,8 @@ struct SongInputStrip: View {
                     aiVoiceCompact
                 case .notes:
                     NotesInputControls()
+                case .api:
+                    ApiInputPanel()
                 }
             }
         }
@@ -48,6 +51,7 @@ struct SongInputStrip: View {
         let selected = inputMode == mode
         return Button {
             VoiceSongSession.shared.stopTest()
+            ApiSongSession.shared.stopTest()
             withAnimation(.easeInOut(duration: 0.2)) { inputModeRaw = mode.rawValue }
             dlog("Song input → \(mode.title)")
         } label: {
@@ -55,7 +59,7 @@ struct SongInputStrip: View {
                 Image(systemName: icon)
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                if mode == .aiVoice, voice.isActive {
+                if (mode == .aiVoice && voice.isActive) || (mode == .api && api.isActive) {
                     Circle().fill(Color.red).frame(width: 6, height: 6)
                 }
             }

@@ -10,6 +10,7 @@ enum OracleSheet: Identifiable {
     case debugLog
     case voiceSettings
     case voiceDebug
+    case apiSettings
 
     var id: String {
         switch self {
@@ -22,6 +23,7 @@ enum OracleSheet: Identifiable {
         case .debugLog: return "debugLog"
         case .voiceSettings: return "voiceSettings"
         case .voiceDebug: return "voiceDebug"
+        case .apiSettings: return "apiSettings"
         }
     }
 }
@@ -44,6 +46,7 @@ struct GuideSheet: View {
                 }
                 Section("Song input") {
                     NavigationLink("AI Voice & API key") { VoiceSettingsView() }
+                    NavigationLink("API / song input") { ApiSettingsView() }
                 }
                 Section("Performance") {
                     oracleTextBlock(PerformCopy.fakeTiming)
@@ -119,8 +122,8 @@ struct ShareDetailSheet: View {
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
     @AppStorage(VoiceSettings.Key.lockDelay) private var lockDelay = VoiceSettings.defaultLockDelay
 
-    private var voice: Bool {
-        (VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual) == .aiVoice
+    private var input: VoiceSettings.InputMode {
+        VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual
     }
 
     var body: some View {
@@ -143,7 +146,7 @@ struct ShareDetailSheet: View {
                 HowItWorksCard(
                     title: "How Share Ringtone Perform works",
                     icon: "list.number",
-                    steps: PerformCopy.shareSteps(voice: voice, lockSeconds: Int(lockDelay))
+                    steps: PerformCopy.shareSteps(input: input, lockSeconds: Int(lockDelay))
                 )
 
                 TipCard(title: "Performance tip: one Home press", icon: "house.fill", tint: OracleTheme.danger,

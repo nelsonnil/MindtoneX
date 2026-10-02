@@ -95,6 +95,8 @@ struct MainShellView: View {
             case .voiceDebug:
                 NavigationStack { VoiceDebugSheet() }
                     .presentationDetents([.large])
+            case .apiSettings:
+                ApiSettingsSheet()
             }
         }
     }

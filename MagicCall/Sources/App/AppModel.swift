@@ -300,6 +300,7 @@ final class AppModel: ObservableObject {
     func trigger(source: String) {
         VoiceSongSession.shared.callArrived(source: source)
         NotesSongSession.shared.callArrived(source: source)
+        ApiSongSession.shared.callArrived(source: source)
         guard isArmed else {
             dlog("[TRIGGER] “\(source)” ignorado: no armado")
             return
@@ -377,6 +378,7 @@ final class AppModel: ObservableObject {
             hadCallWhileArmed = true
             VoiceSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             NotesSongSession.shared.callArrived(source: "CXCallObserver.incoming")
+            ApiSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             attemptAutoTrigger(source: "CXCallObserver.incoming")
         case .connected:
             if uuid == incomingCallID && Prefs.stopOnAnswer { silence(reason: "contestada") }
