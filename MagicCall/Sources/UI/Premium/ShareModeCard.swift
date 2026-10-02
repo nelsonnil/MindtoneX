@@ -11,19 +11,17 @@ struct ShareModeCard: View {
     var body: some View {
         OracleCard {
             VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Label("Share Ringtone", systemImage: "bell.badge.fill")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(OracleTheme.coral)
-                    Spacer()
-                    Button(action: onInfo) {
-                        Image(systemName: "info.circle")
-                            .foregroundStyle(OracleTheme.textSecondary)
-                    }
-                    .buttonStyle(.plain)
-                }
+                ModeDetailHeader(
+                    title: "Share Ringtone",
+                    icon: "bell.badge.fill",
+                    tint: OracleTheme.coral,
+                    summary: "Silent OFF. Sets your song as a real iOS ringtone with one tap in Share.",
+                    onInfo: onInfo
+                )
 
-                SilentShortcutStatusRow(mode: .shareRingtone, onSetup: onShortcutsSetup)
+                Divider().overlay(OracleTheme.cardBorder)
+
+                ShortcutsInstallPanel(onInstallGuide: onShortcutsSetup)
 
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "star.fill")
@@ -32,26 +30,14 @@ struct ShareModeCard: View {
                     Text("Star **Use as Ringtone** in Share → Edit Actions → Favorites.")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
+                    Spacer(minLength: 0)
                     Button(action: onFavoritesInfo) {
                         Image(systemName: "info.circle")
                             .font(.caption)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(OracleTheme.gold)
-                }
-
-                if model.ringtoneStaged {
-                    Label("Ringtone file ready on device", systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
-
-                OraclePerformButton(
-                    title: "Perform",
-                    gradient: OracleTheme.warmGradient,
-                    disabled: !model.canPerform
-                ) {
-                    model.perform()
+                    .accessibilityLabel("Share Favorites setup")
                 }
 
                 Button {
@@ -61,17 +47,27 @@ struct ShareModeCard: View {
                         isSharePerforming = false
                     }
                 } label: {
-                    if isSharePerforming {
-                        ProgressView().frame(maxWidth: .infinity)
-                    } else {
-                        Text("Test: open Share sheet now")
-                            .font(.footnote.weight(.semibold))
-                            .frame(maxWidth: .infinity)
+                    Group {
+                        if isSharePerforming {
+                            ProgressView()
+                        } else {
+                            Label("Test: open Share sheet now", systemImage: "square.and.arrow.up")
+                                .font(.footnote.weight(.semibold))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .foregroundStyle(OracleTheme.textPrimary)
+                    .background(Color.white.opacity(0.05))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
                     }
                 }
-                .buttonStyle(.bordered)
-                .tint(OracleTheme.textSecondary)
+                .buttonStyle(.plain)
                 .disabled(model.loadState != .ready || isSharePerforming)
+                .opacity(model.loadState != .ready ? 0.5 : 1)
             }
         }
         .transition(.opacity.combined(with: .move(edge: .trailing)))

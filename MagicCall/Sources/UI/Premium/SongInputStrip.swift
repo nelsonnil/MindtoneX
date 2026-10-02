@@ -14,11 +14,14 @@ struct SongInputStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            OracleEyebrow(text: "Song input")
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     inputChip("Manual", icon: "keyboard", mode: .manual)
                     inputChip("AI Voice", icon: "mic.fill", mode: .aiVoice)
-                    disabledChip("API", subtitle: "Soon")
+                    disabledChip("API", icon: "link", subtitle: "Soon")
+                    disabledChip("Notes", icon: "note.text", subtitle: "Soon")
                 }
             }
 
@@ -30,11 +33,6 @@ struct SongInputStrip: View {
                     aiVoiceCompact
                 }
             }
-
-            Text(statusLine)
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .lineLimit(2)
         }
         .sheet(isPresented: $showVoiceDebug) {
             NavigationStack {
@@ -76,9 +74,9 @@ struct SongInputStrip: View {
         )
     }
 
-    private func disabledChip(_ title: String, subtitle: String) -> some View {
+    private func disabledChip(_ title: String, icon: String, subtitle: String) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: "link")
+            Image(systemName: icon)
             Text(title)
                 .font(.subheadline.weight(.semibold))
             Text(subtitle)
@@ -91,7 +89,9 @@ struct SongInputStrip: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .foregroundStyle(OracleTheme.textSecondary.opacity(0.5))
-        .overlay { Capsule().stroke(OracleTheme.cardBorder, lineWidth: 1) }
+        .overlay { Capsule().stroke(OracleTheme.cardBorder, style: StrokeStyle(lineWidth: 1, dash: [3, 3])) }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title) input, coming soon")
     }
 
     private var manualField: some View {
@@ -154,7 +154,7 @@ struct SongInputStrip: View {
     private var aiVoiceCompact: some View {
         VStack(alignment: .leading, spacing: 10) {
             if !VoiceSettings.isConfigured {
-                Label("Add API key in Guide → Voice settings", systemImage: "key.fill")
+                Label("Add an API key in Advanced → AI Voice & API key", systemImage: "key.fill")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             }
@@ -195,30 +195,6 @@ struct SongInputStrip: View {
         }
     }
 
-    private var statusLine: String {
-        switch inputMode {
-        case .manual:
-            switch model.loadState {
-            case .idle: return "Search for a song to begin."
-            case .searching: return "Searching…"
-            case .downloading: return "Downloading preview…"
-            case .ready:
-                if let track = model.selected {
-                    return "Ready · \(track.title)"
-                }
-                return "Ready"
-            case .failed: return "Search failed — try again."
-            }
-        case .aiVoice:
-            switch voice.state {
-            case .idle: return VoiceSettings.isConfigured ? "Tap Listen test to try AI Voice." : "Need API key or Apple on-device engine."
-            case .starting: return "Starting microphone…"
-            case .listening: return "Listening…"
-            case .locked: return "Locked · song ready for Perform"
-            case .failed(let m): return m
-            }
-        }
-    }
 }
 
 struct VoiceDebugSheet: View {

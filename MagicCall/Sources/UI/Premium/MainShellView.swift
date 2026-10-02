@@ -1,16 +1,14 @@
 import PhotosUI
 import SwiftUI
 
-/// Premium home shell — hero, song strip, mode card, floating dock.
+/// Premium home shell — hero, mode picker card, mode detail, song strip, Advanced card,
+/// and a fixed bottom bar with the readiness strip and Perform.
 struct MainShellView: View {
     @EnvironmentObject private var model: AppModel
     @FocusState private var queryFocused: Bool
 
     @AppStorage(Prefs.Key.performanceMode) private var performanceModeRaw = Prefs.PerformanceMode.fakeRingtone.rawValue
     @AppStorage(Prefs.Key.background) private var background = StageBackground.black.rawValue
-    @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = true
-    @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
-    @AppStorage(Prefs.Key.darkStatusBarText) private var darkStatusBarText = false
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     @State private var photoItem: PhotosPickerItem?
@@ -21,53 +19,50 @@ struct MainShellView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            OracleTheme.screenGradient
-                .ignoresSafeArea()
+        ScrollView {
+            VStack(spacing: 16) {
+                HeroLogoView {
+                    activeSheet = .advanced
+                }
 
-            ScrollView {
-                VStack(spacing: 20) {
-                    HeroLogoView {
-                        activeSheet = .advanced
-                    }
+                ModePickerCard(modeRaw: $performanceModeRaw)
 
-                    OracleCard {
-                        SongInputStrip(
-                            inputModeRaw: $inputModeRaw,
-                            queryFocused: $queryFocused
+                Group {
+                    switch mode {
+                    case .fakeRingtone:
+                        FakeModeCard(
+                            background: $background,
+                            photoItem: $photoItem,
+                            onInfo: { activeSheet = .fakeDetails },
+                            onShortcutsSetup: { activeSheet = .shortcutsSetup }
+                        )
+                    case .shareRingtone:
+                        ShareModeCard(
+                            onInfo: { activeSheet = .shareDetails },
+                            onShortcutsSetup: { activeSheet = .shortcutsSetup },
+                            onFavoritesInfo: { activeSheet = .favoritesSetup }
                         )
                     }
-
-                    Group {
-                        switch mode {
-                        case .fakeRingtone:
-                            FakeModeCard(
-                                background: $background,
-                                maskStatusBar: $maskStatusBar,
-                                hideStatusBar: $hideStatusBar,
-                                darkStatusBarText: $darkStatusBarText,
-                                photoItem: $photoItem,
-                                onInfo: { activeSheet = .fakeDetails },
-                                onShortcutsSetup: { activeSheet = .shortcutsSetup }
-                            )
-                        case .shareRingtone:
-                            ShareModeCard(
-                                onInfo: { activeSheet = .shareDetails },
-                                onShortcutsSetup: { activeSheet = .shortcutsSetup },
-                                onFavoritesInfo: { activeSheet = .favoritesSetup }
-                            )
-                        }
-                    }
-                    .animation(.easeInOut(duration: 0.25), value: performanceModeRaw)
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 120)
-            }
+                .animation(.easeInOut(duration: 0.25), value: performanceModeRaw)
 
-            FloatingModeDock(modeRaw: $performanceModeRaw) {
-                activeSheet = .guide
+                OracleCard {
+                    SongInputStrip(
+                        inputModeRaw: $inputModeRaw,
+                        queryFocused: $queryFocused
+                    )
+                }
+
+                AdvancedDisclosureCard { activeSheet = $0 }
             }
-            .padding(.bottom, 8)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 20)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background { OracleBackdrop() }
+        .overlay(alignment: .topTrailing) { guideButton }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            PerformBottomBar(mode: mode)
         }
         .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
@@ -95,7 +90,32 @@ struct MainShellView: View {
                 NavigationStack { FavoritesSetupSheet() }
             case .advanced:
                 NavigationStack { SettingsView() }
+            case .debugLog:
+                NavigationStack { DebugLogView() }
+            case .voiceSettings:
+                NavigationStack { VoiceSettingsView() }
+            case .voiceDebug:
+                NavigationStack { VoiceDebugSheet() }
+                    .presentationDetents([.large])
             }
         }
+    }
+
+    private var guideButton: some View {
+        Button {
+            activeSheet = .guide
+        } label: {
+            Image(systemName: "book.closed.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(OracleTheme.gold)
+                .frame(width: 40, height: 40)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay { Circle().strokeBorder(OracleTheme.cardBorderHighlight, lineWidth: 0.5) }
+                .shadow(color: .black.opacity(0.35), radius: 8, y: 4)
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 16)
+        .padding(.top, 4)
+        .accessibilityLabel("User guide")
     }
 }

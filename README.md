@@ -169,6 +169,8 @@ app el título es *Ringtone Oracle*; en la pantalla de inicio sigue apareciendo 
 
 Build 16 — **UI premium**: pantalla principal oscura (`MainShellView`), hero con logo v2-03 sin título, dock flotante Fake/Share + Guide, chips Manual / AI Voice / API Soon, tarjetas compactas y textos largos en sheets. Build number en `project.yml` / Xcode.
 
+Build 17 — **UI premium v2**: fondo oscuro multicapa (índigo/negro/púrpura) con glow suave tras el logo; botón circular **Guide** arriba a la derecha; tarjeta de modo **Fake Ringtone | Share Ringtone** bajo el logo; barra inferior fija con **barra de estado** (texto negro/blanco según luminancia del fondo) y **Perform**; panel de descarga de atajos *Ringtone Oracle Silent On/Off* en Share (enlaces iCloud en `SilentShortcut.silentOnInstallURL` / `silentOffInstallURL`, vacíos → guía); chip **Notes · Soon**; tarjeta plegable **Advanced** (barra de estado del escenario, otras coincidencias, ajustes completos, debug log, AI Voice/API, voice debug, atajos, favoritos).
+
 Build 15 — **icono**: campana dorada sobre fondo crema (concepto v2-03), en `Assets.xcassets/AppIcon.appiconset`
 (1024 para la App Store + todos los tamaños de iPhone). El nombre bajo el icono sigue siendo **Tonos**.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta

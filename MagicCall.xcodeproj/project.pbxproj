@@ -43,13 +43,15 @@
 		728EECDB8B001133FF4F0696 /* SilentShortcutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1739526C750AA0036D5F293 /* SilentShortcutCard.swift */; };
 		AA0000020000000000000002 /* MainShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000001 /* MainShellView.swift */; };
 		AA0000040000000000000004 /* HeroLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000030000000000000003 /* HeroLogoView.swift */; };
-		AA0000060000000000000006 /* FloatingModeDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000050000000000000005 /* FloatingModeDock.swift */; };
+		AA0000060000000000000006 /* ModePickerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000050000000000000005 /* ModePickerCard.swift */; };
 		AA0000080000000000000008 /* SongInputStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000070000000000000007 /* SongInputStrip.swift */; };
 		AA00000A000000000000000A /* FakeModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000090000000000000009 /* FakeModeCard.swift */; };
 		AA00000C000000000000000C /* ShareModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000B000000000000000B /* ShareModeCard.swift */; };
 		AA00000E000000000000000E /* OracleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000D000000000000000D /* OracleSheets.swift */; };
 		AA0000100000000000000010 /* OracleTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000F000000000000000F /* OracleTheme.swift */; };
 		AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000110000000000000011 /* SilentShortcutStatusRow.swift */; };
+		AA0000140000000000000014 /* PerformBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000130000000000000013 /* PerformBottomBar.swift */; };
+		AA0000160000000000000016 /* AdvancedDisclosureCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000150000000000000015 /* AdvancedDisclosureCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,13 +95,15 @@
 		E1739526C750AA0036D5F293 /* SilentShortcutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SilentShortcutCard.swift"; sourceTree = "<group>"; };
 		AA0000010000000000000001 /* MainShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainShellView.swift; sourceTree = "<group>"; };
 		AA0000030000000000000003 /* HeroLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroLogoView.swift; sourceTree = "<group>"; };
-		AA0000050000000000000005 /* FloatingModeDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingModeDock.swift; sourceTree = "<group>"; };
+		AA0000050000000000000005 /* ModePickerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModePickerCard.swift; sourceTree = "<group>"; };
 		AA0000070000000000000007 /* SongInputStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongInputStrip.swift; sourceTree = "<group>"; };
 		AA0000090000000000000009 /* FakeModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeModeCard.swift; sourceTree = "<group>"; };
 		AA00000B000000000000000B /* ShareModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareModeCard.swift; sourceTree = "<group>"; };
 		AA00000D000000000000000D /* OracleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleSheets.swift; sourceTree = "<group>"; };
 		AA00000F000000000000000F /* OracleTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleTheme.swift; sourceTree = "<group>"; };
 		AA0000110000000000000011 /* SilentShortcutStatusRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentShortcutStatusRow.swift; sourceTree = "<group>"; };
+		AA0000130000000000000013 /* PerformBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformBottomBar.swift; sourceTree = "<group>"; };
+		AA0000150000000000000015 /* AdvancedDisclosureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedDisclosureCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -247,13 +251,15 @@
 			children = (
 				AA0000010000000000000001 /* MainShellView.swift */,
 				AA0000030000000000000003 /* HeroLogoView.swift */,
-				AA0000050000000000000005 /* FloatingModeDock.swift */,
+				AA0000050000000000000005 /* ModePickerCard.swift */,
 				AA0000070000000000000007 /* SongInputStrip.swift */,
 				AA0000090000000000000009 /* FakeModeCard.swift */,
 				AA00000B000000000000000B /* ShareModeCard.swift */,
 				AA00000D000000000000000D /* OracleSheets.swift */,
 				AA00000F000000000000000F /* OracleTheme.swift */,
 				AA0000110000000000000011 /* SilentShortcutStatusRow.swift */,
+				AA0000130000000000000013 /* PerformBottomBar.swift */,
+				AA0000150000000000000015 /* AdvancedDisclosureCard.swift */,
 			);
 			path = Premium;
 			sourceTree = "<group>";
@@ -390,13 +396,15 @@
 				F1A2B3C4D5E6789012345671 /* UIIllustrations.swift in Sources */,
 				AA0000020000000000000002 /* MainShellView.swift in Sources */,
 				AA0000040000000000000004 /* HeroLogoView.swift in Sources */,
-				AA0000060000000000000006 /* FloatingModeDock.swift in Sources */,
+				AA0000060000000000000006 /* ModePickerCard.swift in Sources */,
 				AA0000080000000000000008 /* SongInputStrip.swift in Sources */,
 				AA00000A000000000000000A /* FakeModeCard.swift in Sources */,
 				AA00000C000000000000000C /* ShareModeCard.swift in Sources */,
 				AA00000E000000000000000E /* OracleSheets.swift in Sources */,
 				AA0000100000000000000010 /* OracleTheme.swift in Sources */,
 				AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */,
+				AA0000140000000000000014 /* PerformBottomBar.swift in Sources */,
+				AA0000160000000000000016 /* AdvancedDisclosureCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -438,7 +446,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -500,7 +508,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -562,7 +570,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
