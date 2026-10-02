@@ -38,7 +38,6 @@
 		C652859F762A767FCE73A0FB /* SongPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEB827245D07D21B631D6F1 /* SongPicker.swift */; };
 		F7DCE309099597A6E768E922 /* VoiceInputCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6291FB41218A515A8F2DCFDA /* VoiceInputCard.swift */; };
 		89D05D830FAE9AE7E676E4D8 /* VoiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 577D20CD9D11B283EB37294A /* VoiceSettings.swift */; };
-		0E0ADF8C19CDBE98648567C5 /* VoiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7EA318B9C2EC36A7FA3816C /* VoiceSettingsView.swift */; };
 		AA0000180000000000000018 /* VoiceLockingControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000170000000000000017 /* VoiceLockingControls.swift */; };
 		585AC343960B24E3E4BC65BD /* VoiceSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3786727696B22A692F5C69D /* VoiceSongSession.swift */; };
 		B7991EA68474061E01D04616 /* SilentShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = E050CA4E65BC817983D87C6E /* SilentShortcut.swift */; };
@@ -103,7 +102,6 @@
 		1EEB827245D07D21B631D6F1 /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongPicker.swift"; sourceTree = "<group>"; };
 		6291FB41218A515A8F2DCFDA /* VoiceInputCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceInputCard.swift"; sourceTree = "<group>"; };
 		577D20CD9D11B283EB37294A /* VoiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceSettings.swift"; sourceTree = "<group>"; };
-		A7EA318B9C2EC36A7FA3816C /* VoiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceSettingsView.swift"; sourceTree = "<group>"; };
 		AA0000170000000000000017 /* VoiceLockingControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLockingControls.swift; sourceTree = "<group>"; };
 		C3786727696B22A692F5C69D /* VoiceSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VoiceSongSession.swift"; sourceTree = "<group>"; };
 		E050CA4E65BC817983D87C6E /* SilentShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SilentShortcut.swift"; sourceTree = "<group>"; };
@@ -313,7 +311,6 @@
 				1EEB827245D07D21B631D6F1 /* SongPicker.swift */,
 				6291FB41218A515A8F2DCFDA /* VoiceInputCard.swift */,
 				577D20CD9D11B283EB37294A /* VoiceSettings.swift */,
-				A7EA318B9C2EC36A7FA3816C /* VoiceSettingsView.swift */,
 				AA0000170000000000000017 /* VoiceLockingControls.swift */,
 				C3786727696B22A692F5C69D /* VoiceSongSession.swift */,
 			);
@@ -430,7 +427,6 @@
 				C652859F762A767FCE73A0FB /* SongPicker.swift in Sources */,
 				F7DCE309099597A6E768E922 /* VoiceInputCard.swift in Sources */,
 				89D05D830FAE9AE7E676E4D8 /* VoiceSettings.swift in Sources */,
-				0E0ADF8C19CDBE98648567C5 /* VoiceSettingsView.swift in Sources */,
 				AA0000180000000000000018 /* VoiceLockingControls.swift in Sources */,
 				AA0000230000000000000023 /* NotesSettings.swift in Sources */,
 				AA0000250000000000000025 /* NotesSongSession.swift in Sources */,
@@ -510,7 +506,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -572,7 +568,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -634,7 +630,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

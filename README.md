@@ -176,6 +176,10 @@ Build 16 — **UI premium**: pantalla principal oscura (`MainShellView`), hero c
 
 Build 17 — **UI premium v2**: fondo oscuro multicapa (índigo/negro/púrpura) con glow suave tras el logo; botón circular **Guide** arriba a la derecha; tarjeta de modo **Fake Ringtone | Share Ringtone** bajo el logo; barra inferior fija con **barra de estado** (texto negro/blanco según luminancia del fondo) y **Perform**; panel de descarga de atajos *Ringtone Oracle Silent On/Off* en Share (enlaces iCloud en `SilentShortcut.silentOnInstallURL` / `silentOffInstallURL`, vacíos → guía); chip **Notes · Soon**; tarjeta plegable **Advanced** (barra de estado del escenario, otras coincidencias, ajustes completos, debug log, AI Voice/API, voice debug, atajos, favoritos). **Barra de estado del escenario automática**: con captura siempre se tapa la barra vieja y el color del texto (negro/blanco) se detecta por la luminancia de la franja superior; solo queda manual "Hide status bar".
 
+Build 35 — **AI Voice:** single **Test** under Song input chips; no duplicate test buttons inside the panel.
+
+Build 34 — **Advanced card minimal**: optional screenshot blur, debug log, and Engine & lab sheet only; no song alternates, shortcut toggles, or duplicate status-bar copy. Mode-gated triggers/export in the sheet.
+
 Build 33 — **Song input / Advanced cleanup**: AI Voice is one panel on the home screen (API key, engine, models, mic test, lock delay, minimum confidence, listen test with transcript). No separate Voice debug sheet or Advanced duplicates. Advanced hides private API lab UI; API song input and Notes only on Song input chips.
 
 Build 32 — **Fake Ringtone post-llamada**: cuando el espectador cuelga, sigues en Perform armado con la misma canción bloqueada; otra llamada la reproduce otra vez. Solo entonces (estado PERFORMED) un botón de volumen abre **Compartir / Usar como tono**; durante el timbre o la llamada el volumen solo sube/baja. Registro: `volumen post-llamada → Compartir tono`.

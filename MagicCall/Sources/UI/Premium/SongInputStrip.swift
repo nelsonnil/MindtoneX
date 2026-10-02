@@ -29,6 +29,7 @@ struct SongInputStrip: View {
                 case .manual:
                     manualField
                 case .aiVoice:
+                    aiVoiceTestBar
                     AiVoiceInputPanel()
                 case .notes:
                     NotesInputControls()
@@ -65,6 +66,35 @@ struct SongInputStrip: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+
+    private var aiVoiceTestBar: some View {
+        HStack(spacing: 10) {
+            if voice.isActive {
+                Button(role: .destructive) { voice.stopTest() } label: {
+                    Label("Stop", systemImage: "stop.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            } else {
+                Button {
+                    model.clearSongForNextPerformance()
+                    Task { await voice.start(context: .test) }
+                } label: {
+                    Label("Test", systemImage: "mic.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(OracleTheme.indigo)
+                .disabled(!VoiceSettings.isConfigured)
+            }
+            if voice.hasContent && !voice.isActive {
+                Button { model.resetVoicePerformance() } label: {
+                    Label("Reset", systemImage: "arrow.counterclockwise")
+                }
+                .buttonStyle(.bordered)
+            }
+        }
     }
 
     private var manualField: some View {

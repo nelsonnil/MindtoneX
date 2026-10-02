@@ -13,7 +13,6 @@ struct AiVoiceInputPanel: View {
     @State private var keyDraft = ""
     @State private var savedKeyHint: String?
     @State private var showModels = false
-    @StateObject private var micTest = MicTester()
 
     private var engine: VoiceSettings.Engine { VoiceSettings.Engine(rawValue: engineRaw) ?? .openAIRealtime }
     private var configured: Bool { VoiceSettings.isConfigured }
@@ -89,8 +88,6 @@ struct AiVoiceInputPanel: View {
                         }
                     }
                 }
-                rowDivider
-                micTestRow
             }
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -142,69 +139,18 @@ struct AiVoiceInputPanel: View {
         .padding(.vertical, 12)
     }
 
-    private var micTestRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button {
-                Task { await micTest.run() }
-            } label: {
-                Label(micTest.running ? "Listening…" : "Test microphone (4 s)", systemImage: "mic.circle")
-                    .font(.subheadline)
-                    .foregroundStyle(OracleTheme.textPrimary)
-            }
-            .disabled(micTest.running || voice.isActive)
-            if micTest.running {
-                LevelMeter(level: micTest.level)
-            }
-            if let result = micTest.result {
-                Text(result)
-                    .font(.caption)
-                    .foregroundStyle(micTest.ok ? OracleTheme.gold : OracleTheme.coral)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-    }
-
     // MARK: Live listen (debug)
 
     private var liveListenBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                OracleEyebrow(text: "Listen test")
+                OracleEyebrow(text: "Live preview")
                 Spacer()
                 voiceStatusChip
             }
-            Text("Talk like on stage. You’ll see what the app hears and which song the AI picks. Nothing is shown during Perform.")
+            Text(.init("Tap **Test** above and talk like on stage. You’ll see what the app hears and which song the AI picks. Nothing is shown during Perform."))
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
-
-            HStack(spacing: 10) {
-                if voice.isActive {
-                    Button(role: .destructive) { voice.stopTest() } label: {
-                        Label("Stop", systemImage: "stop.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                } else {
-                    Button {
-                        model.clearSongForNextPerformance()
-                        Task { await voice.start(context: .test) }
-                    } label: {
-                        Label("Start test", systemImage: "mic.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(OracleTheme.indigo)
-                    .disabled(!configured)
-                }
-                if voice.hasContent && !voice.isActive {
-                    Button { model.resetVoicePerformance() } label: {
-                        Label("Reset", systemImage: "arrow.counterclockwise")
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
 
             if !configured {
                 Label("Add an API key above, or choose Apple on-device (no key).", systemImage: "key.fill")
@@ -263,7 +209,7 @@ struct AiVoiceInputPanel: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 4) {
                         if voice.lines.isEmpty {
-                            Text(voice.isActive ? "Listening… say something." : "Nothing yet. Press Start test and talk.")
+                            Text(voice.isActive ? "Listening… say something." : "Nothing yet. Tap Test above and talk.")
                                 .foregroundStyle(OracleTheme.textSecondary.opacity(0.7))
                         }
                         ForEach(voice.lines) { line in
