@@ -33,6 +33,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.discreetRingtoneUI) private var discreetRingtoneUI = true
     @AppStorage(Prefs.Key.ringtoneUseQuickLook) private var ringtoneUseQuickLook = false
     @AppStorage(Prefs.Key.attemptRingerMaxOnStage) private var attemptRingerMaxOnStage = false
+    @AppStorage(SharePerformFlow.tapToHomeKey) private var tapToHome = true
 
     @State private var confirmToneChange = false
 
@@ -42,6 +43,11 @@ struct SettingsView: View {
                 DebugLogView()
             } label: {
                 Label("Debug log", systemImage: "doc.text.magnifyingglass")
+            }
+            NavigationLink {
+                VoiceSettingsView()
+            } label: {
+                Label("AI Voice settings", systemImage: "mic.badge.plus")
             }
 
             audioSection
@@ -107,13 +113,14 @@ struct SettingsView: View {
             Toggle("Prepare ringtone file when song is ready", isOn: $autoStageRingtone)
             Toggle("Black flash before Share sheet", isOn: $discreetRingtoneUI)
             Toggle("Use Quick Look instead of Share", isOn: $ringtoneUseQuickLook)
+            Toggle("Tap black screen to go Home (private API)", isOn: $tapToHome)
             if PrivateProbes.isCompiled {
                 Toggle("Try private API: max ringer volume on export", isOn: $attemptRingerMaxOnStage)
             }
         } header: {
             Text("Share Ringtone export")
         } footer: {
-            Text("Auto-prepare builds the .m4a in the background. Quick Look is an alternate path if “Use as Ringtone” doesn’t appear in Share.")
+            Text("Auto-prepare builds the .m4a in the background. Quick Look is an alternate path if “Use as Ringtone” doesn’t appear in Share. Tap-to-Home uses an undocumented iOS call (the same as pressing Home); if it stops working, swipe up instead.")
         }
     }
 

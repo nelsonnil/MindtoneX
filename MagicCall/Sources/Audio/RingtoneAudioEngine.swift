@@ -25,7 +25,13 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
         var options: AVAudioSession.CategoryOptions = []
         if Prefs.mixWithOthers { options.insert(.mixWithOthers) }
         // .playback es imprescindible: .ambient/.soloAmbient se silencian con el modo silencio.
-        try session.setCategory(.playback, mode: .default, options: options)
+        if VoiceAudioSession.recordCategoryActive {
+            options.insert(.defaultToSpeaker)
+            try session.setCategory(.playAndRecord, mode: .default, options: options)
+            try? session.setAllowHapticsAndSystemSoundsDuringRecording(true)
+        } else {
+            try session.setCategory(.playback, mode: .default, options: options)
+        }
         try session.setPrefersNoInterruptionsFromSystemAlerts(Prefs.noInterruptions)
         try session.setActive(true)
         dlog("Sesión activa: cat=\(session.category.rawValue) opts=\(session.categoryOptions.rawValue) prefersNoInterruptionsFromSystemAlerts=\(session.prefersNoInterruptionsFromSystemAlerts) ruta=\(Self.routeDescription()) volumenMedia=\(String(format: "%.2f", session.outputVolume))")
@@ -159,6 +165,11 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
         timer = nil
         player?.stop()
         isAudible = false
+    }
+
+    func unload() {
+        stop()
+        player = nil
     }
 
     func snapshot() -> String {

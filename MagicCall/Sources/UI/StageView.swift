@@ -17,7 +17,13 @@ struct StageView: View {
                 .ignoresSafeArea()
 
             StageGestureLayer(
-                onTap: { if Prefs.tapTrigger { model.toggleManual() } },
+                onTap: {
+                    if SharePerformFlow.shared.isActive {
+                        SharePerformFlow.shared.handleTap()
+                    } else if Prefs.tapTrigger {
+                        model.toggleManual()
+                    }
+                },
                 onTwoFingerHold: { model.disarm() }
             )
             .ignoresSafeArea()

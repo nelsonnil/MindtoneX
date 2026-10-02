@@ -12,6 +12,9 @@ enum RingtoneSharePresenter {
         .airDrop, .openInIBooks, .markupAsPDF,
     ]
 
+    /// One-shot callback for the next Share sheet: (activity type, completed).
+    @MainActor static var onNextCompletion: ((String?, Bool) -> Void)?
+
     @MainActor
     static func present(url: URL, title: String, from presenter: UIViewController? = nil) {
         let top = presenter ?? topViewController()
@@ -25,6 +28,11 @@ enum RingtoneSharePresenter {
         sheet.completionWithItemsHandler = { activity, completed, _, error in
             let id = activity?.rawValue ?? "ninguna"
             dlog("Compartir: actividad=\(id) completado=\(completed)\(error.map { " error=\($0.localizedDescription)" } ?? "")")
+            MainActor.assumeIsolated {
+                let callback = onNextCompletion
+                onNextCompletion = nil
+                callback?(activity?.rawValue, completed)
+            }
         }
         if let pop = sheet.popoverPresentationController {
             pop.sourceView = top.view

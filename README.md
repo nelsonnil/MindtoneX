@@ -93,6 +93,43 @@ reproductor a +0,3/1/2,5/5/9 s del disparo, resultados de las APIs privadas) se 
 `magic-call-log.txt`. Expórtalo desde *Registro de pruebas › Compartir*, o búscalo en
 **Archivos › En mi iPhone › Tonos** (la carpeta de la app).
 
+## 3b. Entrada de canción: Manual o Voz IA (build 7)
+
+Arriba, en **Song**, eliges **Manual** (escribes la canción, como antes) o **AI Voice**.
+
+**AI Voice**: al pulsar **Perform** la app escucha la conversación (solo se ve la pantalla negra).
+1. En cuanto la IA oye la canción que eligió el **espectador** (ignora los ejemplos que dice el mago,
+   sigue los "no, mejor…", mezcla español/inglés), la busca y la deja preparada.
+2. Si en **5 s** (ajustable) no hay cambios, la canción queda **bloqueada** y el micrófono se apaga del todo.
+   Si el espectador cambia, se prepara la nueva y el contador vuelve a empezar.
+3. Si la llamada llega antes del bloqueo, suena la mejor candidata de ese momento.
+4. Al salir de Perform se borra todo (texto, candidata, canción) para la siguiente actuación.
+
+Todo queda en el **Registro** con la etiqueta `[VOICE]` (lo oído, cada cambio de candidata, el bloqueo).
+En la pantalla de preparación, **Try it here → Start test** muestra en vivo lo que oye y lo que elige la IA.
+
+**Ajustes de voz** (*AI Voice → Voice settings*, o *Advanced → AI Voice settings*): clave de OpenAI
+(se guarda en el Llavero del iPhone), motor, modelos, idioma, segundos hasta bloquear, confianza mínima,
+vibración al bloquear y **Test microphone**.
+
+| Motor | Ventajas | Inconvenientes |
+|---|---|---|
+| **OpenAI** (por defecto): `gpt-live-transcribe` en streaming por WebSocket + `gpt-6-luna` con salida JSON `{title, artist, confidence, reasoning}` | El mejor con títulos en inglés dichos en español y con cambios de opinión | Necesita clave e internet; coste por minuto |
+| **Apple on-device** (`SFSpeechRecognizer`) | Gratis, sin clave, funciona sin red para transcribir | Peor con títulos en inglés; sin clave, la elección es una regla simple (última respuesta corta) |
+
+Con Apple + clave, Apple transcribe y la IA de OpenAI elige la canción.
+
+Audio: mientras escucha, la sesión pasa a `playAndRecord` + altavoz (el modo silencio no la apaga,
+igual que `.playback`). Al bloquear vuelve a `.playback`. iOS muestra un **punto naranja** mientras el
+micrófono está encendido; desaparece al bloquear.
+
+**Share Ringtone + Perform**: pantalla negra → (AI Voice escucha y bloquea, o usa la canción escrita) →
+se apaga el micro → se abre **Compartir** solo → pulsas **Usar como tono** → un toque en la pantalla
+negra te lleva a la pantalla de inicio (usa una llamada privada de iOS, se puede desactivar en
+*Advanced › Tap black screen to go Home*; si falla, desliza hacia arriba). **Modo silencio desactivado.**
+Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
+(`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
+
 ## 4. Protocolo de prueba mínimo
 
 Necesitas un segundo teléfono para llamar. Antes de cada bloque, en la app: *Registro › papelera*.
@@ -133,6 +170,8 @@ MagicCall/Sources/Audio     RingtoneAudioEngine (sesión + reproducción), Ringt
 MagicCall/Sources/Calls     CallMonitor (CXCallObserver)
 MagicCall/Sources/Songs     PreviewService (iTunes → Deezer, caché, latencias)
 MagicCall/Sources/UI        Preparación, escena, ajustes, registro
+MagicCall/Sources/Voice     AI Voice: micrófono, transcripción (OpenAI/Apple), elección de canción, ajustes
+MagicCall/Sources/Perform   Flujo Perform de Share Ringtone y textos "How it works"
 MagicCall/Sources/Intents   App Intents para Toque posterior / botón de Acción
 MagicCall/Sources/Experiments  APIs privadas, CallKit, volumen
 docs/                       Informe de investigación

@@ -207,8 +207,8 @@ final class AppModel: ObservableObject {
         dlog("Share Ringtone: share sheet presented for Perform")
     }
 
-    func arm() {
-        guard loadState == .ready else {
+    func arm(requireSong: Bool = true) {
+        guard loadState == .ready || !requireSong else {
             dlog("No se puede armar: no hay canción lista")
             return
         }
@@ -244,10 +244,25 @@ final class AppModel: ObservableObject {
         phase = .setup
         showDebugOverlay = false
         UIApplication.shared.isIdleTimerDisabled = false
+        resetVoicePerformance()
         dlog("══ DESARMADO ══")
     }
 
+    /// AI Voice: forget the previous spectator's song so the next Perform starts empty.
+    func clearSongForNextPerformance() {
+        audio.unload()
+        query = ""
+        results = []
+        selected = nil
+        currentAudio = nil
+        exportedRingtone = nil
+        ringtoneStaged = false
+        timings = ""
+        loadState = .idle
+    }
+
     func trigger(source: String) {
+        VoiceSongSession.shared.callArrived(source: source)
         guard isArmed else {
             dlog("[TRIGGER] “\(source)” ignorado: no armado")
             return
@@ -318,6 +333,7 @@ final class AppModel: ObservableObject {
             incomingCallID = uuid
             incomingDetectedAt = CACurrentMediaTime()
             callSignalActive = true
+            VoiceSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             attemptAutoTrigger(source: "CXCallObserver.incoming")
         case .connected:
             if uuid == incomingCallID && Prefs.stopOnAnswer { silence(reason: "contestada") }

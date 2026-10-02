@@ -11,12 +11,18 @@ struct SetupView: View {
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = true
     @AppStorage(Prefs.Key.hideStatusBar) private var hideStatusBar = false
     @AppStorage(Prefs.Key.darkStatusBarText) private var darkStatusBarText = false
+    @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
+    @AppStorage(VoiceSettings.Key.lockDelay) private var lockDelay = VoiceSettings.defaultLockDelay
 
     @State private var photoItem: PhotosPickerItem?
     @State private var isSharePerforming = false
 
     private var mode: Prefs.PerformanceMode {
         Prefs.PerformanceMode(rawValue: performanceModeRaw) ?? .fakeRingtone
+    }
+
+    private var inputMode: VoiceSettings.InputMode {
+        VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual
     }
 
     var body: some View {
@@ -63,6 +69,32 @@ struct SetupView: View {
             Label("Song", systemImage: "music.note.list")
                 .font(.headline)
 
+            Picker("Song input", selection: $inputModeRaw) {
+                ForEach(VoiceSettings.InputMode.allCases) { m in
+                    Text(m.title).tag(m.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: inputModeRaw) { _, newValue in
+                VoiceSongSession.shared.stopTest()
+                dlog("Song input → \(VoiceSettings.InputMode(rawValue: newValue)?.title ?? newValue)")
+            }
+
+            switch inputMode {
+            case .manual:
+                manualSongInput
+            case .aiVoice:
+                VoiceInputCard()
+                if model.loadState != .idle {
+                    songStatusCard
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var manualSongInput: some View {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 TextField("Title and artist, e.g. Bohemian Rhapsody Queen", text: $model.query)
                     .textInputAutocapitalization(.never)
@@ -176,10 +208,9 @@ struct SetupView: View {
 
     private var comingSoonSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Future song input")
+            Text("More song inputs")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-            ComingSoonInputRow(title: "Voice recognition", icon: "mic.fill")
             ComingSoonInputRow(title: "Music API / library", icon: "link")
             ComingSoonInputRow(title: "AI song guess", icon: "brain.head.profile")
         }
@@ -201,6 +232,8 @@ struct SetupView: View {
             .foregroundStyle(.secondary)
 
             SilentModeIllustration()
+
+            TipCard(title: "Performance tip / timing", icon: "clock", tint: .purple, lines: PerformCopy.fakeTiming)
 
             setupChecklist
 
@@ -294,7 +327,7 @@ struct SetupView: View {
 
     private var performFakeButton: some View {
         Button {
-            model.performFakeRingtone()
+            model.perform()
         } label: {
             Label("Perform", systemImage: "play.fill")
                 .font(.title3.weight(.semibold))
@@ -303,7 +336,7 @@ struct SetupView: View {
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
-        .disabled(model.loadState != .ready)
+        .disabled(!model.canPerform)
     }
 
     // MARK: Share Ringtone
@@ -311,6 +344,14 @@ struct SetupView: View {
     private var shareRingtoneContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             sectionHeader("Share Ringtone", icon: "bell.badge.fill", tint: .orange)
+
+            Label("Silent must be OFF in this mode", systemImage: "bell.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Color.orange)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             Text("""
             This sets your song as a **real iOS ringtone** (official “Use as Ringtone”). Turn **Silent OFF** and turn **ringer volume up**. After setup, one tap in the Share sheet is enough each performance.
@@ -337,11 +378,26 @@ struct SetupView: View {
                     .font(.footnote)
             }
 
-            Text("""
-            **Show tip:** When you “look up your number” for the spectator, tap **Use as Ringtone** from Favorites — it’s fast and looks natural.
-            """)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            HowItWorksCard(title: "How Share Ringtone Perform works", icon: "list.number",
+                           steps: PerformCopy.shareSteps(voice: inputMode == .aiVoice, lockSeconds: Int(lockDelay)))
+
+            TipCard(title: "Performance tip / timing", icon: "clock", tint: .orange,
+                    lines: PerformCopy.shareTiming(lockSeconds: Int(lockDelay)))
+
+            TipCard(title: "Good to know", icon: "exclamationmark.triangle", tint: .yellow,
+                    lines: PerformCopy.shareCaveats)
+
+            Button {
+                model.perform()
+            } label: {
+                Label("Perform", systemImage: "play.fill")
+                    .font(.title3.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
+            .disabled(!model.canPerform)
 
             Button {
                 isSharePerforming = true
@@ -351,21 +407,16 @@ struct SetupView: View {
                 }
             } label: {
                 if isSharePerforming {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
+                    ProgressView().frame(maxWidth: .infinity)
                 } else {
-                    Label("Perform", systemImage: "square.and.arrow.up.fill")
-                        .font(.title3.weight(.semibold))
+                    Label("Test: open Share sheet now", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
                 }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .buttonStyle(.bordered)
             .disabled(model.loadState != .ready || isSharePerforming)
 
-            Text("Perform exports the clip if needed, then opens Share automatically so you can tap Use as Ringtone.")
+            Text("Perform shows a black screen, opens Share by itself when the song is ready, and one tap afterwards goes to your Home Screen. The test button opens Share right here without the black screen.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }

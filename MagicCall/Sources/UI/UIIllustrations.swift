@@ -97,7 +97,7 @@ struct POCBanner: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "sparkles")
                 .foregroundStyle(.tint)
-            Text("Proof of concept — song search uses a text preview lookup today. Voice, AI, and API inputs are coming soon.")
+            Text("Proof of concept — type the song (Manual) or let the app listen for it (AI Voice). Music API input is coming soon.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
