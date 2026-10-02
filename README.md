@@ -141,6 +141,12 @@ adelantarse; cada intento queda en el Registro. Vías estudiadas sin éxito: Qui
 del sistema, también abre Ajustes), Archivos (igual), API pública de tonos (no existe en iOS; ToneLibrary
 es privada y está en los experimentos, normalmente bloqueada sin jailbreak).
 Truco de actuación: al aparecer Ajustes, pulsa Inicio (o desliza hacia arriba) mientras sigues hablando.
+
+Build 12 — **Fake Ringtone, fin de la llamada**: cuando el espectador cuelga, la app entra en estado
+**PERFORMED**: para la canción, apaga todos los disparadores de respaldo (sondeo CXCall, interrupciones,
+avisos de audio, reintentos, botones de volumen), libera la sesión de audio y restaura el volumen. No vuelve
+a sonar nada hasta salir de Perform (dos dedos 1,5 s). El final de una interrupción ya no reanuda el audio:
+solo dispara si hay una llamada sonando de verdad. En el Registro: `[TRIGGER] ■ PERFORMED …`.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
 (`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
 

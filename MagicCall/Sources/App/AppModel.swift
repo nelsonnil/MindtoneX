@@ -41,6 +41,8 @@ final class AppModel: ObservableObject {
     private var lastLoggedCallCount = 0
     private var autoTriggerCooldownUntil: CFTimeInterval = 0
     private var callSignalActive = false
+    private var hadCallWhileArmed = false
+    private(set) var performed = false
     private var currentAudio: (data: Data, hint: String)?
     @Published private(set) var exportedRingtone: URL?
     @Published var showingDiscreetRingtonePrep = false
@@ -224,6 +226,9 @@ final class AppModel: ObservableObject {
         if Prefs.hotStandby { audio.startStandby() }
         calls.reassertDelegate()
         startVolumeButtonWatch()
+        performed = false
+        hadCallWhileArmed = false
+        autoTriggerCooldownUntil = 0
         startCallPolling()
         isArmed = true
         isAudible = false
@@ -244,8 +249,28 @@ final class AppModel: ObservableObject {
         phase = .setup
         showDebugOverlay = false
         UIApplication.shared.isIdleTimerDisabled = false
+        performed = false
+        hadCallWhileArmed = false
         resetVoicePerformance()
         dlog("══ DESARMADO ══")
+    }
+
+    /// Terminal state after the spectator's call ends: nothing may play again (no triggers,
+    /// retries, polling, standby or interruption resume) until the performer leaves Perform.
+    private func enterPerformedState(reason: String) {
+        guard isArmed, !performed else { return }
+        performed = true
+        isArmed = false
+        stopCallPolling()
+        callSignalActive = false
+        autoTriggerCooldownUntil = .greatestFiniteMagnitude
+        volumeObservation = nil
+        audio.stop()
+        audio.player?.currentTime = 0
+        isAudible = false
+        SystemVolume.shared.restoreSavedIfNeeded()
+        audio.deactivateSession()
+        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — all triggers, retries and polling off; player stopped; session released. Leave Perform (two-finger hold) to reset.")
     }
 
     /// AI Voice: forget the previous spectator's song so the next Perform starts empty.
@@ -330,25 +355,29 @@ final class AppModel: ObservableObject {
     private func handle(_ event: CallMonitor.Event, uuid: UUID) {
         switch event {
         case .incoming:
+            guard isArmed else {
+                dlog("[TRIGGER] CXCall incoming ignored: not armed\(performed ? " (performed — waiting for exit)" : "")")
+                return
+            }
             incomingCallID = uuid
             incomingDetectedAt = CACurrentMediaTime()
             callSignalActive = true
+            hadCallWhileArmed = true
             VoiceSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             attemptAutoTrigger(source: "CXCallObserver.incoming")
         case .connected:
             if uuid == incomingCallID && Prefs.stopOnAnswer { silence(reason: "contestada") }
         case .ended:
             let wasOurs = uuid == incomingCallID
-            if isArmed && (wasOurs || isAudible) {
-                silence(reason: "call ended")
-                SystemVolume.shared.restoreSavedIfNeeded()
+            if isArmed && (wasOurs || isAudible || hadCallWhileArmed || callSignalActive) {
+                enterPerformedState(reason: "CXCall ended (ours=\(wasOurs))")
             }
             if wasOurs {
                 incomingCallID = nil
                 callSignalActive = false
                 incomingDetectedAt = 0
             }
-            if isArmed && calls.currentCalls.allSatisfy(\.hasEnded) {
+            if calls.currentCalls.allSatisfy(\.hasEnded) {
                 callSignalActive = false
             }
         case .outgoing, .onHold:
@@ -420,6 +449,10 @@ final class AppModel: ObservableObject {
             logAudioSession(context: "interruption.began reason=\(reasonRaw.map(String.init) ?? "nil")")
             dlog("[AUDIO] ⛔️ interruption.began audibleAntes=\(wasAudible) · \(audio.snapshot()) · \(calls.describeCalls())")
             isAudible = false
+            guard isArmed else {
+                dlog("[AUDIO] interruption.began: not armed\(performed ? " (performed)" : "") → no standby, no trigger")
+                return
+            }
             audio.markStandbyAfterInterruption()
             callSignalActive = true
             incomingDetectedAt = CACurrentMediaTime()
@@ -427,10 +460,18 @@ final class AppModel: ObservableObject {
         case .ended:
             let optRaw = n.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
             let shouldResume = AVAudioSession.InterruptionOptions(rawValue: optRaw).contains(.shouldResume)
-            dlog("[AUDIO] ✅ interruption.ended shouldResume=\(shouldResume) · \(calls.describeCalls())")
-            if isArmed, hasLikelyIncomingCallSignal(), !isAudible {
+            dlog("[AUDIO] ✅ interruption.ended shouldResume=\(shouldResume) (never auto-resumed) · \(calls.describeCalls())")
+            guard isArmed else {
+                dlog("[AUDIO] interruption.ended: not armed\(performed ? " (performed)" : "") → ignored")
+                return
+            }
+            if hadCallWhileArmed, calls.currentCalls.allSatisfy(\.hasEnded) {
+                enterPerformedState(reason: "interruption.ended with no active call")
+            } else if !calls.ringingIncomingCalls().isEmpty, !isAudible {
+                dlog("[TRIGGER] interruption.ended while a call is still ringing → trigger")
                 attemptAutoTrigger(source: "interruption.ended")
             } else {
+                dlog("[AUDIO] interruption.ended: no ringing call → standby only")
                 ensureStandby()
             }
         @unknown default:
@@ -532,6 +573,11 @@ final class AppModel: ObservableObject {
         if count != lastLoggedCallCount {
             dlog("[CXCall] poll count \(lastLoggedCallCount)→\(count) · \(calls.describeCalls()) app=\(appStateLabel())")
             lastLoggedCallCount = count
+        }
+        if !calls.ringingIncomingCalls().isEmpty { hadCallWhileArmed = true }
+        if hadCallWhileArmed, calls.currentCalls.allSatisfy(\.hasEnded) {
+            enterPerformedState(reason: "CXCall.poll: call gone")
+            return
         }
         syncOngoingIncomingCalls()
         if !calls.ringingIncomingCalls().isEmpty, !isAudible {

@@ -118,6 +118,6 @@ enum PerformCopy {
         "Turn **Silent ON** before you press Perform.",
         "Stay on the black (or screenshot) screen and keep the phone unlocked — don’t press the side button.",
         "Keep talking while the spectator names the song and while you give them your number; ask them to call you.",
-        "When the call arrives the song plays by itself. Hold two fingers for 1.5 s to leave afterwards.",
+        "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you hold two fingers for 1.5 s to leave.",
     ]
 }
