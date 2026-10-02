@@ -178,6 +178,8 @@ Build 17 — **UI premium v2**: fondo oscuro multicapa (índigo/negro/púrpura) 
 
 Build 19 — **Notes (entrada de canción)**: el chip **Notes** ya funciona. Con Notes + **Perform** se abre una nota en blanco copiada de G-Sensor `NotesView` (fondo blanco, botón atrás redondo, cápsula compartir/⋯, check dorado; texto 22 pt, cursor dorado, teclado sube solo). El espectador escribe; tras **N s sin escribir** (interruptor + stepper, por defecto 3 s), al pulsar **Intro** (interruptor) o el **check**, la nota se busca y la canción se precarga en segundo plano. Fake Ringtone: la llamada entrante la reproduce igual que AI Voice. Share Ringtone: en cuanto está lista se abre Compartir. Con clave OpenAI la IA convierte la nota en "título artista" (interruptor *Use AI to read the note*); sin clave se busca tal cual. Salir: mantener pulsado el botón atrás o deslizar con dos dedos hacia abajo. Triple toque en la cápsula ⋯ = debug. Ajustes en la tira *Song input* y en *Advanced → Notes input* (claves `notes.*`).
 
+Build 20 — **API (entrada de canción)**: el chip **API** ya funciona. En *Settings → API / song input* (también en la tarjeta Advanced y en la Guía) un selector elige **una sola** integración: **Inject** (ID → `https://11z.co/_w/{ID}/selection`, campos `count`/`value`), **Elips** (URL completa de la app Elips, campos `count`/`song`/`artist`) o **Custom API** (URL + campo JSON, sin distinguir mayúsculas, con puntos para anidados, cabecera de autenticación opcional). Al pulsar **Perform** la app consulta la API **cada 2 s**: la primera respuesta es la línea base y el siguiente cambio es la búsqueda del espectador, que se busca y precarga como en AI Voice y se bloquea; la llamada entrante la reproduce (Fake) o se abre Compartir (Share). Salir de Perform lo reinicia. En la tira hay *Watch test* y en ajustes *Test connection*. Código en `MagicCall/Sources/Api` (port de G-Sensor `Packages/magicintegrations`).
+
 Build 15 — **icono**: campana dorada sobre fondo crema (concepto v2-03), en `Assets.xcassets/AppIcon.appiconset`
 (1024 para la App Store + todos los tamaños de iPhone). El nombre bajo el icono es **RingtoneX**.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
@@ -230,6 +232,7 @@ MagicCall/Sources/Songs     PreviewService (iTunes → Deezer, caché, latencias
 MagicCall/Sources/UI        Preparación, escena, ajustes, registro
 MagicCall/Sources/Voice     AI Voice: micrófono, transcripción (OpenAI/Apple), elección de canción, ajustes
 MagicCall/Sources/Notes     Notes: pantalla tipo Notas, búsqueda por inactividad/Intro, ajustes
+MagicCall/Sources/Api       API: Inject / Elips / Custom API, sondeo cada 2 s, ajustes
 MagicCall/Sources/Perform   Flujo Perform de Share Ringtone y textos "How it works"
 MagicCall/Sources/Intents   App Intents para Toque posterior / botón de Acción
 MagicCall/Sources/Experiments  APIs privadas, CallKit, volumen
