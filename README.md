@@ -166,6 +166,9 @@ Build 14 — **marca Ringtone Oracle**. Los atajos se llaman ahora exactamente *
 y **Ringtone Oracle Silent Off** (si ya creaste los de "MagicCall…", renómbralos en Atajos). Dentro de la
 app el título es *Ringtone Oracle*; en la pantalla de inicio sigue apareciendo **Tonos**
 (`CFBundleDisplayName`), y el bundle id, el esquema de URL (`magiccall://`) y el proyecto Xcode no cambian.
+
+Build 15 — **icono**: campana dorada sobre fondo crema (concepto v2-03), en `Assets.xcassets/AppIcon.appiconset`
+(1024 para la App Store + todos los tamaños de iPhone). El nombre bajo el icono sigue siendo **Tonos**.
 Si iOS muestra una confirmación o abre Ajustes tras "Usar como tono", el Registro lo apunta
 (`[SHARE PERFORM] ⚠️ app left the foreground…`): simplemente ve a inicio.
 
