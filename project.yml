@@ -21,7 +21,7 @@ settings:
     # Pon aquí tu Team ID o elígelo en Xcode > Signing & Capabilities.
     DEVELOPMENT_TEAM: "6XSHKM2M34"
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "79"
+    CURRENT_PROJECT_VERSION: "80"
 
 targets:
   MagicCall:
@@ -37,6 +37,7 @@ targets:
         PRODUCT_NAME: MagicCall
         INFOPLIST_FILE: MagicCall/Resources/Info.plist
         INFOPLIST_KEY_CFBundleDisplayName: MindtoneX
+        INFOPLIST_KEY_CFBundleDevelopmentRegion: en
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_OBJC_BRIDGING_HEADER: MagicCall/Sources/Support/MagicCall-Bridging-Header.h
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
