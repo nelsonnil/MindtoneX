@@ -24,9 +24,9 @@ extension AppModel {
         let mode = Prefs.performanceMode
         if usesVoiceInput {
             guard !voiceOpenAIPreflightInProgress else { return }
-            voiceOpenAIPreflightInProgress = true
+            setVoiceOpenAIPreflightInProgress(true)
             Task {
-                defer { voiceOpenAIPreflightInProgress = false }
+                defer { setVoiceOpenAIPreflightInProgress(false) }
                 if let message = await VoiceOpenAIPreflight.checkBeforePerform() {
                     voiceOpenAIPreflightAlert = message
                     UINotificationFeedbackGenerator().notificationOccurred(.warning)

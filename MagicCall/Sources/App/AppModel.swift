@@ -52,6 +52,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var voiceOpenAIPreflightInProgress = false
     @Published var voiceOpenAIPreflightAlert: String?
 
+    func setVoiceOpenAIPreflightInProgress(_ inProgress: Bool) {
+        voiceOpenAIPreflightInProgress = inProgress
+    }
+
     /// Evita auto-lock mientras la app está visible (setup, Perform, overlays). En background se restaura.
     static func setScreenAwakeWhileInForeground(_ awake: Bool) {
         UIApplication.shared.isIdleTimerDisabled = awake
