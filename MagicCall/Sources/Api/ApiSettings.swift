@@ -87,9 +87,9 @@ enum ApiSettings {
     /// What the strip and status bar show when the active integration is missing a field.
     static var setupHint: String {
         switch provider {
-        case .inject: return "Add your Inject ID in API settings"
-        case .elips: return "Paste your Elips API URL in API settings"
-        case .custom: return customURL.isEmpty ? "Add a Custom API URL in API settings" : "Choose the JSON field in API settings"
+        case .inject: return "Enter your Inject ID above"
+        case .elips: return "Tap connection details and paste your Elips URL"
+        case .custom: return customURL.isEmpty ? "Tap connection details and add your API URL" : "Choose the JSON field in connection details"
         }
     }
 

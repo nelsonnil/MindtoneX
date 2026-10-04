@@ -77,8 +77,8 @@ struct MainShellView: View {
             }
         }
         .onChange(of: activeSheet) { _, sheet in
-            if sheet != nil {
-                model.pauseVoiceAndAudioForSetupUI(reason: "sheet \(sheet!.id)")
+            if let sheet {
+                model.pauseVoiceAndAudioForSetupUI(reason: "sheet \(sheet.id)")
             }
         }
         .sheet(item: $activeSheet) { sheet in

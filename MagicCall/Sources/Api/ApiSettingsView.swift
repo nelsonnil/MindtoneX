@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → API / song input. The segmented selector is the only switch between integrations.
+/// Connection setup for API song input — matches home Oracle styling (not system Form gray).
 struct ApiSettingsView: View {
     @AppStorage(ApiSettings.Key.provider) private var providerRaw = ApiSettings.Provider.inject.rawValue
     @AppStorage(ApiSettings.Key.injectID) private var injectID = ""
@@ -19,61 +19,90 @@ struct ApiSettingsView: View {
     private var provider: ApiSettings.Provider { ApiSettings.Provider(rawValue: providerRaw) ?? .inject }
 
     var body: some View {
-        Form {
-            Section {
-                Picker("Integration", selection: $providerRaw) {
-                    ForEach(ApiSettings.Provider.allCases) { Text($0.title).tag($0.rawValue) }
-                }
-                .pickerStyle(.segmented)
-                Text(provider.detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } header: {
-                Text("Integration")
-            } footer: {
-                Text("Only one integration is active at a time, so they never poll together. Your settings for the others are kept.")
-            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                introBlock
 
-            switch provider {
-            case .inject: injectSection
-            case .elips: elipsSection
-            case .custom: customSection
-            }
-
-            Section {
-                Button {
-                    Task { await runTest() }
-                } label: {
-                    HStack {
-                        Label(testing ? "Testing…" : "Test connection", systemImage: "antenna.radiowaves.left.and.right")
-                        if testing { Spacer(); ProgressView() }
+                oracleCard {
+                    VStack(alignment: .leading, spacing: 12) {
+                        OracleEyebrow(text: "Integration")
+                        Picker("Integration", selection: $providerRaw) {
+                            ForEach(ApiSettings.Provider.allCases) { Text($0.title).tag($0.rawValue) }
+                        }
+                        .pickerStyle(.segmented)
+                        Text(provider.detail)
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .disabled(testing || !ApiSettings.isConfigured)
-                if let testResult {
-                    Text(testResult.text)
-                        .font(.footnote)
-                        .foregroundStyle(testResult.ok ? .green : .orange)
-                        .textSelection(.enabled)
-                }
-            } header: {
-                Text("Check")
-            } footer: {
-                Text("Reads the API once and shows what it returns right now.")
-            }
 
-            Section {
-                if inputModeRaw != VoiceSettings.InputMode.api.rawValue {
-                    Button("Use API as song input") { inputModeRaw = VoiceSettings.InputMode.api.rawValue }
+                switch provider {
+                case .inject: injectCard
+                case .elips: elipsCard
+                case .custom: customCards
                 }
-            } header: {
-                Text("Perform")
-            } footer: {
-                Text("On Perform the app checks the API every \(Int(ApiSettings.pollInterval)) seconds. The first answer is whatever was searched before; the next change is the spectator’s search. That song is found, loaded and locked — the call plays it, like AI Voice. Leaving Perform resets it for the next performance.")
+
+                oracleCard {
+                    VStack(alignment: .leading, spacing: 12) {
+                        OracleEyebrow(text: "Check")
+                        Button {
+                            Task { await runTest() }
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "antenna.radiowaves.left.and.right")
+                                    .font(.body.weight(.semibold))
+                                Text(testing ? "Testing…" : "Test connection")
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                                if testing { ProgressView().tint(OracleTheme.gold) }
+                            }
+                            .foregroundStyle(ApiSettings.isConfigured ? OracleTheme.textPrimary : OracleTheme.textSecondary)
+                            .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(testing || !ApiSettings.isConfigured)
+
+                        if let testResult {
+                            Text(testResult.text)
+                                .font(.caption)
+                                .foregroundStyle(testResult.ok ? OracleTheme.gold : OracleTheme.coral)
+                                .textSelection(.enabled)
+                        } else {
+                            Text("Reads the API once and shows what it returns right now.")
+                                .font(.caption)
+                                .foregroundStyle(OracleTheme.textSecondary)
+                        }
+                    }
+                }
+
+                oracleCard {
+                    VStack(alignment: .leading, spacing: 10) {
+                        OracleEyebrow(text: "On Perform")
+                        Text("The app checks every \(Int(ApiSettings.pollInterval)) seconds. The first reading is whatever was searched before; the **next change** is the spectator’s search. That song is loaded and locked for the call — like AI Voice.")
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if inputModeRaw != VoiceSettings.InputMode.api.rawValue {
+                            Button("Use API as song input") {
+                                inputModeRaw = VoiceSettings.InputMode.api.rawValue
+                            }
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(OracleTheme.gold)
+                        } else {
+                            Label("API is your active song input", systemImage: "checkmark.circle.fill")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(OracleTheme.gold)
+                        }
+                    }
+                }
             }
+            .padding(20)
         }
-        .navigationTitle("API / song input")
+        .background(OracleTheme.bgTop)
+        .navigationTitle("API connection")
         .navigationBarTitleDisplayMode(.inline)
+        .preferredColorScheme(.dark)
         .onAppear(perform: refreshHeader)
         .onChange(of: providerRaw) { _, newValue in
             testResult = nil
@@ -82,84 +111,130 @@ struct ApiSettingsView: View {
         }
     }
 
-    private var injectSection: some View {
-        Section {
-            TextField("Inject ID, e.g. 00000", text: $injectID)
-                .keyboardType(.asciiCapable)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-            if let url = ApiSettings.injectEndpoint(for: injectID) {
-                Text(url.absoluteString)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
+    private var introBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Connect the spectator’s search")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+            Text("Choose Inject, Elips, or your own API. Enter the details below — no separate “settings app”; this is the same screen as home, with more room.")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+        }
+    }
+
+    private var injectCard: some View {
+        oracleCard {
+            VStack(alignment: .leading, spacing: 10) {
+                OracleEyebrow(text: "Inject ID")
+                oracleField("00000", text: $injectID)
+                    .keyboardType(.asciiCapable)
+                if let url = ApiSettings.injectEndpoint(for: injectID) {
+                    Text(url.absoluteString)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .textSelection(.enabled)
+                }
+                Text("Paste the API token from Inject. When the count changes, that value becomes the song title.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
             }
-        } header: {
-            Text("Inject")
-        } footer: {
-            Text("The API token shown in Inject. A new search bumps Inject’s count; its value becomes the song title.")
         }
     }
 
-    private var elipsSection: some View {
-        Section {
-            TextField("https://pag.gg/…/api/…", text: $elipsURL)
-                .keyboardType(.URL)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-        } header: {
-            Text("Elips")
-        } footer: {
-            Text("Copy the API URL from the Elips app. The song (and artist, if sent) is used for the lookup.")
-        }
-    }
-
-    private var customSection: some View {
-        Group {
-            Section {
-                TextField("https://example.com/api/song", text: $customURL)
+    private var elipsCard: some View {
+        oracleCard {
+            VStack(alignment: .leading, spacing: 10) {
+                OracleEyebrow(text: "Elips API URL")
+                oracleField("https://pag.gg/…/api/…", text: $elipsURL)
                     .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                TextField("JSON field, e.g. song", text: $customField)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-            } header: {
-                Text("Custom API")
-            } footer: {
-                Text("GET request; the response must be a JSON object. Field names ignore upper/lower case; use dots for nested fields (data.song).")
+                Text("Copy the full API URL from the Elips app.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
             }
+        }
+    }
 
-            Section {
-                TextField("Header name, e.g. Authorization", text: $customHeaderName)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                if let hint = savedHeaderHint {
+    private var customCards: some View {
+        Group {
+            oracleCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    OracleEyebrow(text: "Custom API")
+                    oracleField("https://example.com/api/song", text: $customURL)
+                        .keyboardType(.URL)
                     HStack {
-                        Label("Value saved (\(hint))", systemImage: "checkmark.seal.fill")
-                            .foregroundStyle(.green)
+                        Text("JSON field")
+                            .font(.subheadline)
+                            .foregroundStyle(OracleTheme.textPrimary)
                         Spacer()
-                        Button("Remove", role: .destructive) {
-                            ApiSettings.saveCustomHeaderValue(nil)
-                            refreshHeader()
+                        TextField("song", text: $customField)
+                            .multilineTextAlignment(.trailing)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .foregroundStyle(OracleTheme.textPrimary)
+                    }
+                    Text("GET request; JSON object. Field names ignore case; use dots for nested keys (data.song).")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                }
+            }
+            oracleCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    OracleEyebrow(text: "Authentication (optional)")
+                    oracleField("Header name, e.g. Authorization", text: $customHeaderName)
+                    if let hint = savedHeaderHint {
+                        HStack {
+                            Label("Value saved (\(hint))", systemImage: "checkmark.seal.fill")
+                                .font(.caption)
+                                .foregroundStyle(OracleTheme.gold)
+                            Spacer()
+                            Button("Remove", role: .destructive) {
+                                ApiSettings.saveCustomHeaderValue(nil)
+                                refreshHeader()
+                            }
+                            .font(.caption)
                         }
                     }
+                    SecureField(savedHeaderHint == nil ? "Header value, e.g. Bearer …" : "Replace value", text: $headerDraft)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .font(.subheadline)
+                        .padding(10)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    Button("Save header value") {
+                        ApiSettings.saveCustomHeaderValue(headerDraft)
+                        headerDraft = ""
+                        refreshHeader()
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.gold)
+                    .disabled(headerDraft.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                SecureField(savedHeaderHint == nil ? "Header value, e.g. Bearer …" : "Replace value", text: $headerDraft)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                Button("Save value") {
-                    ApiSettings.saveCustomHeaderValue(headerDraft)
-                    headerDraft = ""
-                    refreshHeader()
-                }
-                .disabled(headerDraft.trimmingCharacters(in: .whitespaces).isEmpty)
-            } header: {
-                Text("Authentication (optional)")
-            } footer: {
-                Text("Sent with every request when both name and value are set. The value stays in this iPhone’s Keychain.")
             }
         }
+    }
+
+    private func oracleCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+            }
+    }
+
+    private func oracleField(_ placeholder: String, text: Binding<String>) -> some View {
+        TextField(placeholder, text: text)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .font(.subheadline)
+            .padding(10)
+            .background(Color.white.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .foregroundStyle(OracleTheme.textPrimary)
     }
 
     private func refreshHeader() {
