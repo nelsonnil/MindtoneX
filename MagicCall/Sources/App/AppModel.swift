@@ -60,6 +60,7 @@ final class AppModel: ObservableObject {
         FakePostCallVolumeGateSelfTest.run()
         #endif
         Prefs.registerDefaults()
+        VoiceSettings.registerDefaults()
         DebugLog.shared.logDeviceHeader()
         calls.onEvent = { [weak self] event, call in
             MainActor.assumeIsolated { self?.handle(event, uuid: call.uuid) }

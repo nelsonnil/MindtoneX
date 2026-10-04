@@ -57,8 +57,20 @@ enum VoiceSettings {
 
     static let defaultLockDelay = 5.0
     static let defaultMinConfidence = 0.55
+    static let defaultLanguage = "en"
 
     private static var d: UserDefaults { .standard }
+
+    /// Registers Voice defaults before any `@AppStorage` view reads (aligned with build 70 English-first setup).
+    static func registerDefaults() {
+        d.register(defaults: [
+            Key.inputMode: InputMode.manual.rawValue,
+            Key.engine: Engine.openAIRealtime.rawValue,
+            Key.language: defaultLanguage,
+            Key.lockDelay: defaultLockDelay,
+            Key.minConfidence: defaultMinConfidence,
+        ])
+    }
 
     static var inputMode: InputMode { InputMode(rawValue: d.string(forKey: Key.inputMode) ?? "") ?? .manual }
     static var engine: Engine {
