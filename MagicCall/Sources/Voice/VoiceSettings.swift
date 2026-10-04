@@ -31,57 +31,12 @@ enum VoiceSettings {
         }
     }
 
-    enum Engine: String, CaseIterable, Identifiable {
+    /// Speech engine (OpenAI only in UI; Apple on-device kept for legacy stored values).
+    enum Engine: String, Identifiable {
         case openAIRealtime
         case appleOnDevice
 
         var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .openAIRealtime: return "OpenAI (best)"
-            case .appleOnDevice: return "Apple on-device"
-            }
-        }
-        var detail: String {
-            switch self {
-            case .openAIRealtime:
-                return "Streams audio to OpenAI live transcription. Best with Spanish/English mixes and song titles. Needs an API key and internet."
-            case .appleOnDevice:
-                return "Apple speech recognition on the iPhone, no key needed. Weaker with English titles said in Spanish. With an API key, the AI still picks the song; without one, a simple offline guess is used."
-            }
-        }
-    }
-
-    enum Language: String, CaseIterable, Identifiable {
-        case spanishEnglish
-        case spanish
-        case english
-        case auto
-
-        var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .spanishEnglish: return "Spanish + English"
-            case .spanish: return "Spanish"
-            case .english: return "English"
-            case .auto: return "Automatic"
-            }
-        }
-        var openAICodes: [String] {
-            switch self {
-            case .spanishEnglish: return ["es", "en"]
-            case .spanish: return ["es"]
-            case .english: return ["en"]
-            case .auto: return []
-            }
-        }
-        var appleLocale: Locale {
-            switch self {
-            case .spanishEnglish, .spanish: return Locale(identifier: "es-ES")
-            case .english: return Locale(identifier: "en-US")
-            case .auto: return Locale.current
-            }
-        }
     }
 
     struct ModelOption: Identifiable {
@@ -106,10 +61,17 @@ enum VoiceSettings {
     private static var d: UserDefaults { .standard }
 
     static var inputMode: InputMode { InputMode(rawValue: d.string(forKey: Key.inputMode) ?? "") ?? .manual }
-    static var engine: Engine { Engine(rawValue: d.string(forKey: Key.engine) ?? "") ?? .openAIRealtime }
-    static var transcribeModel: String { nonEmpty(d.string(forKey: Key.transcribeModel)) ?? transcribeModels[0].id }
-    static var pickerModel: String { nonEmpty(d.string(forKey: Key.pickerModel)) ?? pickerModels[0].id }
-    static var language: Language { Language(rawValue: d.string(forKey: Key.language) ?? "") ?? .spanishEnglish }
+    static var engine: Engine {
+        let raw = d.string(forKey: Key.engine) ?? ""
+        if raw == Engine.appleOnDevice.rawValue { return .openAIRealtime }
+        return .openAIRealtime
+    }
+    static var transcribeModel: String { transcribeModels[0].id }
+    static var pickerModel: String { pickerModels[0].id }
+    static var languageOption: VoiceOpenAILanguages.Option {
+        VoiceOpenAILanguages.resolve(stored: d.string(forKey: Key.language))
+    }
+    static var openAILanguageCodes: [String] { languageOption.openAICodes }
     static var lockDelay: Double { d.object(forKey: Key.lockDelay) == nil ? defaultLockDelay : d.double(forKey: Key.lockDelay) }
     static var minConfidence: Double { d.object(forKey: Key.minConfidence) == nil ? defaultMinConfidence : d.double(forKey: Key.minConfidence) }
 
@@ -119,11 +81,10 @@ enum VoiceSettings {
         Keychain.set(nonEmpty(key?.trimmingCharacters(in: .whitespacesAndNewlines)), account: keychainAccount)
     }
 
-    /// Ready to listen: Apple engine works without a key; OpenAI needs one.
-    static var isConfigured: Bool { engine == .appleOnDevice || apiKey != nil }
+    static var isConfigured: Bool { apiKey != nil }
 
     static func summary() -> String {
-        "engine=\(engine.rawValue) stt=\(transcribeModel) picker=\(apiKey != nil ? pickerModel : "offline") lang=\(language.rawValue) lock=\(lockDelay)s minConf=\(minConfidence)"
+        "engine=openAI stt=\(transcribeModel) picker=\(pickerModel) lang=\(languageOption.id) lock=\(lockDelay)s minConf=\(minConfidence)"
     }
 
     private static let keychainAccount = "openai.apiKey"

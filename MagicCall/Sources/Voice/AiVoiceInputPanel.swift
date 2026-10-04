@@ -5,16 +5,11 @@ struct AiVoiceInputPanel: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
 
-    @AppStorage(VoiceSettings.Key.engine) private var engineRaw = VoiceSettings.Engine.openAIRealtime.rawValue
-    @AppStorage(VoiceSettings.Key.transcribeModel) private var transcribeModel = VoiceSettings.transcribeModels[0].id
-    @AppStorage(VoiceSettings.Key.pickerModel) private var pickerModel = VoiceSettings.pickerModels[0].id
-    @AppStorage(VoiceSettings.Key.language) private var languageRaw = VoiceSettings.Language.spanishEnglish.rawValue
+    @AppStorage(VoiceSettings.Key.language) private var languageRaw = "es-en"
 
     @State private var keyDraft = ""
     @State private var savedKeyHint: String?
-    @State private var showModels = false
 
-    private var engine: VoiceSettings.Engine { VoiceSettings.Engine(rawValue: engineRaw) ?? .openAIRealtime }
     private var configured: Bool { VoiceSettings.isConfigured }
 
     var body: some View {
@@ -24,7 +19,6 @@ struct AiVoiceInputPanel: View {
             liveListenBlock
         }
         .onAppear(perform: refreshKey)
-        .onChange(of: engineRaw) { _, _ in refreshKey() }
     }
 
     // MARK: Connection & key
@@ -34,60 +28,17 @@ struct AiVoiceInputPanel: View {
             OracleEyebrow(text: "Connection")
 
             VStack(spacing: 0) {
-                pickerRow("Engine") {
-                    Picker("Engine", selection: $engineRaw) {
-                        ForEach(VoiceSettings.Engine.allCases) { Text($0.title).tag($0.rawValue) }
-                    }
-                    .labelsHidden()
-                    .tint(OracleTheme.gold)
-                }
-                rowDivider
                 pickerRow("Language") {
                     Picker("Language", selection: $languageRaw) {
-                        ForEach(VoiceSettings.Language.allCases) { Text($0.title).tag($0.rawValue) }
+                        ForEach(VoiceOpenAILanguages.options) { option in
+                            Text(option.title).tag(option.id)
+                        }
                     }
                     .labelsHidden()
                     .tint(OracleTheme.gold)
                 }
                 rowDivider
                 apiKeyRow
-                if engine == .openAIRealtime {
-                    rowDivider
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) { showModels.toggle() }
-                    } label: {
-                        HStack {
-                            Text("AI models")
-                                .font(.subheadline)
-                                .foregroundStyle(OracleTheme.textPrimary)
-                            Spacer()
-                            Image(systemName: showModels ? "chevron.up" : "chevron.down")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(OracleTheme.textSecondary)
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                    }
-                    .buttonStyle(.plain)
-                    if showModels {
-                        rowDivider
-                        pickerRow("Transcription") {
-                            Picker("Transcription", selection: $transcribeModel) {
-                                ForEach(VoiceSettings.transcribeModels) { Text($0.label).tag($0.id) }
-                            }
-                            .labelsHidden()
-                            .tint(OracleTheme.gold)
-                        }
-                        rowDivider
-                        pickerRow("Song picker") {
-                            Picker("Song picker", selection: $pickerModel) {
-                                ForEach(VoiceSettings.pickerModels) { Text($0.label).tag($0.id) }
-                            }
-                            .labelsHidden()
-                            .tint(OracleTheme.gold)
-                        }
-                    }
-                }
             }
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -96,7 +47,7 @@ struct AiVoiceInputPanel: View {
                     .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
             }
 
-            Text(engine.detail)
+            Text("OpenAI live transcription. Recommended models are used automatically.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
         }
@@ -155,7 +106,7 @@ struct AiVoiceInputPanel: View {
             livePreviewTestControls
 
             if !configured {
-                Label("Add an API key above, or choose Apple on-device (no key).", systemImage: "key.fill")
+                Label("Add an OpenAI API key above.", systemImage: "key.fill")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             }
@@ -183,31 +134,80 @@ struct AiVoiceInputPanel: View {
     }
 
     private var livePreviewTestControls: some View {
-        HStack(spacing: 10) {
+        VStack(spacing: 10) {
             if voice.isActive {
-                Button(role: .destructive) { voice.stopTest() } label: {
-                    Label("Stop", systemImage: "stop.fill")
-                        .frame(maxWidth: .infinity)
+                Button { voice.stopTest() } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "stop.circle.fill")
+                            .font(.title3)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Stop listening")
+                                .font(.subheadline.weight(.bold))
+                            Text("End this test run")
+                                .font(.caption2)
+                                .opacity(0.85)
+                        }
+                        Spacer()
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.red.opacity(0.88))
+                    )
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
+                .buttonStyle(.plain)
             } else {
                 Button {
                     model.clearSongForNextPerformance()
                     Task { await voice.start(context: .test) }
                 } label: {
-                    Label("Test", systemImage: "mic.fill")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 12) {
+                        Image(systemName: "mic.circle.fill")
+                            .font(.title2)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Test voice")
+                                .font(.subheadline.weight(.bold))
+                            Text("Speak a song title like on stage")
+                                .font(.caption2)
+                                .opacity(0.9)
+                        }
+                        Spacer()
+                        Image(systemName: "waveform")
+                            .font(.body.weight(.semibold))
+                            .opacity(configured ? 1 : 0.35)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: configured
+                                        ? [OracleTheme.gold, OracleTheme.gold.opacity(0.72)]
+                                        : [Color.gray.opacity(0.35), Color.gray.opacity(0.25)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(OracleTheme.indigo)
+                .buttonStyle(.plain)
                 .disabled(!configured)
             }
+
             if voice.hasContent && !voice.isActive {
                 Button { model.resetVoicePerformance() } label: {
-                    Label("Reset", systemImage: "arrow.counterclockwise")
+                    Label("Clear transcript & pick", systemImage: "arrow.counterclockwise")
+                        .font(.subheadline.weight(.medium))
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                .tint(OracleTheme.textSecondary)
             }
         }
     }

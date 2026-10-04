@@ -12,10 +12,6 @@ struct UnifiedPerformanceModeCard: View {
     @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
     @AppStorage("ui.modeSetupExpanded") private var setupExpanded = true
 
-    var onFakeInfo: () -> Void
-    var onShareInfo: () -> Void
-    var onFavoritesInfo: () -> Void
-
     private var mode: Prefs.PerformanceMode {
         Prefs.PerformanceMode(rawValue: modeRaw) ?? .fakeRingtone
     }
@@ -58,14 +54,10 @@ struct UnifiedPerformanceModeCard: View {
                 case .fakeRingtone:
                     FakeModeContent(
                         background: $background,
-                        photoItem: $photoItem,
-                        onInfo: onFakeInfo
+                        photoItem: $photoItem
                     )
                 case .shareRingtone:
-                    ShareModeContent(
-                        onInfo: onShareInfo,
-                        onFavoritesInfo: onFavoritesInfo
-                    )
+                    ShareModeContent()
                 }
             }
             .padding(.top, 12)

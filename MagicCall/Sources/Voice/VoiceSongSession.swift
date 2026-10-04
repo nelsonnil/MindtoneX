@@ -73,34 +73,24 @@ final class VoiceSongSession: ObservableObject {
         dlog("[VOICE] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(VoiceSettings.summary())")
 
         guard VoiceSettings.isConfigured else {
-            fail("Add your OpenAI API key in Voice settings, or choose Apple on-device.")
+            fail("Add your OpenAI API key in AI Voice settings.")
             return
         }
         guard await MicCapture.requestPermission() else {
             fail("Microphone access is off. Turn it on in iPhone Settings → Privacy & Security → Microphone → \(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "RingtoneX").")
             return
         }
-        let engine = VoiceSettings.engine
-        if engine == .appleOnDevice {
-            guard await AppleSpeechTranscriber.requestPermission() else {
-                fail("Speech Recognition access is off. Turn it on in iPhone Settings → Privacy & Security → Speech Recognition.")
-                return
-            }
-        }
         guard gen == generation else { return }
 
-        let transcriber: LiveTranscriber
-        switch engine {
-        case .openAIRealtime:
-            guard let key = VoiceSettings.apiKey else {
-                fail("Add your OpenAI API key in Voice settings.")
-                return
-            }
-            transcriber = OpenAIRealtimeTranscriber(apiKey: key, model: VoiceSettings.transcribeModel,
-                                                    languages: VoiceSettings.language.openAICodes)
-        case .appleOnDevice:
-            transcriber = AppleSpeechTranscriber(locale: VoiceSettings.language.appleLocale)
+        guard let key = VoiceSettings.apiKey else {
+            fail("Add your OpenAI API key in AI Voice settings.")
+            return
         }
+        let transcriber: LiveTranscriber = OpenAIRealtimeTranscriber(
+            apiKey: key,
+            model: VoiceSettings.transcribeModel,
+            languages: VoiceSettings.openAILanguageCodes
+        )
         transcriber.onUpdate = { [weak self] id, text, isFinal in
             MainActor.assumeIsolated { self?.ingest(id: id, text: text, isFinal: isFinal, gen: gen) }
         }

@@ -4,23 +4,11 @@ import SwiftUI
 struct FakeModeContent: View {
     @Binding var background: String
     @Binding var photoItem: PhotosPickerItem?
-    var onInfo: () -> Void
 
     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Spacer()
-                Button(action: onInfo) {
-                    Label("Guide", systemImage: "info.circle")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Fake Ringtone guide")
-            }
-
             ShortcutsInstallPanel(mode: .fakeRingtone)
 
             VStack(alignment: .leading, spacing: 6) {

@@ -26,10 +26,7 @@ struct MainShellView: View {
                 UnifiedPerformanceModeCard(
                     modeRaw: $performanceModeRaw,
                     background: $background,
-                    photoItem: $photoItem,
-                    onFakeInfo: { activeSheet = .fakeDetails },
-                    onShareInfo: { activeSheet = .shareDetails },
-                    onFavoritesInfo: { activeSheet = .favoritesSetup }
+                    photoItem: $photoItem
                 )
 
                 HomePanel(accent: OracleTheme.indigo) {
@@ -55,7 +52,7 @@ struct MainShellView: View {
         }
         .background { OracleAnimatedBackdrop() }
         .overlay(alignment: .topTrailing) {
-            homeOverflowMenu
+            instructionsButton
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             PerformBottomBar(mode: mode)
@@ -74,10 +71,14 @@ struct MainShellView: View {
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
-            case .fakeDetails:
-                NavigationStack { FakeDetailSheet() }
-            case .shareDetails:
-                NavigationStack { ShareDetailSheet() }
+            case .performanceGuide:
+                NavigationStack {
+                    PerformanceGuideSheet(
+                        initialMode: mode,
+                        onOpenAdvanced: { activeSheet = .advanced },
+                        onOpenFavorites: { activeSheet = .favoritesSetup }
+                    )
+                }
             case .shortcutsSetup:
                 NavigationStack { ShortcutsSetupSheet() }
             case .favoritesSetup:
@@ -92,26 +93,17 @@ struct MainShellView: View {
         }
     }
 
-    private var homeOverflowMenu: some View {
-        Menu {
-            Button {
-                activeSheet = .advanced
-            } label: {
-                Label("Engine & lab settings", systemImage: "gearshape.2.fill")
-            }
-            Button {
-                activeSheet = .debugLog
-            } label: {
-                Label("Debug log", systemImage: "doc.text.magnifyingglass")
-            }
+    private var instructionsButton: some View {
+        Button {
+            activeSheet = .performanceGuide
         } label: {
-            Image(systemName: "ellipsis.circle.fill")
+            Image(systemName: "text.book.closed.fill")
                 .font(.title2)
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(OracleTheme.textSecondary)
+                .foregroundStyle(OracleTheme.gold.opacity(0.9))
                 .padding(12)
                 .contentShape(Rectangle())
         }
-        .accessibilityLabel("More options")
+        .accessibilityLabel("Instructions")
     }
 }
