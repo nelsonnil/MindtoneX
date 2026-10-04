@@ -44,7 +44,9 @@ struct SongInputStrip: View {
         return Button {
             VoiceSongSession.shared.stopTest()
             ApiSongSession.shared.stopTest()
+            let previous = inputMode
             withAnimation(.easeInOut(duration: 0.2)) { inputModeRaw = mode.rawValue }
+            model.resetAfterSongInputModeChange(from: previous, to: mode)
             dlog("Song input → \(mode.title)")
         } label: {
             HStack(spacing: 6) {

@@ -20,6 +20,10 @@ extension AppModel {
     }
 
     private func performNow() {
+        if isArmed {
+            dlog("══ PERFORM ══ already armed → disarm and start fresh")
+            disarm()
+        }
         let input = VoiceSettings.inputMode
         dlog("══ PERFORM ══ mode=\(Prefs.performanceMode.title) input=\(input.title)")
         if findsSongDuringPerform {
@@ -74,7 +78,11 @@ extension AppModel {
     }
 
     private func prepareSongQuery(_ text: String) async -> Bool {
-        query = text
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed != query.trimmingCharacters(in: .whitespacesAndNewlines) || loadState == .ready {
+            dropPreviewForNewLookup()
+        }
+        query = trimmed
         await search()
         guard loadState == .ready else { return false }
         if Prefs.performanceMode == .shareRingtone, !Prefs.autoStageRingtone {
@@ -133,5 +141,16 @@ extension AppModel {
         NotesSongSession.shared.reset(reason: "left Perform")
         ApiSongSession.shared.reset(reason: "left Perform")
         if findsSongDuringPerform { clearSongForNextPerformance() }
+    }
+
+    /// Home screen: switching song input must not leave a preview loaded from AI Voice / Notes / API Test.
+    func resetAfterSongInputModeChange(from previous: VoiceSettings.InputMode, to next: VoiceSettings.InputMode) {
+        guard previous != next else { return }
+        VoiceSongSession.shared.reset(reason: "input mode \(previous.title) → \(next.title)")
+        NotesSongSession.shared.reset(reason: "input mode")
+        ApiSongSession.shared.reset(reason: "input mode")
+        if previous != .manual || next != .manual {
+            clearSongForNextPerformance()
+        }
     }
 }

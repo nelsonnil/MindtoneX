@@ -94,6 +94,18 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Drops loaded preview bytes while a new lookup is in flight (AI / Notes / API). Keeps `query`.
+    func dropPreviewForNewLookup() {
+        audio.unload()
+        selected = nil
+        currentAudio = nil
+        exportedRingtone = nil
+        ringtoneStaged = false
+        timings = ""
+        if case .idle = loadState { return }
+        loadState = .idle
+    }
+
     func select(_ track: PreviewTrack, searchMs: Int? = nil) async {
         selected = track
         loadState = .downloading
@@ -123,6 +135,10 @@ final class AppModel: ObservableObject {
                 }
             }
         } catch {
+            audio.unload()
+            currentAudio = nil
+            exportedRingtone = nil
+            ringtoneStaged = false
             loadState = .failed(error.localizedDescription)
             dlog("✗ Cargar audio: \(error.localizedDescription)")
         }

@@ -57,6 +57,7 @@ final class VoiceSongSession: ObservableObject {
     private var lastEvaluatedText = ""
     private var prefetchTask: Task<Void, Never>?
     private var pendingPrefetch: SongPick?
+    private var pendingCallLock = false
 
     private init() {}
 
@@ -153,9 +154,14 @@ final class VoiceSongSession: ObservableObject {
     /// A call (or a manual trigger) arrived: use the best candidate right away.
     func callArrived(source: String) {
         guard isActive else { return }
-        if let c = candidate, prep != .notFound {
+        if let c = candidate, prep == .ready {
+            pendingCallLock = false
             lock(c, reason: "call/trigger before lock (\(source))", duringCall: true)
+        } else if candidate != nil, prep == .preparing {
+            pendingCallLock = true
+            dlog("[VOICE] call/trigger (\(source)) while prefetch in progress — lock when audio ready")
         } else {
+            pendingCallLock = false
             dlog("[VOICE] call/trigger (\(source)) with no usable candidate — stopping mic")
             stopListening()
             state = .idle
@@ -246,6 +252,8 @@ final class VoiceSongSession: ObservableObject {
         dlog("[VOICE] ★ candidate \(candidate?.label ?? "none") → \(pick.label) · \(Self.percent(pick.confidence)) · \(pick.reasoning) (\(ms) ms)")
         candidate = pick
         prep = .preparing
+        pendingCallLock = false
+        AppModel.shared.dropPreviewForNewLookup()
         restartLockTimer()
         prefetch(pick)
     }
@@ -270,6 +278,9 @@ final class VoiceSongSession: ObservableObject {
                     if !ok {
                         self.lockTimer?.invalidate()
                         self.lockDeadline = nil
+                    } else if self.pendingCallLock, let c = self.candidate {
+                        self.pendingCallLock = false
+                        self.lock(c, reason: "call/trigger deferred until prefetch ready", duringCall: true)
                     }
                 }
             }
@@ -344,6 +355,7 @@ final class VoiceSongSession: ObservableObject {
         pendingPrefetch = nil
         prefetchTask?.cancel()
         prefetchTask = nil
+        pendingCallLock = false
     }
 
     private func fail(_ message: String) {
