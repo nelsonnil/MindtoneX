@@ -28,9 +28,9 @@ struct UnifiedPerformanceModeCard: View {
         HomePanel(accent: OracleTheme.gold) {
             VStack(alignment: .leading, spacing: 20) {
                 HomeSectionTitle(
-                    eyebrow: "Step 1",
                     title: "Performance mode",
-                    subtitle: "Fake plays on stage · Share sends the ringtone file"
+                    subtitle: "Fake plays on stage · Share sends the ringtone file",
+                    eyebrow: "Step 1"
                 )
 
                 VStack(spacing: 10) {

@@ -16,9 +16,9 @@ struct SongInputStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HomeSectionTitle(
-                eyebrow: "Step 2",
                 title: "Song input",
-                subtitle: "How the track is chosen before Perform"
+                subtitle: "How the track is chosen before Perform",
+                eyebrow: "Step 2"
             )
 
             LazyVGrid(columns: inputColumns, spacing: 10) {
