@@ -108,21 +108,16 @@ struct MainShellView: View {
             instructionsPulse = false
             activeSheet = .performanceGuide
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "text.book.closed.fill")
-                    .font(.body.weight(.bold))
-                Text("Instructions")
-                    .font(.subheadline.weight(.bold))
-            }
-            .foregroundStyle(Color(red: 0.10, green: 0.08, blue: 0.04))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            Image(systemName: "lightbulb.fill")
+                .font(.body.weight(.bold))
+                .foregroundStyle(Color(red: 0.10, green: 0.08, blue: 0.04))
+                .frame(width: 44, height: 44)
             .background {
                 ZStack {
-                    Capsule()
+                    Circle()
                         .fill(OracleTheme.goldGradient)
                     if !performanceGuideOpened {
-                        Capsule()
+                        Circle()
                             .strokeBorder(OracleTheme.gold.opacity(instructionsPulse ? 0.95 : 0.35), lineWidth: 2)
                             .scaleEffect(instructionsPulse ? 1.12 : 1.0)
                             .opacity(instructionsPulse ? 0.85 : 0.35)
@@ -130,6 +125,7 @@ struct MainShellView: View {
                 }
             }
             .shadow(color: OracleTheme.gold.opacity(instructionsPulse ? 0.55 : 0.28), radius: instructionsPulse ? 14 : 8, y: 4)
+            .clipShape(Circle())
             .overlay(alignment: .topTrailing) {
                 if !performanceGuideOpened {
                     Circle()
