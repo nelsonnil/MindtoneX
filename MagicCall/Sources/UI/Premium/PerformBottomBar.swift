@@ -102,7 +102,7 @@ struct ReadinessStatusBar: View {
             }
         case .aiVoice:
             guard VoiceSettings.isConfigured else {
-                return Status(tone: .warning, icon: "key.fill", text: "AI Voice needs setup — see Advanced")
+                return Status(tone: .warning, icon: "link.circle", text: "Voice — paste token under Connection")
             }
             if case .failed(let message) = voice.state {
                 return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: message)
@@ -116,7 +116,7 @@ struct ReadinessStatusBar: View {
                 let pick = voice.lockedPick?.label ?? "song"
                 return Status(tone: .ready, icon: "lock.fill", text: "Locked · \(pick)")
             default:
-                return Status(tone: .ready, icon: "mic.circle.fill", text: "Ready · AI Voice picks the song on Perform")
+                return Status(tone: .ready, icon: "mic.circle.fill", text: "Ready · Voice listens on Perform")
             }
         case .api:
             let name = ApiSettings.provider.title

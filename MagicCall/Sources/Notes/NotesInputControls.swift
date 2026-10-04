@@ -47,7 +47,7 @@ struct NotesInputControls: View {
     private var footer: String {
         var parts = ["The checkmark always searches. Each new search replaces the last one until the call arrives; a call with nothing searched yet searches the note right away."]
         if VoiceSettings.apiKey == nil {
-            parts.append("“Interpret note with AI” needs an OpenAI key (Advanced → AI Voice settings); until then the note is searched exactly as typed.")
+            parts.append("“Interpret note” needs a token (Voice → Connection); until then the note is searched exactly as typed.")
         }
         parts.append("Leave Perform: long-press the back button or swipe down with two fingers.")
         return parts.joined(separator: " ")

@@ -79,7 +79,7 @@ struct ApiSettingsView: View {
                 oracleCard {
                     VStack(alignment: .leading, spacing: 10) {
                         OracleEyebrow(text: "On Perform")
-                        Text("The app checks every \(Int(ApiSettings.pollInterval)) seconds. The first reading is whatever was searched before; the **next change** is the spectator’s search. That song is loaded and locked for the call — like AI Voice.")
+                        Text("The app checks every \(Int(ApiSettings.pollInterval)) seconds. The first reading is whatever was searched before; the **next change** is the spectator’s search. That song is loaded and locked for the call — like Voice.")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)

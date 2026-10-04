@@ -24,7 +24,7 @@ enum VoiceSettings {
         var title: String {
             switch self {
             case .manual: return "Manual"
-            case .aiVoice: return "AI Voice"
+            case .aiVoice: return "Voice"
             case .notes: return "Notes"
             case .api: return "API"
             }

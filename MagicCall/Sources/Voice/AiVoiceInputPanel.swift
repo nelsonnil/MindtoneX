@@ -47,44 +47,57 @@ struct AiVoiceInputPanel: View {
                     .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
             }
 
-            Text("OpenAI live transcription. Recommended models are used automatically.")
+            Text("Live speech on stage. Models are chosen automatically.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
         }
     }
 
     private var apiKeyRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let hint = savedKeyHint {
-                HStack {
-                    Label("Key saved (\(hint))", systemImage: "checkmark.seal.fill")
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.gold)
-                    Spacer()
-                    Button("Remove", role: .destructive) {
-                        VoiceSettings.saveAPIKey(nil)
-                        refreshKey()
-                        dlog("[VOICE] API key removed")
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Token")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(OracleTheme.textSecondary)
+
+            HStack(spacing: 10) {
+                SecureField(savedKeyHint == nil ? "Paste token (sk-…)" : "Replace token", text: $keyDraft)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .font(.subheadline)
+                    .submitLabel(.done)
+                    .onSubmit { commitKeyDraft() }
+
+                if !keyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Button(action: commitKeyDraft) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title2)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(OracleTheme.gold)
                     }
-                    .font(.caption)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Save token")
                 }
             }
-            SecureField(savedKeyHint == nil ? "OpenAI API key (sk-…)" : "Replace key", text: $keyDraft)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .font(.subheadline)
-                .padding(10)
-                .background(Color.white.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            Button("Save key") {
-                VoiceSettings.saveAPIKey(keyDraft)
-                keyDraft = ""
-                refreshKey()
-                dlog("[VOICE] API key saved to Keychain")
+            .padding(10)
+            .background(Color.white.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            if let hint = savedKeyHint {
+                HStack(spacing: 8) {
+                    Label("Connected · \(hint)", systemImage: "checkmark.seal.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(OracleTheme.gold)
+                    Spacer(minLength: 8)
+                    Button("Disconnect") {
+                        VoiceSettings.saveAPIKey(nil)
+                        keyDraft = ""
+                        refreshKey()
+                        dlog("[VOICE] token removed")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.coral.opacity(0.95))
+                }
             }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(OracleTheme.gold)
-            .disabled(keyDraft.trimmingCharacters(in: .whitespaces).isEmpty)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -99,14 +112,14 @@ struct AiVoiceInputPanel: View {
                 Spacer()
                 voiceStatusChip
             }
-            Text("Talk like on stage. You’ll see what the app hears and which song the AI picks. Nothing is shown during Perform.")
+            Text("Talk like on stage. You’ll see what the app hears and which song it picks. Nothing is shown during Perform.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
 
             livePreviewTestControls
 
             if !configured {
-                Label("Add an OpenAI API key above.", systemImage: "key.fill")
+                Label("Paste your token under Connection above.", systemImage: "link.circle")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             }
@@ -269,7 +282,7 @@ struct AiVoiceInputPanel: View {
     private var pickBox: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("AI pick")
+                Text("Song pick")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(OracleTheme.textSecondary)
                 if voice.isThinking {
@@ -361,5 +374,14 @@ struct AiVoiceInputPanel: View {
 
     private func refreshKey() {
         savedKeyHint = VoiceSettings.apiKey.map { "…" + String($0.suffix(4)) }
+    }
+
+    private func commitKeyDraft() {
+        let trimmed = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        VoiceSettings.saveAPIKey(trimmed)
+        keyDraft = ""
+        refreshKey()
+        dlog("[VOICE] token saved to Keychain")
     }
 }

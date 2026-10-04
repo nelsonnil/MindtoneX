@@ -23,7 +23,7 @@ struct SongInputStrip: View {
 
             LazyVGrid(columns: inputColumns, spacing: 10) {
                 inputChip("Manual", icon: "keyboard", mode: .manual)
-                inputChip("AI Voice", icon: "mic.fill", mode: .aiVoice)
+                inputChip("Voice", icon: "mic.fill", mode: .aiVoice)
                 inputChip("Notes", icon: "note.text", mode: .notes)
                 inputChip("API", icon: "link", mode: .api)
             }
