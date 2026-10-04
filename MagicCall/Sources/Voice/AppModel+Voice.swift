@@ -8,6 +8,16 @@ extension AppModel {
     /// AI Voice, Notes and API find the song during Perform, so each Perform starts with no song.
     var findsSongDuringPerform: Bool { usesVoiceInput || usesNotesInput || usesApiInput }
 
+    /// True when this Perform may play audio (locked or manual track loaded after reset).
+    func hasSongLockedForCurrentPerform() -> Bool {
+        switch VoiceSettings.inputMode {
+        case .aiVoice: return VoiceSongSession.shared.state == .locked
+        case .notes: return NotesSongSession.shared.isLocked
+        case .api: return ApiSongSession.shared.state == .locked
+        case .manual: return loadState == .ready
+        }
+    }
+
     /// Perform button for both modes and all song inputs. Runs the Silent On/Off Shortcut first
     /// when enabled, and continues when Shortcuts returns to the app.
     func perform() {
@@ -134,13 +144,13 @@ extension AppModel {
         }
     }
 
-    /// Leaving Perform starts the next performance from zero.
+    /// Leaving Perform starts the next performance from zero (no stale song on the next run).
     func resetVoicePerformance() {
         SharePerformFlow.shared.reset()
         VoiceSongSession.shared.reset(reason: "left Perform")
         NotesSongSession.shared.reset(reason: "left Perform")
         ApiSongSession.shared.reset(reason: "left Perform")
-        if findsSongDuringPerform { clearSongForNextPerformance() }
+        clearSongForNextPerformance()
     }
 
     /// Home screen: switching song input must not leave a preview loaded from AI Voice / Notes / API Test.

@@ -330,6 +330,7 @@ final class AppModel: ObservableObject {
         ringtoneStaged = false
         timings = ""
         loadState = .idle
+        dlog("Canción descartada — el próximo Perform empieza vacío hasta nueva búsqueda/bloqueo")
     }
 
     func trigger(source: String) {
@@ -346,6 +347,14 @@ final class AppModel: ObservableObject {
         }
         guard !isAudible else {
             dlog("[TRIGGER] “\(source)” ignorado: ya audible")
+            return
+        }
+        guard loadState == .ready, currentAudio != nil else {
+            dlog("[TRIGGER] “\(source)” ignorado: sin canción para este Perform (elige o deja que se bloquee una nueva)")
+            return
+        }
+        if findsSongDuringPerform, !hasSongLockedForCurrentPerform() {
+            dlog("[TRIGGER] “\(source)” ignorado: canción aún no bloqueada en este Perform")
             return
         }
         applySystemVolumeBoostForTrigger()
