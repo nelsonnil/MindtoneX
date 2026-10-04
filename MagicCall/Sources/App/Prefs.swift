@@ -25,9 +25,7 @@ enum Prefs {
         static let deezerFallback = "songs.deezerFallback"
         static let storeCountry = "songs.storeCountry"
 
-        static let background = "stage.background"
         static let maskStatusBar = "stage.maskStatusBar"
-        static let darkStatusBarText = "stage.darkStatusBarText"
 
         static let darwinSignals = "probe.darwinSignals"
         static let toneIdentifierToTry = "probe.toneIdentifierToTry"
@@ -94,9 +92,7 @@ enum Prefs {
             Key.diskCache: false,
             Key.deezerFallback: true,
             Key.storeCountry: "",
-            Key.background: StageBackground.black.rawValue,
             Key.maskStatusBar: false,
-            Key.darkStatusBarText: false,
             Key.darwinSignals: true,
             Key.toneIdentifierToTry: "system:Radar",
             Key.callKitCallerName: "Ana",
@@ -157,17 +153,5 @@ enum Prefs {
             "ringerMaxOnStage=\(attemptRingerMaxOnStage)",
             "diskCache=\(diskCache) deezer=\(deezerFallback) store=\(storeCountry.isEmpty ? "auto" : storeCountry)",
         ].joined(separator: " · ")
-    }
-}
-
-enum StageBackground: String, CaseIterable, Identifiable {
-    case black, gradient, image
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .black: return "Solid black"
-        case .gradient: return "Dark gradient"
-        case .image: return "Your screenshot"
-        }
     }
 }

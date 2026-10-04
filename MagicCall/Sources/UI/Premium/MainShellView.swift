@@ -7,7 +7,6 @@ struct MainShellView: View {
     @FocusState private var queryFocused: Bool
 
     @AppStorage(Prefs.Key.performanceMode) private var performanceModeRaw = Prefs.PerformanceMode.fakeRingtone.rawValue
-    @AppStorage(Prefs.Key.background) private var background = StageBackground.black.rawValue
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     @State private var photoItem: PhotosPickerItem?
@@ -27,7 +26,6 @@ struct MainShellView: View {
 
                 UnifiedPerformanceModeCard(
                     modeRaw: $performanceModeRaw,
-                    background: $background,
                     photoItem: $photoItem
                 )
 
@@ -71,7 +69,6 @@ struct MainShellView: View {
             Task {
                 if let data = try? await newItem.loadTransferable(type: Data.self) {
                     StageImageStore.save(data)
-                    background = StageBackground.image.rawValue
                     dlog("Stage background image saved (\(data.count / 1024) KB)")
                 }
             }

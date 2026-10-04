@@ -6,16 +6,15 @@ import UIKit
 struct StageView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var notes = NotesSongSession.shared
-    @AppStorage(Prefs.Key.background) private var background = StageBackground.black.rawValue
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
 
-    private var stageKind: StageBackground { StageBackground(rawValue: background) ?? .black }
+    private var hasStageScreenshot: Bool { StageImageStore.load() != nil }
 
-    /// Solid black Fake stage: hide status bar. Gradient, screenshot, and Notes: always show (adaptive text on wallpaper).
-    private var hidesStatusBarForStage: Bool { stageKind == .black }
+    /// No screenshot yet: plain black stage hides the status bar. With a screenshot, show adaptive status bar text.
+    private var hidesStatusBarForStage: Bool { !hasStageScreenshot }
 
     private var darkStatusBarText: Bool {
-        stageKind == .image && StageImageStore.wantsDarkStatusBarText()
+        hasStageScreenshot && StageImageStore.wantsDarkStatusBarText()
     }
 
     var body: some View {
@@ -31,7 +30,7 @@ struct StageView: View {
 
     private var callStage: some View {
         ZStack(alignment: .topLeading) {
-            StageBackgroundView(kind: stageKind, maskStatusBar: maskStatusBar)
+            StageBackgroundView(maskStatusBar: maskStatusBar)
                 .ignoresSafeArea()
 
             StageGestureLayer(
@@ -201,7 +200,6 @@ enum StageImageStore {
 }
 
 struct StageBackgroundView: View {
-    let kind: StageBackground
     let maskStatusBar: Bool
 
     /// La vista ignora el área segura, así que se lee del window real.
@@ -210,36 +208,28 @@ struct StageBackgroundView: View {
     }
 
     var body: some View {
-        switch kind {
-        case .black:
-            Color.black
-        case .gradient:
-            LinearGradient(colors: [Color(white: 0.07), Color(white: 0.01)],
-                           startPoint: .top, endPoint: .bottom)
-        case .image:
-            if let image = StageImageStore.load() {
-                GeometryReader { geo in
-                    ZStack(alignment: .top) {
+        if let image = StageImageStore.load() {
+            GeometryReader { geo in
+                ZStack(alignment: .top) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .clipped()
+                    // Optional: blur strip to hide a stale status bar baked into the screenshot (Advanced → off by default).
+                    if maskStatusBar {
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFill()
                             .frame(width: geo.size.width, height: geo.size.height)
+                            .blur(radius: 18)
+                            .frame(height: Self.statusBarHeight + 6, alignment: .top)
                             .clipped()
-                        // Optional: blur strip to hide a stale status bar baked into the screenshot (Advanced → off by default).
-                        if maskStatusBar {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: geo.size.width, height: geo.size.height)
-                                .blur(radius: 18)
-                                .frame(height: Self.statusBarHeight + 6, alignment: .top)
-                                .clipped()
-                        }
                     }
                 }
-            } else {
-                Color.black
             }
+        } else {
+            Color.black
         }
     }
 }

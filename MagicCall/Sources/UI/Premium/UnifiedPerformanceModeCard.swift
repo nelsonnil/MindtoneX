@@ -4,7 +4,6 @@ import SwiftUI
 /// Mode picker + mode-specific setup in one panel (Fake or Share).
 struct UnifiedPerformanceModeCard: View {
     @Binding var modeRaw: String
-    @Binding var background: String
     @Binding var photoItem: PhotosPickerItem?
     @Namespace private var selection
 
@@ -75,10 +74,7 @@ struct UnifiedPerformanceModeCard: View {
                 Group {
                     switch mode {
                     case .fakeRingtone:
-                        FakeModeContent(
-                            background: $background,
-                            photoItem: $photoItem
-                        )
+                        FakeModeContent(photoItem: $photoItem)
                     case .shareRingtone:
                         ShareModeContent()
                     }
