@@ -12,7 +12,7 @@ enum VoiceOpenAILanguages {
     static let options: [Option] = {
         var list: [Option] = [
             Option(id: "auto", title: "Automatic (detect)", openAICodes: []),
-            Option(id: "es-en", title: "Spanish + English", openAICodes: ["es", "en"]),
+            Option(id: "es-en", title: "Spanish & English", openAICodes: ["es", "en"]),
         ]
         let singles: [(String, String)] = [
             ("af", "Afrikaans"), ("ar", "Arabic"), ("hy", "Armenian"), ("az", "Azerbaijani"),
@@ -35,6 +35,18 @@ enum VoiceOpenAILanguages {
             list.append(Option(id: code, title: title, openAICodes: [code]))
         }
         return list
+    }()
+
+    /// Shown on home Voice connection row (menu, not segmented tabs).
+    static let homeMenuOptions: [Option] = {
+        let preferred = ["auto", "es-en", "es", "en", "fr", "de", "it", "pt"]
+        var ordered: [Option] = []
+        for id in preferred {
+            if let o = options.first(where: { $0.id == id }) { ordered.append(o) }
+        }
+        let rest = options.filter { o in !preferred.contains(o.id) }
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        return ordered + rest
     }()
 
     static func resolve(stored raw: String?) -> Option {

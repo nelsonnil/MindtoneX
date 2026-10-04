@@ -23,20 +23,16 @@ struct AiVoiceInputPanel: View {
 
     // MARK: Connection & key
 
+    private var selectedLanguage: VoiceOpenAILanguages.Option {
+        VoiceOpenAILanguages.resolve(stored: languageRaw)
+    }
+
     private var connectionBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
             OracleEyebrow(text: "Connection")
 
             VStack(spacing: 0) {
-                pickerRow("Language") {
-                    Picker("Language", selection: $languageRaw) {
-                        ForEach(VoiceOpenAILanguages.options) { option in
-                            Text(option.title).tag(option.id)
-                        }
-                    }
-                    .labelsHidden()
-                    .tint(OracleTheme.gold)
-                }
+                languageMenuRow
                 rowDivider
                 apiKeyRow
             }
@@ -46,21 +42,48 @@ struct AiVoiceInputPanel: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
             }
-
-            Text("Live speech on stage. Models are chosen automatically.")
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
         }
+    }
+
+    private var languageMenuRow: some View {
+        Menu {
+            ForEach(VoiceOpenAILanguages.homeMenuOptions) { option in
+                Button {
+                    languageRaw = option.id
+                } label: {
+                    if option.id == languageRaw {
+                        Label(option.title, systemImage: "checkmark")
+                    } else {
+                        Text(option.title)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Text("Language")
+                    .font(.subheadline)
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Spacer(minLength: 8)
+                Text(selectedLanguage.title)
+                    .font(.subheadline)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textSecondary.opacity(0.8))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .tint(OracleTheme.textPrimary)
     }
 
     private var apiKeyRow: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Token")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(OracleTheme.textSecondary)
-
             HStack(spacing: 10) {
-                SecureField(savedKeyHint == nil ? "Paste token (sk-…)" : "Replace token", text: $keyDraft)
+                SecureField("", text: $keyDraft)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .font(.subheadline)
@@ -75,7 +98,7 @@ struct AiVoiceInputPanel: View {
                             .foregroundStyle(OracleTheme.gold)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Save token")
+                    .accessibilityLabel("Save")
                 }
             }
             .padding(10)
@@ -119,7 +142,7 @@ struct AiVoiceInputPanel: View {
             livePreviewTestControls
 
             if !configured {
-                Label("Paste your token under Connection above.", systemImage: "link.circle")
+                Label("Add your key under Connection to enable tests.", systemImage: "link.circle")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             }
