@@ -12,6 +12,7 @@ struct MainShellView: View {
 
     @State private var photoItem: PhotosPickerItem?
     @State private var activeSheet: OracleSheet?
+    @State private var homeAppeared = false
 
     private var mode: Prefs.PerformanceMode {
         Prefs.PerformanceMode(rawValue: performanceModeRaw) ?? .fakeRingtone
@@ -31,7 +32,7 @@ struct MainShellView: View {
                     onFavoritesInfo: { activeSheet = .favoritesSetup }
                 )
 
-                HomePanel {
+                HomePanel(accent: OracleTheme.indigo) {
                     SongInputStrip(
                         inputModeRaw: $inputModeRaw,
                         queryFocused: $queryFocused
@@ -43,8 +44,15 @@ struct MainShellView: View {
             .padding(.horizontal, 16)
             .padding(.top, 4)
             .padding(.bottom, 20)
+            .opacity(homeAppeared ? 1 : 0)
+            .offset(y: homeAppeared ? 0 : 18)
         }
         .scrollDismissesKeyboard(.interactively)
+        .onAppear {
+            withAnimation(.spring(response: 0.65, dampingFraction: 0.86)) {
+                homeAppeared = true
+            }
+        }
         .background { OracleAnimatedBackdrop() }
         .overlay(alignment: .topTrailing) {
             homeOverflowMenu

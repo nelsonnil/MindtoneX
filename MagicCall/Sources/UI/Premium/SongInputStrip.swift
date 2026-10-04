@@ -15,7 +15,11 @@ struct SongInputStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HomeSectionTitle(title: "Song input", subtitle: "How the track is chosen before Perform")
+            HomeSectionTitle(
+                eyebrow: "Step 2",
+                title: "Song input",
+                subtitle: "How the track is chosen before Perform"
+            )
 
             LazyVGrid(columns: inputColumns, spacing: 10) {
                 inputChip("Manual", icon: "keyboard", mode: .manual)
@@ -67,10 +71,33 @@ struct SongInputStrip: View {
             .frame(maxWidth: .infinity)
             .frame(minHeight: 72)
             .foregroundStyle(selected ? OracleTheme.textPrimary : OracleTheme.textSecondary)
-            .background(selected ? OracleTheme.indigo.opacity(0.28) : Color.white.opacity(0.05))
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [OracleTheme.indigo.opacity(0.38), OracleTheme.deepIndigo.opacity(0.22)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.white.opacity(0.05))
+                }
+            }
             .overlay {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(selected ? OracleTheme.gold.opacity(0.65) : OracleTheme.cardBorder, lineWidth: selected ? 1.5 : 1)
+                    .stroke(
+                        selected
+                            ? LinearGradient(
+                                colors: [OracleTheme.gold.opacity(0.85), OracleTheme.indigo.opacity(0.5)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(colors: [OracleTheme.cardBorder], startPoint: .top, endPoint: .bottom),
+                        lineWidth: selected ? 1.5 : 1
+                    )
             }
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }

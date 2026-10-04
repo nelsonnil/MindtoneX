@@ -2,6 +2,20 @@ import SwiftUI
 import UIKit
 
 enum OracleTheme {
+    // MARK: Typography (confident, product-grade)
+
+    static func brandTitle() -> Font {
+        .system(size: 26, weight: .heavy, design: .rounded)
+    }
+
+    static func sectionTitle() -> Font {
+        .system(size: 22, weight: .bold, design: .rounded)
+    }
+
+    static func techLabel() -> Font {
+        .system(size: 11, weight: .semibold, design: .monospaced)
+    }
+
     static let bgTop = Color(red: 0.05, green: 0.04, blue: 0.10)
     static let bgBottom = Color(red: 0.03, green: 0.03, blue: 0.05)
 
@@ -145,10 +159,83 @@ struct OracleAnimatedBackdrop: View {
         ZStack {
             OracleBackdrop()
             TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
+                AuroraDriftLayer(date: context.date)
+            }
+            .allowsHitTesting(false)
+            TechGridOverlay()
+                .allowsHitTesting(false)
+            TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
                 RingtoneRippleLayer(date: context.date)
             }
             .allowsHitTesting(false)
         }
+    }
+}
+
+/// Slow drifting color fields — depth without heavy GPU work.
+private struct AuroraDriftLayer: View {
+    let date: Date
+
+    private var t: Double { date.timeIntervalSinceReferenceDate }
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            ZStack {
+                Ellipse()
+                    .fill(OracleTheme.indigo.opacity(0.22))
+                    .frame(width: w * 1.1, height: h * 0.45)
+                    .blur(radius: 70)
+                    .offset(x: sin(t * 0.22) * w * 0.12, y: -h * 0.28 + cos(t * 0.18) * 24)
+
+                Ellipse()
+                    .fill(OracleTheme.gold.opacity(0.10))
+                    .frame(width: w * 0.85, height: h * 0.35)
+                    .blur(radius: 60)
+                    .offset(x: cos(t * 0.19) * w * 0.14, y: -h * 0.22 + sin(t * 0.21) * 20)
+
+                Ellipse()
+                    .fill(OracleTheme.deepPurple.opacity(0.18))
+                    .frame(width: w * 0.9, height: h * 0.5)
+                    .blur(radius: 80)
+                    .offset(x: sin(t * 0.15 + 1) * w * 0.1, y: h * 0.05)
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
+/// Fine grid + top specular fade — “serious tech product” first impression.
+private struct TechGridOverlay: View {
+    var body: some View {
+        GeometryReader { geo in
+            Canvas { context, size in
+                let step: CGFloat = 28
+                var path = Path()
+                var x: CGFloat = 0
+                while x <= size.width {
+                    path.move(to: CGPoint(x: x, y: 0))
+                    path.addLine(to: CGPoint(x: x, y: size.height))
+                    x += step
+                }
+                var y: CGFloat = 0
+                while y <= size.height {
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: size.width, y: y))
+                    y += step
+                }
+                context.stroke(path, with: .color(.white.opacity(0.025)), lineWidth: 0.5)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+
+            LinearGradient(
+                colors: [Color.white.opacity(0.07), .clear],
+                startPoint: .top,
+                endPoint: UnitPoint(x: 0.5, y: 0.22)
+            )
+        }
+        .ignoresSafeArea()
     }
 }
 
@@ -191,6 +278,7 @@ private struct RingtoneRippleLayer: View {
 /// Home primary block — lighter chrome than section-rail `OracleCard`.
 struct HomePanel<Content: View>: View {
     var padding: CGFloat = 20
+    var accent: Color = OracleTheme.gold
     @ViewBuilder var content: () -> Content
 
     private var shape: RoundedRectangle {
@@ -204,32 +292,66 @@ struct HomePanel<Content: View>: View {
             .background {
                 shape
                     .fill(.ultraThinMaterial)
-                    .opacity(0.28)
+                    .opacity(0.38)
             }
             .background {
-                shape.fill(OracleTheme.cardFill.opacity(0.92))
+                ZStack(alignment: .top) {
+                    shape.fill(OracleTheme.cardFill.opacity(0.94))
+                    LinearGradient(
+                        colors: [accent.opacity(0.14), accent.opacity(0.04), .clear],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .clipShape(shape)
+                }
             }
             .clipShape(shape)
             .overlay {
                 shape.strokeBorder(OracleTheme.cardStroke, lineWidth: 1)
             }
-            .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+            .overlay(alignment: .top) {
+                shape
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.22), accent.opacity(0.35), .clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+                    .mask {
+                        VStack(spacing: 0) {
+                            Rectangle().frame(height: 2)
+                            Spacer()
+                        }
+                    }
+            }
+            .shadow(color: accent.opacity(0.10), radius: 20, y: 10)
+            .shadow(color: .black.opacity(0.40), radius: 18, y: 12)
     }
 }
 
 struct HomeSectionTitle: View {
     let title: String
     var subtitle: String?
+    var eyebrow: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
+            if let eyebrow {
+                Text(eyebrow.uppercased())
+                    .font(OracleTheme.techLabel())
+                    .tracking(1.4)
+                    .foregroundStyle(OracleTheme.gold.opacity(0.85))
+            }
             Text(title)
-                .font(.title3.weight(.bold))
+                .font(OracleTheme.sectionTitle())
                 .foregroundStyle(OracleTheme.textPrimary)
             if let subtitle {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(OracleTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -370,13 +492,15 @@ struct OraclePerformButton: View {
                 generator.impactOccurred()
                 action()
             } label: {
-                HStack(spacing: 10) {
+                HStack(spacing: 12) {
                     Image(systemName: "play.fill")
+                        .font(.title3.weight(.bold))
                     Text(title)
-                        .font(.headline.weight(.semibold))
+                        .font(.title3.weight(.bold))
+                        .tracking(0.3)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 56)
+                .frame(height: 60)
                 .foregroundStyle(Color(red: 0.12, green: 0.10, blue: 0.05))
                 .background(gradient)
                 .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))

@@ -32,10 +32,17 @@ struct PerformBottomBar: View {
                 Rectangle()
                     .fill(.ultraThinMaterial)
                     .environment(\.colorScheme, .dark)
-                OracleTheme.ink.opacity(0.55)
+                OracleTheme.ink.opacity(0.62)
+                LinearGradient(
+                    colors: [OracleTheme.gold.opacity(model.canPerform ? 0.35 : 0.12), .clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 3)
                 Rectangle()
                     .fill(OracleTheme.cardBorderHighlight)
                     .frame(height: 0.5)
+                    .offset(y: 3)
             }
             .ignoresSafeArea(edges: .bottom)
         }

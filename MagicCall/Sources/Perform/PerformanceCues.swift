@@ -151,7 +151,7 @@ struct FeedbackCard: View {
     }
 
     var body: some View {
-        HomePanel(padding: 0) {
+        HomePanel(padding: 0, accent: OracleHomeSection.feedback.accent) {
             DisclosureGroup(isExpanded: $expanded) {
                 VStack(alignment: .leading, spacing: 12) {
                     feedbackInset {
