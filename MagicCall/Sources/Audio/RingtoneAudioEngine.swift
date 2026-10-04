@@ -20,7 +20,7 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
 
     // MARK: Sesión
 
-    func configureSession() throws {
+    func configureSession(preferIPhoneSpeaker: Bool = false) throws {
         let session = AVAudioSession.sharedInstance()
         var options: AVAudioSession.CategoryOptions = []
         if Prefs.mixWithOthers { options.insert(.mixWithOthers) }
@@ -34,9 +34,14 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
         }
         try session.setPrefersNoInterruptionsFromSystemAlerts(Prefs.noInterruptions)
         try session.setActive(true)
-        dlog("Sesión activa: cat=\(session.category.rawValue) opts=\(session.categoryOptions.rawValue) prefersNoInterruptionsFromSystemAlerts=\(session.prefersNoInterruptionsFromSystemAlerts) ruta=\(Self.routeDescription()) volumenMedia=\(String(format: "%.2f", session.outputVolume))")
-        if !Self.isBuiltInSpeaker() {
-            dlog("⚠️ La salida NO es el altavoz del iPhone (\(Self.routeDescription())). Desconecta Bluetooth/AirPods.")
+        if preferIPhoneSpeaker {
+            Self.applyBuiltInSpeakerOverride(reason: "configureSession")
+        }
+        dlog("Sesión activa: cat=\(session.category.rawValue) opts=\(session.categoryOptions.rawValue) prefersNoInterruptionsFromSystemAlerts=\(session.prefersNoInterruptionsFromSystemAlerts) ruta=\(Self.routeDescription()) volumenMedia=\(String(format: "%.2f", session.outputVolume)) preferSpeaker=\(preferIPhoneSpeaker)")
+        if preferIPhoneSpeaker, !Self.isBuiltInSpeaker() {
+            dlog("⚠️ Fake Perform: salida sigue sin ser altavoz interno (\(Self.routeDescription())) — p. ej. Meta glasses A2DP puede ganar en iOS.")
+        } else if !preferIPhoneSpeaker, !Self.isBuiltInSpeaker() {
+            dlog("⚠️ La salida NO es el altavoz del iPhone (\(Self.routeDescription()))")
         }
         if session.outputVolume < 0.5 {
             dlog("⚠️ Volumen multimedia bajo (\(String(format: "%.2f", session.outputVolume))) — Fake Perform intentará subirlo al armar.")
@@ -60,6 +65,21 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
 
     static func isBuiltInSpeaker() -> Bool {
         AVAudioSession.sharedInstance().currentRoute.outputs.contains { $0.portType == .builtInSpeaker }
+    }
+
+    /// Best-effort iPhone speaker for Fake Perform (`overrideOutputAudioPort` is public; BT A2DP may ignore it).
+    @discardableResult
+    static func applyBuiltInSpeakerOverride(reason: String) -> Bool {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.overrideOutputAudioPort(.speaker)
+            let onSpeaker = isBuiltInSpeaker()
+            dlog("[AUDIO] overrideOutputAudioPort(.speaker) (\(reason)) route=\(routeDescription()) builtInSpeaker=\(onSpeaker)")
+            return onSpeaker
+        } catch {
+            dlog("[AUDIO] overrideOutputAudioPort failed (\(reason)): \(describe(error))")
+            return false
+        }
     }
 
     // MARK: Carga

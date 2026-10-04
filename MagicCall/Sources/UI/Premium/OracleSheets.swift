@@ -76,7 +76,9 @@ struct FakeDetailSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("""
-                Put your iPhone on **Silent**. When a real call arrives, the system ringtone stays quiet, but this app plays your song full volume. When the caller hangs up, the song stops — so it feels like the ringtone was the song all along.
+                Put your iPhone on **Silent**. When a real call arrives, the system ringtone stays quiet, but this app plays your song full volume through the **iPhone speaker** when iOS allows. When the caller hangs up, the song stops — so it feels like the ringtone was the song all along.
+
+                Some Bluetooth devices (e.g. **Meta glasses**) may still take audio on certain iOS versions — disconnect them if the song sounds wrong or too quiet.
                 """)
                 .font(.subheadline)
 
@@ -84,7 +86,6 @@ struct FakeDetailSheet: View {
 
                 guideSection("Before you perform", items: [
                     "Settings → Apps → Phone → Incoming Calls: **Banner**",
-                    "Bluetooth & AirPods: **Disconnected**",
                     "Stay in RingtoneX (display stays on while performing)",
                 ])
 

@@ -86,7 +86,7 @@ extension AppModel {
     func voiceDidLock(context: VoiceSongSession.Context, duringCall: Bool) {
         if !duringCall {
             if isArmed {
-                do { try audio.configureSession() } catch {
+                do { try audio.configureSession(preferIPhoneSpeaker: isArmed) } catch {
                     dlog("✗ [VOICE] back to playback: \(RingtoneAudioEngine.describe(error))")
                 }
                 if Prefs.hotStandby, audio.player != nil, audio.player?.isPlaying != true { audio.startStandby() }

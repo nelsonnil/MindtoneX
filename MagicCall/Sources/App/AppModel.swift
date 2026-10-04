@@ -115,7 +115,7 @@ final class AppModel: ObservableObject {
                 Task { await stageRingtoneFile(showShare: false, discreet: false) }
             }
             if isArmed {
-                try? audio.configureSession()
+                try? audio.configureSession(preferIPhoneSpeaker: true)
                 if Prefs.hotStandby { audio.startStandby() }
                 if !isAudible, hasLikelyIncomingCallSignal() {
                     dlog("[TRIGGER] song became ready while a call is ringing")
@@ -132,7 +132,7 @@ final class AppModel: ObservableObject {
     func audition() {
         guard loadState == .ready else { return }
         auditionEndWork?.cancel()
-        do { try audio.configureSession() } catch { dlog("✗ Sesión: \(RingtoneAudioEngine.describe(error))") }
+        do { try audio.configureSession(preferIPhoneSpeaker: false) } catch { dlog("✗ Sesión: \(RingtoneAudioEngine.describe(error))") }
         let seconds = audio.configureSetupPreview(maxSeconds: 28)
         audio.makeAudible()
         isAudible = true
@@ -237,7 +237,7 @@ final class AppModel: ObservableObject {
             return
         }
         do {
-            try audio.configureSession()
+            try audio.configureSession(preferIPhoneSpeaker: true)
         } catch {
             dlog("✗ configureSession: \(RingtoneAudioEngine.describe(error))")
         }
@@ -294,7 +294,7 @@ final class AppModel: ObservableObject {
         SystemVolume.shared.restoreSavedIfNeeded()
         audio.deactivateSession()
         if Prefs.hotStandby, loadState == .ready {
-            do { try audio.configureSession() } catch {
+            do { try audio.configureSession(preferIPhoneSpeaker: true) } catch {
                 dlog("✗ post-call standby sesión: \(RingtoneAudioEngine.describe(error))")
             }
             audio.startStandby()
@@ -335,7 +335,7 @@ final class AppModel: ObservableObject {
         applySystemVolumeBoostForTrigger()
         let t0 = CACurrentMediaTime()
         logAudioSession(context: "antes de disparo [\(source)]")
-        let ok = audio.makeAudible(reconfigureSession: { try self.audio.configureSession() })
+        let ok = audio.makeAudible(reconfigureSession: { try self.audio.configureSession(preferIPhoneSpeaker: true) })
         isAudible = ok
         let sinceCall = callSignalActive ? " · \(Int((t0 - incomingDetectedAt) * 1000)) ms desde señal llamada" : ""
         dlog("[TRIGGER] ▶︎ [\(source)] play=\(ok)\(sinceCall) · \(audio.snapshot())")
@@ -443,8 +443,8 @@ final class AppModel: ObservableObject {
             let raw = n.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt ?? 0
             let prev = n.userInfo?[AVAudioSessionRouteChangePreviousRouteKey]
             dlog("[ROUTE] cambió reason=\(raw) prev=\(prev != nil) → \(RingtoneAudioEngine.routeDescription()) · \(self.calls.describeCalls())")
-            if self.isArmed && !RingtoneAudioEngine.isBuiltInSpeaker() {
-                dlog("[ROUTE] ⚠️ salida no es altavoz interno")
+            if self.isArmed, Prefs.performanceMode == .fakeRingtone {
+                RingtoneAudioEngine.applyBuiltInSpeakerOverride(reason: "routeChange(\(raw))")
             }
             if self.isArmed, self.hasLikelyIncomingCallSignal() {
                 self.attemptAutoTrigger(source: "routeChange(\(raw))")
@@ -529,7 +529,7 @@ final class AppModel: ObservableObject {
         phase = .stage
         Self.setScreenAwakeWhileInForeground(true)
         do {
-            try audio.configureSession()
+            try audio.configureSession(preferIPhoneSpeaker: true)
         } catch {
             dlog("✗ refreshArmedState sesión: \(RingtoneAudioEngine.describe(error))")
         }
