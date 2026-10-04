@@ -172,6 +172,7 @@ struct StageGestureLayer: UIViewRepresentable {
     }
 }
 
+@MainActor
 enum StageImageStore {
     static var url: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]

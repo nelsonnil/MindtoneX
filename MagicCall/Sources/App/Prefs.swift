@@ -186,6 +186,7 @@ enum StageStatusBarContent: String, CaseIterable, Identifiable {
     }
 
     /// `true` → dark icons/text (for a light top area); `false` → light icons/text.
+    @MainActor
     func prefersDarkContent(hasScreenshot: Bool) -> Bool {
         switch self {
         case .dark: return true
