@@ -76,6 +76,11 @@ struct MainShellView: View {
                 }
             }
         }
+        .onChange(of: activeSheet) { _, sheet in
+            if sheet != nil {
+                model.pauseVoiceAndAudioForSetupUI(reason: "sheet \(sheet!.id)")
+            }
+        }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .performanceGuide:

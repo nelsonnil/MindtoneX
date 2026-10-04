@@ -26,7 +26,7 @@ struct PerformanceGuideSheet: View {
                 Group {
                     switch guideMode {
                     case .fakeRingtone:
-                        FakeGuideContent()
+                        FakeGuideContent(onOpenFavorites: onOpenFavorites)
                     case .shareRingtone:
                         ShareGuideContent(onOpenFavorites: onOpenFavorites)
                     }
@@ -57,6 +57,8 @@ struct PerformanceGuideSheet: View {
 }
 
 struct FakeGuideContent: View {
+    var onOpenFavorites: () -> Void
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             guideIntro(
@@ -76,15 +78,18 @@ struct FakeGuideContent: View {
             ])
 
             TipCard(
-                title: "Long-press → Share after call",
+                title: "Long-press the stage → Share",
                 icon: "hand.tap.fill",
                 tint: OracleTheme.gold,
                 lines: [
-                    "Set Playback volume on the home card, or use the side volume buttons during Perform.",
-                    "After the spectator hangs up, press and hold the black stage (~½ second) to open Share and Use as Ringtone.",
-                    "Only works after hang-up — not while ringing or while the song plays.",
+                    "Set **Playback volume** on the home card, or use the side volume buttons during Perform.",
+                    "After the spectator **hangs up**, **press and hold** the black stage about **half a second** — the Share sheet opens.",
+                    "Tap **Use as Ringtone** (pin it to Favorites once — see below — then it is always one tap).",
+                    "Only works **after hang-up** — not while the phone is ringing or while the song is still playing.",
                 ]
             )
+
+            FavoritesQuickAccessSection(onOpenFavorites: onOpenFavorites)
 
             TipCard(title: "Timing", icon: "clock", tint: OracleTheme.indigo, lines: PerformCopy.fakeTiming)
 
@@ -122,15 +127,7 @@ struct ShareGuideContent: View {
                 .background(OracleTheme.coral.opacity(0.18))
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            ShareRingtoneFavoritesIllustration()
-
-            Button(action: onOpenFavorites) {
-                Label("Set up Use as Ringtone in Favorites", systemImage: "star.circle.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.bordered)
-            .tint(OracleTheme.gold)
+            FavoritesQuickAccessSection(onOpenFavorites: onOpenFavorites)
 
             HowItWorksCard(
                 title: "How Perform works",
@@ -167,6 +164,34 @@ private func guideIntro(title: String, icon: String, tint: Color, text: String) 
     .frame(maxWidth: .infinity, alignment: .leading)
     .background(Color.white.opacity(0.06))
     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+}
+
+/// One-time Share sheet setup so **Use as Ringtone** stays on the first row (Fake long-press Share and Share mode).
+private struct FavoritesQuickAccessSection: View {
+    var onOpenFavorites: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            TipCard(
+                title: "First time: add to Favorites",
+                icon: "star.circle.fill",
+                tint: OracleTheme.gold,
+                lines: [
+                    "Do this **once** the first time you see the Share sheet (Fake after long-press, or Share Ringtone Perform).",
+                    "Tap **More** (•••) → **Edit Actions** → tap **+** next to **Use as Ringtone** → **Favorites**.",
+                    "From then on, **Use as Ringtone** appears on the **top row** — fast access every performance.",
+                ]
+            )
+            ShareRingtoneFavoritesIllustration()
+            Button(action: onOpenFavorites) {
+                Label("Open step-by-step Favorites guide", systemImage: "book.pages.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.bordered)
+            .tint(OracleTheme.gold)
+        }
+    }
 }
 
 struct OracleGuideSection: View {

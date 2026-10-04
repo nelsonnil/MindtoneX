@@ -48,7 +48,7 @@ extension AppModel {
             case .aiVoice:
                 VoiceAudioSession.recordCategoryActive = true
                 arm(requireSong: false)
-                Task { await VoiceSongSession.shared.start(context: .perform) }
+                scheduleVoicePerformStart()
             case .notes:
                 NotesSongSession.shared.start(context: .perform)
                 arm(requireSong: false)

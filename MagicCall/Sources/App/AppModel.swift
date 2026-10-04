@@ -45,6 +45,7 @@ final class AppModel: ObservableObject {
     private(set) var performed = false
     private var currentAudio: (data: Data, hint: String)?
     private var auditionEndWork: DispatchWorkItem?
+    private var voicePerformTask: Task<Void, Never>?
     @Published private(set) var exportedRingtone: URL?
     @Published var showingDiscreetRingtonePrep = false
     @Published private(set) var ringtoneStaged = false
@@ -296,17 +297,42 @@ final class AppModel: ObservableObject {
         stopCallPolling()
         callSignalActive = false
         SystemVolume.shared.restoreSavedIfNeeded()
-        audio.stop()
-        audio.deactivateSession()
         volumeObservation = nil
-        isArmed = false
-        isAudible = false
-        phase = .setup
+        voicePerformTask?.cancel()
+        voicePerformTask = nil
         showDebugOverlay = false
         performed = false
         hadCallWhileArmed = false
+        isAudible = false
         resetVoicePerformance()
+        audio.stop()
+        audio.deactivateSession()
+        isArmed = false
+        phase = .setup
         dlog("══ DESARMADO ══")
+    }
+
+    func scheduleVoicePerformStart() {
+        voicePerformTask?.cancel()
+        voicePerformTask = Task { await VoiceSongSession.shared.start(context: .perform) }
+    }
+
+    /// Home sheets / call banner: stop Live preview mic before AVAudioSession changes.
+    func pauseVoiceAndAudioForSetupUI(reason: String) {
+        guard phase == .setup, !isArmed else { return }
+        voicePerformTask?.cancel()
+        voicePerformTask = nil
+        VoiceSongSession.shared.stopTest()
+        ApiSongSession.shared.stopTest()
+        auditionEndWork?.cancel()
+        auditionEndWork = nil
+        if isAudible {
+            audio.stop()
+            isAudible = false
+        }
+        VoiceAudioSession.recordCategoryActive = false
+        VoiceAudioSession.deactivateIfIdle()
+        dlog("[APP] paused setup audio/voice (\(reason))")
     }
 
     /// After the spectator hangs up in Fake Ringtone: stop playback, allow long-press → Share, stay on
