@@ -6,8 +6,16 @@ struct FakeModeContent: View {
     var stageScreenshotGeneration: Int
 
     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
+    @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
 
     private var hasScreenshot: Bool { StageImageStore.hasScreenshot }
+
+    private var statusBarContentSelection: Binding<StageStatusBarContent> {
+        Binding(
+            get: { StageStatusBarContent(rawValue: stageStatusBarContentRaw) ?? .automatic },
+            set: { stageStatusBarContentRaw = $0.rawValue }
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -53,6 +61,21 @@ struct FakeModeContent: View {
                 .buttonStyle(.borderedProminent)
                 .tint(hasScreenshot ? OracleTheme.gold.opacity(0.85) : OracleTheme.gold)
                 Spacer(minLength: 0)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Status bar icons")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Picker("Status bar icons", selection: statusBarContentSelection) {
+                    ForEach(StageStatusBarContent.allCases) { mode in
+                        Text(mode.segmentTitle).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Text("Dark = black icons (light wallpaper). Light = white icons (dark wallpaper). Auto matches the top of your screenshot.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
             }
         }
     }

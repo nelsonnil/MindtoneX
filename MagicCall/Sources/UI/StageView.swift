@@ -10,18 +10,22 @@ struct StageView: View {
     /// Observed so status bar style refreshes when a new screenshot is saved (luminance is recomputed in `StageImageStore.save`).
     @AppStorage(StageImageStore.luminanceDefaultsKey) private var stageStatusBarLuminance = 0.0
     @AppStorage(StageImageStore.revisionDefaultsKey) private var stageScreenshotRevision = ""
+    @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
 
     private var hasStageScreenshot: Bool { StageImageStore.hasScreenshot }
 
-    /// Screenshot-only stage: adaptive status bar content from the top of the saved image.
+    private var statusBarContentMode: StageStatusBarContent {
+        StageStatusBarContent(rawValue: stageStatusBarContentRaw) ?? .automatic
+    }
+
+    /// Screenshot-only stage: status bar content from automatic luminance or user override.
     private var hidesStatusBarForStage: Bool { false }
 
-    /// Light wallpaper behind the status bar → dark icons/text; dark wallpaper → light icons/text.
+    /// Dark status bar content = black icons/text; light content = white icons/text.
     private var prefersDarkStatusBarContent: Bool {
         _ = stageStatusBarLuminance
         _ = stageScreenshotRevision
-        guard hasStageScreenshot else { return false }
-        return StageImageStore.wantsDarkStatusBarText()
+        return statusBarContentMode.prefersDarkContent(hasScreenshot: hasStageScreenshot)
     }
 
     var body: some View {

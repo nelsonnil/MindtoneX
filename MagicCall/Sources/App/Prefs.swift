@@ -26,6 +26,8 @@ enum Prefs {
         static let storeCountry = "songs.storeCountry"
 
         static let maskStatusBar = "stage.maskStatusBar"
+        /// `StageStatusBarContent` raw value — automatic luminance or forced icon style on stage.
+        static let stageStatusBarContent = "stage.statusBarContent"
 
         static let darwinSignals = "probe.darwinSignals"
         static let toneIdentifierToTry = "probe.toneIdentifierToTry"
@@ -93,6 +95,7 @@ enum Prefs {
             Key.deezerFallback: true,
             Key.storeCountry: "",
             Key.maskStatusBar: false,
+            Key.stageStatusBarContent: StageStatusBarContent.automatic.rawValue,
             Key.darwinSignals: true,
             Key.toneIdentifierToTry: "system:Radar",
             Key.callKitCallerName: "Ana",
@@ -153,5 +156,43 @@ enum Prefs {
             "ringerMaxOnStage=\(attemptRingerMaxOnStage)",
             "diskCache=\(diskCache) deezer=\(deezerFallback) store=\(storeCountry.isEmpty ? "auto" : storeCountry)",
         ].joined(separator: " · ")
+    }
+}
+
+/// Status bar icon/text color on the stage screenshot (not the bar tint).
+enum StageStatusBarContent: String, CaseIterable, Identifiable {
+    case automatic
+    case dark
+    case light
+
+    var id: String { rawValue }
+
+    /// Segmented control label (short).
+    var segmentTitle: String {
+        switch self {
+        case .automatic: return "Auto"
+        case .dark: return "Dark"
+        case .light: return "Light"
+        }
+    }
+
+    /// Accessibility / menu label.
+    var label: String {
+        switch self {
+        case .automatic: return "Automatic"
+        case .dark: return "Dark status bar"
+        case .light: return "Light status bar"
+        }
+    }
+
+    /// `true` → dark icons/text (for a light top area); `false` → light icons/text.
+    func prefersDarkContent(hasScreenshot: Bool) -> Bool {
+        switch self {
+        case .dark: return true
+        case .light: return false
+        case .automatic:
+            guard hasScreenshot else { return false }
+            return StageImageStore.wantsDarkStatusBarText()
+        }
     }
 }
