@@ -202,6 +202,21 @@ final class AppModel: ObservableObject {
     }
 
     /// Solo abre Compartir si el archivo ya se preparó al buscar la canción.
+    /// Fake Ringtone: after hang-up, long-press the stage to open Share (Use as Ringtone).
+    func openFakeShareAfterCallIfNeeded() {
+        guard FakePostCallShareGate.shouldOpenShareOnLongPress(
+            performanceMode: Prefs.performanceMode,
+            phase: phase,
+            performed: performed,
+            isArmed: isArmed
+        ) else {
+            dlog("[SHARE] long-press ignored (Fake post-call only, after hang-up)")
+            return
+        }
+        dlog("[SHARE] long-press post-call → Share ringtone")
+        Task { await applyRingtoneNow() }
+    }
+
     func applyRingtoneNow() async {
         guard selected != nil else { return }
         if ringtoneStaged, let url = exportedRingtone, FileManager.default.fileExists(atPath: url.path),
@@ -294,7 +309,7 @@ final class AppModel: ObservableObject {
         dlog("══ DESARMADO ══")
     }
 
-    /// After the spectator hangs up in Fake Ringtone: stop playback, allow volume → Share, stay on
+    /// After the spectator hangs up in Fake Ringtone: stop playback, allow long-press → Share, stay on
     /// stage armed for another call with the same locked song. Share Ringtone Perform is unaffected.
     private func enterPerformedState(reason: String) {
         guard isArmed, !performed else { return }
@@ -316,7 +331,7 @@ final class AppModel: ObservableObject {
             audio.startStandby()
         }
         ensureVolumeButtonWatch()
-        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; volume → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
+        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; long-press stage → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
     }
 
     /// AI Voice: forget the previous spectator's song so the next Perform starts empty.
@@ -342,7 +357,7 @@ final class AppModel: ObservableObject {
             return
         }
         guard !performed else {
-            dlog("[TRIGGER] “\(source)” ignorado: post-llamada (volumen → Compartir o nueva llamada)")
+            dlog("[TRIGGER] “\(source)” ignorado: post-llamada (long-press → Compartir o nueva llamada)")
             return
         }
         guard !isAudible else {
@@ -693,20 +708,6 @@ final class AppModel: ObservableObject {
                 let new = change.newValue ?? 0
                 dlog("Volumen multimedia \(String(format: "%.2f", old)) → \(String(format: "%.2f", new))")
                 guard CACurrentMediaTime() > self.ignoreVolumeChangesUntil else { return }
-                if FakePostCallVolumeGate.shouldOpenShareOnVolume(
-                    performanceMode: Prefs.performanceMode,
-                    phase: self.phase,
-                    performed: self.performed,
-                    isArmed: self.isArmed,
-                    volumeDownOpensShare: Prefs.volumeDownOpensShareAfterCall,
-                    oldVolume: old,
-                    newVolume: new
-                ) {
-                    self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
-                    dlog("[TRIGGER] volume down post-call → Share ringtone")
-                    Task { await self.applyRingtoneNow() }
-                    return
-                }
                 guard FakePostCallVolumeGate.shouldTogglePlayOnVolume(
                     volumeButtonTrigger: Prefs.volumeButtonTrigger,
                     isArmed: self.isArmed,
@@ -758,16 +759,21 @@ final class AppModel: ObservableObject {
         guard Prefs.performanceMode == .fakeRingtone else { return }
         guard Prefs.boostMediaVolumeOnFakePerform else { return }
         ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
+        let target = Float(Prefs.fakePlaybackVolume)
         let before = SystemVolume.shared.outputVolume
-        SystemVolume.shared.captureAndBoostToMaximum()
-        dlog("[VOLUME] Fake Perform boost (\(reason)) before=\(String(format: "%.2f", before)) attached=\(SystemVolume.shared.isAttached)")
+        SystemVolume.shared.set(target, label: "fake playback (\(reason))", sliderRetries: 5)
+        dlog("[VOLUME] Fake Perform (\(reason)) target=\(String(format: "%.2f", target)) before=\(String(format: "%.2f", before)) attached=\(SystemVolume.shared.isAttached)")
     }
 
     /// Ruta 2: sube el volumen multimedia del sistema al 100 % al disparar (llamada o toque manual).
     private func applySystemVolumeBoostForTrigger() {
         guard Prefs.boostSystemVolumeOnTrigger else { return }
         ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
-        SystemVolume.shared.captureAndBoostToMaximum()
+        if Prefs.performanceMode == .fakeRingtone {
+            SystemVolume.shared.set(Float(Prefs.fakePlaybackVolume), label: "fake trigger", sliderRetries: 5)
+        } else {
+            SystemVolume.shared.captureAndBoostToMaximum()
+        }
     }
 
     func scheduleCallKitFallback() {

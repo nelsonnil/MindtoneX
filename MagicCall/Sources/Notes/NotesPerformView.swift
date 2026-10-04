@@ -34,6 +34,12 @@ struct NotesPerformView: View {
                 Color.white.opacity(0.001)
                     .ignoresSafeArea()
                     .onTapGesture { SharePerformFlow.shared.handleTap() }
+            } else if Prefs.performanceMode == .fakeRingtone, model.performed {
+                Color.white.opacity(0.001)
+                    .ignoresSafeArea()
+                    .onLongPressGesture(minimumDuration: 0.55) {
+                        model.openFakeShareAfterCallIfNeeded()
+                    }
             }
 
             HiddenVolumeView().frame(width: 1, height: 1)

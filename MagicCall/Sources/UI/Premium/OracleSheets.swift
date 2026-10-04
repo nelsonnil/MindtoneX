@@ -41,14 +41,14 @@ struct FakeDetailSheet: View {
                 ])
 
                 TipCard(
-                    title: "Volume down → Share after call",
-                    icon: "speaker.wave.2.fill",
+                    title: "Long-press → Share after call",
+                    icon: "hand.tap.fill",
                     tint: OracleTheme.gold,
                     lines: [
-                        "On the Fake Ringtone setup card, **Volume down opens share after call** is **on by default**. Turn it **off** if you never want the hardware volume keys to open Share.",
-                        "After the spectator **hangs up** (fake call finished, song stopped), press the **volume down** button once. RingtoneX opens the Share sheet so you can **Use as Ringtone** and add the song as a real iOS ringtone.",
-                        "This does **not** work while the call is ringing or while the song is playing — only **after** hang-up. **Volume up** does not open Share.",
-                        "You can stay in the same Perform for another call with the same song; after each hang-up, volume down works again while the toggle stays on.",
+                        "Set **Playback volume** on the Fake Ringtone card, or use the **side volume buttons** during Perform.",
+                        "After the spectator **hangs up** (song stopped), **press and hold** anywhere on the black stage (~½ second). RingtoneX opens Share so you can **Use as Ringtone**.",
+                        "This does **not** work while the call is ringing or while the song is playing — only **after** hang-up.",
+                        "You can stay in the same Perform for another call with the same song; after each hang-up, long-press works again.",
                     ]
                 )
 

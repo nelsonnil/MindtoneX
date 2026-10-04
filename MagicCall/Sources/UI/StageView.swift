@@ -42,6 +42,9 @@ struct StageView: View {
                         model.toggleManual()
                     }
                 },
+                onLongPress: {
+                    model.openFakeShareAfterCallIfNeeded()
+                },
                 onTwoFingerSwipeDown: { model.disarm() }
             )
             .ignoresSafeArea()
@@ -68,9 +71,10 @@ struct StageView: View {
 /// UIKit para tener un deslizamiento real con dos dedos; SwiftUI no distingue número de dedos.
 struct StageGestureLayer: UIViewRepresentable {
     let onTap: () -> Void
+    let onLongPress: () -> Void
     let onTwoFingerSwipeDown: () -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator { Coordinator(onLongPress: onLongPress) }
 
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -80,25 +84,50 @@ struct StageGestureLayer: UIViewRepresentable {
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tap))
         tap.numberOfTouchesRequired = 1
 
+        let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.longPress(_:)))
+        longPress.minimumPressDuration = 0.55
+        tap.require(toFail: longPress)
+
         let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipeDown(_:)))
         swipe.numberOfTouchesRequired = 2
         swipe.direction = .down
 
         view.addGestureRecognizer(tap)
+        view.addGestureRecognizer(longPress)
         view.addGestureRecognizer(swipe)
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
         context.coordinator.onTap = onTap
+        context.coordinator.onLongPress = onLongPress
         context.coordinator.onTwoFingerSwipeDown = onTwoFingerSwipeDown
     }
 
     final class Coordinator: NSObject {
         var onTap: () -> Void = {}
+        var onLongPress: () -> Void = {}
         var onTwoFingerSwipeDown: () -> Void = {}
+        private var didLongPress = false
 
-        @objc func tap() { onTap() }
+        init(onLongPress: @escaping () -> Void) {
+            self.onLongPress = onLongPress
+        }
+
+        @objc func tap() {
+            guard !didLongPress else {
+                didLongPress = false
+                return
+            }
+            onTap()
+        }
+
+        @objc func longPress(_ recognizer: UILongPressGestureRecognizer) {
+            guard recognizer.state == .began else { return }
+            didLongPress = true
+            dlog("[STAGE] long-press on stage")
+            onLongPress()
+        }
 
         @objc func swipeDown(_ recognizer: UISwipeGestureRecognizer) {
             guard recognizer.state == .ended else { return }

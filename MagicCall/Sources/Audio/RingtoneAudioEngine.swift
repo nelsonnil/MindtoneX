@@ -155,7 +155,8 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
             }
         }
         if ok {
-            p.setVolume(1, fadeDuration: 0.02)
+            let level = Float(Prefs.fakePlaybackVolume)
+            p.setVolume(level, fadeDuration: 0.02)
         } else {
             dlog("[AUDIO] makeAudible: play()=false · \(snapshot())")
         }

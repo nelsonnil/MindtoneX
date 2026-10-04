@@ -6,7 +6,7 @@ struct FakeModeContent: View {
     @Binding var photoItem: PhotosPickerItem?
     var onInfo: () -> Void
 
-    @AppStorage(Prefs.Key.volumeDownOpensShareAfterCall) private var volumeDownOpensShareAfterCall = true
+    @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -24,13 +24,22 @@ struct FakeModeContent: View {
 
             ShortcutsInstallPanel(mode: .fakeRingtone)
 
-            Toggle(isOn: $volumeDownOpensShareAfterCall) {
-                Text("Volume down opens share after call")
-                    .font(.subheadline)
-                    .foregroundStyle(OracleTheme.textPrimary)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Playback volume")
+                        .font(.subheadline)
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    Spacer()
+                    Text("\(Int(fakePlaybackVolume * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(OracleTheme.textSecondary)
+                }
+                Slider(value: $fakePlaybackVolume, in: 0.3...1)
+                    .tint(OracleTheme.gold)
+                Text("Side buttons adjust volume during Perform. After the call ends, long-press the stage to open Share.")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
             }
-            .toggleStyle(.switch)
-            .tint(OracleTheme.gold)
 
             stageRow
         }
