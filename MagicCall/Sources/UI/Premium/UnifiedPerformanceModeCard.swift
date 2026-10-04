@@ -48,33 +48,45 @@ struct UnifiedPerformanceModeCard: View {
     }
 
     private var setupDisclosure: some View {
-        DisclosureGroup(isExpanded: $setupExpanded) {
-            Group {
-                switch mode {
-                case .fakeRingtone:
-                    FakeModeContent(
-                        background: $background,
-                        photoItem: $photoItem
-                    )
-                case .shareRingtone:
-                    ShareModeContent()
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.22)) { setupExpanded.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Text("Performance setup")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    if shortcutReady {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.gold)
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .rotationEffect(.degrees(setupExpanded ? 180 : 0))
                 }
             }
-            .padding(.top, 12)
-            .animation(.easeInOut(duration: 0.25), value: modeRaw)
-        } label: {
-            HStack(spacing: 8) {
-                Text("Performance setup")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(OracleTheme.textPrimary)
-                if shortcutReady {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.gold)
+            .buttonStyle(.plain)
+            .accessibilityLabel(setupExpanded ? "Collapse performance setup" : "Expand performance setup")
+
+            if setupExpanded {
+                Group {
+                    switch mode {
+                    case .fakeRingtone:
+                        FakeModeContent(
+                            background: $background,
+                            photoItem: $photoItem
+                        )
+                    case .shareRingtone:
+                        ShareModeContent()
+                    }
                 }
+                .padding(.top, 14)
+                .animation(.easeInOut(duration: 0.25), value: modeRaw)
             }
         }
-        .tint(OracleTheme.gold)
     }
 
     private func modeTile(_ value: Prefs.PerformanceMode, title: String, subtitle: String, icon: String) -> some View {

@@ -22,13 +22,20 @@ struct ShortcutsInstallPanel: View {
 
             shortcutRow
 
-            Toggle(isOn: autoRunBinding) {
+            HStack(alignment: .center, spacing: 12) {
                 Text("Run shortcut before Perform")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(OracleTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Toggle("", isOn: autoRunBinding)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .tint(OracleTheme.gold)
+                    .fixedSize()
             }
-            .toggleStyle(.switch)
-            .tint(OracleTheme.gold)
+            .padding(.vertical, 4)
+            .padding(.trailing, 2)
 
             HStack(spacing: 10) {
                 if enabled {
