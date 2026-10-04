@@ -116,9 +116,9 @@ extension AppModel {
 
     private func prepareSongQuery(_ text: String) async -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed != query.trimmingCharacters(in: .whitespacesAndNewlines) || loadState == .ready {
-            dropPreviewForNewLookup()
-        }
+        // Always discard loaded bytes before a Voice/Notes/API lookup (same query + new Inject count
+        // used to leave the previous preview armed — same class of bug as stale AI Voice songs).
+        dropPreviewForNewLookup()
         query = trimmed
         await search()
         guard loadState == .ready else { return false }

@@ -154,6 +154,7 @@ final class ApiSongSession: ObservableObject {
         let gen = generation
         state = .loading(reading.label)
         notFound = nil
+        AppModel.shared.dropPreviewForNewLookup()
         let t0 = CACurrentMediaTime()
         let ok = await AppModel.shared.prepareApiQuery(reading.searchQuery)
         guard gen == generation else { return }
