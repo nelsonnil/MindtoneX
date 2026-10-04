@@ -114,7 +114,9 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
     private var callKitSection: some View {
+        #if DEBUG
         Section {
             TextField("Simulated caller name", text: $callKitCallerName)
             Stepper("Delay: \(Int(callKitDelay)) s", value: $callKitDelay, in: 2...30, step: 1)
@@ -124,7 +126,8 @@ struct SettingsView: View {
             }
             .disabled(model.loadState != .ready)
         } header: {
-            Text("CallKit lab (not a real call)")
+            Text("CallKit lab (Debug only)")
         }
+        #endif
     }
 }

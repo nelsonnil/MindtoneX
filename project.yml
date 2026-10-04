@@ -10,6 +10,7 @@ configs:
   Debug: debug
   Release: release
   TestFlight: release
+  AppStore: release
 
 settings:
   base:
@@ -20,7 +21,7 @@ settings:
     # Pon aquí tu Team ID o elígelo en Xcode > Signing & Capabilities.
     DEVELOPMENT_TEAM: "6XSHKM2M34"
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "57"
+    CURRENT_PROJECT_VERSION: "58"
 
 targets:
   MagicCall:
@@ -46,10 +47,12 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG MAGIC_PRIVATE_PROBES"
+        # App Store / TestFlight externo / Archive producción: SIN APIs privadas (evita ITMS-90338).
         Release:
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "MAGIC_PRIVATE_PROBES"
-        # TestFlight solo para probadores internos (sin Beta App Review): incluye los experimentos privados.
-        # Quitar MAGIC_PRIVATE_PROBES antes de enviar a probadores externos o al App Store.
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
+        AppStore:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
+        # Solo probadores internos: experimentos privados (dlopen, tonos, etc.).
         TestFlight:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "MAGIC_PRIVATE_PROBES"
 
@@ -65,7 +68,15 @@ schemes:
     analyze:
       config: Debug
     archive:
+      config: AppStore
+  MagicCall-AppStore:
+    build:
+      targets:
+        MagicCall: all
+    run:
       config: Release
+    archive:
+      config: AppStore
   MagicCall-TestFlight:
     build:
       targets:

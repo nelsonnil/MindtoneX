@@ -71,7 +71,7 @@ enum PerformCopy {
     static func aiVoiceSteps(lockSeconds: Int) -> [String] {
         [
             "Press **Perform** (or **Start test** below) — the app starts listening.",
-            "Ask the spectator to name any song. The AI ignores the example songs you mention and follows changes of mind (“no, better…”).",
+            "Ask the spectator to name any song. It ignores the example songs you mention and follows changes of mind (“no, better…”).",
             "As soon as it hears a song, it finds it and gets it ready.",
             "It waits **\(lockSeconds) seconds** (adjustable in Voice settings) in case the spectator corrects or names another song.",
             "After \(lockSeconds) seconds with no change, the song is **locked** and listening stops completely.",

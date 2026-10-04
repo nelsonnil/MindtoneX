@@ -38,9 +38,9 @@
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>AI Voice listens while the spectator names a song, so the app can get that song ready. Listening stops as soon as the song is locked.</string>
+	<string>Voice mode listens while the spectator names a song during your performance. The microphone stops as soon as the song is locked.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Apple on-device speech recognition turns the conversation into text so the app can find the song the spectator named.</string>
+	<string>On-device speech recognition may turn speech into text to find the song the spectator named.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

@@ -10,6 +10,7 @@
 		0252A189382C473B6FAD70AB /* DebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6CC08F1371815B8ECC08D6 /* DebugLog.swift */; };
 		0FC1EC7B4985F1F6545DE135 /* RingtoneAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */; };
 		1A496C1D95A030425C92AF6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B6949E0964299D0E2E8531C7 /* Assets.xcassets */; };
+		AA00004D000000000000004D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA00004C000000000000004C /* PrivacyInfo.xcprivacy */; };
 		2759F7EDE468921282C2E330 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */; };
 		2E7126CCE44C14489C54AA8E /* MagicCallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5F46051981A4C204711045 /* MagicCallApp.swift */; };
 		30CF1BD0AF300884CF55328D /* RingtoneSharePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041A68340E90792EDFC50A97 /* RingtoneSharePresenter.swift */; };
@@ -514,7 +515,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 57;
+				CURRENT_PROJECT_VERSION = 58;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -576,7 +577,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 57;
+				CURRENT_PROJECT_VERSION = 58;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -638,7 +639,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 57;
+				CURRENT_PROJECT_VERSION = 58;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -691,7 +692,7 @@
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = MAGIC_PRIVATE_PROBES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "MagicCall/Sources/Support/MagicCall-Bridging-Header.h";
 				TARGETED_DEVICE_FAMILY = 1;
 			};

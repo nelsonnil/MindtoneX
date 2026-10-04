@@ -25,7 +25,7 @@ struct NotesInputControls: View {
                 rowDivider
                 toggleRow("Search on Return", isOn: $searchOnReturn)
                 rowDivider
-                toggleRow("Interpret note with AI", detail: NotesSettings.aiPickerExplanation(isOn: useAIPicker),
+                toggleRow("Interpret note", detail: NotesSettings.aiPickerExplanation(isOn: useAIPicker),
                           isOn: $useAIPicker)
                     .disabled(VoiceSettings.apiKey == nil)
             }
