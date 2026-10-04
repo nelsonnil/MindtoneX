@@ -1,4 +1,5 @@
 import AudioToolbox
+import CoreHaptics
 import SwiftUI
 import UIKit
 
@@ -7,26 +8,14 @@ import UIKit
 enum PerformanceCues {
     enum Key {
         static let vibrateOnLock = "cues.vibrateOnSongLock"
-        static let vibrationStyle = "cues.vibrationStyle"
         static let dotEnabled = "cues.statusDot.enabled"
         static let dotSize = "cues.statusDot.size"
         static let dotColor = "cues.statusDot.color"
     }
 
-    enum VibrationStyle: String, CaseIterable, Identifiable {
-        case alert
-        case heavyDouble
-        case longBuzz
-
-        var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .alert: return "Strong — 3 taps"
-            case .heavyDouble: return "Heavy — 2 taps"
-            case .longBuzz: return "Long buzz"
-            }
-        }
-    }
+    /// Gap between the two long buzzes when a song locks (performer cue).
+    private static let songLockBuzzGap: TimeInterval = 0.55
+    private static let songLockBuzzDuration: TimeInterval = 0.38
 
     static let defaultDotSize = 8.0
     static let dotSizeRange: ClosedRange<Double> = 4...24
@@ -50,32 +39,53 @@ enum PerformanceCues {
     private static var d: UserDefaults { .standard }
 
     static var vibrateOnLock: Bool { d.object(forKey: Key.vibrateOnLock) == nil ? true : d.bool(forKey: Key.vibrateOnLock) }
-    static var vibrationStyle: VibrationStyle {
-        VibrationStyle(rawValue: d.string(forKey: Key.vibrationStyle) ?? "") ?? .alert
-    }
 
     /// The performer's song is locked (AI Voice, API) or loaded from the note (Notes).
     @MainActor
     static func songLocked(source: String) {
         guard vibrateOnLock else { return }
-        vibrate(vibrationStyle)
-        dlog("[CUE] vibration (\(vibrationStyle.rawValue)) · \(source)")
+        playSongLockVibration()
+        dlog("[CUE] vibration (2× long buzz) · \(source)")
+    }
+
+    /// Fixed performer cue: two long buzzes with a clear gap (no pattern picker).
+    @MainActor
+    static func playSongLockVibration() {
+        playOneLongBuzz()
+        DispatchQueue.main.asyncAfter(deadline: .now() + songLockBuzzDuration + songLockBuzzGap) {
+            playOneLongBuzz()
+        }
     }
 
     @MainActor
-    static func vibrate(_ style: VibrationStyle) {
-        switch style {
-        case .alert:
-            let generator = UINotificationFeedbackGenerator()
-            generator.prepare()
-            generator.notificationOccurred(.error)
-        case .heavyDouble:
-            let generator = UIImpactFeedbackGenerator(style: .heavy)
-            generator.prepare()
-            generator.impactOccurred(intensity: 1)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) { generator.impactOccurred(intensity: 1) }
-        case .longBuzz:
-            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+    private static func playOneLongBuzz() {
+        if playContinuousHapticBuzz(duration: songLockBuzzDuration) { return }
+        AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+    }
+
+    /// Core Haptics continuous buzz when hardware supports it; otherwise caller uses legacy vibrate.
+    @MainActor
+    private static func playContinuousHapticBuzz(duration: TimeInterval) -> Bool {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return false }
+        do {
+            let engine = try CHHapticEngine()
+            try engine.start()
+            let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
+            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.25)
+            let event = CHHapticEvent(
+                eventType: .hapticContinuous,
+                parameters: [intensity, sharpness],
+                relativeTime: 0,
+                duration: duration
+            )
+            let pattern = try CHHapticPattern(events: [event], parameters: [])
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: 0)
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.05) { engine.stop(completionHandler: nil) }
+            return true
+        } catch {
+            dlog("[CUE] Core Haptics buzz failed: \(error.localizedDescription)")
+            return false
         }
     }
 }
@@ -125,7 +135,6 @@ struct PerformStatusDot: View {
 struct FeedbackCard: View {
     @AppStorage("ui.feedbackExpanded") private var expanded = false
     @AppStorage(PerformanceCues.Key.vibrateOnLock) private var vibrateOnLock = true
-    @AppStorage(PerformanceCues.Key.vibrationStyle) private var styleRaw = PerformanceCues.VibrationStyle.alert.rawValue
     @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var dotSize = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
@@ -193,45 +202,28 @@ struct FeedbackCard: View {
             CueSectionTitle("Vibration")
             CueRows {
                 CueRow {
-                    Toggle(isOn: $vibrateOnLock) { CueLabel("When song locks") }
-                        .toggleStyle(.switch)
-                        .tint(OracleTheme.gold)
-                }
-                if vibrateOnLock {
-                    CueDivider()
-                    CueRow(verticalPadding: 12) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack(alignment: .center, spacing: 8) {
-                                CueLabel("Pattern")
-                                Spacer(minLength: 8)
-                                Button {
-                                    PerformanceCues.vibrate(PerformanceCues.VibrationStyle(rawValue: styleRaw) ?? .alert)
-                                } label: {
-                                    Image(systemName: "iphone.radiowaves.left.and.right")
-                                        .font(.body.weight(.medium))
-                                        .frame(width: 36, height: 36)
-                                        .background(Color.white.opacity(0.06))
-                                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(OracleTheme.gold)
-                                .accessibilityLabel("Test vibration")
-                            }
-                            Picker("Pattern", selection: $styleRaw) {
-                                ForEach(PerformanceCues.VibrationStyle.allCases) { style in
-                                    Text(style.title).tag(style.rawValue)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .labelsHidden()
+                    HStack(spacing: 10) {
+                        Toggle(isOn: $vibrateOnLock) { CueLabel("When song locks") }
+                            .toggleStyle(.switch)
                             .tint(OracleTheme.gold)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
+                        if vibrateOnLock {
+                            Button {
+                                PerformanceCues.playSongLockVibration()
+                            } label: {
+                                Image(systemName: "iphone.radiowaves.left.and.right")
+                                    .font(.body.weight(.medium))
+                                    .frame(width: 36, height: 36)
+                                    .background(Color.white.opacity(0.06))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(OracleTheme.gold)
+                            .accessibilityLabel("Test vibration")
                         }
                     }
                 }
             }
-            CueFooter("AI Voice, API, or Notes during Perform. Manual input is already ready before you start.")
+            CueFooter("Fixed cue: two long buzzes with a short gap. AI Voice, API, or Notes during Perform.")
         }
     }
 
