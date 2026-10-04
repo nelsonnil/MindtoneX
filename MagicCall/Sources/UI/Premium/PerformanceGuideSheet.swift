@@ -56,7 +56,7 @@ struct FakeGuideContent: View {
                 icon: "bell.slash.fill",
                 tint: OracleTheme.gold,
                 text: """
-                Put your iPhone on Silent. When a real call arrives, the system ringtone stays quiet, but RingtoneX plays your song through the iPhone speaker when iOS allows. When the caller hangs up, playback stops — so it feels like the ringtone was the song all along.
+                Put your iPhone on Silent. When a real call arrives, the system ringtone stays quiet, but MindtoneX plays your song through the iPhone speaker when iOS allows. When the caller hangs up, playback stops.
                 """
             )
 
@@ -64,7 +64,7 @@ struct FakeGuideContent: View {
 
             OracleGuideSection(title: "Before you perform", items: [
                 "Settings → Apps → Phone → Incoming Calls: Banner",
-                "Stay in RingtoneX (screen stays awake while performing)",
+                "Stay in MindtoneX (screen stays awake while performing)",
             ])
 
             TipCard(
@@ -73,7 +73,7 @@ struct FakeGuideContent: View {
                 tint: OracleTheme.gold,
                 lines: [
                     "Set **Playback volume** on the home card, or use the side volume buttons during Perform.",
-                    "After the spectator **hangs up**, **press and hold** the black stage about **half a second** — the Share sheet opens.",
+                    "After the call **ends**, **press and hold** the stage screen about **half a second** — the Share sheet opens.",
                     "Tap **Use as Ringtone** (pin it to Favorites once — see below — then it is always one tap).",
                     "Only works **after hang-up** — not while the phone is ringing or while the song is still playing.",
                 ]

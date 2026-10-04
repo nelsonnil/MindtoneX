@@ -57,7 +57,7 @@ struct HeroLogoView: View {
                 .frame(height: size * 1.5)
 
                 VStack(spacing: 6) {
-                    Text("RingtoneX")
+                    Text("MindtoneX")
                         .font(OracleTheme.brandTitle())
                         .foregroundStyle(
                             LinearGradient(
@@ -78,7 +78,7 @@ struct HeroLogoView: View {
         .padding(.bottom, 4)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("RingtoneX")
+        .accessibilityLabel("MindtoneX")
         .onTapGesture {
             tapCount += 1
             tapResetTask?.cancel()

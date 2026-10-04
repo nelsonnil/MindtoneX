@@ -10,7 +10,7 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
     private(set) var isAudible = false
     private var timer: Timer?
     private var clipStart: TimeInterval = 0
-    private var clipEnd: TimeInterval = 10
+    private var clipEnd: TimeInterval = RingtoneLimits.defaultClipSeconds
     private var fadingAtLoopEdge = false
     private let edgeFade: TimeInterval = 0.12
 
@@ -99,13 +99,14 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
     func recomputeClip() {
         guard let p = player else { return }
         clipStart = min(max(0, Prefs.startOffset), max(0, p.duration - 1))
-        clipEnd = min(p.duration, clipStart + max(2, Prefs.clipSeconds))
+        let clipLength = min(Prefs.clipSeconds, RingtoneLimits.clipStepperMax)
+        clipEnd = min(p.duration, clipStart + max(2, clipLength))
     }
 
-    /// Setup-screen preview: same start as ringtone export, up to `maxSeconds` (iOS ringtone cap ~28 s).
+    /// Setup-screen preview: same start as ringtone export, up to `maxSeconds` (Apple ringtone cap ~30 s; export uses `RingtoneLimits.exportMaxSeconds`).
     /// Returns how long playback should run before stopping.
     @discardableResult
-    func configureSetupPreview(maxSeconds: TimeInterval = 28) -> TimeInterval {
+    func configureSetupPreview(maxSeconds: TimeInterval = RingtoneLimits.exportMaxSeconds) -> TimeInterval {
         guard let p = player else { return maxSeconds }
         clipStart = min(max(0, Prefs.startOffset), max(0, p.duration - 1))
         let available = max(0, p.duration - clipStart)

@@ -9,7 +9,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.noInterruptions) private var noInterruptions = true
     @AppStorage(Prefs.Key.mixWithOthers) private var mixWithOthers = false
     @AppStorage(Prefs.Key.hotStandby) private var hotStandby = true
-    @AppStorage(Prefs.Key.clipSeconds) private var clipSeconds = 10.0
+    @AppStorage(Prefs.Key.clipSeconds) private var clipSeconds = RingtoneLimits.defaultClipSeconds
     @AppStorage(Prefs.Key.startOffset) private var startOffset = 0.0
     @AppStorage(Prefs.Key.loopClip) private var loopClip = true
     @AppStorage(Prefs.Key.stopOnAnswer) private var stopOnAnswer = true
@@ -53,7 +53,7 @@ struct SettingsView: View {
             Toggle("Mix with other audio", isOn: $mixWithOthers)
             Toggle("Loop song clip", isOn: $loopClip)
             Toggle("Stop when call is answered", isOn: $stopOnAnswer)
-            Stepper("Clip length: \(Int(clipSeconds)) s", value: $clipSeconds, in: 4...30, step: 1)
+            Stepper("Clip length: \(Int(clipSeconds)) s", value: $clipSeconds, in: RingtoneLimits.clipStepperMin...RingtoneLimits.clipStepperMax, step: 1)
             Stepper("Start at second \(Int(startOffset))", value: $startOffset, in: 0...25, step: 1)
             Toggle("Set media volume when entering stage", isOn: $forceMediaVolume)
             if forceMediaVolume {
@@ -64,7 +64,7 @@ struct SettingsView: View {
         } header: {
             Text("Audio engine")
         } footer: {
-            Text("Defaults work for most shows. Stage mode uses a hidden volume slider (best effort — not guaranteed with Bluetooth, Focus, or if the stage view isn’t mounted yet). Hot standby starts playback instantly when a call arrives.")
+            Text("Defaults work for most shows. Clip length defaults to \(Int(RingtoneLimits.defaultClipSeconds)) s (Apple’s ringtone limit is under 30 s). Stage mode uses a hidden volume slider (best effort — not guaranteed with Bluetooth, Focus, or if the stage view isn’t mounted yet). Hot standby starts playback instantly when a call arrives.")
         }
     }
 

@@ -18,7 +18,7 @@ struct SilentShortcutCard: View {
                 "Add **Set Silent Mode** and set it to **On**.",
                 "Name the shortcut exactly **\(SilentShortcut.silentOnName)** and tap **Done**.",
                 "Keep the shortcut to **one action** (Set Silent Mode). You do **not** need “Open App” for Perform — the app calls Shortcuts with a return URL.",
-                "Optional: add **Open App → Ringtone Oracle** at the end only if you run the shortcut by hand from the Shortcuts app.",
+                "Optional: add **Open App → MindtoneX** at the end only if you run the shortcut by hand from the Shortcuts app.",
             ]
         }
         return [
@@ -26,7 +26,7 @@ struct SilentShortcutCard: View {
             "Add **Set Silent Mode** and set it to **Off**.",
             "Name the shortcut exactly **\(SilentShortcut.silentOffName)** and tap **Done**.",
             "Keep the shortcut to **one action** (Set Silent Mode). You do **not** need “Open App” for Perform — the app calls Shortcuts with a return URL.",
-            "Optional: add **Open App → Ringtone Oracle** at the end only if you run the shortcut by hand from the Shortcuts app.",
+            "Optional: add **Open App → MindtoneX** at the end only if you run the shortcut by hand from the Shortcuts app.",
         ]
     }
 
@@ -37,7 +37,7 @@ struct SilentShortcutCard: View {
 
         **Manual:** flip Silent \(silent) yourself before each show.
 
-        **Automatic:** turn on **Run shortcut before Perform** on the main screen — Perform opens Shortcuts briefly, sets Silent \(silent), then returns here. Press Perform before the spectator is watching.
+        **Automatic:** turn on **Run shortcut before Perform** on the main screen — Perform opens Shortcuts briefly, sets Silent \(silent), then returns here. Press Perform before you begin the performance.
         """
     }
 
@@ -59,7 +59,7 @@ struct SilentShortcutCard: View {
             }
 
             HowItWorksCard(
-                title: mode == .fakeRingtone ? "Ringtone Oracle Silent On" : "Ringtone Oracle Silent Off",
+                title: shortcutName,
                 icon: "bell.slash.circle",
                 steps: steps,
                 footer: footer

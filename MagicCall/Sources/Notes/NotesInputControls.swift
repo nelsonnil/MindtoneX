@@ -9,7 +9,7 @@ struct NotesInputControls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Perform opens a blank white note. The spectator writes a song; Ringtone Oracle finds and loads it in the background, then the incoming call plays it.")
+            Text("Perform opens a blank white note. The spectator writes a song; MindtoneX finds and loads it in the background, then the incoming call plays it.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -157,7 +157,7 @@ final class AppModel: ObservableObject {
         guard loadState == .ready else { return }
         auditionEndWork?.cancel()
         do { try audio.configureSession(preferIPhoneSpeaker: false) } catch { dlog("✗ Sesión: \(RingtoneAudioEngine.describe(error))") }
-        let seconds = audio.configureSetupPreview(maxSeconds: 28)
+        let seconds = audio.configureSetupPreview(maxSeconds: RingtoneLimits.exportMaxSeconds)
         audio.makeAudible()
         isAudible = true
         dlog("Audition \(String(format: "%.1f", seconds)) s (ringtone preview window)")
@@ -182,7 +182,8 @@ final class AppModel: ObservableObject {
         do {
             let url = try await RingtoneExporter.export(data: audio.data, fileTypeHint: audio.hint,
                                                        title: track.title, artist: track.artist,
-                                                       startAt: Prefs.startOffset)
+                                                       startAt: Prefs.startOffset,
+                                                       maxSeconds: RingtoneLimits.exportMaxSeconds)
             exportedRingtone = url
             ringtoneStaged = true
             dlog("Tono preparado en \(PreviewService.ms(since: t0)) ms → \(url.lastPathComponent)")

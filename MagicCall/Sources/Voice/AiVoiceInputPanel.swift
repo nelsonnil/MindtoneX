@@ -356,7 +356,7 @@ struct AiVoiceInputPanel: View {
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
             case .notFound:
-                Label("Not found in previews — keep talking or try again", systemImage: "exclamationmark.circle")
+                Label("Not found in previews — keep speaking or try again", systemImage: "exclamationmark.circle")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             case .ready:

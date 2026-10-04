@@ -109,7 +109,7 @@ struct ReadinessStatusBar: View {
             }
         case .aiVoice:
             guard VoiceSettings.isConfigured else {
-                return Status(tone: .warning, icon: "link.circle", text: "Voice — paste token under Connection")
+                return Status(tone: .warning, icon: "link.circle", text: "Voice — add connection key in settings")
             }
             if model.voiceOpenAIPreflightInProgress {
                 return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Checking OpenAI connection…")

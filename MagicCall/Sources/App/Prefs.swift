@@ -78,7 +78,7 @@ enum Prefs {
             Key.noInterruptions: true,
             Key.mixWithOthers: false,
             Key.hotStandby: true,
-            Key.clipSeconds: 10.0,
+            Key.clipSeconds: RingtoneLimits.defaultClipSeconds,
             Key.startOffset: 0.0,
             Key.loopClip: true,
             Key.stopOnAnswer: true,
@@ -157,6 +157,14 @@ enum Prefs {
             "diskCache=\(diskCache) deezer=\(deezerFallback) store=\(storeCountry.isEmpty ? "auto" : storeCountry)",
         ].joined(separator: " · ")
     }
+}
+
+/// iOS accepts custom ringtones only under ~30 s; export and defaults target the longest safe length.
+enum RingtoneLimits {
+    static let exportMaxSeconds: Double = 28
+    static let defaultClipSeconds: Double = 28
+    static let clipStepperMin: Double = 4
+    static let clipStepperMax: Double = 30
 }
 
 /// Status bar icon/text color on the stage screenshot (not the bar tint).

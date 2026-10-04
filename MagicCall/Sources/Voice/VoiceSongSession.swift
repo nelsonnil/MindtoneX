@@ -77,7 +77,7 @@ final class VoiceSongSession: ObservableObject {
             return
         }
         guard await MicCapture.requestPermission() else {
-            fail("Microphone access is off. Turn it on in iPhone Settings → Privacy & Security → Microphone → \(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "RingtoneX").")
+            fail("Microphone access is off. Turn it on in iPhone Settings → Privacy & Security → Microphone → \(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "MindtoneX").")
             return
         }
         guard gen == generation else { return }

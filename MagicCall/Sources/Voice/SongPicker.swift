@@ -48,7 +48,7 @@ enum SongPicker {
     // MARK: OpenAI Responses API + structured output
 
     static let instructions = """
-    You listen, through one phone microphone, to a live conversation during a magic trick. The magician (performer) asks a spectator to name any song. You get an automatic speech-recognition transcript: no speaker labels, possible recognition errors, and English titles may be spelled the way a Spanish speaker pronounces them (e.g. "bojemian rapsodi" = "Bohemian Rhapsody", "dispasito" = "Despacito"). Spanish, English, or a mix.
+    You listen, through one phone microphone, to a live conversation during a performance. The performer asks a spectator to name any song. You get an automatic speech-recognition transcript: no speaker labels, possible recognition errors, and English titles may be spelled the way a Spanish speaker pronounces them (e.g. "bojemian rapsodi" = "Bohemian Rhapsody", "dispasito" = "Despacito"). Spanish, English, or a mix.
 
     Decide which song the SPECTATOR has finally chosen.
 

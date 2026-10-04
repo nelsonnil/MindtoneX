@@ -1,6 +1,6 @@
 import UIKit
 
-/// Runs the user's “Ringtone Oracle Silent On/Off” Shortcut before Perform, through
+/// Runs the user's “MindtoneX Silent On/Off” Shortcut before Perform, through
 /// `shortcuts://x-callback-url/run-shortcut`, and continues when Shortcuts calls back
 /// `magiccall://…`. iOS offers no public API to change Silent Mode directly.
 @MainActor
@@ -8,8 +8,8 @@ final class SilentShortcut: ObservableObject {
     static let shared = SilentShortcut()
 
     static let scheme = "magiccall"
-    static let silentOnName = "Ringtone Oracle Silent On"
-    static let silentOffName = "Ringtone Oracle Silent Off"
+    static let silentOnName = "MindtoneX Silent On"
+    static let silentOffName = "MindtoneX Silent Off"
 
     /// iCloud share links (https://www.icloud.com/shortcuts/…) — tap **Get** on the mode card.
     /// Paste Nelson’s links here when ready, e.g. `URL(string: "https://www.icloud.com/shortcuts/…")!`

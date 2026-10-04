@@ -22,12 +22,11 @@ enum RingtoneExporter {
             .appendingPathComponent("Canciones", isDirectory: true)
     }
 
-    /// iOS 26 exige clips de menos de 30 s; los previews de iTunes duran 30,0 s, así que se recortan.
+    /// Apple accepts custom ringtones only under ~30 s; export targets `RingtoneLimits.exportMaxSeconds`.
     ///
-    /// “Usar como tono” rechaza con «tono duplicado» un archivo que ya importó: cada exportación
-    /// lleva nombre, título de metadatos y recorte (unas centésimas) distintos.
+    /// “Use as Ringtone” may reject duplicates: each export gets a distinct name, metadata title, and trim jitter.
     static func export(data: Data, fileTypeHint: String, title: String, artist: String,
-                       startAt: Double, maxSeconds: Double = 28) async throws -> URL {
+                       startAt: Double, maxSeconds: Double = RingtoneLimits.exportMaxSeconds) async throws -> URL {
         let ext = fileTypeHint == AVFileType.mp3.rawValue ? "mp3" : "m4a"
         let source = FileManager.default.temporaryDirectory.appendingPathComponent("src-\(UUID().uuidString).\(ext)")
         try data.write(to: source)
