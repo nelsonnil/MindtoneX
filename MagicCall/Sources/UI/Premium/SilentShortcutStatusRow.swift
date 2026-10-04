@@ -43,11 +43,6 @@ struct ShortcutsInstallPanel: View {
                     .foregroundStyle(.green)
             }
 
-            if installURL != nil {
-                Button("Build the shortcut yourself instead") { showManualSteps = true }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(OracleTheme.gold)
-            }
         }
         .sheet(isPresented: $showManualSteps) {
             NavigationStack {
