@@ -83,18 +83,14 @@ struct FakeDetailSheet: View {
                 SilentModeIllustration()
 
                 guideSection("Before you perform", items: [
-                    "Silent mode ON (real ringtone muted)",
                     "Settings → Apps → Phone → Incoming Calls: **Banner**",
-                    "Silence Unknown Callers: **Off**",
-                    "Focus / Do Not Disturb: **Off**",
                     "Bluetooth & AirPods: **Disconnected**",
-                    "Media volume: **Up**",
-                    "Stay in Ringtone Oracle, screen on & unlocked",
+                    "Stay in RingtoneX (display stays on while performing)",
                 ])
 
                 TipCard(title: "Performance tip / timing", icon: "clock", tint: OracleTheme.indigo, lines: PerformCopy.fakeTiming)
 
-                Text("On the black screen: stay in this app, keep the phone unlocked. Exit with a **two-finger swipe down** (start mid-screen, not at the top edge). Optional: triple-tap the top-left corner for the debug log.")
+                Text("On the black screen: stay in this app — the display won’t auto-lock while RingtoneX is open. Exit with a **two-finger swipe down** (start mid-screen, not at the top edge). Optional: triple-tap the top-left corner for the debug log.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
             }
