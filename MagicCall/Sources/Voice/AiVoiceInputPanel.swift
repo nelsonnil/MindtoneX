@@ -5,7 +5,7 @@ struct AiVoiceInputPanel: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
 
-    @AppStorage(VoiceSettings.Key.language) private var languageRaw = "es-en"
+    @AppStorage(VoiceSettings.Key.language) private var languageRaw = "es"
 
     @State private var keyDraft = ""
     @State private var savedKeyHint: String?
@@ -18,7 +18,10 @@ struct AiVoiceInputPanel: View {
             VoiceLockingControls()
             liveListenBlock
         }
-        .onAppear(perform: refreshKey)
+        .onAppear {
+            if languageRaw == "es-en" { languageRaw = "es" }
+            refreshKey()
+        }
     }
 
     // MARK: Connection & key

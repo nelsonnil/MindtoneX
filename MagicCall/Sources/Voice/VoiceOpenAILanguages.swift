@@ -12,13 +12,14 @@ enum VoiceOpenAILanguages {
     static let options: [Option] = {
         var list: [Option] = [
             Option(id: "auto", title: "Automatic", openAICodes: []),
-            Option(id: "es-en", title: "Spanish & English", openAICodes: ["es", "en"]),
+            Option(id: "es", title: "Spanish", openAICodes: ["es"]),
+            Option(id: "en", title: "English", openAICodes: ["en"]),
         ]
         let singles: [(String, String)] = [
             ("af", "Afrikaans"), ("ar", "Arabic"), ("hy", "Armenian"), ("az", "Azerbaijani"),
             ("be", "Belarusian"), ("bs", "Bosnian"), ("bg", "Bulgarian"), ("ca", "Catalan"),
             ("zh", "Chinese"), ("hr", "Croatian"), ("cs", "Czech"), ("da", "Danish"),
-            ("nl", "Dutch"), ("en", "English"), ("et", "Estonian"), ("fi", "Finnish"),
+            ("nl", "Dutch"), ("et", "Estonian"), ("fi", "Finnish"),
             ("fr", "French"), ("gl", "Galician"), ("de", "German"), ("el", "Greek"),
             ("he", "Hebrew"), ("hi", "Hindi"), ("hu", "Hungarian"), ("is", "Icelandic"),
             ("id", "Indonesian"), ("it", "Italian"), ("ja", "Japanese"), ("kn", "Kannada"),
@@ -26,7 +27,7 @@ enum VoiceOpenAILanguages {
             ("mk", "Macedonian"), ("ms", "Malay"), ("mr", "Marathi"), ("mi", "Maori"),
             ("ne", "Nepali"), ("no", "Norwegian"), ("fa", "Persian"), ("pl", "Polish"),
             ("pt", "Portuguese"), ("ro", "Romanian"), ("ru", "Russian"), ("sr", "Serbian"),
-            ("sk", "Slovak"), ("sl", "Slovenian"), ("es", "Spanish"), ("sw", "Swahili"),
+            ("sk", "Slovak"), ("sl", "Slovenian"), ("sw", "Swahili"),
             ("sv", "Swedish"), ("tl", "Tagalog"), ("ta", "Tamil"), ("th", "Thai"),
             ("tr", "Turkish"), ("uk", "Ukrainian"), ("ur", "Urdu"), ("vi", "Vietnamese"),
             ("cy", "Welsh"),
@@ -39,7 +40,7 @@ enum VoiceOpenAILanguages {
 
     /// Shown on home Voice connection row (menu, not segmented tabs).
     static let homeMenuOptions: [Option] = {
-        let preferred = ["auto", "es-en", "es", "en", "fr", "de", "it", "pt"]
+        let preferred = ["auto", "es", "en", "fr", "de", "it", "pt"]
         var ordered: [Option] = []
         for id in preferred {
             if let o = options.first(where: { $0.id == id }) { ordered.append(o) }
@@ -52,12 +53,12 @@ enum VoiceOpenAILanguages {
     static func resolve(stored raw: String?) -> Option {
         let key = raw ?? ""
         if let legacy = migrateLegacy(key) { return legacy }
-        return options.first { $0.id == key } ?? options.first { $0.id == "es-en" }!
+        return options.first { $0.id == key } ?? options.first { $0.id == "es" }!
     }
 
     private static func migrateLegacy(_ raw: String) -> Option? {
         switch raw {
-        case "spanishEnglish": return options.first { $0.id == "es-en" }
+        case "spanishEnglish", "es-en": return options.first { $0.id == "es" }
         case "spanish": return options.first { $0.id == "es" }
         case "english": return options.first { $0.id == "en" }
         case "auto": return options.first { $0.id == "auto" }
