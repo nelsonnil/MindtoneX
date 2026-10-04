@@ -17,7 +17,6 @@
 		4C3EAD437CDD61E9E5E6DFE6 /* SystemVolume.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81ED684AAD9C91EABD24A1D3 /* SystemVolume.swift */; };
 		4D745440E4E871C0E45D380E /* RingtoneDisguiseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B61D2102F758F8505B68544E /* RingtoneDisguiseView.swift */; };
 		924BA1D7520A74BEAA0986A7 /* MCObjC.m in Sources */ = {isa = PBXBuildFile; fileRef = 778066FED077319EC23EDCEE /* MCObjC.m */; };
-		96026EC11D4C033E96585955 /* CallKitFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4AE31BF04AE2B60A80AB388 /* CallKitFallback.swift */; };
 		99C1146710877380EBC55FD9 /* CallMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303BA173088357A9233FE003 /* CallMonitor.swift */; };
 		9BC788D2F180C967FBFF14AB /* MagicIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48131BF78F88DFF0CB3E192 /* MagicIntents.swift */; };
 		A44853952E079252482E4F83 /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA922A0D263D3309553D389 /* Prefs.swift */; };
@@ -91,7 +90,6 @@
 		C3733964AB91EF91B6CA3950 /* MCObjC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MCObjC.h; sourceTree = "<group>"; };
 		C5D33B9D6604B6A2334D1E28 /* UIWindow+MagicCall.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIWindow+MagicCall.swift"; sourceTree = "<group>"; };
 		E1A2B3C4D5E6789012345671 /* UIIllustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIIllustrations.swift; sourceTree = "<group>"; };
-		D4AE31BF04AE2B60A80AB388 /* CallKitFallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallKitFallback.swift; sourceTree = "<group>"; };
 		DEA922A0D263D3309553D389 /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
 		E3138D1D5022FAD8B230768B /* PrivateProbes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateProbes.swift; sourceTree = "<group>"; };
 		E48131BF78F88DFF0CB3E192 /* MagicIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicIntents.swift; sourceTree = "<group>"; };
@@ -172,7 +170,6 @@
 		46B89EE582F954AA05B2FF8F /* Experiments */ = {
 			isa = PBXGroup;
 			children = (
-				D4AE31BF04AE2B60A80AB388 /* CallKitFallback.swift */,
 				E3138D1D5022FAD8B230768B /* PrivateProbes.swift */,
 				81ED684AAD9C91EABD24A1D3 /* SystemVolume.swift */,
 			);
@@ -445,7 +442,6 @@
 				AA0000290000000000000029 /* NotesInputControls.swift in Sources */,
 				585AC343960B24E3E4BC65BD /* VoiceSongSession.swift in Sources */,
 				2759F7EDE468921282C2E330 /* AppModel.swift in Sources */,
-				96026EC11D4C033E96585955 /* CallKitFallback.swift in Sources */,
 				99C1146710877380EBC55FD9 /* CallMonitor.swift in Sources */,
 				0252A189382C473B6FAD70AB /* DebugLog.swift in Sources */,
 				C4A84B05EE00F8A14BB48FC6 /* DebugLogView.swift in Sources */,
@@ -518,7 +514,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 60;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -580,7 +576,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 60;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -642,7 +638,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 60;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

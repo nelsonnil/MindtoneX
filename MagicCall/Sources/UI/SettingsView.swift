@@ -29,8 +29,6 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.autoStageRingtone) private var autoStageRingtone = true
     @AppStorage(Prefs.Key.discreetRingtoneUI) private var discreetRingtoneUI = true
     @AppStorage(Prefs.Key.ringtoneUseQuickLook) private var ringtoneUseQuickLook = false
-    @AppStorage(SharePerformFlow.tapToHomeKey) private var tapToHome = true
-    @AppStorage(SharePerformFlow.autoHomeKey) private var autoHome = true
     @AppStorage(SharePerformFlow.hapticOnShareKey) private var hapticOnShare = true
 
     private var mode: Prefs.PerformanceMode {
@@ -99,9 +97,6 @@ struct SettingsView: View {
             Toggle("Prepare ringtone file when song is ready", isOn: $autoStageRingtone)
             Toggle("Black flash before Share sheet", isOn: $discreetRingtoneUI)
             Toggle("Use Quick Look instead of Share", isOn: $ringtoneUseQuickLook)
-            Toggle("Tap black screen to go Home", isOn: $tapToHome)
-            Toggle("Go Home automatically after Use as Ringtone", isOn: $autoHome)
-                .disabled(!tapToHome)
             Toggle("Soft vibration when ringtone is added", isOn: $hapticOnShare)
         } header: {
             Text("Share Ringtone export")

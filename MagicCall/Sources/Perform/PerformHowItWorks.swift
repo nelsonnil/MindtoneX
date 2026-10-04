@@ -115,7 +115,7 @@ enum PerformCopy {
     static let shareCaveats = [
         "**Silent must be OFF** in this mode — the real ringtone is what plays. With the “Ringtone Oracle Silent Off” shortcut installed, Perform turns it off for you.",
         "iOS always opens **Settings → Ringtone** after “Use as Ringtone”. Apps can’t prevent or close it — one Home press (or swipe up) is needed.",
-        "Sometimes the app manages to jump Home before Settings appears; if you land back on the black screen, tap it once to go Home.",
+        "When you return to the black screen, tap it once or swipe down with two fingers to leave Perform.",
         "Every performance adds a new ringtone with a slightly different name, so iOS never says “duplicate”. To remove old ones: **Settings → Sounds & Haptics → Ringtone**, swipe left on a ringtone → Delete. The app can’t remove them for you.",
     ]
 
