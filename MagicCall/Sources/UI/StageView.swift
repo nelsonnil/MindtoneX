@@ -227,8 +227,8 @@ enum StageImageStore {
         let viewSize = UIScreen.main.bounds.size
         let fillScale = max(viewSize.width / iw, viewSize.height / ih)
         let offsetY = (ih * fillScale - viewSize.height) / 2
-        let statusBarTop = UIApplication.mcKeyWindow?.safeAreaInsets.top ?? 59
-        let statusBarPoints = (statusBarTop + 4) / fillScale
+        // Nominal status bar height (pt); avoids MainActor-only `mcKeyWindow` in this nonisolated helper.
+        let statusBarPoints = (59 + 4) / fillScale
         let yStart = max(0, min(ih - 1, offsetY / fillScale))
         let stripHeight = max(1, min(ih - yStart, max(statusBarPoints, ih * fraction)))
         guard let strip = cg.cropping(to: CGRect(x: 0, y: yStart, width: iw, height: stripHeight)) else { return 0 }
@@ -261,6 +261,7 @@ struct StageBackgroundView: View {
     let maskStatusBar: Bool
 
     /// La vista ignora el área segura, así que se lee del window real.
+    @MainActor
     static var statusBarHeight: CGFloat {
         UIApplication.mcKeyWindow?.safeAreaInsets.top ?? 59
     }
