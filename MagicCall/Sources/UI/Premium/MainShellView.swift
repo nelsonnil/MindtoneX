@@ -81,6 +81,11 @@ struct MainShellView: View {
                 model.pauseVoiceAndAudioForSetupUI(reason: "sheet \(sheet.id)")
             }
         }
+        .alert("Can't start performance", isPresented: voicePreflightAlertPresented) {
+            Button("OK", role: .cancel) { model.voiceOpenAIPreflightAlert = nil }
+        } message: {
+            Text(model.voiceOpenAIPreflightAlert ?? "")
+        }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .performanceGuide:
@@ -100,6 +105,13 @@ struct MainShellView: View {
                 ApiSettingsSheet()
             }
         }
+    }
+
+    private var voicePreflightAlertPresented: Binding<Bool> {
+        Binding(
+            get: { model.voiceOpenAIPreflightAlert != nil },
+            set: { if !$0 { model.voiceOpenAIPreflightAlert = nil } }
+        )
     }
 
     private var instructionsButton: some View {

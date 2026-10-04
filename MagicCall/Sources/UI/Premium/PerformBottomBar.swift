@@ -16,10 +16,10 @@ struct PerformBottomBar: View {
             ReadinessStatusBar(mode: mode)
 
             OraclePerformButton(
-                title: "Perform",
+                title: model.voiceOpenAIPreflightInProgress ? "Checking…" : "Perform",
                 gradient: OracleTheme.performGradient(for: mode),
-                disabled: !model.canPerform,
-                emphasizeReady: model.canPerform
+                disabled: !model.canPerform || model.voiceOpenAIPreflightInProgress,
+                emphasizeReady: model.canPerform && !model.voiceOpenAIPreflightInProgress
             ) {
                 model.perform()
             }
@@ -103,6 +103,9 @@ struct ReadinessStatusBar: View {
         case .aiVoice:
             guard VoiceSettings.isConfigured else {
                 return Status(tone: .warning, icon: "link.circle", text: "Voice — paste token under Connection")
+            }
+            if model.voiceOpenAIPreflightInProgress {
+                return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Checking OpenAI connection…")
             }
             if case .failed(let message) = voice.state {
                 return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: message)

@@ -64,6 +64,7 @@
 		AA0000430000000000000043 /* FakePostCallVolumeGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000420000000000000042 /* FakePostCallVolumeGate.swift */; };
 		AA0000490000000000000049 /* PerformanceGuideSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000480000000000000048 /* PerformanceGuideSheet.swift */; };
 		AA00004B000000000000004B /* VoiceOpenAILanguages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00004A000000000000004A /* VoiceOpenAILanguages.swift */; };
+		AA0000500000000000000050 /* VoiceOpenAIPreflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000510000000000000051 /* VoiceOpenAIPreflight.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -112,6 +113,7 @@
 		AA0000470000000000000047 /* UnifiedPerformanceModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPerformanceModeCard.swift; sourceTree = "<group>"; };
 		AA0000480000000000000048 /* PerformanceGuideSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceGuideSheet.swift; sourceTree = "<group>"; };
 		AA00004A000000000000004A /* VoiceOpenAILanguages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceOpenAILanguages.swift; sourceTree = "<group>"; };
+		AA0000510000000000000051 /* VoiceOpenAIPreflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceOpenAIPreflight.swift; sourceTree = "<group>"; };
 		AA0000070000000000000007 /* SongInputStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongInputStrip.swift; sourceTree = "<group>"; };
 		AA0000090000000000000009 /* FakeModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeModeCard.swift; sourceTree = "<group>"; };
 		AA00000B000000000000000B /* ShareModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareModeCard.swift; sourceTree = "<group>"; };
@@ -314,6 +316,7 @@
 				6291FB41218A515A8F2DCFDA /* VoiceInputCard.swift */,
 				577D20CD9D11B283EB37294A /* VoiceSettings.swift */,
 				AA00004A000000000000004A /* VoiceOpenAILanguages.swift */,
+				AA0000510000000000000051 /* VoiceOpenAIPreflight.swift */,
 				AA0000170000000000000017 /* VoiceLockingControls.swift */,
 				C3786727696B22A692F5C69D /* VoiceSongSession.swift */,
 			);
@@ -432,6 +435,7 @@
 				F7DCE309099597A6E768E922 /* VoiceInputCard.swift in Sources */,
 				89D05D830FAE9AE7E676E4D8 /* VoiceSettings.swift in Sources */,
 				AA00004B000000000000004B /* VoiceOpenAILanguages.swift in Sources */,
+				AA0000500000000000000050 /* VoiceOpenAIPreflight.swift in Sources */,
 				AA0000180000000000000018 /* VoiceLockingControls.swift in Sources */,
 				AA0000230000000000000023 /* NotesSettings.swift in Sources */,
 				AA0000250000000000000025 /* NotesSongSession.swift in Sources */,

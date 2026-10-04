@@ -49,6 +49,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var exportedRingtone: URL?
     @Published var showingDiscreetRingtonePrep = false
     @Published private(set) var ringtoneStaged = false
+    @Published private(set) var voiceOpenAIPreflightInProgress = false
+    @Published var voiceOpenAIPreflightAlert: String?
 
     /// Evita auto-lock mientras la app está visible (setup, Perform, overlays). En background se restaura.
     static func setScreenAwakeWhileInForeground(_ awake: Bool) {
