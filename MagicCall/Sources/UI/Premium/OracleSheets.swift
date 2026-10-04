@@ -40,6 +40,18 @@ struct FakeDetailSheet: View {
                     "Stay in RingtoneX (display stays on while performing)",
                 ])
 
+                TipCard(
+                    title: "Volume down → Share after call",
+                    icon: "speaker.wave.2.fill",
+                    tint: OracleTheme.gold,
+                    lines: [
+                        "On the Fake Ringtone setup card, **Volume down opens share after call** is **on by default**. Turn it **off** if you never want the hardware volume keys to open Share.",
+                        "After the spectator **hangs up** (fake call finished, song stopped), press the **volume down** button once. RingtoneX opens the Share sheet so you can **Use as Ringtone** and add the song as a real iOS ringtone.",
+                        "This does **not** work while the call is ringing or while the song is playing — only **after** hang-up. **Volume up** does not open Share.",
+                        "You can stay in the same Perform for another call with the same song; after each hang-up, volume down works again while the toggle stays on.",
+                    ]
+                )
+
                 TipCard(title: "Performance tip / timing", icon: "clock", tint: OracleTheme.indigo, lines: PerformCopy.fakeTiming)
 
                 Text("On the black screen: stay in this app — the display won’t auto-lock while RingtoneX is open. Exit with a **two-finger swipe down** (start mid-screen, not at the top edge). Optional: triple-tap the top-left corner for the debug log.")
