@@ -5,7 +5,7 @@ struct AiVoiceInputPanel: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
 
-    @AppStorage(VoiceSettings.Key.language) private var languageRaw = "es"
+    @AppStorage(VoiceSettings.Key.language) private var languageRaw = "en"
 
     @State private var keyDraft = ""
     @State private var savedKeyHint: String?

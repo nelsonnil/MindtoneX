@@ -53,7 +53,7 @@ enum VoiceOpenAILanguages {
     static func resolve(stored raw: String?) -> Option {
         let key = raw ?? ""
         if let legacy = migrateLegacy(key) { return legacy }
-        return options.first { $0.id == key } ?? options.first { $0.id == "es" }!
+        return options.first { $0.id == key } ?? options.first { $0.id == "en" }!
     }
 
     private static func migrateLegacy(_ raw: String) -> Option? {
