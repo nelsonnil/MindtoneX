@@ -31,8 +31,8 @@ enum SongPickerError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .http(let code, let body): return "OpenAI HTTP \(code): \(body.prefix(200))"
-        case .badOutput(let s): return "Unexpected AI output: \(s.prefix(200))"
+        case .http(let code, _): return "Speech service unavailable (HTTP \(code))."
+        case .badOutput: return "Couldn't match a song from what was said."
         }
     }
 }

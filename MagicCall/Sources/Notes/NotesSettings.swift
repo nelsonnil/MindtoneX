@@ -24,7 +24,7 @@ enum NotesSettings {
     static var useAIPicker: Bool { bool(Key.useAIPicker, default: true) }
 
     static let aiPickerOffText = "Off: uses the note text exactly as typed to find the song."
-    static let aiPickerOnText = "On: uses the same engine as Voice to fix spelling and work out which song the spectator meant."
+    static let aiPickerOnText = "On: cleans spelling and works out which song the spectator meant."
 
     static func aiPickerExplanation(isOn: Bool) -> String { isOn ? aiPickerOnText : aiPickerOffText }
 

@@ -29,7 +29,7 @@ struct AiVoiceInputPanel: View {
 
     private var connectionBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            OracleEyebrow(text: "Connection")
+            OracleEyebrow(text: "Speech")
 
             VStack(spacing: 0) {
                 languageMenuRow
@@ -142,7 +142,7 @@ struct AiVoiceInputPanel: View {
             livePreviewTestControls
 
             if !configured {
-                Label("Add your key under Connection to enable tests.", systemImage: "link.circle")
+                Label("Add your key under Speech to enable tests.", systemImage: "link.circle")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             }
@@ -310,7 +310,7 @@ struct AiVoiceInputPanel: View {
                     .foregroundStyle(OracleTheme.textSecondary)
                 if voice.isThinking {
                     ProgressView().controlSize(.mini)
-                    Text("Thinking…").font(.caption2).foregroundStyle(OracleTheme.textSecondary)
+                    Text("Matching…").font(.caption2).foregroundStyle(OracleTheme.textSecondary)
                 }
             }
             if let pick = voice.lockedPick ?? voice.candidate {
@@ -321,10 +321,6 @@ struct AiVoiceInputPanel: View {
                     Text("Confidence \(VoiceSongSession.percent(pick.confidence))")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
-                    Text(pick.reasoning)
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
                     pickStatus
                 }
             } else {

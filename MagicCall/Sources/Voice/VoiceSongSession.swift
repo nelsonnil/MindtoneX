@@ -73,7 +73,7 @@ final class VoiceSongSession: ObservableObject {
         dlog("[VOICE] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(VoiceSettings.summary())")
 
         guard VoiceSettings.isConfigured else {
-            fail("Paste your token under Voice → Connection.")
+            fail("Add your key under Voice → Speech.")
             return
         }
         guard await MicCapture.requestPermission() else {
@@ -83,7 +83,7 @@ final class VoiceSongSession: ObservableObject {
         guard gen == generation else { return }
 
         guard let key = VoiceSettings.apiKey else {
-            fail("Paste your token under Voice → Connection.")
+            fail("Add your key under Voice → Speech.")
             return
         }
         let transcriber: LiveTranscriber = OpenAIRealtimeTranscriber(
@@ -309,7 +309,7 @@ final class VoiceSongSession: ObservableObject {
         lockDeadline = nil
         state = .locked
         dlog("[VOICE] 🔒 locked \(pick.label) · \(Self.percent(pick.confidence)) · \(reason) · mic running=\(mic.isRunning)")
-        if context == .perform { PerformanceCues.songLocked(source: "AI Voice") }
+        if context == .perform { PerformanceCues.songLocked(source: "Voice") }
         // During a ringing call the session category must not change (see RingtoneAudioEngine).
         if !duringCall { VoiceAudioSession.recordCategoryActive = false }
         AppModel.shared.voiceDidLock(context: context, duringCall: duringCall)

@@ -11,7 +11,7 @@ enum VoiceOpenAILanguages {
     /// Popular picks first, then alphabetical by title.
     static let options: [Option] = {
         var list: [Option] = [
-            Option(id: "auto", title: "Automatic (detect)", openAICodes: []),
+            Option(id: "auto", title: "Automatic", openAICodes: []),
             Option(id: "es-en", title: "Spanish & English", openAICodes: ["es", "en"]),
         ]
         let singles: [(String, String)] = [

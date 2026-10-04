@@ -9,7 +9,7 @@ struct VoiceLockingControls: View {
         VStack(alignment: .leading, spacing: 12) {
             OracleEyebrow(text: "Locking the song")
 
-            Text("Each new song the AI hears restarts the countdown. Guesses below the minimum confidence are ignored.")
+            Text("Each new song name restarts the countdown. Matches below minimum confidence are ignored.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
