@@ -39,7 +39,7 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
             dlog("⚠️ La salida NO es el altavoz del iPhone (\(Self.routeDescription())). Desconecta Bluetooth/AirPods.")
         }
         if session.outputVolume < 0.5 {
-            dlog("⚠️ Volumen multimedia bajo (\(String(format: "%.2f", session.outputVolume))). Súbelo con los botones antes de actuar.")
+            dlog("⚠️ Volumen multimedia bajo (\(String(format: "%.2f", session.outputVolume))) — Fake Perform intentará subirlo al armar.")
         }
     }
 

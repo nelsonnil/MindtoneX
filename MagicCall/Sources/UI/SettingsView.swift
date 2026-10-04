@@ -16,6 +16,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.forceMediaVolume) private var forceMediaVolume = false
     @AppStorage(Prefs.Key.mediaVolumeTarget) private var mediaVolumeTarget = 0.8
     @AppStorage(Prefs.Key.boostSystemVolumeOnTrigger) private var boostSystemVolumeOnTrigger = true
+    @AppStorage(Prefs.Key.boostMediaVolumeOnFakePerform) private var boostMediaVolumeOnFakePerform = true
 
     @AppStorage(Prefs.Key.autoTrigger) private var autoTrigger = true
     @AppStorage(Prefs.Key.tapTrigger) private var tapTrigger = true
@@ -64,11 +65,12 @@ struct SettingsView: View {
             if forceMediaVolume {
                 Slider(value: $mediaVolumeTarget, in: 0.3...1) { Text("Target volume") }
             }
+            Toggle("Boost media volume when entering Fake Perform", isOn: $boostMediaVolumeOnFakePerform)
             Toggle("Boost media volume to max when song starts", isOn: $boostSystemVolumeOnTrigger)
         } header: {
             Text("Audio engine")
         } footer: {
-            Text("Defaults work for most shows. Hot standby starts playback instantly when a call arrives.")
+            Text("Defaults work for most shows. Fake Perform uses a hidden volume slider (best effort — not guaranteed with Bluetooth, Focus, or if the stage view isn’t mounted yet). Hot standby starts playback instantly when a call arrives.")
         }
     }
 

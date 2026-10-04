@@ -108,6 +108,9 @@ final class AppModel: ObservableObject {
             timings = [searchMs.map { "búsqueda \($0) ms" }, "audio listo \(downloadMs) ms"].compactMap { $0 }.joined(separator: " · ")
             loadState = .ready
             dlog("Listo: \(track.title) — \(track.artist). \(timings)")
+            if isArmed, Prefs.performanceMode == .fakeRingtone {
+                applyFakePerformMediaVolumeBoost(reason: "songReady")
+            }
             if Prefs.autoStageRingtone {
                 Task { await stageRingtoneFile(showShare: false, discreet: false) }
             }
@@ -238,9 +241,11 @@ final class AppModel: ObservableObject {
         } catch {
             dlog("✗ configureSession: \(RingtoneAudioEngine.describe(error))")
         }
-        if Prefs.forceMediaVolume {
+        if Prefs.performanceMode == .fakeRingtone {
+            applyFakePerformMediaVolumeBoost(reason: "arm")
+        } else if Prefs.forceMediaVolume {
             ignoreVolumeChangesUntil = CACurrentMediaTime() + 1
-            SystemVolume.shared.set(Float(Prefs.mediaVolumeTarget))
+            SystemVolume.shared.set(Float(Prefs.mediaVolumeTarget), label: "stage target", sliderRetries: 5)
         }
         if Prefs.hotStandby { audio.startStandby() }
         calls.reassertDelegate()
@@ -718,6 +723,16 @@ final class AppModel: ObservableObject {
         probeResults = results
         dlog("Ruta 1 [\(context)]: intento volumen timbre al máximo — \(results.map { $0.outcome.rawValue }.joined(separator: ", "))")
         #endif
+    }
+
+    /// Fake Ringtone: best-effort max media volume via hidden `MPVolumeView` (public API; slider hook undocumented).
+    func applyFakePerformMediaVolumeBoost(reason: String) {
+        guard Prefs.performanceMode == .fakeRingtone else { return }
+        guard Prefs.boostMediaVolumeOnFakePerform else { return }
+        ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
+        let before = SystemVolume.shared.outputVolume
+        SystemVolume.shared.captureAndBoostToMaximum()
+        dlog("[VOLUME] Fake Perform boost (\(reason)) before=\(String(format: "%.2f", before)) attached=\(SystemVolume.shared.isAttached)")
     }
 
     /// Ruta 2: sube el volumen multimedia del sistema al 100 % al disparar (llamada o toque manual).

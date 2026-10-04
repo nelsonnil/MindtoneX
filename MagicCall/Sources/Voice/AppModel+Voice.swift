@@ -95,6 +95,9 @@ extension AppModel {
                 VoiceAudioSession.deactivateIfIdle()
             }
         }
+        if context == .perform, Prefs.performanceMode == .fakeRingtone, isArmed {
+            applyFakePerformMediaVolumeBoost(reason: "songLocked")
+        }
         if context == .perform, SharePerformFlow.shared.isActive {
             SharePerformFlow.shared.songLocked()
         }
@@ -104,6 +107,9 @@ extension AppModel {
     /// standby); Share Ringtone opens the Share sheet with it.
     func notesSongReady(context: NotesSongSession.Context) {
         guard context == .perform else { return }
+        if Prefs.performanceMode == .fakeRingtone, isArmed {
+            applyFakePerformMediaVolumeBoost(reason: "notesReady")
+        }
         if SharePerformFlow.shared.isActive {
             NotesSongSession.shared.lockForShare()
             SharePerformFlow.shared.songLocked()
@@ -112,6 +118,9 @@ extension AppModel {
 
     /// API locked a loaded song. Fake Ringtone is already hot via select(); Share opens the Share sheet.
     func apiSongLocked(context: ApiSongSession.Context) {
+        if context == .perform, Prefs.performanceMode == .fakeRingtone, isArmed {
+            applyFakePerformMediaVolumeBoost(reason: "apiLocked")
+        }
         if context == .perform, SharePerformFlow.shared.isActive {
             SharePerformFlow.shared.songLocked()
         }

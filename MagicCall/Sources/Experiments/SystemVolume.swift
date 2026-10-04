@@ -21,12 +21,12 @@ final class SystemVolume {
     var outputVolume: Float { AVAudioSession.sharedInstance().outputVolume }
 
     /// Guarda el volumen actual (solo la primera vez) y lo sube al 100 %.
-    func captureAndBoostToMaximum() {
+    func captureAndBoostToMaximum(sliderRetries: Int = 5) {
         if savedOutputVolume == nil {
             savedOutputVolume = outputVolume
             dlog("SystemVolume: guardado volumen previo \(String(format: "%.2f", savedOutputVolume ?? 0))")
         }
-        set(1.0, label: "máximo")
+        set(1.0, label: "máximo", sliderRetries: sliderRetries)
     }
 
     /// Vuelve al volumen guardado al terminar la llamada o al desarmar.
@@ -36,9 +36,15 @@ final class SystemVolume {
         set(saved, label: "restaurar")
     }
 
-    func set(_ value: Float, label: String? = nil) {
+    func set(_ value: Float, label: String? = nil, sliderRetries: Int = 0) {
         guard let slider else {
-            dlog("SystemVolume: MPVolumeView no está en pantalla, no se puede fijar el volumen")
+            if sliderRetries > 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    self?.set(value, label: label, sliderRetries: sliderRetries - 1)
+                }
+            } else {
+                dlog("SystemVolume: MPVolumeView slider unavailable (\(label ?? "set"))")
+            }
             return
         }
         let clamped = min(max(value, 0), 1)
@@ -61,5 +67,7 @@ struct HiddenVolumeView: UIViewRepresentable {
         return view
     }
 
-    func updateUIView(_ uiView: MPVolumeView, context: Context) {}
+    func updateUIView(_ uiView: MPVolumeView, context: Context) {
+        SystemVolume.shared.volumeView = uiView
+    }
 }

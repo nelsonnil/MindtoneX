@@ -13,6 +13,7 @@ enum Prefs {
         static let forceMediaVolume = "audio.forceMediaVolume"
         static let mediaVolumeTarget = "audio.mediaVolumeTarget"
         static let boostSystemVolumeOnTrigger = "audio.boostSystemVolumeOnTrigger"
+        static let boostMediaVolumeOnFakePerform = "audio.boostMediaVolumeOnFakePerform"
 
         static let attemptRingerMaxOnStage = "ringtone.attemptRingerMaxOnStage"
 
@@ -66,6 +67,7 @@ enum Prefs {
             Key.forceMediaVolume: false,
             Key.mediaVolumeTarget: 0.8,
             Key.boostSystemVolumeOnTrigger: true,
+            Key.boostMediaVolumeOnFakePerform: true,
             Key.attemptRingerMaxOnStage: false,
             Key.autoTrigger: true,
             Key.tapTrigger: true,
@@ -107,6 +109,7 @@ enum Prefs {
     static var forceMediaVolume: Bool { d.bool(forKey: Key.forceMediaVolume) }
     static var mediaVolumeTarget: Double { d.double(forKey: Key.mediaVolumeTarget) }
     static var boostSystemVolumeOnTrigger: Bool { d.bool(forKey: Key.boostSystemVolumeOnTrigger) }
+    static var boostMediaVolumeOnFakePerform: Bool { d.bool(forKey: Key.boostMediaVolumeOnFakePerform) }
     static var attemptRingerMaxOnStage: Bool { d.bool(forKey: Key.attemptRingerMaxOnStage) }
     static var autoTrigger: Bool { d.bool(forKey: Key.autoTrigger) }
     static var tapTrigger: Bool { d.bool(forKey: Key.tapTrigger) }
@@ -127,7 +130,7 @@ enum Prefs {
             "clip=\(clipSeconds)s offset=\(startOffset)s loop=\(loopClip)",
             "stopOnAnswer=\(stopOnAnswer)",
             "auto=\(autoTrigger) tap=\(tapTrigger) volBtn=\(volumeButtonTrigger)",
-            "forceVol=\(forceMediaVolume)(\(mediaVolumeTarget)) boostOnTrigger=\(boostSystemVolumeOnTrigger)",
+            "forceVol=\(forceMediaVolume)(\(mediaVolumeTarget)) boostFakePerform=\(boostMediaVolumeOnFakePerform) boostOnTrigger=\(boostSystemVolumeOnTrigger)",
             "ringerMaxOnStage=\(attemptRingerMaxOnStage)",
             "diskCache=\(diskCache) deezer=\(deezerFallback) store=\(storeCountry.isEmpty ? "auto" : storeCountry)",
         ].joined(separator: " · ")
