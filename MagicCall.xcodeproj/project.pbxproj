@@ -52,7 +52,6 @@
 		AA0000100000000000000010 /* OracleTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000F000000000000000F /* OracleTheme.swift */; };
 		AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000110000000000000011 /* SilentShortcutStatusRow.swift */; };
 		AA0000140000000000000014 /* PerformBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000130000000000000013 /* PerformBottomBar.swift */; };
-		AA0000160000000000000016 /* AdvancedDisclosureCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000150000000000000015 /* AdvancedDisclosureCard.swift */; };
 		AA0000230000000000000023 /* NotesSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000220000000000000022 /* NotesSettings.swift */; };
 		AA0000250000000000000025 /* NotesSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000240000000000000024 /* NotesSongSession.swift */; };
 		AA0000270000000000000027 /* NotesPerformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000260000000000000026 /* NotesPerformView.swift */; };
@@ -120,7 +119,6 @@
 		AA00000F000000000000000F /* OracleTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleTheme.swift; sourceTree = "<group>"; };
 		AA0000110000000000000011 /* SilentShortcutStatusRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentShortcutStatusRow.swift; sourceTree = "<group>"; };
 		AA0000130000000000000013 /* PerformBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformBottomBar.swift; sourceTree = "<group>"; };
-		AA0000150000000000000015 /* AdvancedDisclosureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedDisclosureCard.swift; sourceTree = "<group>"; };
 		AA0000220000000000000022 /* NotesSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSettings.swift; sourceTree = "<group>"; };
 		AA0000240000000000000024 /* NotesSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSongSession.swift; sourceTree = "<group>"; };
 		AA0000260000000000000026 /* NotesPerformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesPerformView.swift; sourceTree = "<group>"; };
@@ -287,7 +285,6 @@
 				AA00000F000000000000000F /* OracleTheme.swift */,
 				AA0000110000000000000011 /* SilentShortcutStatusRow.swift */,
 				AA0000130000000000000013 /* PerformBottomBar.swift */,
-				AA0000150000000000000015 /* AdvancedDisclosureCard.swift */,
 				AA0000480000000000000048 /* PerformanceGuideSheet.swift */,
 			);
 			path = Premium;
@@ -472,7 +469,6 @@
 				AA0000100000000000000010 /* OracleTheme.swift in Sources */,
 				AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */,
 				AA0000140000000000000014 /* PerformBottomBar.swift in Sources */,
-				AA0000160000000000000016 /* AdvancedDisclosureCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -514,7 +510,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 62;
+				CURRENT_PROJECT_VERSION = 63;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -576,7 +572,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 62;
+				CURRENT_PROJECT_VERSION = 63;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -638,7 +634,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 62;
+				CURRENT_PROJECT_VERSION = 63;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
