@@ -22,6 +22,24 @@ extension AppModel {
     /// when enabled, and continues when Shortcuts returns to the app.
     func perform() {
         let mode = Prefs.performanceMode
+        if usesVoiceInput {
+            guard !voiceOpenAIPreflightInProgress else { return }
+            voiceOpenAIPreflightInProgress = true
+            Task {
+                defer { voiceOpenAIPreflightInProgress = false }
+                if let message = await VoiceOpenAIPreflight.checkBeforePerform() {
+                    voiceOpenAIPreflightAlert = message
+                    UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                    return
+                }
+                continuePerformAfterPreflight(mode: mode)
+            }
+            return
+        }
+        continuePerformAfterPreflight(mode: mode)
+    }
+
+    private func continuePerformAfterPreflight(mode: Prefs.PerformanceMode) {
         if SilentShortcut.isEnabled(for: mode) {
             SilentShortcut.shared.runBeforePerform(mode: mode) { [weak self] in self?.performNow() }
         } else {
