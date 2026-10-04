@@ -177,7 +177,7 @@ struct ReadinessStatusBar: View {
                     Image(systemName: "bolt.fill")
                         .accessibilityLabel("Silent shortcut on")
                 }
-                Text(mode == .fakeRingtone ? "FAKE" : "SHARE")
+                Text(mode.shortBadge)
                     .tracking(1)
             }
             .font(.system(size: 10, weight: .bold, design: .monospaced))

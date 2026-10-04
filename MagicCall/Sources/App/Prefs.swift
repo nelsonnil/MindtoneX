@@ -47,12 +47,30 @@ enum Prefs {
 
         var id: String { rawValue }
 
+        /// User-facing mode name (App Store–safe: no “fake”).
         var title: String {
             switch self {
-            case .fakeRingtone: return "Fake Ringtone"
-            case .shareRingtone: return "Share Ringtone"
+            case .fakeRingtone: return "Stage Ringtone"
+            case .shareRingtone: return "Phone Ringtone"
             }
         }
+
+        /// Compact badge on the Perform bar.
+        var shortBadge: String {
+            switch self {
+            case .fakeRingtone: return "STAGE"
+            case .shareRingtone: return "PHONE"
+            }
+        }
+
+        var tileSubtitle: String {
+            switch self {
+            case .fakeRingtone: return "Silent stage · volume control"
+            case .shareRingtone: return "Install on iPhone · share sheet"
+            }
+        }
+
+        static let modePickerSubtitle = "Stage plays in the app · Phone sets the real ringtone"
     }
 
     static func registerDefaults() {

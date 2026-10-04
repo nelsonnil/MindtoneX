@@ -16,8 +16,9 @@ struct PerformanceGuideSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Picker("Mode", selection: $guideMode) {
-                    Text("Fake Ringtone").tag(Prefs.PerformanceMode.fakeRingtone)
-                    Text("Share Ringtone").tag(Prefs.PerformanceMode.shareRingtone)
+                    ForEach(Prefs.PerformanceMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
                 }
                 .pickerStyle(.segmented)
 
@@ -51,7 +52,7 @@ struct FakeGuideContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             guideIntro(
-                title: "Fake Ringtone",
+                title: Prefs.PerformanceMode.fakeRingtone.title,
                 icon: "bell.slash.fill",
                 tint: OracleTheme.gold,
                 text: """
@@ -101,7 +102,7 @@ struct ShareGuideContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             guideIntro(
-                title: "Share Ringtone",
+                title: Prefs.PerformanceMode.shareRingtone.title,
                 icon: "bell.badge.fill",
                 tint: OracleTheme.coral,
                 text: """
@@ -166,7 +167,7 @@ private struct FavoritesQuickAccessSection: View {
                 icon: "star.circle.fill",
                 tint: OracleTheme.gold,
                 lines: [
-                    "Do this **once** the first time you see the Share sheet (Fake after long-press, or Share Ringtone Perform).",
+                    "Do this **once** the first time you see the Share sheet (\(Prefs.PerformanceMode.fakeRingtone.title) after long-press, or \(Prefs.PerformanceMode.shareRingtone.title) Perform).",
                     "Tap **More** (•••) → **Edit Actions** → tap **+** next to **Use as Ringtone** → **Favorites**.",
                     "From then on, **Use as Ringtone** appears on the **top row** — fast access every performance.",
                 ]

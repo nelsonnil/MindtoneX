@@ -94,7 +94,7 @@ struct ShortcutsInstallPanel: View {
                     .foregroundStyle(OracleTheme.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
-                Text(isFake ? "Silent ON for Fake Ringtone" : "Silent OFF for Share Ringtone")
+                Text(isFake ? "Silent ON for \(Prefs.PerformanceMode.fakeRingtone.title)" : "Silent OFF for \(Prefs.PerformanceMode.shareRingtone.title)")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
             }

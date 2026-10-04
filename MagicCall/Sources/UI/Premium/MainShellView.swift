@@ -144,6 +144,6 @@ struct MainShellView: View {
         .padding(.top, 6)
         .padding(.trailing, 14)
         .accessibilityLabel("Instructions — start here")
-        .accessibilityHint("Opens Fake and Share Ringtone guide")
+        .accessibilityHint("Opens performance mode instructions")
     }
 }

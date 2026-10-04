@@ -59,12 +59,12 @@ struct SettingsView: View {
             if forceMediaVolume {
                 Slider(value: $mediaVolumeTarget, in: 0.3...1) { Text("Target volume") }
             }
-            Toggle("Boost media volume when entering Fake Perform", isOn: $boostMediaVolumeOnFakePerform)
+            Toggle("Boost media volume when entering Stage Perform", isOn: $boostMediaVolumeOnFakePerform)
             Toggle("Boost media volume to max when song starts", isOn: $boostSystemVolumeOnTrigger)
         } header: {
             Text("Audio engine")
         } footer: {
-            Text("Defaults work for most shows. Fake Perform uses a hidden volume slider (best effort — not guaranteed with Bluetooth, Focus, or if the stage view isn’t mounted yet). Hot standby starts playback instantly when a call arrives.")
+            Text("Defaults work for most shows. Stage mode uses a hidden volume slider (best effort — not guaranteed with Bluetooth, Focus, or if the stage view isn’t mounted yet). Hot standby starts playback instantly when a call arrives.")
         }
     }
 
@@ -74,7 +74,7 @@ struct SettingsView: View {
             Toggle("Tap screen to start/stop song", isOn: $tapTrigger)
             Toggle("Volume buttons to start/stop", isOn: $volumeButtonTrigger)
         } header: {
-            Text("Fake Ringtone triggers")
+            Text("\(Prefs.PerformanceMode.fakeRingtone.title) triggers")
         } footer: {
             Text("Leave auto-start on for performances. Tap is a backup if detection fails.")
         }
@@ -99,7 +99,7 @@ struct SettingsView: View {
             Toggle("Use Quick Look instead of Share", isOn: $ringtoneUseQuickLook)
             Toggle("Soft vibration when ringtone is added", isOn: $hapticOnShare)
         } header: {
-            Text("Share Ringtone export")
+            Text("\(Prefs.PerformanceMode.shareRingtone.title) export")
         } footer: {
             Text("iOS 26 opens Settings → Ringtone after “Use as Ringtone” — press Home once if needed.")
         }

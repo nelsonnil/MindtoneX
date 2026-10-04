@@ -25,13 +25,13 @@ struct UnifiedPerformanceModeCard: View {
             VStack(alignment: .leading, spacing: 20) {
                 HomeSectionTitle(
                     title: "Performance mode",
-                    subtitle: "Fake plays on stage · Share sends the ringtone file",
+                    subtitle: Prefs.PerformanceMode.modePickerSubtitle,
                     eyebrow: "Step 1"
                 )
 
                 VStack(spacing: 10) {
-                    modeTile(.fakeRingtone, title: "Fake Ringtone", subtitle: "Silent stage · volume control", icon: "bell.slash.fill")
-                    modeTile(.shareRingtone, title: "Share Ringtone", subtitle: "Prepare file · share sheet", icon: "bell.badge.fill")
+                    modeTile(.fakeRingtone, title: Prefs.PerformanceMode.fakeRingtone.title, subtitle: Prefs.PerformanceMode.fakeRingtone.tileSubtitle, icon: "bell.slash.fill")
+                    modeTile(.shareRingtone, title: Prefs.PerformanceMode.shareRingtone.title, subtitle: Prefs.PerformanceMode.shareRingtone.tileSubtitle, icon: "bell.badge.fill")
                 }
 
                 setupDisclosure
