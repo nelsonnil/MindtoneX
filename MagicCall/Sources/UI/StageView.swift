@@ -7,14 +7,21 @@ struct StageView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var notes = NotesSongSession.shared
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
+    /// Observed so status bar style refreshes when a new screenshot is saved (luminance is recomputed in `StageImageStore.save`).
+    @AppStorage(StageImageStore.luminanceDefaultsKey) private var stageStatusBarLuminance = 0.0
+    @AppStorage(StageImageStore.revisionDefaultsKey) private var stageScreenshotRevision = ""
 
-    private var hasStageScreenshot: Bool { StageImageStore.load() != nil }
+    private var hasStageScreenshot: Bool { StageImageStore.hasScreenshot }
 
-    /// No screenshot yet: plain black stage hides the status bar. With a screenshot, show adaptive status bar text.
-    private var hidesStatusBarForStage: Bool { !hasStageScreenshot }
+    /// Screenshot-only stage: adaptive status bar content from the top of the saved image.
+    private var hidesStatusBarForStage: Bool { false }
 
-    private var darkStatusBarText: Bool {
-        hasStageScreenshot && StageImageStore.wantsDarkStatusBarText()
+    /// Light wallpaper behind the status bar → dark icons/text; dark wallpaper → light icons/text.
+    private var prefersDarkStatusBarContent: Bool {
+        _ = stageStatusBarLuminance
+        _ = stageScreenshotRevision
+        guard hasStageScreenshot else { return false }
+        return StageImageStore.wantsDarkStatusBarText()
     }
 
     var body: some View {
@@ -60,10 +67,35 @@ struct StageView: View {
                 DebugOverlay().transition(.opacity)
             }
         }
+        .background {
+            StageStatusBarStyleController(useDarkContent: prefersDarkStatusBarContent)
+        }
         .statusBarHidden(hidesStatusBarForStage)
-        .preferredColorScheme(darkStatusBarText ? .light : .dark)
+        .preferredColorScheme(prefersDarkStatusBarContent ? .light : .dark)
         .persistentSystemOverlays(.hidden)
         .animation(.easeInOut(duration: 0.2), value: model.showDebugOverlay)
+        .animation(.easeInOut(duration: 0.2), value: prefersDarkStatusBarContent)
+    }
+}
+
+/// UIKit status bar style (more reliable than SwiftUI alone when global plist styles differ).
+private struct StageStatusBarStyleController: UIViewControllerRepresentable {
+    let useDarkContent: Bool
+
+    func makeUIViewController(context: Context) -> Controller { Controller(useDarkContent: useDarkContent) }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        controller.useDarkContent = useDarkContent
+        controller.setNeedsStatusBarAppearanceUpdate()
+    }
+
+    final class Controller: UIViewController {
+        var useDarkContent: Bool
+        init(useDarkContent: Bool) { self.useDarkContent = useDarkContent; super.init(nibName: nil, bundle: nil) }
+        @available(*, unavailable) required init?(coder: NSCoder) { fatalError() }
+        override var preferredStatusBarStyle: UIStatusBarStyle {
+            useDarkContent ? .darkContent : .lightContent
+        }
     }
 }
 
@@ -144,14 +176,21 @@ enum StageImageStore {
 
     static func load() -> UIImage? { UIImage(contentsOfFile: url.path) }
 
-    private static let luminanceKey = "stage.statusBarLuminance"
+    static var hasScreenshot: Bool { load() != nil }
+
+    static let luminanceDefaultsKey = "stage.statusBarLuminance"
+    static let revisionDefaultsKey = "stage.screenshotRevision"
+    private static let luminanceKey = luminanceDefaultsKey
 
     static func save(_ data: Data) {
         try? data.write(to: url, options: .atomic)
         UserDefaults.standard.removeObject(forKey: luminanceKey)
         if let image = UIImage(data: data) {
-            UserDefaults.standard.set(topLuminance(of: image), forKey: luminanceKey)
+            let value = topLuminance(of: image)
+            UserDefaults.standard.set(value, forKey: luminanceKey)
+            dlog("Stage status bar luminance \(String(format: "%.3f", value)) → \(value > 0.179 ? "dark" : "light") content")
         }
+        UserDefaults.standard.set(UUID().uuidString, forKey: revisionDefaultsKey)
     }
 
     /// Average luminance (0–1) of the screenshot strip behind the status bar; nil without an image.
@@ -163,15 +202,32 @@ enum StageImageStore {
         return value
     }
 
-    /// True when the status bar should use dark text. 0.179 is where black and white text have equal contrast.
+    /// True when the status bar should use dark content (black icons/text on a light top region).
     static func wantsDarkStatusBarText() -> Bool {
         (statusBarLuminance() ?? 0) > 0.179
     }
 
+    private static func cgImageNormalized(_ image: UIImage) -> CGImage? {
+        guard image.imageOrientation != .up else { return image.cgImage }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        let drawn = renderer.image { _ in image.draw(at: .zero) }
+        return drawn.cgImage
+    }
+
+    /// Top strip of the image as it appears behind the status bar after `scaledToFill` on the device screen.
     private static func topLuminance(of image: UIImage, fraction: CGFloat = 0.07) -> Double {
-        guard let cg = image.cgImage else { return 0 }
-        let stripHeight = max(1, CGFloat(cg.height) * fraction)
-        guard let strip = cg.cropping(to: CGRect(x: 0, y: 0, width: CGFloat(cg.width), height: stripHeight)) else { return 0 }
+        guard let cg = cgImageNormalized(image) else { return 0 }
+        let iw = CGFloat(cg.width), ih = CGFloat(cg.height)
+        let viewSize = UIScreen.main.bounds.size
+        let fillScale = max(viewSize.width / iw, viewSize.height / ih)
+        let offsetY = (ih * fillScale - viewSize.height) / 2
+        let statusBarTop = UIApplication.mcKeyWindow?.safeAreaInsets.top ?? 59
+        let statusBarPoints = (statusBarTop + 4) / fillScale
+        let yStart = max(0, min(ih - 1, offsetY / fillScale))
+        let stripHeight = max(1, min(ih - yStart, max(statusBarPoints, ih * fraction)))
+        guard let strip = cg.cropping(to: CGRect(x: 0, y: yStart, width: iw, height: stripHeight)) else { return 0 }
 
         let w = 24, h = 4
         var pixels = [UInt8](repeating: 0, count: w * h * 4)
@@ -193,9 +249,7 @@ enum StageImageStore {
         for i in stride(from: 0, to: pixels.count, by: 4) {
             total += 0.2126 * linear(pixels[i]) + 0.7152 * linear(pixels[i + 1]) + 0.0722 * linear(pixels[i + 2])
         }
-        let value = total / Double(w * h)
-        dlog("Stage status bar luminance \(String(format: "%.3f", value)) → \(value > 0.179 ? "dark" : "white") text")
-        return value
+        return total / Double(w * h)
     }
 }
 
@@ -229,7 +283,27 @@ struct StageBackgroundView: View {
                 }
             }
         } else {
-            Color.black
+            StageScreenshotMissingView()
         }
+    }
+}
+
+/// Shown only if Perform was entered without a saved screenshot (should be blocked in setup).
+struct StageScreenshotMissingView: View {
+    var body: some View {
+        Color(white: 0.11)
+            .overlay {
+                VStack(spacing: 10) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.largeTitle.weight(.medium))
+                    Text("Stage screenshot missing")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Leave Perform and choose a screenshot in Performance setup.")
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+                .foregroundStyle(Color.white.opacity(0.55))
+            }
     }
 }

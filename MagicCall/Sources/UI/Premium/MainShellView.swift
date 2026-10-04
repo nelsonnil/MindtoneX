@@ -10,6 +10,7 @@ struct MainShellView: View {
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     @State private var photoItem: PhotosPickerItem?
+    @State private var stageScreenshotGeneration = 0
     @State private var activeSheet: OracleSheet?
     @State private var homeAppeared = false
     @AppStorage("ui.performanceGuideOpened") private var performanceGuideOpened = false
@@ -26,7 +27,8 @@ struct MainShellView: View {
 
                 UnifiedPerformanceModeCard(
                     modeRaw: $performanceModeRaw,
-                    photoItem: $photoItem
+                    photoItem: $photoItem,
+                    stageScreenshotGeneration: stageScreenshotGeneration
                 )
 
                 HomePanel(accent: OracleTheme.indigo) {
@@ -69,6 +71,7 @@ struct MainShellView: View {
             Task {
                 if let data = try? await newItem.loadTransferable(type: Data.self) {
                     StageImageStore.save(data)
+                    stageScreenshotGeneration += 1
                     dlog("Stage background image saved (\(data.count / 1024) KB)")
                 }
             }

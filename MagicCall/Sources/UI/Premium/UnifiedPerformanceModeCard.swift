@@ -5,6 +5,7 @@ import SwiftUI
 struct UnifiedPerformanceModeCard: View {
     @Binding var modeRaw: String
     @Binding var photoItem: PhotosPickerItem?
+    var stageScreenshotGeneration: Int
     @Namespace private var selection
 
     @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
@@ -16,7 +17,10 @@ struct UnifiedPerformanceModeCard: View {
     }
 
     private var shortcutReady: Bool {
-        mode == .fakeRingtone ? silentOnEnabled : silentOffEnabled
+        switch mode {
+        case .fakeRingtone: return silentOnEnabled && StageImageStore.hasScreenshot
+        case .shareRingtone: return silentOffEnabled
+        }
     }
 
     var body: some View {
@@ -74,7 +78,10 @@ struct UnifiedPerformanceModeCard: View {
                 Group {
                     switch mode {
                     case .fakeRingtone:
-                        FakeModeContent(photoItem: $photoItem)
+                        FakeModeContent(
+                            photoItem: $photoItem,
+                            stageScreenshotGeneration: stageScreenshotGeneration
+                        )
                     case .shareRingtone:
                         ShareModeContent()
                     }

@@ -82,6 +82,13 @@ struct ReadinessStatusBar: View {
     private var shortcutOn: Bool { mode == .fakeRingtone ? silentOnEnabled : silentOffEnabled }
 
     private var status: Status {
+        if mode == .fakeRingtone, !StageImageStore.hasScreenshot {
+            return Status(
+                tone: .warning,
+                icon: "photo.on.rectangle.angled",
+                text: "Choose a stage screenshot in Performance setup"
+            )
+        }
         switch inputMode {
         case .manual:
             switch model.loadState {

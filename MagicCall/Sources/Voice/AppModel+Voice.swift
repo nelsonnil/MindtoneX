@@ -62,6 +62,11 @@ extension AppModel {
         }
         switch Prefs.performanceMode {
         case .fakeRingtone:
+            guard StageImageStore.hasScreenshot else {
+                dlog("══ PERFORM ══ blocked: no stage screenshot")
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                return
+            }
             switch input {
             case .aiVoice:
                 VoiceAudioSession.recordCategoryActive = true
@@ -82,12 +87,16 @@ extension AppModel {
     }
 
     var canPerform: Bool {
-        switch VoiceSettings.inputMode {
-        case .aiVoice: return VoiceSettings.isConfigured
-        case .notes: return true
-        case .api: return ApiSettings.isConfigured
-        case .manual: return loadState == .ready
+        let inputReady: Bool = switch VoiceSettings.inputMode {
+        case .aiVoice: VoiceSettings.isConfigured
+        case .notes: true
+        case .api: ApiSettings.isConfigured
+        case .manual: loadState == .ready
         }
+        if Prefs.performanceMode == .fakeRingtone {
+            return inputReady && StageImageStore.hasScreenshot
+        }
+        return inputReady
     }
 
     /// Looks up and loads a voice candidate with the normal preview lookup.
