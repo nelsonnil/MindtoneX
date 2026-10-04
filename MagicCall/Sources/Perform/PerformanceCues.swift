@@ -133,7 +133,6 @@ struct PerformStatusDot: View {
 /// Vibration + stage status dot — discrete cues when the song is ready during Perform.
 /// Single home card: vibration + stage status dot (replaces separate StatusDot / Vibration cards).
 struct FeedbackCard: View {
-    @AppStorage("ui.feedbackExpanded") private var expanded = false
     @AppStorage(PerformanceCues.Key.vibrateOnLock) private var vibrateOnLock = true
     @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var dotSize = PerformanceCues.defaultDotSize
@@ -144,128 +143,128 @@ struct FeedbackCard: View {
     }
 
     var body: some View {
-        OracleCard(section: .feedback, padding: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                header
-                if expanded {
-                    VStack(alignment: .leading, spacing: 16) {
-                        vibrationSection
-                        statusDotSection
+        OracleCard(section: .feedback) {
+            VStack(alignment: .leading, spacing: 14) {
+                OracleEyebrow(text: "Feedback")
+
+                feedbackInset {
+                    vibrationRow
+                }
+
+                feedbackInset {
+                    VStack(spacing: 0) {
+                        statusDotRow
+                        if dotEnabled {
+                            CueDivider()
+                            dotCustomizeRow
+                        }
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 18)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: vibrateOnLock)
             .animation(.easeInOut(duration: 0.2), value: dotEnabled)
         }
     }
 
-    private var header: some View {
-        Button {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { expanded.toggle() }
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "hand.tap.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(OracleHomeSection.feedback.accent)
-                    .frame(width: 36, height: 36)
-                    .background(OracleHomeSection.feedback.accent.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Feedback")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Vibration and status dot when the song is ready")
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.down")
-                    .font(.footnote.weight(.bold))
+    private var vibrationRow: some View {
+        HStack(spacing: 12) {
+            feedbackIcon("iphone.radiowaves.left.and.right")
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Vibration when song locks")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Text("Two long buzzes · fixed pattern")
+                    .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
-                    .rotationEffect(.degrees(expanded ? 180 : 0))
             }
-            .padding(18)
-            .contentShape(Rectangle())
+            Spacer(minLength: 4)
+            if vibrateOnLock {
+                Button {
+                    PerformanceCues.playSongLockVibration()
+                } label: {
+                    Image(systemName: "waveform")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 34, height: 34)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(OracleTheme.gold)
+                .accessibilityLabel("Test vibration")
+            }
+            Toggle("", isOn: $vibrateOnLock)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(OracleTheme.gold)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Feedback")
-        .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 
-    private var vibrationSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            CueSectionTitle("Vibration")
-            CueRows {
-                CueRow {
-                    HStack(spacing: 10) {
-                        Toggle(isOn: $vibrateOnLock) { CueLabel("When song locks") }
-                            .toggleStyle(.switch)
-                            .tint(OracleTheme.gold)
-                        if vibrateOnLock {
-                            Button {
-                                PerformanceCues.playSongLockVibration()
-                            } label: {
-                                Image(systemName: "iphone.radiowaves.left.and.right")
-                                    .font(.body.weight(.medium))
-                                    .frame(width: 36, height: 36)
-                                    .background(Color.white.opacity(0.06))
-                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(OracleTheme.gold)
-                            .accessibilityLabel("Test vibration")
-                        }
-                    }
-                }
+    private var statusDotRow: some View {
+        HStack(spacing: 12) {
+            feedbackIcon("circle.inset.filled")
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Status dot when song ready")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Text("Top-right on stage · only when loaded")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
             }
-            CueFooter("Fixed cue: two long buzzes with a short gap. AI Voice, API, or Notes during Perform.")
+            Spacer(minLength: 4)
+            Toggle("", isOn: $dotEnabled)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(OracleTheme.gold)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 
-    private var statusDotSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            CueSectionTitle("Status dot")
-            CueRows {
-                CueRow {
-                    Toggle(isOn: $dotEnabled) { CueLabel("When song is ready") }
-                        .toggleStyle(.switch)
-                        .tint(OracleTheme.gold)
-                }
-                if dotEnabled {
-                    CueDivider()
-                    CueRow {
-                        HStack {
-                            CueLabel("Size \(Int(dotSize)) pt")
-                            Spacer(minLength: 8)
-                            Circle()
-                                .fill(dotColor.wrappedValue)
-                                .frame(width: dotSize, height: dotSize)
-                                .frame(width: 26)
-                            Stepper("", value: $dotSize, in: PerformanceCues.dotSizeRange, step: 1)
-                                .labelsHidden()
-                                .tint(OracleTheme.gold)
-                        }
-                    }
-                    CueDivider()
-                    CueRow {
-                        VStack(alignment: .leading, spacing: 10) {
-                            ColorPicker(selection: dotColor, supportsOpacity: true) { CueLabel("Color") }
-                            HStack(spacing: 10) {
-                                ForEach(PerformanceCues.colorPresets) { preset in
-                                    presetSwatch(preset)
-                                }
-                            }
-                        }
-                    }
+    private var dotCustomizeRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Size \(Int(dotSize)) pt")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                Spacer()
+                Circle()
+                    .fill(dotColor.wrappedValue)
+                    .frame(width: min(dotSize, 14), height: min(dotSize, 14))
+                Stepper("", value: $dotSize, in: PerformanceCues.dotSizeRange, step: 1)
+                    .labelsHidden()
+                    .tint(OracleTheme.gold)
+            }
+            HStack(spacing: 8) {
+                ColorPicker("", selection: dotColor, supportsOpacity: true)
+                    .labelsHidden()
+                    .frame(width: 28, height: 28)
+                ForEach(PerformanceCues.colorPresets) { preset in
+                    presetSwatch(preset)
                 }
             }
-            CueFooter("Top-right on the stage (black screen, wallpaper, or Notes). The dot appears only once the song is loaded and locked (AI Voice / API) or ready (Manual / Notes).")
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
+    private func feedbackIcon(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(OracleHomeSection.feedback.accent)
+            .frame(width: 36, height: 36)
+            .background(OracleHomeSection.feedback.accent.opacity(0.14))
+            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+    }
+
+    private func feedbackInset<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .background(Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+            }
     }
 
     private func presetSwatch(_ preset: PerformanceCues.ColorPreset) -> some View {
@@ -275,82 +274,18 @@ struct FeedbackCard: View {
         } label: {
             Circle()
                 .fill(Color(hex: preset.hex) ?? .clear)
-                .frame(width: 24, height: 24)
+                .frame(width: 22, height: 22)
                 .overlay { Circle().strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5) }
-                .overlay { Circle().strokeBorder(OracleTheme.gold, lineWidth: selected ? 2 : 0).padding(-3) }
+                .overlay { Circle().strokeBorder(OracleTheme.gold, lineWidth: selected ? 2 : 0).padding(-2) }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(preset.name)
     }
 }
 
-// MARK: Row styling
-
-private struct CueRows<Content: View>: View {
-    @ViewBuilder var content: () -> Content
-
-    var body: some View {
-        VStack(spacing: 0, content: content)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-            }
-    }
-}
-
-private struct CueRow<Content: View>: View {
-    var verticalPadding: CGFloat = 10
-    @ViewBuilder var content: () -> Content
-
-    var body: some View {
-        content()
-            .padding(.horizontal, 14)
-            .padding(.vertical, verticalPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
 private struct CueDivider: View {
     var body: some View {
         Divider().overlay(OracleTheme.cardBorder).padding(.leading, 14)
-    }
-}
-
-private struct CueSectionTitle: View {
-    let text: String
-    @Environment(\.oracleSectionAccent) private var sectionAccent
-    init(_ text: String) { self.text = text }
-
-    var body: some View {
-        Text(text.uppercased())
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle((sectionAccent ?? OracleTheme.textSecondary).opacity(0.88))
-            .tracking(0.6)
-    }
-}
-
-private struct CueLabel: View {
-    let text: String
-    init(_ text: String) { self.text = text }
-
-    var body: some View {
-        Text(text)
-            .font(.subheadline)
-            .foregroundStyle(OracleTheme.textPrimary)
-    }
-}
-
-private struct CueFooter: View {
-    let text: String
-    init(_ text: String) { self.text = text }
-
-    var body: some View {
-        Text(text)
-            .font(.caption2)
-            .foregroundStyle(OracleTheme.textSecondary)
-            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
