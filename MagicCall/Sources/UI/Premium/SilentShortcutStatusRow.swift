@@ -37,20 +37,10 @@ struct ShortcutsInstallPanel: View {
             .padding(.vertical, 4)
             .padding(.trailing, 2)
 
-            HStack(spacing: 10) {
-                if enabled {
-                    Label("Enabled for Perform", systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
-                Spacer()
-                Button("Test") { shortcut.test(mode: mode) }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(OracleTheme.textSecondary)
-                    .disabled(!enabled)
-            }
-            if let result = shortcut.lastTestResult {
-                Text(result).font(.caption2).foregroundStyle(OracleTheme.textSecondary)
+            if enabled {
+                Label("Enabled for Perform", systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
             }
 
             if installURL != nil {
