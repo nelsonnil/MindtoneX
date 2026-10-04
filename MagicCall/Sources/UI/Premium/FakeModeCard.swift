@@ -6,6 +6,8 @@ struct FakeModeContent: View {
     @Binding var photoItem: PhotosPickerItem?
     var onInfo: () -> Void
 
+    @AppStorage(Prefs.Key.volumeDownOpensShareAfterCall) private var volumeDownOpensShareAfterCall = true
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
@@ -21,6 +23,15 @@ struct FakeModeContent: View {
             }
 
             ShortcutsInstallPanel(mode: .fakeRingtone)
+
+            Toggle(isOn: $volumeDownOpensShareAfterCall) {
+                Text("Volume down opens share after call")
+                    .font(.subheadline)
+                    .foregroundStyle(OracleTheme.textPrimary)
+            }
+            .toggleStyle(.switch)
+            .tint(OracleTheme.gold)
+
             stageRow
         }
     }

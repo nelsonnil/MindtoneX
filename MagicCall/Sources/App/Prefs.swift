@@ -20,6 +20,7 @@ enum Prefs {
         static let autoTrigger = "trigger.autoOnCall"
         static let tapTrigger = "trigger.tap"
         static let volumeButtonTrigger = "trigger.volumeButton"
+        static let volumeDownOpensShareAfterCall = "fake.volumeDownOpensShareAfterCall"
 
         static let diskCache = "songs.diskCache"
         static let deezerFallback = "songs.deezerFallback"
@@ -72,6 +73,7 @@ enum Prefs {
             Key.autoTrigger: true,
             Key.tapTrigger: true,
             Key.volumeButtonTrigger: false,
+            Key.volumeDownOpensShareAfterCall: true,
             Key.diskCache: false,
             Key.deezerFallback: true,
             Key.storeCountry: "",
@@ -114,6 +116,7 @@ enum Prefs {
     static var autoTrigger: Bool { d.bool(forKey: Key.autoTrigger) }
     static var tapTrigger: Bool { d.bool(forKey: Key.tapTrigger) }
     static var volumeButtonTrigger: Bool { d.bool(forKey: Key.volumeButtonTrigger) }
+    static var volumeDownOpensShareAfterCall: Bool { d.bool(forKey: Key.volumeDownOpensShareAfterCall) }
     static var diskCache: Bool { d.bool(forKey: Key.diskCache) }
     static var deezerFallback: Bool { d.bool(forKey: Key.deezerFallback) }
     static var storeCountry: String { d.string(forKey: Key.storeCountry) ?? "" }

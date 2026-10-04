@@ -672,10 +672,13 @@ final class AppModel: ObservableObject {
                     performanceMode: Prefs.performanceMode,
                     phase: self.phase,
                     performed: self.performed,
-                    isArmed: self.isArmed
+                    isArmed: self.isArmed,
+                    volumeDownOpensShare: Prefs.volumeDownOpensShareAfterCall,
+                    oldVolume: old,
+                    newVolume: new
                 ) {
                     self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
-                    dlog("[TRIGGER] volumen post-llamada → Compartir tono")
+                    dlog("[TRIGGER] volume down post-call → Share ringtone")
                     Task { await self.applyRingtoneNow() }
                     return
                 }
