@@ -53,7 +53,7 @@ struct AdvancedDisclosureCard: View {
                     Text("Advanced")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Optional blur, debug log, engine tuning")
+                    Text("Optional blur and debug log")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .lineLimit(1)
@@ -91,8 +91,6 @@ struct AdvancedDisclosureCard: View {
     private var toolsSection: some View {
         VStack(spacing: 0) {
             toolRow("Debug log", icon: "doc.text.magnifyingglass", sheet: .debugLog)
-            divider
-            toolRow("Engine & lab settings", icon: "gearshape.2.fill", sheet: .advanced)
         }
         .background(Color.white.opacity(0.04))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
