@@ -4,7 +4,6 @@ enum OracleSheet: Identifiable {
     case performanceGuide
     case shortcutsSetup
     case favoritesSetup
-    case advanced
     case debugLog
     case apiSettings
 
@@ -13,7 +12,6 @@ enum OracleSheet: Identifiable {
         case .performanceGuide: return "guide"
         case .shortcutsSetup: return "shortcuts"
         case .favoritesSetup: return "favorites"
-        case .advanced: return "advanced"
         case .debugLog: return "debugLog"
         case .apiSettings: return "apiSettings"
         }

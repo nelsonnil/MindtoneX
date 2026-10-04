@@ -5,12 +5,10 @@ struct PerformanceGuideSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Prefs.Key.performanceMode) private var performanceModeRaw = Prefs.PerformanceMode.fakeRingtone.rawValue
     @State private var guideMode: Prefs.PerformanceMode
-    var onOpenAdvanced: () -> Void
     var onOpenFavorites: () -> Void
 
-    init(initialMode: Prefs.PerformanceMode, onOpenAdvanced: @escaping () -> Void, onOpenFavorites: @escaping () -> Void) {
+    init(initialMode: Prefs.PerformanceMode, onOpenFavorites: @escaping () -> Void) {
         _guideMode = State(initialValue: initialMode)
-        self.onOpenAdvanced = onOpenAdvanced
         self.onOpenFavorites = onOpenFavorites
     }
 
@@ -42,15 +40,6 @@ struct PerformanceGuideSheet: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Done") { dismiss() }
                     .foregroundStyle(OracleTheme.gold)
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    dismiss()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { onOpenAdvanced() }
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                }
-                .accessibilityLabel("Engine settings")
             }
         }
     }

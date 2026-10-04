@@ -26,9 +26,6 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.deezerFallback) private var deezerFallback = true
     @AppStorage(Prefs.Key.storeCountry) private var storeCountry = ""
 
-    @AppStorage(Prefs.Key.callKitCallerName) private var callKitCallerName = "Ana"
-    @AppStorage(Prefs.Key.callKitDelay) private var callKitDelay = 5.0
-
     @AppStorage(Prefs.Key.autoStageRingtone) private var autoStageRingtone = true
     @AppStorage(Prefs.Key.discreetRingtoneUI) private var discreetRingtoneUI = true
     @AppStorage(Prefs.Key.ringtoneUseQuickLook) private var ringtoneUseQuickLook = false
@@ -46,7 +43,6 @@ struct SettingsView: View {
             if mode == .fakeRingtone { triggerSection }
             if mode == .shareRingtone { shareRingtoneSection }
             previewsSection
-            callKitSection
         }
         .navigationTitle("Engine & lab")
         .navigationBarTitleDisplayMode(.inline)
@@ -114,20 +110,4 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private var callKitSection: some View {
-        #if DEBUG
-        Section {
-            TextField("Simulated caller name", text: $callKitCallerName)
-            Stepper("Delay: \(Int(callKitDelay)) s", value: $callKitDelay, in: 2...30, step: 1)
-            Button("Schedule fake CallKit call + enter stage") {
-                model.scheduleCallKitFallback()
-                model.performFakeRingtone()
-            }
-            .disabled(model.loadState != .ready)
-        } header: {
-            Text("CallKit lab (Debug only)")
-        }
-        #endif
-    }
 }

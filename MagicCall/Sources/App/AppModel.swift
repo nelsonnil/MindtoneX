@@ -802,9 +802,6 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func scheduleCallKitFallback() {
-        CallKitFallback.shared.scheduleIncoming(callerName: Prefs.callKitCallerName, after: Prefs.callKitDelay)
-    }
 }
 
 private func onMain(after delay: TimeInterval, _ body: @escaping @MainActor () -> Void) {

@@ -87,7 +87,6 @@ struct MainShellView: View {
                 NavigationStack {
                     PerformanceGuideSheet(
                         initialMode: mode,
-                        onOpenAdvanced: { activeSheet = .advanced },
                         onOpenFavorites: { activeSheet = .favoritesSetup }
                     )
                 }
@@ -95,8 +94,6 @@ struct MainShellView: View {
                 NavigationStack { ShortcutsSetupSheet() }
             case .favoritesSetup:
                 NavigationStack { FavoritesSetupSheet() }
-            case .advanced:
-                NavigationStack { SettingsView() }
             case .debugLog:
                 NavigationStack { DebugLogView() }
             case .apiSettings:

@@ -78,6 +78,7 @@
 		4327EF1CCFA6B6427A4B0D85 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		5A5F46051981A4C204711045 /* MagicCallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicCallApp.swift; sourceTree = "<group>"; };
 		72AC74524CAF7C0D6B683FE2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		AA00004C000000000000004C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		778066FED077319EC23EDCEE /* MCObjC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MCObjC.m; sourceTree = "<group>"; };
 		81ED684AAD9C91EABD24A1D3 /* SystemVolume.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemVolume.swift; sourceTree = "<group>"; };
 		8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneAudioEngine.swift; sourceTree = "<group>"; };
@@ -163,6 +164,7 @@
 			children = (
 				B6949E0964299D0E2E8531C7 /* Assets.xcassets */,
 				72AC74524CAF7C0D6B683FE2 /* Info.plist */,
+				AA00004C000000000000004C /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -407,6 +409,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1A496C1D95A030425C92AF6B /* Assets.xcassets in Resources */,
+				AA00004D000000000000004D /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
