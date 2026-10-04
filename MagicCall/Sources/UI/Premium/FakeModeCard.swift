@@ -11,11 +11,10 @@ struct FakeModeContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                OracleEyebrow(text: "Setup")
                 Spacer()
                 Button(action: onInfo) {
-                    Image(systemName: "info.circle")
-                        .font(.body)
+                    Label("Guide", systemImage: "info.circle")
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(OracleTheme.textSecondary)
                 }
                 .buttonStyle(.plain)
@@ -47,7 +46,9 @@ struct FakeModeContent: View {
 
     private var stageRow: some View {
         VStack(alignment: .leading, spacing: 10) {
-            OracleEyebrow(text: "Stage")
+            Text("Stage background")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
             HStack(spacing: 12) {
                 stageThumb
                 VStack(alignment: .leading, spacing: 8) {

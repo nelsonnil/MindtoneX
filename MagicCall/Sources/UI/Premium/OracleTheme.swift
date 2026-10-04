@@ -139,6 +139,102 @@ struct OracleBackdrop: View {
     }
 }
 
+/// Static backdrop plus subtle ringtone-style ripples (transform/opacity only).
+struct OracleAnimatedBackdrop: View {
+    var body: some View {
+        ZStack {
+            OracleBackdrop()
+            TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
+                RingtoneRippleLayer(date: context.date)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+private struct RingtoneRippleLayer: View {
+    let date: Date
+
+    private var phase: Double {
+        date.timeIntervalSinceReferenceDate
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let center = CGPoint(x: geo.size.width * 0.5, y: geo.size.height * 0.22)
+            let base = min(geo.size.width, geo.size.height) * 0.38
+            ZStack {
+                ForEach(0..<3, id: \.self) { index in
+                    let t = (phase / 3.6 + Double(index) * 0.33).truncatingRemainder(dividingBy: 1)
+                    let scale = 0.55 + t * 0.95
+                    let opacity = (1 - t) * 0.22
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [OracleTheme.gold.opacity(0.55), OracleTheme.indigo.opacity(0.35)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
+                        .frame(width: base * 2, height: base * 2)
+                        .scaleEffect(scale)
+                        .opacity(opacity)
+                        .position(center)
+                }
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
+/// Home primary block — lighter chrome than section-rail `OracleCard`.
+struct HomePanel<Content: View>: View {
+    var padding: CGFloat = 20
+    @ViewBuilder var content: () -> Content
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: OracleTheme.cardRadius, style: .continuous)
+    }
+
+    var body: some View {
+        content()
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                shape
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.28)
+            }
+            .background {
+                shape.fill(OracleTheme.cardFill.opacity(0.92))
+            }
+            .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(OracleTheme.cardStroke, lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+    }
+}
+
+struct HomeSectionTitle: View {
+    let title: String
+    var subtitle: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(OracleTheme.textPrimary)
+            if let subtitle {
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
+        }
+    }
+}
+
 /// Visual tier on the home screen — each block gets its own accent wash and rail.
 enum OracleHomeSection {
     case mode
@@ -259,40 +355,46 @@ struct OraclePerformButton: View {
     let title: String
     let gradient: LinearGradient
     let disabled: Bool
+    var emphasizeReady: Bool = false
     let action: () -> Void
 
     @State private var pressed = false
 
     var body: some View {
-        Button {
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
-            action()
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "play.fill")
-                Text(title)
-                    .font(.headline.weight(.semibold))
+        TimelineView(.animation(minimumInterval: 1 / 20, paused: !emphasizeReady || disabled)) { context in
+            let pulse = emphasizeReady && !disabled
+                ? 0.5 + 0.5 * sin(context.date.timeIntervalSinceReferenceDate * 2.6)
+                : 0.0
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                action()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "play.fill")
+                    Text(title)
+                        .font(.headline.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .foregroundStyle(Color(red: 0.12, green: 0.10, blue: 0.05))
+                .background(gradient)
+                .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 17, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
+                }
+                .shadow(color: OracleTheme.gold.opacity(disabled ? 0 : (0.22 + 0.14 * pulse)), radius: 12 + 6 * pulse, y: 6)
+                .scaleEffect((pressed ? 0.98 : 1) * (1 + 0.012 * pulse))
+                .opacity(disabled ? 0.45 : 1)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 54)
-            .foregroundStyle(Color(red: 0.12, green: 0.10, blue: 0.05))
-            .background(gradient)
-            .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
-            }
-            .shadow(color: OracleTheme.gold.opacity(disabled ? 0 : 0.28), radius: 14, y: 6)
-            .scaleEffect(pressed ? 0.98 : 1)
-            .opacity(disabled ? 0.45 : 1)
+            .buttonStyle(.plain)
+            .disabled(disabled)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in withAnimation(.easeOut(duration: 0.12)) { pressed = true } }
+                    .onEnded { _ in withAnimation(.easeOut(duration: 0.12)) { pressed = false } }
+            )
         }
-        .buttonStyle(.plain)
-        .disabled(disabled)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in withAnimation(.easeOut(duration: 0.12)) { pressed = true } }
-                .onEnded { _ in withAnimation(.easeOut(duration: 0.12)) { pressed = false } }
-        )
     }
 }

@@ -6,39 +6,34 @@ struct HeroLogoView: View {
     @State private var tapCount = 0
     @State private var tapResetTask: Task<Void, Never>?
 
-    private let size: CGFloat = 88
+    private let size: CGFloat = 76
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(OracleTheme.deepIndigo.opacity(0.9))
-                .frame(width: size * 2.2, height: size * 2.2)
-                .blur(radius: 46)
+        TimelineView(.animation(minimumInterval: 1 / 24, paused: false)) { context in
+            let breathe = 1 + 0.035 * sin(context.date.timeIntervalSinceReferenceDate * 1.4)
+            ZStack {
+                Circle()
+                    .fill(OracleTheme.deepIndigo.opacity(0.9))
+                    .frame(width: size * 2.0 * breathe, height: size * 2.0 * breathe)
+                    .blur(radius: 42)
 
-            Circle()
-                .fill(OracleTheme.deepPurple.opacity(0.7))
-                .frame(width: size * 1.5, height: size * 1.5)
-                .offset(x: size * 0.35, y: size * 0.1)
-                .blur(radius: 40)
+                Circle()
+                    .fill(OracleTheme.gold.opacity(0.18))
+                    .frame(width: size * 1.05 * breathe, height: size * 1.05 * breathe)
+                    .blur(radius: 26)
 
-            Circle()
-                .fill(OracleTheme.gold.opacity(0.22))
-                .frame(width: size * 1.1, height: size * 1.1)
-                .blur(radius: 30)
-
-            // The PNG has a light margin outside its rounded square; scaling up and clipping crops it
-            // so no halo or ring shows against the dark backdrop.
-            Image("HeroLogo")
-                .resizable()
-                .scaledToFit()
-                .scaleEffect(1.09)
-                .frame(width: size, height: size)
-                .clipShape(RoundedRectangle(cornerRadius: size * 0.235, style: .continuous))
-                .shadow(color: .black.opacity(0.55), radius: 22, y: 12)
-                .accessibilityLabel("Ringtone Oracle")
+                Image("HeroLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .scaleEffect(1.09)
+                    .frame(width: size, height: size)
+                    .clipShape(RoundedRectangle(cornerRadius: size * 0.235, style: .continuous))
+                    .shadow(color: .black.opacity(0.55), radius: 18, y: 10)
+                    .accessibilityLabel("Ringtone Oracle")
+            }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 148)
+        .frame(height: 120)
         .contentShape(Rectangle())
         .onTapGesture {
             tapCount += 1

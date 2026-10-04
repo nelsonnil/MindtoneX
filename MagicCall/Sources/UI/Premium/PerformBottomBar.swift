@@ -18,7 +18,8 @@ struct PerformBottomBar: View {
             OraclePerformButton(
                 title: "Perform",
                 gradient: OracleTheme.performGradient(for: mode),
-                disabled: !model.canPerform
+                disabled: !model.canPerform,
+                emphasizeReady: model.canPerform
             ) {
                 model.perform()
             }

@@ -1,8 +1,7 @@
 import PhotosUI
 import SwiftUI
 
-/// Premium home shell — hero, mode picker card, mode detail, song strip, Advanced card,
-/// and a fixed bottom bar with the readiness strip and Perform.
+/// Premium home shell — hero, mode picker, song input, feedback, and a fixed Perform dock.
 struct MainShellView: View {
     @EnvironmentObject private var model: AppModel
     @FocusState private var queryFocused: Bool
@@ -20,8 +19,8 @@ struct MainShellView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                HeroLogoView()
+            VStack(spacing: 24) {
+                HeroLogoView(onTripleTap: { activeSheet = .debugLog })
 
                 UnifiedPerformanceModeCard(
                     modeRaw: $performanceModeRaw,
@@ -32,21 +31,24 @@ struct MainShellView: View {
                     onFavoritesInfo: { activeSheet = .favoritesSetup }
                 )
 
-                OracleCard(section: .songInput) {
+                HomePanel {
                     SongInputStrip(
                         inputModeRaw: $inputModeRaw,
                         queryFocused: $queryFocused
                     )
                 }
 
-                // One Feedback block (vibration + status dot) — not separate cards.
                 FeedbackCard()
             }
             .padding(.horizontal, 16)
+            .padding(.top, 4)
             .padding(.bottom, 20)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background { OracleBackdrop() }
+        .background { OracleAnimatedBackdrop() }
+        .overlay(alignment: .topTrailing) {
+            homeOverflowMenu
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             PerformBottomBar(mode: mode)
         }
@@ -80,5 +82,28 @@ struct MainShellView: View {
                 ApiSettingsSheet()
             }
         }
+    }
+
+    private var homeOverflowMenu: some View {
+        Menu {
+            Button {
+                activeSheet = .advanced
+            } label: {
+                Label("Engine & lab settings", systemImage: "gearshape.2.fill")
+            }
+            Button {
+                activeSheet = .debugLog
+            } label: {
+                Label("Debug log", systemImage: "doc.text.magnifyingglass")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle.fill")
+                .font(.title2)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .padding(12)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("More options")
     }
 }

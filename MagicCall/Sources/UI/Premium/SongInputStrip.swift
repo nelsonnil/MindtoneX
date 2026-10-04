@@ -7,21 +7,21 @@ struct SongInputStrip: View {
     @Binding var inputModeRaw: String
     @FocusState.Binding var queryFocused: Bool
 
+    private let inputColumns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+
     private var inputMode: VoiceSettings.InputMode {
         VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            OracleEyebrow(text: "Song input")
+        VStack(alignment: .leading, spacing: 16) {
+            HomeSectionTitle(title: "Song input", subtitle: "How the track is chosen before Perform")
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    inputChip("Manual", icon: "keyboard", mode: .manual)
-                    inputChip("AI Voice", icon: "mic.fill", mode: .aiVoice)
-                    inputChip("Notes", icon: "note.text", mode: .notes)
-                    inputChip("API", icon: "link", mode: .api)
-                }
+            LazyVGrid(columns: inputColumns, spacing: 10) {
+                inputChip("Manual", icon: "keyboard", mode: .manual)
+                inputChip("AI Voice", icon: "mic.fill", mode: .aiVoice)
+                inputChip("Notes", icon: "note.text", mode: .notes)
+                inputChip("API", icon: "link", mode: .api)
             }
 
             Group {
@@ -36,6 +36,7 @@ struct SongInputStrip: View {
                     ApiInputPanel()
                 }
             }
+            .animation(.easeInOut(duration: 0.2), value: inputModeRaw)
         }
     }
 
@@ -49,24 +50,32 @@ struct SongInputStrip: View {
             model.resetAfterSongInputModeChange(from: previous, to: mode)
             dlog("Song input → \(mode.title)")
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
+            VStack(spacing: 8) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: icon)
+                        .font(.title2.weight(.semibold))
+                    if (mode == .aiVoice && voice.isActive) || (mode == .api && api.isActive) {
+                        Circle().fill(Color.red).frame(width: 7, height: 7)
+                            .offset(x: 4, y: -4)
+                    }
+                }
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                if (mode == .aiVoice && voice.isActive) || (mode == .api && api.isActive) {
-                    Circle().fill(Color.red).frame(width: 6, height: 6)
-                }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 72)
             .foregroundStyle(selected ? OracleTheme.textPrimary : OracleTheme.textSecondary)
-            .background(selected ? OracleTheme.indigo.opacity(0.25) : Color.white.opacity(0.04))
+            .background(selected ? OracleTheme.indigo.opacity(0.28) : Color.white.opacity(0.05))
             .overlay {
-                Capsule().stroke(selected ? OracleTheme.gold.opacity(0.6) : OracleTheme.cardBorder, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(selected ? OracleTheme.gold.opacity(0.65) : OracleTheme.cardBorder, lineWidth: selected ? 1.5 : 1)
             }
-            .clipShape(Capsule())
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private var manualField: some View {
@@ -78,7 +87,7 @@ struct SongInputStrip: View {
                     .submitLabel(.search)
                     .focused($queryFocused)
                     .onSubmit { Task { await model.search() } }
-                    .padding(12)
+                    .padding(14)
                     .background(Color.white.opacity(0.06))
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
@@ -88,7 +97,7 @@ struct SongInputStrip: View {
                 } label: {
                     Image(systemName: "magnifyingglass")
                         .font(.body.weight(.semibold))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 48, height: 48)
                         .background(OracleTheme.goldGradient)
                         .foregroundStyle(Color(red: 0.12, green: 0.10, blue: 0.05))
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -113,7 +122,7 @@ struct SongInputStrip: View {
                     .foregroundStyle(OracleTheme.gold)
                     .disabled(model.isAudible)
                 }
-                .padding(10)
+                .padding(12)
                 .background(Color.white.opacity(0.05))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }

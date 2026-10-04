@@ -137,31 +137,62 @@ struct FeedbackCard: View {
     @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var dotSize = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
+    @AppStorage("ui.feedbackExpanded") private var expanded = false
+
     private var dotColor: Binding<Color> {
         Binding(get: { Color(hex: colorHex) ?? .green },
                 set: { colorHex = $0.hexString })
     }
 
+    private var summary: String {
+        let vib = vibrateOnLock ? "Vibration on" : "Vibration off"
+        let dot = dotEnabled ? "Status dot on" : "Status dot off"
+        return "\(vib) · \(dot)"
+    }
+
     var body: some View {
-        OracleCard(section: .feedback) {
-            VStack(alignment: .leading, spacing: 14) {
-                OracleEyebrow(text: "Feedback")
+        HomePanel(padding: 0) {
+            DisclosureGroup(isExpanded: $expanded) {
+                VStack(alignment: .leading, spacing: 12) {
+                    feedbackInset {
+                        vibrationRow
+                    }
 
-                feedbackInset {
-                    vibrationRow
-                }
-
-                feedbackInset {
-                    VStack(spacing: 0) {
-                        statusDotRow
-                        if dotEnabled {
-                            CueDivider()
-                            dotCustomizeRow
+                    feedbackInset {
+                        VStack(spacing: 0) {
+                            statusDotRow
+                            if dotEnabled {
+                                CueDivider()
+                                dotCustomizeRow
+                            }
                         }
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 18)
+                .animation(.easeInOut(duration: 0.2), value: dotEnabled)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "hand.tap.fill")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(OracleHomeSection.feedback.accent)
+                        .frame(width: 40, height: 40)
+                        .background(OracleHomeSection.feedback.accent.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Feedback")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(OracleTheme.textPrimary)
+                        Text(summary)
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(20)
             }
-            .animation(.easeInOut(duration: 0.2), value: dotEnabled)
+            .tint(OracleTheme.gold)
         }
     }
 
