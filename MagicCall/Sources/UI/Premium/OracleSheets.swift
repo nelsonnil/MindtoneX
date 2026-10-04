@@ -1,7 +1,6 @@
 import SwiftUI
 
 enum OracleSheet: Identifiable {
-    case guide
     case fakeDetails
     case shareDetails
     case shortcutsSetup
@@ -12,7 +11,6 @@ enum OracleSheet: Identifiable {
 
     var id: String {
         switch self {
-        case .guide: return "guide"
         case .fakeDetails: return "fake"
         case .shareDetails: return "share"
         case .shortcutsSetup: return "shortcuts"
@@ -20,53 +18,6 @@ enum OracleSheet: Identifiable {
         case .advanced: return "advanced"
         case .debugLog: return "debugLog"
         case .apiSettings: return "apiSettings"
-        }
-    }
-}
-
-struct GuideSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage(VoiceSettings.Key.lockDelay) private var lockDelay = VoiceSettings.defaultLockDelay
-    var body: some View {
-        NavigationStack {
-            List {
-                Section("Modes") {
-                    NavigationLink("Fake Ringtone setup") { FakeDetailSheet() }
-                    NavigationLink("Share Ringtone setup") { ShareDetailSheet() }
-                }
-                Section("One-time setup") {
-                    NavigationLink("Silent Mode shortcuts") { ShortcutsSetupSheet() }
-                    NavigationLink("Share Favorites") { FavoritesSetupSheet() }
-                }
-                Section("Song input") {
-                    Text("On the home screen, choose **Manual**, **AI Voice**, **Notes**, or **API** under Song input. AI Voice includes your API key, locking, and listen test in one place. API uses **Settings** on the API chip.")
-                        .font(.footnote)
-                }
-                Section("Performance") {
-                    oracleTextBlock(PerformCopy.fakeTiming)
-                    oracleTextBlock(PerformCopy.shareTiming(lockSeconds: Int(lockDelay)))
-                }
-                Section("Troubleshooting") {
-                    Text("If the song doesn’t play, check Silent mode, Focus, Bluetooth, and media volume. Export the debug log from the Advanced card at the bottom of the home screen.")
-                        .font(.footnote)
-                }
-            }
-            .navigationTitle("User Guide")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-    }
-
-    private func oracleTextBlock(_ lines: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(lines, id: \.self) { line in
-                Text(.init("• \(line)"))
-                    .font(.footnote)
-            }
         }
     }
 }

@@ -47,7 +47,6 @@ struct MainShellView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background { OracleBackdrop() }
-        .overlay(alignment: .topTrailing) { guideButton }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             PerformBottomBar(mode: mode)
         }
@@ -65,8 +64,6 @@ struct MainShellView: View {
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
-            case .guide:
-                GuideSheet()
             case .fakeDetails:
                 NavigationStack { FakeDetailSheet() }
             case .shareDetails:
@@ -83,23 +80,5 @@ struct MainShellView: View {
                 ApiSettingsSheet()
             }
         }
-    }
-
-    private var guideButton: some View {
-        Button {
-            activeSheet = .guide
-        } label: {
-            Image(systemName: "book.closed.fill")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(OracleTheme.gold)
-                .frame(width: 40, height: 40)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay { Circle().strokeBorder(OracleTheme.cardBorderHighlight, lineWidth: 0.5) }
-                .shadow(color: .black.opacity(0.35), radius: 8, y: 4)
-        }
-        .buttonStyle(.plain)
-        .padding(.trailing, 16)
-        .padding(.top, 4)
-        .accessibilityLabel("User guide")
     }
 }
