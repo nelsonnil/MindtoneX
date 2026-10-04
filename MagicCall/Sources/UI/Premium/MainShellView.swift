@@ -23,24 +23,14 @@ struct MainShellView: View {
             VStack(spacing: 20) {
                 HeroLogoView()
 
-                ModePickerCard(modeRaw: $performanceModeRaw)
-
-                Group {
-                    switch mode {
-                    case .fakeRingtone:
-                        FakeModeCard(
-                            background: $background,
-                            photoItem: $photoItem,
-                            onInfo: { activeSheet = .fakeDetails }
-                        )
-                    case .shareRingtone:
-                        ShareModeCard(
-                            onInfo: { activeSheet = .shareDetails },
-                            onFavoritesInfo: { activeSheet = .favoritesSetup }
-                        )
-                    }
-                }
-                .animation(.easeInOut(duration: 0.25), value: performanceModeRaw)
+                UnifiedPerformanceModeCard(
+                    modeRaw: $performanceModeRaw,
+                    background: $background,
+                    photoItem: $photoItem,
+                    onFakeInfo: { activeSheet = .fakeDetails },
+                    onShareInfo: { activeSheet = .shareDetails },
+                    onFavoritesInfo: { activeSheet = .favoritesSetup }
+                )
 
                 OracleCard(section: .songInput) {
                     SongInputStrip(
@@ -51,8 +41,6 @@ struct MainShellView: View {
 
                 // One Feedback block (vibration + status dot) — not separate cards.
                 FeedbackCard()
-
-                AdvancedDisclosureCard { activeSheet = $0 }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 20)

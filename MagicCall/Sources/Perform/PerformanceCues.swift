@@ -123,6 +123,7 @@ struct PerformStatusDot: View {
 /// Vibration + stage status dot — discrete cues when the song is ready during Perform.
 /// Single home card: vibration + stage status dot (replaces separate StatusDot / Vibration cards).
 struct FeedbackCard: View {
+    @AppStorage("ui.feedbackExpanded") private var expanded = false
     @AppStorage(PerformanceCues.Key.vibrateOnLock) private var vibrateOnLock = true
     @AppStorage(PerformanceCues.Key.vibrationStyle) private var styleRaw = PerformanceCues.VibrationStyle.alert.rawValue
     @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
@@ -134,22 +135,57 @@ struct FeedbackCard: View {
     }
 
     var body: some View {
-        OracleCard(section: .feedback) {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    OracleEyebrow(text: "Feedback")
-                    Text("Quiet cues so you know the song is ready — without looking at the status bar.")
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+        OracleCard(section: .feedback, padding: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                if expanded {
+                    VStack(alignment: .leading, spacing: 16) {
+                        vibrationSection
+                        statusDotSection
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 18)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-
-                vibrationSection
-                statusDotSection
             }
             .animation(.easeInOut(duration: 0.2), value: vibrateOnLock)
             .animation(.easeInOut(duration: 0.2), value: dotEnabled)
         }
+    }
+
+    private var header: some View {
+        Button {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { expanded.toggle() }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "hand.tap.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(OracleHomeSection.feedback.accent)
+                    .frame(width: 36, height: 36)
+                    .background(OracleHomeSection.feedback.accent.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Feedback")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    Text("Vibration and status dot when the song is ready")
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.down")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .rotationEffect(.degrees(expanded ? 180 : 0))
+            }
+            .padding(18)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Feedback")
+        .accessibilityValue(expanded ? "Expanded" : "Collapsed")
     }
 
     private var vibrationSection: some View {

@@ -20,22 +20,12 @@ struct ShortcutsInstallPanel: View {
                 ShortcutHintBanner(hint: hint) { shortcut.hint = nil }
             }
 
-            Text(.init(installExplanation))
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
             shortcutRow
 
             Toggle(isOn: autoRunBinding) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Run shortcut before Perform")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Turns Silent \(isFake ? "ON" : "OFF") automatically so you don’t forget.")
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
+                Text("Run shortcut before Perform")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(OracleTheme.textPrimary)
             }
             .toggleStyle(.switch)
             .tint(OracleTheme.gold)
@@ -72,13 +62,6 @@ struct ShortcutsInstallPanel: View {
                     }
             }
         }
-    }
-
-    private var installExplanation: String {
-        if installURL != nil {
-            return "One-time: tap **Get** to add the shortcut, or build it yourself. You can also turn Silent \(isFake ? "on" : "off") by hand before each show — the toggle below is optional but helps you avoid mistakes."
-        }
-        return "Install the shortcut once (download link coming soon), or build it yourself. You can always set Silent \(isFake ? "on" : "off") manually; turn on the toggle below to run the shortcut automatically before each Perform."
     }
 
     private var autoRunBinding: Binding<Bool> {
