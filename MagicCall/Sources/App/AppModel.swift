@@ -369,6 +369,12 @@ final class AppModel: ObservableObject {
         dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; long-press stage → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
     }
 
+    /// Library → Recently used (deduped in `SongLibraryStore`).
+    func recordRecentLoadedSongIfReady() {
+        guard loadState == .ready, let track = selected else { return }
+        SongLibraryStore.shared.recordRecent(track)
+    }
+
     /// AI Voice: forget the previous spectator's song so the next Perform starts empty.
     func clearSongForNextPerformance() {
         audio.unload()

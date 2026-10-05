@@ -47,12 +47,11 @@ struct SongLibrarySection: View {
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Picker("Library list", selection: $selectedTab) {
+            HStack(spacing: 10) {
                 ForEach(LibraryTab.allCases) { tab in
-                    Text(tab.rawValue).tag(tab)
+                    libraryTabChip(tab)
                 }
             }
-            .pickerStyle(.segmented)
 
             libraryToolbar
 
@@ -76,6 +75,52 @@ struct SongLibrarySection: View {
                 .frame(maxHeight: 240)
             }
         }
+    }
+
+    private func libraryTabChip(_ tab: LibraryTab) -> some View {
+        let selected = selectedTab == tab
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { selectedTab = tab }
+        } label: {
+            Text(tab.rawValue)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(selected ? OracleTheme.textPrimary : OracleTheme.textSecondary)
+                .background {
+                    if selected {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [OracleTheme.indigo.opacity(0.38), OracleTheme.deepIndigo.opacity(0.22)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.white.opacity(0.05))
+                    }
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(
+                            selected
+                                ? LinearGradient(
+                                    colors: [OracleTheme.gold.opacity(0.85), OracleTheme.indigo.opacity(0.5)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                : LinearGradient(colors: [OracleTheme.cardBorder], startPoint: .top, endPoint: .bottom),
+                            lineWidth: selected ? 1.5 : 1
+                        )
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     @ViewBuilder
