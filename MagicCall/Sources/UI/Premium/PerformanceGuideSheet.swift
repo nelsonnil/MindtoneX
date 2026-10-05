@@ -31,6 +31,13 @@ struct PerformanceGuideSheet: View {
                     }
                 }
                 .animation(.easeInOut(duration: 0.22), value: guideMode)
+
+                TipCard(
+                    title: "Missed call & voicemail",
+                    icon: "recordingtape",
+                    tint: OracleTheme.textSecondary,
+                    lines: PerformCopy.voicemailAndMissedCall
+                )
             }
             .padding(20)
         }

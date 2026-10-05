@@ -125,4 +125,12 @@ enum PerformCopy {
         "While the spectator names the song, share your number and ask them to call you when you are ready.",
         "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you swipe down with two fingers to leave.",
     ]
+
+    /// Testers often ask for “voicemail says the prediction” — iOS/carrier limits (shown in Instructions).
+    static let voicemailAndMissedCall = [
+        "**Voicemail with the song name?** No app (including MindtoneX) can speak a **new prediction** on your **carrier voicemail** when you don’t answer. After the ring, callers hear **your carrier’s voicemail** and a **fixed greeting** you set in **Settings → Phone**, not text generated per show.",
+        "**Stage Ringtone:** if you don’t pick up, the caller hears normal ringing; **your song plays on your iPhone** during the ring — not as their voicemail message.",
+        "**Phone Ringtone:** callers may hear your **custom ringtone** while it rings; when it goes to voicemail, the greeting is still **static**, not the app’s guess.",
+        "**What works instead:** answer for the full effect; or use a **pre-recorded** generic greeting; or a **separate** phone/service (e.g. Twilio) — outside this app.",
+    ]
 }
