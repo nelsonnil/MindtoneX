@@ -17,6 +17,9 @@ struct AiVoiceInputPanel: View {
             connectionBlock
             VoiceLockingControls()
             liveListenBlock
+            if let track = model.selected, model.loadState == .ready {
+                LoadedSongReadyRow(track: track)
+            }
         }
         .onAppear {
             if languageRaw == "es-en" { languageRaw = "es" }

@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Notes song-input settings shown in the song strip: when the written note is searched.
 struct NotesInputControls: View {
+    @EnvironmentObject private var model: AppModel
     @AppStorage(NotesSettings.Key.idleSearchEnabled) private var idleSearchEnabled = true
     @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
     @AppStorage(NotesSettings.Key.searchOnReturn) private var searchOnReturn = true
@@ -40,6 +41,10 @@ struct NotesInputControls: View {
                 .font(.caption2)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if let track = model.selected, model.loadState == .ready {
+                LoadedSongReadyRow(track: track)
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: idleSearchEnabled)
     }

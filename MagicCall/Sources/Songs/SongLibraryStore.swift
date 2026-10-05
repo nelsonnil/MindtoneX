@@ -43,6 +43,32 @@ final class SongLibraryStore: ObservableObject {
         persist(favorites, forKey: Keys.favorites)
     }
 
+    func removeRecent(at index: Int) {
+        guard recent.indices.contains(index) else { return }
+        recent.remove(at: index)
+        persist(recent, forKey: Keys.recent)
+    }
+
+    func removeRecent(_ track: PreviewTrack) {
+        let before = recent.count
+        recent.removeAll { $0.id == track.id }
+        guard recent.count != before else { return }
+        persist(recent, forKey: Keys.recent)
+    }
+
+    func clearRecent() {
+        guard !recent.isEmpty else { return }
+        recent = []
+        persist(recent, forKey: Keys.recent)
+    }
+
+    func removeFavorite(_ track: PreviewTrack) {
+        let before = favorites.count
+        favorites.removeAll { $0.id == track.id }
+        guard favorites.count != before else { return }
+        persist(favorites, forKey: Keys.favorites)
+    }
+
     private func persist(_ tracks: [PreviewTrack], forKey key: String) {
         guard let data = try? JSONEncoder().encode(tracks) else { return }
         UserDefaults.standard.set(data, forKey: key)

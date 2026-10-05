@@ -4,91 +4,180 @@ struct SongLibrarySection: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var library = SongLibraryStore.shared
 
+    private enum LibraryTab: String, CaseIterable, Identifiable {
+        case recent = "Recently used"
+        case favorites = "My favorites"
+
+        var id: String { rawValue }
+
+        var emptyMessage: String {
+            switch self {
+            case .recent: return "No recent songs yet"
+            case .favorites: return "No favorites yet"
+            }
+        }
+    }
+
+    @State private var selectedTab: LibraryTab = .recent
+    @State private var showClearRecentAlert = false
+
+    private var activeTracks: [PreviewTrack] {
+        switch selectedTab {
+        case .recent: return library.recent
+        case .favorites: return library.favorites
+        }
+    }
+
+    private var rowInteractionDisabled: Bool {
+        if case .downloading = model.loadState { return true }
+        if case .searching = model.loadState { return true }
+        return false
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             HomeSectionTitle(
                 title: "Library",
                 subtitle: "Recently used songs and favorites",
                 eyebrow: "Step 2b"
             )
 
-            librarySubsection(
-                title: "Recently used",
-                emptyMessage: "No recent songs yet",
-                tracks: library.recent
-            )
-            librarySubsection(
-                title: "My favorites",
-                emptyMessage: "No favorites yet",
-                tracks: library.favorites
-            )
+            Text("Star a loaded song or any row below to save a favorite.")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Picker("Library list", selection: $selectedTab) {
+                ForEach(LibraryTab.allCases) { tab in
+                    Text(tab.rawValue).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            libraryToolbar
+
+            if activeTracks.isEmpty {
+                Text(selectedTab.emptyMessage)
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+            } else {
+                List {
+                    ForEach(activeTracks) { track in
+                        libraryRow(track)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .frame(maxHeight: 240)
+            }
         }
     }
 
     @ViewBuilder
-    private func librarySubsection(title: String, emptyMessage: String, tracks: [PreviewTrack]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(OracleTheme.textPrimary)
-
-            if tracks.isEmpty {
-                Text(emptyMessage)
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.textSecondary)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(tracks) { track in
-                            libraryChip(track)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
+    private var libraryToolbar: some View {
+        if selectedTab == .recent, !library.recent.isEmpty {
+            HStack {
+                Spacer(minLength: 0)
+                Button("Clear") { showClearRecentAlert = true }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(OracleTheme.coral.opacity(0.95))
+            }
+            .alert("Clear recently used?", isPresented: $showClearRecentAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Clear", role: .destructive) { library.clearRecent() }
+            } message: {
+                Text("This removes every song from Recently used. Favorites are not affected.")
             }
         }
     }
 
-    private func libraryChip(_ track: PreviewTrack) -> some View {
+    private func libraryRow(_ track: PreviewTrack) -> some View {
         let favorited = library.isFavorite(track)
-        return Button {
-            reload(track)
-        } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(track.title)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                Text(track.artist)
-                    .font(.caption2)
-                    .foregroundStyle(OracleTheme.textSecondary)
-                    .lineLimit(1)
-            }
-            .frame(width: 148, alignment: .leading)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color.white.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-            }
-            .overlay(alignment: .topTrailing) {
-                if favorited {
-                    Image(systemName: "star.fill")
-                        .font(.caption2)
-                        .foregroundStyle(OracleTheme.gold)
-                        .padding(6)
+        return HStack(spacing: 8) {
+            Button {
+                loadAndPlay(track)
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(OracleTheme.gold.opacity(0.92))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(track.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(OracleTheme.textPrimary)
+                            .lineLimit(1)
+                        Text(track.artist)
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
                 }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(rowInteractionDisabled)
+
+            Button {
+                library.toggleFavorite(track)
+            } label: {
+                Image(systemName: favorited ? "star.fill" : "star")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(favorited ? OracleTheme.gold : OracleTheme.textSecondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(favorited ? "Remove from favorites" : "Add to favorites")
+
+            Button {
+                remove(track)
+            } label: {
+                Image(systemName: "minus.circle.fill")
+                    .font(.body)
+                    .foregroundStyle(OracleTheme.textSecondary.opacity(0.85))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(selectedTab == .recent ? "Remove from recently used" : "Remove from favorites")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                remove(track)
+            } label: {
+                Label("Remove", systemImage: "trash")
             }
         }
-        .buttonStyle(.plain)
-        .disabled(model.loadState == .downloading || model.loadState == .searching)
+        .accessibilityElement(children: .combine)
         .accessibilityLabel("\(track.title), \(track.artist)")
-        .accessibilityHint("Load this song again")
+        .accessibilityHint("Load and play preview")
     }
 
-    private func reload(_ track: PreviewTrack) {
+    private func remove(_ track: PreviewTrack) {
+        switch selectedTab {
+        case .recent:
+            library.removeRecent(track)
+        case .favorites:
+            library.removeFavorite(track)
+        }
+    }
+
+    private func loadAndPlay(_ track: PreviewTrack) {
         model.query = "\(track.title) \(track.artist)"
-        Task { await model.select(track) }
+        Task {
+            await model.select(track)
+            guard model.loadState == .ready, model.selected?.id == track.id else { return }
+            model.audition()
+        }
     }
 }
