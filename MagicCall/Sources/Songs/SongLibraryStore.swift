@@ -70,7 +70,27 @@ final class SongLibraryStore: ObservableObject {
     }
 
     func isFavorite(_ track: PreviewTrack) -> Bool {
-        favorites.contains { $0.id == track.id }
+        let key = canonicalTrackForLibrary(track)
+        return favorites.contains { $0.id == key.id || $0.id == track.id || canonicalTrackForLibrary($0).id == key.id }
+    }
+
+    /// Real preview track for Library lists / favorites (resolves perform placeholders).
+    func canonicalTrackForLibrary(_ track: PreviewTrack) -> PreviewTrack {
+        if !RecentPerformSnapshot.isSnapshotPlaceholder(track) {
+            if recent.contains(where: { $0.id == track.id }) { return track }
+            if let match = recent.first(where: { $0.title == track.title && $0.artist == track.artist }) { return match }
+            return track
+        }
+        if let snap = performSnapshots.first(where: { $0.asSyntheticPreviewTrack().id == track.id }),
+           let real = snap.asPreviewTrackIfPossible() {
+            return real
+        }
+        if let snap = performSnapshots.first(where: { $0.matches(track) }),
+           let real = snap.asPreviewTrackIfPossible() {
+            return real
+        }
+        if let last = lastPerformTrack, !RecentPerformSnapshot.isSnapshotPlaceholder(last) { return last }
+        return track
     }
 
     func commitPerformSnapshot(_ snapshot: RecentPerformSnapshot) {
@@ -108,12 +128,24 @@ final class SongLibraryStore: ObservableObject {
     }
 
     func toggleFavorite(_ track: PreviewTrack) {
-        if let index = favorites.firstIndex(where: { $0.id == track.id }) {
+        let stored = canonicalTrackForLibrary(track)
+        if let index = favorites.firstIndex(where: { $0.id == stored.id }) {
             favorites.remove(at: index)
+            dlog("[LIBRARY] toggleFavorite removed “\(stored.title)” · count=\(favorites.count)")
         } else {
-            favorites.insert(track, at: 0)
+            favorites.insert(stored, at: 0)
+            dlog("[LIBRARY] toggleFavorite added “\(stored.title) — \(stored.artist)” · count=\(favorites.count)")
         }
-        _ = persist(favorites, forKey: Keys.favorites)
+        let ok = persist(favorites, forKey: Keys.favorites)
+        dlog("[LIBRARY] toggleFavorite persist ok=\(ok)")
+    }
+
+    /// Home card / disarm: ensure Recently used + lastPerform match what the user saw.
+    func syncFromPerformDisplay(_ track: PreviewTrack, reason: String) {
+        let stored = canonicalTrackForLibrary(track)
+        lastPerformTrack = stored
+        recordRecent(stored, reason: "syncDisplay:\(reason)")
+        logRecentDisplayMerge(context: "syncFromPerformDisplay")
     }
 
     func removeRecent(at index: Int) {

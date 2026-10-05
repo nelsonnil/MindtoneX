@@ -27,7 +27,7 @@ struct LoadedSongReadyRow: View {
                 .lineLimit(1)
             Spacer(minLength: 0)
             Button {
-                library.toggleFavorite(track)
+                library.toggleFavorite(library.canonicalTrackForLibrary(track))
             } label: {
                 Image(systemName: isFavorite ? "star.fill" : "star")
                     .font(.body.weight(.semibold))

@@ -138,10 +138,8 @@ struct SongLibrarySection: View {
         let selected = selectedTab == tab
         return Button {
             withAnimation(.easeInOut(duration: 0.2)) { selectedTab = tab }
-            if tab == .recent {
-                library.reloadFromDisk()
-                library.logRecentDisplayMerge(context: "Recent tab tap")
-            }
+            library.reloadFromDisk()
+            library.logRecentDisplayMerge(context: "tab:\(tab.rawValue)")
         } label: {
             Text(tab.rawValue)
                 .font(.subheadline.weight(.semibold))

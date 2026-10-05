@@ -352,6 +352,9 @@ final class AppModel: ObservableObject {
         audio.deactivateSession()
         isArmed = false
         phase = .setup
+        if let track = performSessionDisplayTrack {
+            SongLibraryStore.shared.syncFromPerformDisplay(track, reason: "disarm")
+        }
         SongLibraryStore.shared.reloadFromDisk()
         SongLibraryStore.shared.logRecentDisplayMerge(context: "disarm")
         dlog("══ DESARMADO ══")
@@ -431,8 +434,8 @@ final class AppModel: ObservableObject {
     var displayLoadedTrack: PreviewTrack? {
         if let track = selected, loadState == .ready { return track }
         if let track = lastReadyTrack { return track }
-        if let track = performSessionDisplayTrack { return track }
-        return SongLibraryStore.shared.lastPerformTrack
+        if let track = SongLibraryStore.shared.lastPerformTrack { return track }
+        return performSessionDisplayTrack
     }
 
     /// Library → Recently used (deduped in `SongLibraryStore`).
