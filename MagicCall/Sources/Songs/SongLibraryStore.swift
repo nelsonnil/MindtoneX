@@ -18,6 +18,8 @@ final class SongLibraryStore: ObservableObject {
     @Published private(set) var performSnapshots: [RecentPerformSnapshot] = []
     /// Last loaded/locked track during Perform — for Home UI after clear.
     @Published private(set) var lastPerformTrack: PreviewTrack?
+    /// Drives Recently used rows — updated whenever recents/snapshots change (List-in-ScrollView safe).
+    @Published private(set) var recentForUI: [PreviewTrack] = []
 
     private init() {
         reloadFromDisk()
@@ -56,7 +58,13 @@ final class SongLibraryStore: ObservableObject {
         if lastPerformTrack == nil, let first = loadedSnapshots.first {
             lastPerformTrack = first.asPreviewTrackIfPossible() ?? first.asSyntheticPreviewTrack()
         }
+        refreshRecentForUI()
         dlog("[LIBRARY] reloadFromDisk recent=\(loadedRecent.count) favorites=\(loadedFavorites.count) snapshots=\(loadedSnapshots.count)")
+    }
+
+    func refreshRecentForUI() {
+        recentForUI = recentDisplayTracks
+        dlog("[LIBRARY] refreshRecentForUI count=\(recentForUI.count) titles=\(recentForUI.prefix(3).map { $0.title }.joined(separator: ", "))")
     }
 
     func searchQuery(forDisplayTrack track: PreviewTrack) -> String? {
@@ -125,6 +133,7 @@ final class SongLibraryStore: ObservableObject {
         recent = list
         let ok = persist(list, forKey: Keys.recent)
         dlog("[LIBRARY] recordRecent (\(reason)) “\(track.title) — \(track.artist)” ok=\(ok) count=\(list.count)")
+        refreshRecentForUI()
     }
 
     func toggleFavorite(_ track: PreviewTrack) {
@@ -171,6 +180,7 @@ final class SongLibraryStore: ObservableObject {
             persistSnapshots(performSnapshots)
         }
         dlog("[LIBRARY] removeRecent “\(track.title)” · recent=\(recent.count) snapshots=\(performSnapshots.count)")
+        refreshRecentForUI()
     }
 
     func clearRecent() {
@@ -181,6 +191,7 @@ final class SongLibraryStore: ObservableObject {
         UserDefaults.standard.removeObject(forKey: Keys.recent)
         UserDefaults.standard.removeObject(forKey: Keys.performSnapshots)
         dlog("[LIBRARY] clearRecent")
+        refreshRecentForUI()
     }
 
     func removeFavorite(_ track: PreviewTrack) {

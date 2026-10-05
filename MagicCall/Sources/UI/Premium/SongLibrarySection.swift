@@ -25,7 +25,7 @@ struct SongLibrarySection: View {
 
     private var activeTracks: [PreviewTrack] {
         switch selectedTab {
-        case .recent: return library.recentDisplayTracks
+        case .recent: return library.recentForUI
         case .favorites: return library.favorites
         }
     }
@@ -66,22 +66,22 @@ struct SongLibrarySection: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 8)
             } else {
-                List {
+                VStack(spacing: 8) {
                     ForEach(activeTracks) { track in
                         libraryRow(track)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                     }
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .frame(maxHeight: 240)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .onAppear {
             library.reloadFromDisk()
+            library.refreshRecentForUI()
             library.logRecentDisplayMerge(context: "SongLibrarySection.onAppear")
+        }
+        .onChange(of: model.phase) { _, phase in
+            guard phase == .setup else { return }
+            library.refreshRecentForUI()
         }
         .fileImporter(
             isPresented: $showImportPicker,
@@ -139,6 +139,7 @@ struct SongLibrarySection: View {
         return Button {
             withAnimation(.easeInOut(duration: 0.2)) { selectedTab = tab }
             library.reloadFromDisk()
+            library.refreshRecentForUI()
             library.logRecentDisplayMerge(context: "tab:\(tab.rawValue)")
         } label: {
             Text(tab.rawValue)
@@ -184,7 +185,7 @@ struct SongLibrarySection: View {
 
     @ViewBuilder
     private var libraryToolbar: some View {
-        if selectedTab == .recent, !library.recentDisplayTracks.isEmpty {
+        if selectedTab == .recent, !library.recentForUI.isEmpty {
             HStack {
                 Spacer(minLength: 0)
                 Button("Clear") { showClearRecentAlert = true }
