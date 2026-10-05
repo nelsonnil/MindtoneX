@@ -265,6 +265,9 @@ final class VoiceSongSession: ObservableObject {
                 dlog("[VOICE] prefetch “\(next.searchQuery)” → \(ok ? "ready: \(track)" : "not found") (\(PreviewService.ms(since: t0)) ms)")
                 if self.candidate?.key == next.key {
                     self.prep = ok ? .ready : .notFound
+                    if ok {
+                        AppModel.shared.recordRecentLoadedSongIfReady()
+                    }
                     if !ok {
                         self.lockTimer?.invalidate()
                         self.lockDeadline = nil

@@ -21,6 +21,8 @@ final class AppModel: ObservableObject {
     @Published var query = ""
     @Published private(set) var results: [PreviewTrack] = []
     @Published private(set) var selected: PreviewTrack?
+    /// Last track that reached `.ready` in `select()` — survives brief clears before library record.
+    private(set) var lastReadyTrack: PreviewTrack?
     @Published private(set) var loadState: LoadState = .idle
     @Published private(set) var isArmed = false
     @Published private(set) var isAudible = false
@@ -127,6 +129,7 @@ final class AppModel: ObservableObject {
             let downloadMs = PreviewService.ms(since: t0)
             timings = [searchMs.map { "búsqueda \($0) ms" }, "audio listo \(downloadMs) ms"].compactMap { $0 }.joined(separator: " · ")
             loadState = .ready
+            lastReadyTrack = track
             SongLibraryStore.shared.recordRecent(track)
             dlog("Listo: \(track.title) — \(track.artist). \(timings)")
             if isArmed, Prefs.performanceMode == .fakeRingtone {
@@ -366,17 +369,22 @@ final class AppModel: ObservableObject {
             audio.startStandby()
         }
         ensureVolumeButtonWatch()
+        recordRecentLoadedSongIfReady()
         dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; long-press stage → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
     }
 
     /// Library → Recently used (deduped in `SongLibraryStore`).
     func recordRecentLoadedSongIfReady() {
-        guard loadState == .ready, let track = selected else { return }
+        guard let track = selected ?? lastReadyTrack else { return }
+        guard loadState == .ready || lastReadyTrack != nil else { return }
         SongLibraryStore.shared.recordRecent(track)
     }
 
     /// AI Voice: forget the previous spectator's song so the next Perform starts empty.
     func clearSongForNextPerformance() {
+        if let track = selected ?? lastReadyTrack {
+            SongLibraryStore.shared.recordRecent(track)
+        }
         audio.unload()
         query = ""
         results = []
@@ -386,6 +394,7 @@ final class AppModel: ObservableObject {
         ringtoneStaged = false
         timings = ""
         loadState = .idle
+        lastReadyTrack = nil
         dlog("Canción descartada — el próximo Perform empieza vacío hasta nueva búsqueda/bloqueo")
     }
 

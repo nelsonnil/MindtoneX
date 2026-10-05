@@ -75,6 +75,7 @@ struct SongLibrarySection: View {
                 .frame(maxHeight: 240)
             }
         }
+        .onAppear { library.reloadFromDisk() }
     }
 
     private func libraryTabChip(_ tab: LibraryTab) -> some View {

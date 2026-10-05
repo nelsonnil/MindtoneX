@@ -16,6 +16,11 @@ final class SongLibraryStore: ObservableObject {
     @Published private(set) var favorites: [PreviewTrack] = []
 
     private init() {
+        reloadFromDisk()
+    }
+
+    /// Re-read persisted lists (e.g. after another code path wrote UserDefaults).
+    func reloadFromDisk() {
         recent = Self.loadTracks(forKey: Keys.recent)
         favorites = Self.loadTracks(forKey: Keys.favorites)
     }

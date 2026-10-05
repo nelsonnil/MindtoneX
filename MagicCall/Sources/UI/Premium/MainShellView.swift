@@ -85,6 +85,11 @@ struct MainShellView: View {
                 model.pauseVoiceAndAudioForSetupUI(reason: "sheet \(sheet.id)")
             }
         }
+        .onChange(of: model.phase) { _, phase in
+            if phase == .setup {
+                SongLibraryStore.shared.reloadFromDisk()
+            }
+        }
         .alert("Can't start performance", isPresented: voicePreflightAlertPresented) {
             Button("OK", role: .cancel) { model.voiceOpenAIPreflightAlert = nil }
         } message: {
