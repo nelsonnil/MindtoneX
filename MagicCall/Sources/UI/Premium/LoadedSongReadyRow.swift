@@ -47,13 +47,13 @@ struct LoadedSongReadyRow: View {
             .accessibilityHint("Exports a short clip and opens the Share sheet")
 
             Button {
-                model.audition()
+                model.toggleAudition()
             } label: {
-                Image(systemName: model.isAudible ? "speaker.wave.2.fill" : "play.circle")
+                Image(systemName: model.isAudible ? "stop.circle.fill" : "play.circle")
             }
             .buttonStyle(.plain)
             .foregroundStyle(OracleTheme.gold)
-            .disabled(model.isAudible)
+            .accessibilityLabel(model.isAudible ? "Stop preview" : "Play preview")
         }
         .padding(12)
         .background(Color.white.opacity(0.05))

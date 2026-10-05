@@ -202,12 +202,14 @@ struct SongLibrarySection: View {
 
     private func libraryRow(_ track: PreviewTrack) -> some View {
         let favorited = library.isFavorite(track)
+        let canonical = library.canonicalTrackForLibrary(track)
+        let isPlayingThis = model.isAudible && model.selected?.id == canonical.id
         return HStack(spacing: 8) {
             Button {
                 loadAndPlay(track)
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: "play.circle.fill")
+                    Image(systemName: isPlayingThis ? "stop.circle.fill" : "play.circle.fill")
                         .font(.body)
                         .foregroundStyle(OracleTheme.gold.opacity(0.92))
                     VStack(alignment: .leading, spacing: 2) {

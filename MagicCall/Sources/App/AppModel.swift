@@ -172,6 +172,25 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func stopAudition(reason: String = "user") {
+        auditionEndWork?.cancel()
+        auditionEndWork = nil
+        guard isAudible else { return }
+        audio.stop()
+        audio.recomputeClip()
+        isAudible = false
+        dlog("Audition stopped [\(reason)]")
+    }
+
+    /// Tap play again while auditioning to stop.
+    func toggleAudition() {
+        if isAudible {
+            stopAudition(reason: "toggle")
+            return
+        }
+        audition()
+    }
+
     /// Plays the setup-screen preview for the ringtone window (start offset + up to 28 s), not the old 3 s cap.
     func audition() {
         guard loadState == .ready else { return }
