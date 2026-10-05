@@ -292,6 +292,14 @@ struct SongLibrarySection: View {
 
     private func loadAndPlay(_ track: PreviewTrack) {
         dlog("[LIBRARY] tap Recent row “\(track.title) — \(track.artist)”")
+        let canonical = library.canonicalTrackForLibrary(track)
+        if model.isAudible, model.selected?.id == canonical.id {
+            model.stopAudition(reason: "libraryRow")
+            return
+        }
+        if model.isAudible {
+            model.stopAudition(reason: "libraryRowSwitch")
+        }
         if let searchQuery = library.searchQuery(forDisplayTrack: track), !searchQuery.isEmpty {
             model.query = searchQuery
             Task {

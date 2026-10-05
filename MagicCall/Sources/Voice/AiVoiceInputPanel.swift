@@ -17,12 +17,6 @@ struct AiVoiceInputPanel: View {
             connectionBlock
             VoiceLockingControls()
             liveListenBlock
-            if let track = model.displayLoadedTrack {
-                LoadedSongReadyRow(
-                    track: track,
-                    leadingSystemImage: voice.state == .locked ? "lock.fill" : "checkmark.circle.fill"
-                )
-            }
         }
         .onAppear {
             if languageRaw == "es-en" { languageRaw = "es" }
