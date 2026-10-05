@@ -70,7 +70,6 @@
 		CC0000030000000000000003 /* SongLibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000040000000000000004 /* SongLibrarySection.swift */; };
 		CC0000090000000000000009 /* RecentPerformSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000A000000000000000A /* RecentPerformSnapshot.swift */; };
 		CC00000B000000000000000B /* LoadedSongReadyRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000C000000000000000C /* LoadedSongReadyRow.swift */; };
-		CC0000070000000000000007 /* SongLibraryPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000080000000000000008 /* SongLibraryPanel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,7 +92,6 @@
 		CC0000060000000000000006 /* ImportedAudioStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportedAudioStore.swift; sourceTree = "<group>"; };
 		CC0000040000000000000004 /* SongLibrarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibrarySection.swift; sourceTree = "<group>"; };
 		CC00000C000000000000000C /* LoadedSongReadyRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadedSongReadyRow.swift; sourceTree = "<group>"; };
-		CC0000080000000000000008 /* SongLibraryPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryPanel.swift; sourceTree = "<group>"; };
 		9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B61D2102F758F8505B68544E /* RingtoneDisguiseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneDisguiseView.swift; sourceTree = "<group>"; };
 		B6949E0964299D0E2E8531C7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -297,7 +295,6 @@
 				AA0000470000000000000047 /* UnifiedPerformanceModeCard.swift */,
 				AA0000070000000000000007 /* SongInputStrip.swift */,
 				CC0000040000000000000004 /* SongLibrarySection.swift */,
-				CC0000080000000000000008 /* SongLibraryPanel.swift */,
 				CC00000C000000000000000C /* LoadedSongReadyRow.swift */,
 				AA0000090000000000000009 /* FakeModeCard.swift */,
 				AA00000B000000000000000B /* ShareModeCard.swift */,
@@ -474,7 +471,6 @@
 				CC0000050000000000000005 /* ImportedAudioStore.swift in Sources */,
 				CC0000030000000000000003 /* SongLibrarySection.swift in Sources */,
 				CC00000B000000000000000B /* LoadedSongReadyRow.swift in Sources */,
-				CC0000070000000000000007 /* SongLibraryPanel.swift in Sources */,
 				AD247EA0DE5232DC20B60C86 /* PrivateProbes.swift in Sources */,
 				0FC1EC7B4985F1F6545DE135 /* RingtoneAudioEngine.swift in Sources */,
 				4D745440E4E871C0E45D380E /* RingtoneDisguiseView.swift in Sources */,
@@ -538,7 +534,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 96;
+				CURRENT_PROJECT_VERSION = 97;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -600,7 +596,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 96;
+				CURRENT_PROJECT_VERSION = 97;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -662,7 +658,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 96;
+				CURRENT_PROJECT_VERSION = 97;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
