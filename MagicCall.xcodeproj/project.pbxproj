@@ -70,6 +70,14 @@
 		CC0000030000000000000003 /* SongLibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000040000000000000004 /* SongLibrarySection.swift */; };
 		CC0000090000000000000009 /* RecentPerformSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000A000000000000000A /* RecentPerformSnapshot.swift */; };
 		CC00000B000000000000000B /* LoadedSongReadyRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000C000000000000000C /* LoadedSongReadyRow.swift */; };
+		DD0000020000000000000002 /* CardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000010000000000000001 /* CardSettings.swift */; };
+		DD0000040000000000000004 /* CardCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000030000000000000003 /* CardCaptureService.swift */; };
+		DD0000060000000000000006 /* CardOCRProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000050000000000000005 /* CardOCRProcessor.swift */; };
+		DD0000080000000000000008 /* CardTextMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000070000000000000007 /* CardTextMapper.swift */; };
+		DD00000A000000000000000A /* CardSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000090000000000000009 /* CardSongSession.swift */; };
+		DD00000C000000000000000C /* CardVolumeScanHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000B000000000000000B /* CardVolumeScanHost.swift */; };
+		DD00000E000000000000000E /* CardInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000D000000000000000D /* CardInputPanel.swift */; };
+		DD0000100000000000000010 /* CardPracticeScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000F000000000000000F /* CardPracticeScanView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -140,6 +148,14 @@
 		BB0000050000000000000005 /* ApiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettingsView.swift; sourceTree = "<group>"; };
 		BB0000070000000000000007 /* ApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiInputPanel.swift; sourceTree = "<group>"; };
 		AA0000400000000000000040 /* PerformanceCues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceCues.swift; sourceTree = "<group>"; };
+		DD0000010000000000000001 /* CardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSettings.swift; sourceTree = "<group>"; };
+		DD0000030000000000000003 /* CardCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCaptureService.swift; sourceTree = "<group>"; };
+		DD0000050000000000000005 /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
+		DD0000070000000000000007 /* CardTextMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardTextMapper.swift; sourceTree = "<group>"; };
+		DD0000090000000000000009 /* CardSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSongSession.swift; sourceTree = "<group>"; };
+		DD00000B000000000000000B /* CardVolumeScanHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardVolumeScanHost.swift; sourceTree = "<group>"; };
+		DD00000D000000000000000D /* CardInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardInputPanel.swift; sourceTree = "<group>"; };
+		DD00000F000000000000000F /* CardPracticeScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPracticeScanView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -250,6 +266,7 @@
 			children = (
 				9FF1C4C7A77B04B62ED7949E /* App */,
 				BB0000200000000000000020 /* Api */,
+				DD0000110000000000000011 /* Card */,
 				81D45F486E9CD99D614BA4C4 /* Audio */,
 				20E28B94AB89346A94B87FBD /* Calls */,
 				31B4E312D30B2DE9EFB3E3A5 /* Debug */,
@@ -336,6 +353,21 @@
 				C3786727696B22A692F5C69D /* VoiceSongSession.swift */,
 			);
 			path = Voice;
+			sourceTree = "<group>";
+		};
+		DD0000110000000000000011 /* Card */ = {
+			isa = PBXGroup;
+			children = (
+				DD0000010000000000000001 /* CardSettings.swift */,
+				DD0000030000000000000003 /* CardCaptureService.swift */,
+				DD0000050000000000000005 /* CardOCRProcessor.swift */,
+				DD0000070000000000000007 /* CardTextMapper.swift */,
+				DD0000090000000000000009 /* CardSongSession.swift */,
+				DD00000B000000000000000B /* CardVolumeScanHost.swift */,
+				DD00000D000000000000000D /* CardInputPanel.swift */,
+				DD00000F000000000000000F /* CardPracticeScanView.swift */,
+			);
+			path = Card;
 			sourceTree = "<group>";
 		};
 		AA0000210000000000000021 /* Notes */ = {
@@ -493,6 +525,14 @@
 				AA0000100000000000000010 /* OracleTheme.swift in Sources */,
 				AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */,
 				AA0000140000000000000014 /* PerformBottomBar.swift in Sources */,
+				DD0000020000000000000002 /* CardSettings.swift in Sources */,
+				DD0000040000000000000004 /* CardCaptureService.swift in Sources */,
+				DD0000060000000000000006 /* CardOCRProcessor.swift in Sources */,
+				DD0000080000000000000008 /* CardTextMapper.swift in Sources */,
+				DD00000A000000000000000A /* CardSongSession.swift in Sources */,
+				DD00000C000000000000000C /* CardVolumeScanHost.swift in Sources */,
+				DD00000E000000000000000E /* CardInputPanel.swift in Sources */,
+				DD0000100000000000000010 /* CardPracticeScanView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,7 +574,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 100;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -596,7 +636,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 100;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -658,7 +698,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 100;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

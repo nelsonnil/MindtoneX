@@ -5,8 +5,9 @@ extension AppModel {
     var usesVoiceInput: Bool { VoiceSettings.inputMode == .aiVoice }
     var usesNotesInput: Bool { VoiceSettings.inputMode == .notes }
     var usesApiInput: Bool { VoiceSettings.inputMode == .api }
-    /// AI Voice, Notes and API find the song during Perform, so each Perform starts with no song.
-    var findsSongDuringPerform: Bool { usesVoiceInput || usesNotesInput || usesApiInput }
+    var usesCardInput: Bool { VoiceSettings.inputMode == .card }
+    /// AI Voice, Notes, API and Card find the song during Perform, so each Perform starts with no song.
+    var findsSongDuringPerform: Bool { usesVoiceInput || usesNotesInput || usesApiInput || usesCardInput }
 
     /// True when this Perform may play audio (locked or manual track loaded after reset).
     func hasSongLockedForCurrentPerform() -> Bool {
@@ -14,6 +15,7 @@ extension AppModel {
         case .aiVoice: return VoiceSongSession.shared.state == .locked
         case .notes: return NotesSongSession.shared.isLocked
         case .api: return ApiSongSession.shared.state == .locked
+        case .card: return CardSongSession.shared.isLocked
         case .manual: return loadState == .ready
         }
     }
@@ -59,6 +61,7 @@ extension AppModel {
             VoiceSongSession.shared.reset(reason: "new Perform")
             NotesSongSession.shared.reset(reason: "new Perform")
             ApiSongSession.shared.reset(reason: "new Perform")
+            CardSongSession.shared.reset(reason: "new Perform")
             clearSongForNextPerformance()
         }
         switch Prefs.performanceMode {
@@ -79,6 +82,9 @@ extension AppModel {
             case .api:
                 arm(requireSong: false)
                 ApiSongSession.shared.start(context: .perform)
+            case .card:
+                arm(requireSong: false)
+                CardSongSession.shared.start(context: .perform)
             case .manual:
                 performFakeRingtone()
             }
@@ -92,6 +98,7 @@ extension AppModel {
         case .aiVoice: VoiceSettings.isConfigured
         case .notes: true
         case .api: ApiSettings.isConfigured
+        case .card: CardSettings.cameraAuthorized
         case .manual: loadState == .ready
         }
         if Prefs.performanceMode == .fakeRingtone {
@@ -112,6 +119,10 @@ extension AppModel {
 
     /// Looks up and loads the spectator's search read from the API with the normal preview lookup.
     func prepareApiQuery(_ query: String) async -> Bool {
+        await prepareSongQuery(query)
+    }
+
+    func prepareCardQuery(_ query: String) async -> Bool {
         await prepareSongQuery(query)
     }
 
@@ -179,6 +190,18 @@ extension AppModel {
         }
     }
 
+    func cardSongLocked(context: CardSongSession.Context) {
+        if context == .perform {
+            recordRecentLoadedSongIfReady(reason: "cardLocked")
+        }
+        if context == .perform, Prefs.performanceMode == .fakeRingtone, isArmed {
+            applyFakePerformMediaVolumeBoost(reason: "cardLocked")
+        }
+        if context == .perform, SharePerformFlow.shared.isActive {
+            SharePerformFlow.shared.songLocked()
+        }
+    }
+
     /// Leaving Perform starts the next performance from zero (no stale song on the next run).
     func resetVoicePerformance() {
         SharePerformFlow.shared.reset()
@@ -187,6 +210,7 @@ extension AppModel {
         VoiceSongSession.shared.reset(reason: "left Perform")
         NotesSongSession.shared.reset(reason: "left Perform")
         ApiSongSession.shared.reset(reason: "left Perform")
+        CardSongSession.shared.reset(reason: "left Perform")
         clearSongForNextPerformance()
     }
 
@@ -196,6 +220,7 @@ extension AppModel {
         VoiceSongSession.shared.reset(reason: "input mode \(previous.title) → \(next.title)")
         NotesSongSession.shared.reset(reason: "input mode")
         ApiSongSession.shared.reset(reason: "input mode")
+        CardSongSession.shared.reset(reason: "input mode")
         if previous != .manual || next != .manual {
             clearSongForNextPerformance()
         }

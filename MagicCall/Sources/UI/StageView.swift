@@ -61,6 +61,10 @@ struct StageView: View {
 
             HiddenVolumeView().frame(width: 1, height: 1)
 
+            CardVolumeScanHost()
+                .frame(width: 44, height: 44)
+                .opacity(0.01)
+
             Color.clear
                 .frame(width: 90, height: 90)
                 .contentShape(Rectangle())

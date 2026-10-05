@@ -71,6 +71,7 @@ final class AppModel: ObservableObject {
         #endif
         Prefs.registerDefaults()
         VoiceSettings.registerDefaults()
+        CardSettings.registerDefaults()
         DebugLog.shared.logDeviceHeader()
         calls.onEvent = { [weak self] event, call in
             MainActor.assumeIsolated { self?.handle(event, uuid: call.uuid) }
@@ -500,6 +501,7 @@ final class AppModel: ObservableObject {
         VoiceSongSession.shared.callArrived(source: source)
         NotesSongSession.shared.callArrived(source: source)
         ApiSongSession.shared.callArrived(source: source)
+        CardSongSession.shared.callArrived(source: source)
         guard isArmed else {
             dlog("[TRIGGER] “\(source)” ignorado: no armado")
             return
@@ -594,6 +596,7 @@ final class AppModel: ObservableObject {
             VoiceSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             NotesSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             ApiSongSession.shared.callArrived(source: "CXCallObserver.incoming")
+            CardSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             attemptAutoTrigger(source: "CXCallObserver.incoming")
         case .connected:
             if uuid == incomingCallID && Prefs.stopOnAnswer { silence(reason: "contestada") }
@@ -859,7 +862,8 @@ final class AppModel: ObservableObject {
                 guard FakePostCallVolumeGate.shouldTogglePlayOnVolume(
                     volumeButtonTrigger: Prefs.volumeButtonTrigger,
                     isArmed: self.isArmed,
-                    performed: self.performed
+                    performed: self.performed,
+                    cardCaptureUsesVolume: CardSongSession.shared.capturesVolumeButtons
                 ) else { return }
                 self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.6
                 SystemVolume.shared.set(old)

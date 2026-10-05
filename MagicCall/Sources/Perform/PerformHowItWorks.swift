@@ -89,6 +89,8 @@ enum PerformCopy {
             steps.append("Ask the spectator to search a song in \(ApiSettings.provider.title). The app checks every \(Int(ApiSettings.pollInterval)) seconds and locks their search as soon as the preview is loaded.")
         case .notes:
             steps.append("A white note opens instead. The song written in it is searched and loaded in the background.")
+        case .card:
+            steps.append("The back camera reads the spectator’s handwritten card when you press a **volume button** (no screen touch). ALL CAPS on white card works best.")
         case .manual:
             steps.append("The app uses the song you typed above.")
         }

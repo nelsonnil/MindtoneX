@@ -48,6 +48,37 @@ enum PerformanceCues {
         dlog("[CUE] vibration (2× long buzz) · \(source)")
     }
 
+    private static let candidateBuzzDuration: TimeInterval = 0.45
+    private static let failedShortBuzz: TimeInterval = 0.12
+    private static let failedGap: TimeInterval = 0.18
+
+    /// Light pulse while frames are collected (scan in progress).
+    @MainActor
+    static func cardScanningPulse() {
+        guard vibrateOnLock else { return }
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.65)
+        dlog("[CUE] card scanning pulse")
+    }
+
+    /// Single long buzz — song loaded but needs volume confirm (handwriting uncertain).
+    @MainActor
+    static func cardCandidateUncertain() {
+        guard vibrateOnLock else { return }
+        playOneLongBuzz(duration: candidateBuzzDuration, sharpness: 0.45)
+        dlog("[CUE] card candidate (1× long buzz)")
+    }
+
+    /// Two short buzzes — OCR could not read reliably.
+    @MainActor
+    static func cardScanFailed() {
+        guard vibrateOnLock else { return }
+        playOneLongBuzz(duration: failedShortBuzz, sharpness: 0.85)
+        DispatchQueue.main.asyncAfter(deadline: .now() + failedShortBuzz + failedGap) {
+            playOneLongBuzz(duration: failedShortBuzz, sharpness: 0.85)
+        }
+        dlog("[CUE] card scan failed (2× short buzz)")
+    }
+
     /// Fixed performer cue: two long buzzes with a clear gap (no pattern picker).
     @MainActor
     static func playSongLockVibration() {
@@ -58,20 +89,20 @@ enum PerformanceCues {
     }
 
     @MainActor
-    private static func playOneLongBuzz() {
-        if playContinuousHapticBuzz(duration: songLockBuzzDuration) { return }
+    private static func playOneLongBuzz(duration: TimeInterval = songLockBuzzDuration, sharpness: Float = 0.25) {
+        if playContinuousHapticBuzz(duration: duration, sharpness: sharpness) { return }
         AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
     }
 
     /// Core Haptics continuous buzz when hardware supports it; otherwise caller uses legacy vibrate.
     @MainActor
-    private static func playContinuousHapticBuzz(duration: TimeInterval) -> Bool {
+    private static func playContinuousHapticBuzz(duration: TimeInterval, sharpness: Float = 0.25) -> Bool {
         guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return false }
         do {
             let engine = try CHHapticEngine()
             try engine.start()
             let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
-            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.25)
+            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: sharpness)
             let event = CHHapticEvent(
                 eventType: .hapticContinuous,
                 parameters: [intensity, sharpness],
@@ -97,6 +128,7 @@ struct PerformStatusDot: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
     @ObservedObject private var api = ApiSongSession.shared
+    @ObservedObject private var card = CardSongSession.shared
     @AppStorage(PerformanceCues.Key.dotEnabled) private var enabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var size = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
@@ -107,6 +139,7 @@ struct PerformStatusDot: View {
         switch VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual {
         case .aiVoice: return voice.state == .locked
         case .api: return api.state == .locked
+        case .card: return card.state == .locked
         case .notes, .manual: return true
         }
     }

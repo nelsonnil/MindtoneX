@@ -5,9 +5,11 @@ enum FakePostCallVolumeGate {
     static func shouldTogglePlayOnVolume(
         volumeButtonTrigger: Bool,
         isArmed: Bool,
-        performed: Bool
+        performed: Bool,
+        cardCaptureUsesVolume: Bool = false
     ) -> Bool {
-        volumeButtonTrigger && isArmed && !performed
+        if cardCaptureUsesVolume { return false }
+        return volumeButtonTrigger && isArmed && !performed
     }
 }
 
