@@ -36,7 +36,6 @@ struct MainShellView: View {
                         inputModeRaw: $inputModeRaw,
                         queryFocused: $queryFocused
                     )
-                    SongLibrarySection()
                 }
 
                 FeedbackCard()
