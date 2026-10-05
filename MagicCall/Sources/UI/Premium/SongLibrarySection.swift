@@ -25,7 +25,7 @@ struct SongLibrarySection: View {
 
     private var activeTracks: [PreviewTrack] {
         switch selectedTab {
-        case .recent: return library.recent
+        case .recent: return library.recentDisplayTracks
         case .favorites: return library.favorites
         }
     }
@@ -135,6 +135,10 @@ struct SongLibrarySection: View {
         let selected = selectedTab == tab
         return Button {
             withAnimation(.easeInOut(duration: 0.2)) { selectedTab = tab }
+            if tab == .recent {
+                library.reloadFromDisk()
+                dlog("[LIBRARY] Recent tab · display=\(library.recentDisplayTracks.count) persisted=\(library.recent.count)")
+            }
         } label: {
             Text(tab.rawValue)
                 .font(.subheadline.weight(.semibold))
@@ -179,7 +183,7 @@ struct SongLibrarySection: View {
 
     @ViewBuilder
     private var libraryToolbar: some View {
-        if selectedTab == .recent, !library.recent.isEmpty {
+        if selectedTab == .recent, !library.recentDisplayTracks.isEmpty {
             HStack {
                 Spacer(minLength: 0)
                 Button("Clear") { showClearRecentAlert = true }
@@ -284,10 +288,24 @@ struct SongLibrarySection: View {
     }
 
     private func loadAndPlay(_ track: PreviewTrack) {
+        dlog("[LIBRARY] row tap “\(track.title) — \(track.artist)”")
         model.query = track.source == .imported ? track.title : "\(track.title) \(track.artist)"
         Task {
             await model.select(track)
-            guard model.loadState == .ready, model.selected?.id == track.id else { return }
+            if model.loadState == .ready, model.selected?.id == track.id {
+                model.audition()
+                return
+            }
+            dlog("[LIBRARY] retry loadAndPlay state=\(model.loadState)")
+            if track.source != .imported {
+                await model.search()
+                let match = model.results.first(where: { $0.id == track.id }) ?? model.results.first
+                if let match { await model.select(match) }
+            }
+            guard model.loadState == .ready else {
+                dlog("[LIBRARY] ✗ loadAndPlay failed")
+                return
+            }
             model.audition()
         }
     }

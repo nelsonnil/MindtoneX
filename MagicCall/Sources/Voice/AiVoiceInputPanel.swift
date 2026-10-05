@@ -17,7 +17,7 @@ struct AiVoiceInputPanel: View {
             connectionBlock
             VoiceLockingControls()
             liveListenBlock
-            if let track = model.selected, model.loadState == .ready {
+            if let track = model.displayLoadedTrack {
                 LoadedSongReadyRow(track: track)
             }
         }

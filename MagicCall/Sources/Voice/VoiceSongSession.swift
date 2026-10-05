@@ -266,7 +266,9 @@ final class VoiceSongSession: ObservableObject {
                 if self.candidate?.key == next.key {
                     self.prep = ok ? .ready : .notFound
                     if ok {
-                        AppModel.shared.recordRecentLoadedSongIfReady()
+                        await MainActor.run {
+                            AppModel.shared.recordRecentLoadedSongIfReady(reason: "voicePrefetch")
+                        }
                     }
                     if !ok {
                         self.lockTimer?.invalidate()
@@ -316,6 +318,9 @@ final class VoiceSongSession: ObservableObject {
         // During a ringing call the session category must not change (see RingtoneAudioEngine).
         if !duringCall { VoiceAudioSession.recordCategoryActive = false }
         AppModel.shared.voiceDidLock(context: context, duringCall: duringCall)
+        if context == .perform, let track = AppModel.shared.selected {
+            SongLibraryStore.shared.commitPerformTrack(track, reason: "voiceLock")
+        }
     }
 
     // MARK: Helpers
