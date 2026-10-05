@@ -41,6 +41,8 @@ struct SongInputStrip: View {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: inputModeRaw)
+
+            SongLibrarySection()
         }
     }
 
