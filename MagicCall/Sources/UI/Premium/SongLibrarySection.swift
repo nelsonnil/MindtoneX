@@ -168,6 +168,8 @@ struct SongLibrarySection: View {
             }
             .buttonStyle(.plain)
             .disabled(rowInteractionDisabled)
+            .accessibilityLabel("\(track.title), \(track.artist)")
+            .accessibilityHint("Load and play preview")
 
             Button {
                 library.toggleFavorite(track)
@@ -178,6 +180,18 @@ struct SongLibrarySection: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(favorited ? "Remove from favorites" : "Add to favorites")
+
+            Button {
+                Task { await model.shareRingtoneFromLibrary(track) }
+            } label: {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(OracleTheme.gold)
+            }
+            .buttonStyle(.plain)
+            .disabled(rowInteractionDisabled)
+            .accessibilityLabel("Share as ringtone")
+            .accessibilityHint("Load song, export clip, and open Share")
 
             Button {
                 remove(track)
@@ -204,9 +218,7 @@ struct SongLibrarySection: View {
                 Label("Remove", systemImage: "trash")
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(track.title), \(track.artist)")
-        .accessibilityHint("Load and play preview")
+        .accessibilityElement(children: .contain)
     }
 
     private func remove(_ track: PreviewTrack) {

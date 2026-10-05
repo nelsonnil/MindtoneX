@@ -275,6 +275,20 @@ final class AppModel: ObservableObject {
         dlog("Share Ringtone: share sheet presented for Perform")
     }
 
+    /// Library / home ready row: load the track if needed, then export and present Share or Quick Look.
+    func shareRingtoneFromLibrary(_ track: PreviewTrack) async {
+        if selected?.id != track.id || loadState != .ready {
+            query = "\(track.title) \(track.artist)"
+            await select(track)
+            guard loadState == .ready, selected?.id == track.id else {
+                dlog("✗ Share as ringtone: could not load \(track.title)")
+                return
+            }
+        }
+        await performShareRingtone()
+        dlog("Share as ringtone: share sheet from library/home for \(track.title)")
+    }
+
     func arm(requireSong: Bool = true) {
         guard loadState == .ready || !requireSong else {
             dlog("No se puede armar: no hay canción lista")
