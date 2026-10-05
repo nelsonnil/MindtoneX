@@ -374,6 +374,7 @@ final class AppModel: ObservableObject {
         if let track = performSessionDisplayTrack {
             SongLibraryStore.shared.syncFromPerformDisplay(track, reason: "disarm")
         }
+        performSessionDisplayTrack = nil
         SongLibraryStore.shared.reloadFromDisk()
         SongLibraryStore.shared.logRecentDisplayMerge(context: "disarm")
         dlog("══ DESARMADO ══")
@@ -449,12 +450,11 @@ final class AppModel: ObservableObject {
         dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; long-press stage → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
     }
 
-    /// Home Song input row after Perform (cleared loaded state still shows last perform song).
+    /// Manual search only — Voice/Notes/API songs live in Library (Recently used / Favorites).
     var displayLoadedTrack: PreviewTrack? {
-        if let track = selected, loadState == .ready { return track }
-        if let track = lastReadyTrack { return track }
-        if let track = SongLibraryStore.shared.lastPerformTrack { return track }
-        return performSessionDisplayTrack
+        guard VoiceSettings.inputMode == .manual else { return nil }
+        guard let track = selected, loadState == .ready else { return nil }
+        return track
     }
 
     /// Library → Recently used (deduped in `SongLibraryStore`).

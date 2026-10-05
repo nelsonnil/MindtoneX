@@ -44,7 +44,7 @@ struct SongLibrarySection: View {
                 eyebrow: "Step 2b"
             )
 
-            Text("Star a loaded song or any row below to save a favorite. You can also import your own audio from Files.")
+            Text("Songs from Perform appear here. Star a row for My favorites. Remove one with the minus button or swipe left; Clear empties Recently used.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
