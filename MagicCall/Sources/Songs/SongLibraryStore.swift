@@ -115,6 +115,8 @@ final class SongLibraryStore: ObservableObject {
 
         if let track = snapshot.asPreviewTrackIfPossible() {
             recordRecent(track, reason: "performSnapshot")
+        } else {
+            refreshRecentForUI()
         }
     }
 
@@ -154,6 +156,7 @@ final class SongLibraryStore: ObservableObject {
         let stored = canonicalTrackForLibrary(track)
         lastPerformTrack = stored
         recordRecent(stored, reason: "syncDisplay:\(reason)")
+        refreshRecentForUI()
         logRecentDisplayMerge(context: "syncFromPerformDisplay")
     }
 
