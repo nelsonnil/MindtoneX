@@ -21,7 +21,7 @@ settings:
     # Pon aquí tu Team ID o elígelo en Xcode > Signing & Capabilities.
     DEVELOPMENT_TEAM: "6XSHKM2M34"
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "95"
+    CURRENT_PROJECT_VERSION: "96"
 
 targets:
   MagicCall:
@@ -33,7 +33,7 @@ targets:
     settings:
       base:
         # Cámbialo por uno único tuyo (p. ej. com.tunombre.tonos).
-        PRODUCT_BUNDLE_IDENTIFIER: com.nelsonnil.tono
+        PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono
         PRODUCT_NAME: MagicCall
         INFOPLIST_FILE: MagicCall/Resources/Info.plist
         INFOPLIST_KEY_CFBundleDisplayName: MindtoneX
