@@ -13,6 +13,8 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
     private var clipEnd: TimeInterval = RingtoneLimits.defaultClipSeconds
     private var fadingAtLoopEdge = false
     private let edgeFade: TimeInterval = 0.12
+    /// Tras un stop explícito (toque en escena): no hot-standby ni bucle silencioso hasta `makeAudible`.
+    private(set) var holdsSilentUntilExplicitPlay = false
 
     var onFinishedClip: (() -> Void)?
 
@@ -121,6 +123,10 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
 
     /// Reproduce en silencio para mantener la sesión viva y el decodificador caliente.
     func startStandby() {
+        guard !holdsSilentUntilExplicitPlay else {
+            dlog("Standby omitido: silencio explícito hasta próximo play")
+            return
+        }
         guard let p = player else { return }
         p.volume = 0
         p.currentTime = clipStart
@@ -136,6 +142,7 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
             dlog("[AUDIO] makeAudible: sin reproductor")
             return false
         }
+        holdsSilentUntilExplicitPlay = false
         if let reconfigureSession {
             do { try reconfigureSession() } catch {
                 dlog("[AUDIO] makeAudible: reconfigure falló \(Self.describe(error))")
@@ -183,15 +190,23 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    func silence(fade: TimeInterval = 0.25) {
+    /// - Parameter holdUntilExplicitPlay: Tras un toque «stop» en escena: pausa y no reinicia hot-standby hasta el próximo play.
+    func silence(fade: TimeInterval = 0.25, holdUntilExplicitPlay: Bool = false) {
         guard let p = player else { return }
         isAudible = false
+        fadingAtLoopEdge = false
+        if holdUntilExplicitPlay { holdsSilentUntilExplicitPlay = true }
         p.setVolume(0, fadeDuration: fade)
-        if !Prefs.hotStandby {
+        timer?.invalidate()
+        timer = nil
+        let pauseAfterFade = holdUntilExplicitPlay || !Prefs.hotStandby
+        if pauseAfterFade {
             DispatchQueue.main.asyncAfter(deadline: .now() + fade + 0.05) { [weak self] in
                 guard let self, !self.isAudible else { return }
-                self.player?.stop()
-                self.timer?.invalidate()
+                self.player?.pause()
+                if !Prefs.hotStandby, !holdUntilExplicitPlay {
+                    self.player?.stop()
+                }
             }
         }
     }
@@ -201,6 +216,8 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
         timer = nil
         player?.stop()
         isAudible = false
+        holdsSilentUntilExplicitPlay = false
+        fadingAtLoopEdge = false
     }
 
     func unload() {
@@ -226,10 +243,7 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
     private func tick() {
         guard let p = player, p.isPlaying else { return }
         let now = p.currentTime
-        if !isAudible {
-            if now >= clipEnd || now < clipStart { p.currentTime = clipStart }
-            return
-        }
+        if !isAudible { return }
         if now >= clipEnd - edgeFade && !fadingAtLoopEdge {
             fadingAtLoopEdge = true
             p.setVolume(0, fadeDuration: edgeFade)

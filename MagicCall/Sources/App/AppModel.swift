@@ -445,7 +445,7 @@ final class AppModel: ObservableObject {
 
     func silence(reason: String) {
         guard isAudible else { return }
-        audio.silence()
+        audio.silence(holdUntilExplicitPlay: true)
         isAudible = false
         dlog("■ Silencio [\(reason)]")
     }
