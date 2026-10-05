@@ -20,6 +20,8 @@ struct SongLibrarySection: View {
 
     @State private var selectedTab: LibraryTab = .recent
     @State private var showClearRecentAlert = false
+    @State private var showImportPicker = false
+    @State private var importErrorMessage: String?
 
     private var activeTracks: [PreviewTrack] {
         switch selectedTab {
@@ -42,10 +44,12 @@ struct SongLibrarySection: View {
                 eyebrow: "Step 2b"
             )
 
-            Text("Star a loaded song or any row below to save a favorite.")
+            Text("Star a loaded song or any row below to save a favorite. You can also import your own audio from Files.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            importAudioBlock
 
             HStack(spacing: 10) {
                 ForEach(LibraryTab.allCases) { tab in
@@ -76,6 +80,55 @@ struct SongLibrarySection: View {
             }
         }
         .onAppear { library.reloadFromDisk() }
+        .fileImporter(
+            isPresented: $showImportPicker,
+            allowedContentTypes: ImportedAudioStore.fileImporterTypes,
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                Task { await model.importAudioFromFiles(url) }
+            case .failure(let error):
+                importErrorMessage = error.localizedDescription
+            }
+        }
+        .alert("Import failed", isPresented: Binding(
+            get: { importErrorMessage != nil },
+            set: { if !$0 { importErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { importErrorMessage = nil }
+        } message: {
+            Text(importErrorMessage ?? "")
+        }
+    }
+
+    private var importAudioBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                showImportPicker = true
+            } label: {
+                Label("Import audio", systemImage: "square.and.arrow.down")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .foregroundStyle(OracleTheme.textPrimary)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .disabled(rowInteractionDisabled)
+            .accessibilityHint("Pick an audio file from Files to use as a ringtone clip")
+
+            Text("Use only audio you have the right to use.")
+                .font(.caption2)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private func libraryTabChip(_ tab: LibraryTab) -> some View {
@@ -231,7 +284,7 @@ struct SongLibrarySection: View {
     }
 
     private func loadAndPlay(_ track: PreviewTrack) {
-        model.query = "\(track.title) \(track.artist)"
+        model.query = track.source == .imported ? track.title : "\(track.title) \(track.artist)"
         Task {
             await model.select(track)
             guard model.loadState == .ready, model.selected?.id == track.id else { return }

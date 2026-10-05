@@ -86,6 +86,19 @@ final class AppModel: ObservableObject {
 
     // MARK: Canción
 
+    /// User-picked file from Files (Library → Import audio). App Store–safe: sandbox copy only, no Music library.
+    func importAudioFromFiles(_ url: URL) async {
+        do {
+            let track = try ImportedAudioStore.importTrack(from: url)
+            query = track.title
+            await select(track)
+            dlog("Imported audio: \(track.title) → \(track.previewURL.lastPathComponent)")
+        } catch {
+            loadState = .failed(error.localizedDescription)
+            dlog("✗ Import audio: \(error.localizedDescription)")
+        }
+    }
+
     func search() async {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return }
@@ -278,7 +291,7 @@ final class AppModel: ObservableObject {
     /// Library / home ready row: load the track if needed, then export and present Share or Quick Look.
     func shareRingtoneFromLibrary(_ track: PreviewTrack) async {
         if selected?.id != track.id || loadState != .ready {
-            query = "\(track.title) \(track.artist)"
+            query = track.source == .imported ? track.title : "\(track.title) \(track.artist)"
             await select(track)
             guard loadState == .ready, selected?.id == track.id else {
                 dlog("✗ Share as ringtone: could not load \(track.title)")

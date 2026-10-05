@@ -7,6 +7,7 @@ struct PreviewTrack: Identifiable, Hashable, Codable {
     enum Source: String, Codable {
         case itunes = "iTunes"
         case deezer = "Deezer"
+        case imported = "Imported"
     }
 
     let title: String
@@ -19,7 +20,20 @@ struct PreviewTrack: Identifiable, Hashable, Codable {
     var id: String { source.rawValue + "|" + previewURL.absoluteString }
 
     var fileTypeHint: String {
-        source == .deezer ? AVFileType.mp3.rawValue : AVFileType.m4a.rawValue
+        switch source {
+        case .deezer:
+            return AVFileType.mp3.rawValue
+        case .itunes:
+            return AVFileType.m4a.rawValue
+        case .imported:
+            switch previewURL.pathExtension.lowercased() {
+            case "mp3": return AVFileType.mp3.rawValue
+            case "wav": return AVFileType.wav.rawValue
+            case "caf": return AVFileType.caf.rawValue
+            case "aiff", "aif": return AVFileType.aiff.rawValue
+            default: return AVFileType.m4a.rawValue
+            }
+        }
     }
 }
 
@@ -92,6 +106,17 @@ actor PreviewService {
     }
 
     func audioData(for track: PreviewTrack) async throws -> Data {
+        if track.source == .imported {
+            if let data = audioCache[track.previewURL] {
+                dlog("Imported audio en caché de memoria (\(data.count / 1024) KB)")
+                return data
+            }
+            let data = try Data(contentsOf: track.previewURL)
+            guard !data.isEmpty else { throw ImportedAudioError.unreadable }
+            audioCache[track.previewURL] = data
+            dlog("Imported audio leído (\(data.count / 1024) KB)")
+            return data
+        }
         if let data = audioCache[track.previewURL] {
             dlog("Audio en caché de memoria (\(data.count / 1024) KB)")
             return data
