@@ -55,6 +55,7 @@ extension AppModel {
         let input = VoiceSettings.inputMode
         dlog("══ PERFORM ══ mode=\(Prefs.performanceMode.title) input=\(input.title)")
         if findsSongDuringPerform {
+            performSessionDisplayTrack = nil
             VoiceSongSession.shared.reset(reason: "new Perform")
             NotesSongSession.shared.reset(reason: "new Perform")
             ApiSongSession.shared.reset(reason: "new Perform")
@@ -181,6 +182,7 @@ extension AppModel {
     /// Leaving Perform starts the next performance from zero (no stale song on the next run).
     func resetVoicePerformance() {
         SharePerformFlow.shared.reset()
+        commitVoicePerformSnapshotIfNeeded(reason: "resetVoicePerformance")
         recordRecentLoadedSongIfReady()
         VoiceSongSession.shared.reset(reason: "left Perform")
         NotesSongSession.shared.reset(reason: "left Perform")

@@ -312,7 +312,15 @@ final class VoiceSongSession: ObservableObject {
         lockDeadline = nil
         state = .locked
         dlog("[VOICE] 🔒 locked \(pick.label) · \(Self.percent(pick.confidence)) · \(reason) · mic running=\(mic.isRunning)")
-        if context == .perform { PerformanceCues.songLocked(source: "Voice") }
+        if context == .perform {
+            PerformanceCues.songLocked(source: "Voice")
+            let preview = AppModel.shared.selected?.previewURL.absoluteString
+                ?? AppModel.shared.lastReadyTrack?.previewURL.absoluteString
+            SongLibraryStore.shared.commitPerformSnapshot(
+                RecentPerformSnapshot(pick: pick, previewURL: preview)
+            )
+            AppModel.shared.notePerformDisplayTrack()
+        }
         // During a ringing call the session category must not change (see RingtoneAudioEngine).
         if !duringCall { VoiceAudioSession.recordCategoryActive = false }
         AppModel.shared.voiceDidLock(context: context, duringCall: duringCall)

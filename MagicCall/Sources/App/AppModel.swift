@@ -23,6 +23,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var selected: PreviewTrack?
     /// Last track that reached `.ready` in `select()` — survives brief clears before library record.
     private(set) var lastReadyTrack: PreviewTrack?
+    /// Last song locked/loaded during Voice Perform — shown on Home after disarm until the next Perform.
+    @Published private(set) var performSessionDisplayTrack: PreviewTrack?
     @Published private(set) var loadState: LoadState = .idle
     @Published private(set) var isArmed = false
     @Published private(set) var isAudible = false
@@ -143,7 +145,8 @@ final class AppModel: ObservableObject {
             timings = [searchMs.map { "búsqueda \($0) ms" }, "audio listo \(downloadMs) ms"].compactMap { $0 }.joined(separator: " · ")
             loadState = .ready
             lastReadyTrack = track
-            SongLibraryStore.shared.recordRecent(track)
+            SongLibraryStore.shared.recordRecent(track, source: "select")
+            if isArmed { performSessionDisplayTrack = track }
             dlog("Listo: \(track.title) — \(track.artist). \(timings)")
             if isArmed, Prefs.performanceMode == .fakeRingtone {
                 applyFakePerformMediaVolumeBoost(reason: "songReady")
@@ -333,6 +336,7 @@ final class AppModel: ObservableObject {
     }
 
     func disarm() {
+        dlog("[LIBRARY] disarm begin · selected=\(selected?.title ?? "nil") lastReady=\(lastReadyTrack?.title ?? "nil") lockedPick=\(VoiceSongSession.shared.lockedPick?.label ?? "nil") recent=\(SongLibraryStore.shared.recent.count)")
         stopCallPolling()
         callSignalActive = false
         SystemVolume.shared.restoreSavedIfNeeded()
@@ -348,7 +352,30 @@ final class AppModel: ObservableObject {
         audio.deactivateSession()
         isArmed = false
         phase = .setup
+        SongLibraryStore.shared.reloadFromDisk()
+        SongLibraryStore.shared.logRecentDisplayMerge(context: "disarm")
         dlog("══ DESARMADO ══")
+    }
+
+    func notePerformDisplayTrack() {
+        if let track = selected ?? lastReadyTrack {
+            performSessionDisplayTrack = track
+            dlog("[LIBRARY] perform display track “\(track.title) — \(track.artist)”")
+        }
+    }
+
+    func commitVoicePerformSnapshotIfNeeded(reason: String) {
+        guard usesVoiceInput else { return }
+        guard let pick = VoiceSongSession.shared.lockedPick else {
+            dlog("[LIBRARY] \(reason) — no lockedPick · selected=\(selected?.title ?? "nil") lastReady=\(lastReadyTrack?.title ?? "nil") loadState=\(loadState)")
+            return
+        }
+        let preview = selected?.previewURL.absoluteString ?? lastReadyTrack?.previewURL.absoluteString
+        SongLibraryStore.shared.commitPerformSnapshot(
+            RecentPerformSnapshot(pick: pick, previewURL: preview)
+        )
+        notePerformDisplayTrack()
+        dlog("[LIBRARY] \(reason) snapshot committed · display=\(performSessionDisplayTrack?.title ?? "nil")")
     }
 
     func scheduleVoicePerformStart() {
@@ -402,9 +429,15 @@ final class AppModel: ObservableObject {
 
     /// Library → Recently used (deduped in `SongLibraryStore`).
     func recordRecentLoadedSongIfReady() {
-        guard let track = selected ?? lastReadyTrack else { return }
-        guard loadState == .ready || lastReadyTrack != nil else { return }
-        SongLibraryStore.shared.recordRecent(track)
+        guard let track = selected ?? lastReadyTrack else {
+            dlog("[LIBRARY] recordRecentLoadedSongIfReady skipped — no track · loadState=\(loadState)")
+            return
+        }
+        guard loadState == .ready || lastReadyTrack != nil else {
+            dlog("[LIBRARY] recordRecentLoadedSongIfReady skipped — not ready · loadState=\(loadState)")
+            return
+        }
+        SongLibraryStore.shared.recordRecent(track, source: "recordRecentLoadedSongIfReady")
     }
 
     /// AI Voice: forget the previous spectator's song so the next Perform starts empty.

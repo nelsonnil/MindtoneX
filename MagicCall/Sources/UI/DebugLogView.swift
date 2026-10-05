@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DebugLogView: View {
     @EnvironmentObject private var log: DebugLog
+    @ObservedObject private var library = SongLibraryStore.shared
 
     var body: some View {
         LogList(entries: log.entries)
@@ -13,6 +14,10 @@ struct DebugLogView: View {
                     Button { UIPasteboard.general.string = log.fullText } label: { Image(systemName: "doc.on.doc") }
                     Button(role: .destructive) { log.clear() } label: { Image(systemName: "trash") }
                 }
+            }
+            .onAppear {
+                library.reloadFromDisk()
+                dlog("[LIBRARY] debug log open · recent=\(library.recent.count) display=\(library.recentDisplayTracks.count) snapshots=\(library.performSnapshots.count)")
             }
     }
 }
@@ -28,6 +33,15 @@ struct DebugOverlay: View {
                 Text(model.isAudible ? "● PLAYING" : "○ waiting")
                     .font(.caption.bold())
                     .foregroundStyle(model.isAudible ? .green : .secondary)
+                Text("lib \(SongLibraryStore.shared.recentDisplayTracks.count)")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.secondary)
+                if let t = model.performSessionDisplayTrack ?? model.selected {
+                    Text("\(t.title)")
+                        .font(.caption2)
+                        .lineLimit(1)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 Button("Play") { model.trigger(source: "debug") }
                 Button("Stop") { model.silence(reason: "debug") }

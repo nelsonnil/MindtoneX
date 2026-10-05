@@ -25,7 +25,7 @@ struct SongLibrarySection: View {
 
     private var activeTracks: [PreviewTrack] {
         switch selectedTab {
-        case .recent: return library.recent
+        case .recent: return library.recentDisplayTracks
         case .favorites: return library.favorites
         }
     }
@@ -79,7 +79,10 @@ struct SongLibrarySection: View {
                 .frame(maxHeight: 240)
             }
         }
-        .onAppear { library.reloadFromDisk() }
+        .onAppear {
+            library.reloadFromDisk()
+            library.logRecentDisplayMerge(context: "SongLibrarySection.onAppear")
+        }
         .fileImporter(
             isPresented: $showImportPicker,
             allowedContentTypes: ImportedAudioStore.fileImporterTypes,
@@ -135,6 +138,10 @@ struct SongLibrarySection: View {
         let selected = selectedTab == tab
         return Button {
             withAnimation(.easeInOut(duration: 0.2)) { selectedTab = tab }
+            if tab == .recent {
+                library.reloadFromDisk()
+                library.logRecentDisplayMerge(context: "Recent tab tap")
+            }
         } label: {
             Text(tab.rawValue)
                 .font(.subheadline.weight(.semibold))
@@ -179,7 +186,7 @@ struct SongLibrarySection: View {
 
     @ViewBuilder
     private var libraryToolbar: some View {
-        if selectedTab == .recent, !library.recent.isEmpty {
+        if selectedTab == .recent, !library.recentDisplayTracks.isEmpty {
             HStack {
                 Spacer(minLength: 0)
                 Button("Clear") { showClearRecentAlert = true }
@@ -284,10 +291,28 @@ struct SongLibrarySection: View {
     }
 
     private func loadAndPlay(_ track: PreviewTrack) {
+        dlog("[LIBRARY] tap Recent row “\(track.title) — \(track.artist)” id=\(track.id.prefix(48))")
+        if let searchQuery = library.searchQuery(forDisplayTrack: track), !searchQuery.isEmpty {
+            model.query = searchQuery
+            Task {
+                await model.search()
+                guard model.loadState == .ready else {
+                    dlog("[LIBRARY] loadAndPlay search failed loadState=\(model.loadState)")
+                    return
+                }
+                dlog("[LIBRARY] loadAndPlay snapshot resolved → \(model.selected?.title ?? "?")")
+                model.audition()
+            }
+            return
+        }
         model.query = track.source == .imported ? track.title : "\(track.title) \(track.artist)"
         Task {
             await model.select(track)
-            guard model.loadState == .ready, model.selected?.id == track.id else { return }
+            guard model.loadState == .ready, model.selected?.id == track.id else {
+                dlog("[LIBRARY] loadAndPlay select failed loadState=\(model.loadState) selected=\(model.selected?.id ?? "nil")")
+                return
+            }
+            dlog("[LIBRARY] loadAndPlay select ok → audition")
             model.audition()
         }
     }

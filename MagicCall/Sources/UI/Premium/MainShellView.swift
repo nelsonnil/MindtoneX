@@ -88,6 +88,7 @@ struct MainShellView: View {
         .onChange(of: model.phase) { _, phase in
             if phase == .setup {
                 SongLibraryStore.shared.reloadFromDisk()
+                SongLibraryStore.shared.logRecentDisplayMerge(context: "MainShell.setup")
             }
         }
         .alert("Can't start performance", isPresented: voicePreflightAlertPresented) {

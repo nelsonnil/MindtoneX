@@ -123,6 +123,12 @@ struct ReadinessStatusBar: View {
             case .listening:
                 return Status(tone: .working, icon: "waveform", text: "Listening…")
             case .locked:
+                if model.loadState == .ready, let track = model.selected {
+                    return Status(tone: .ready, icon: "lock.fill", text: "Locked · \(track.title) — \(track.artist)")
+                }
+                if let track = model.performSessionDisplayTrack {
+                    return Status(tone: .ready, icon: "lock.fill", text: "Locked · \(track.title) — \(track.artist)")
+                }
                 let pick = voice.lockedPick?.label ?? "song"
                 return Status(tone: .ready, icon: "lock.fill", text: "Locked · \(pick)")
             default:
