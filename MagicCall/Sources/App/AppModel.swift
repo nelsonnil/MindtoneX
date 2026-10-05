@@ -374,7 +374,7 @@ final class AppModel: ObservableObject {
         if let track = performSessionDisplayTrack {
             SongLibraryStore.shared.syncFromPerformDisplay(track, reason: "disarm")
         }
-        performSessionDisplayTrack = nil
+        clearPerformSessionDisplayTrack()
         SongLibraryStore.shared.reloadFromDisk()
         SongLibraryStore.shared.logRecentDisplayMerge(context: "disarm")
         dlog("══ DESARMADO ══")
@@ -385,6 +385,10 @@ final class AppModel: ObservableObject {
             performSessionDisplayTrack = track
             dlog("[LIBRARY] perform display track “\(track.title) — \(track.artist)”")
         }
+    }
+
+    func clearPerformSessionDisplayTrack() {
+        performSessionDisplayTrack = nil
     }
 
     func commitVoicePerformSnapshotIfNeeded(reason: String) {
