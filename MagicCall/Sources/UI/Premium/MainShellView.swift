@@ -38,6 +38,10 @@ struct MainShellView: View {
                     )
                 }
 
+                HomePanel(accent: OracleTheme.indigo) {
+                    SongLibraryPanel()
+                }
+
                 FeedbackCard()
             }
             .padding(.horizontal, 16)

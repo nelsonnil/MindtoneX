@@ -17,7 +17,6 @@ struct SongLibrarySection: View {
                 tracks: library.favorites
             )
         }
-        .padding(.top, 4)
     }
 
     @ViewBuilder
