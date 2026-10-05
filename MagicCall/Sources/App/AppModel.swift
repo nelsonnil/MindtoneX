@@ -127,6 +127,7 @@ final class AppModel: ObservableObject {
             let downloadMs = PreviewService.ms(since: t0)
             timings = [searchMs.map { "búsqueda \($0) ms" }, "audio listo \(downloadMs) ms"].compactMap { $0 }.joined(separator: " · ")
             loadState = .ready
+            SongLibraryStore.shared.recordRecent(track)
             dlog("Listo: \(track.title) — \(track.artist). \(timings)")
             if isArmed, Prefs.performanceMode == .fakeRingtone {
                 applyFakePerformMediaVolumeBoost(reason: "songReady")

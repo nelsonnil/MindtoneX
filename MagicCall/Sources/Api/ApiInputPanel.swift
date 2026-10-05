@@ -166,23 +166,7 @@ struct ApiInputPanel: View {
     @ViewBuilder
     private var lockedSongRow: some View {
         if session.state == .locked, let track = model.selected, model.loadState == .ready {
-            HStack(spacing: 8) {
-                Image(systemName: "lock.fill")
-                    .foregroundStyle(OracleTheme.gold)
-                Text("\(track.title) — \(track.artist)")
-                    .font(.subheadline.weight(.medium))
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                Button { model.audition() } label: {
-                    Image(systemName: model.isAudible ? "speaker.wave.2.fill" : "play.circle")
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(OracleTheme.gold)
-                .disabled(model.isAudible)
-            }
-            .padding(10)
-            .background(Color.white.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            LoadedSongReadyRow(track: track, leadingSystemImage: "lock.fill")
         }
     }
 

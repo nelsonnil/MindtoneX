@@ -65,6 +65,9 @@
 		AA0000490000000000000049 /* PerformanceGuideSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000480000000000000048 /* PerformanceGuideSheet.swift */; };
 		AA00004B000000000000004B /* VoiceOpenAILanguages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00004A000000000000004A /* VoiceOpenAILanguages.swift */; };
 		AA0000500000000000000050 /* VoiceOpenAIPreflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000510000000000000051 /* VoiceOpenAIPreflight.swift */; };
+		CC0000010000000000000001 /* SongLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000020000000000000002 /* SongLibraryStore.swift */; };
+		CC0000030000000000000003 /* SongLibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000040000000000000004 /* SongLibrarySection.swift */; };
+		CC0000050000000000000005 /* LoadedSongReadyRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000060000000000000006 /* LoadedSongReadyRow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -82,6 +85,9 @@
 		81ED684AAD9C91EABD24A1D3 /* SystemVolume.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemVolume.swift; sourceTree = "<group>"; };
 		8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneAudioEngine.swift; sourceTree = "<group>"; };
 		94C29E2CCBFC1086588445F6 /* PreviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewService.swift; sourceTree = "<group>"; };
+		CC0000020000000000000002 /* SongLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryStore.swift; sourceTree = "<group>"; };
+		CC0000040000000000000004 /* SongLibrarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibrarySection.swift; sourceTree = "<group>"; };
+		CC0000060000000000000006 /* LoadedSongReadyRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadedSongReadyRow.swift; sourceTree = "<group>"; };
 		9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B61D2102F758F8505B68544E /* RingtoneDisguiseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneDisguiseView.swift; sourceTree = "<group>"; };
 		B6949E0964299D0E2E8531C7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -228,6 +234,7 @@
 			isa = PBXGroup;
 			children = (
 				94C29E2CCBFC1086588445F6 /* PreviewService.swift */,
+				CC0000020000000000000002 /* SongLibraryStore.swift */,
 			);
 			path = Songs;
 			sourceTree = "<group>";
@@ -281,6 +288,8 @@
 				AA0000030000000000000003 /* HeroLogoView.swift */,
 				AA0000470000000000000047 /* UnifiedPerformanceModeCard.swift */,
 				AA0000070000000000000007 /* SongInputStrip.swift */,
+				CC0000040000000000000004 /* SongLibrarySection.swift */,
+				CC0000060000000000000006 /* LoadedSongReadyRow.swift */,
 				AA0000090000000000000009 /* FakeModeCard.swift */,
 				AA00000B000000000000000B /* ShareModeCard.swift */,
 				AA00000D000000000000000D /* OracleSheets.swift */,
@@ -451,6 +460,9 @@
 				9BC788D2F180C967FBFF14AB /* MagicIntents.swift in Sources */,
 				A44853952E079252482E4F83 /* Prefs.swift in Sources */,
 				BEC014E4012EE7481D2D4B24 /* PreviewService.swift in Sources */,
+				CC0000010000000000000001 /* SongLibraryStore.swift in Sources */,
+				CC0000030000000000000003 /* SongLibrarySection.swift in Sources */,
+				CC0000050000000000000005 /* LoadedSongReadyRow.swift in Sources */,
 				AD247EA0DE5232DC20B60C86 /* PrivateProbes.swift in Sources */,
 				0FC1EC7B4985F1F6545DE135 /* RingtoneAudioEngine.swift in Sources */,
 				4D745440E4E871C0E45D380E /* RingtoneDisguiseView.swift in Sources */,
@@ -514,7 +526,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -576,7 +588,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -638,7 +650,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

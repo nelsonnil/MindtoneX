@@ -56,7 +56,7 @@ struct FavoritesSetupSheet: View {
             .padding()
         }
         .background(OracleTheme.bgTop)
-        .navigationTitle("Favorites")
+        .navigationTitle("Share favorites")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
