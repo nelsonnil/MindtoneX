@@ -55,7 +55,7 @@ extension AppModel {
         let input = VoiceSettings.inputMode
         dlog("══ PERFORM ══ mode=\(Prefs.performanceMode.title) input=\(input.title)")
         if findsSongDuringPerform {
-            performSessionDisplayTrack = nil
+            clearPerformSessionDisplayTrack()
             VoiceSongSession.shared.reset(reason: "new Perform")
             NotesSongSession.shared.reset(reason: "new Perform")
             ApiSongSession.shared.reset(reason: "new Perform")
