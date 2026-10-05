@@ -68,7 +68,6 @@
 		CC0000010000000000000001 /* SongLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000020000000000000002 /* SongLibraryStore.swift */; };
 		CC0000030000000000000003 /* SongLibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000040000000000000004 /* SongLibrarySection.swift */; };
 		CC0000050000000000000005 /* LoadedSongReadyRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000060000000000000006 /* LoadedSongReadyRow.swift */; };
-		CC0000070000000000000007 /* SongLibraryPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000080000000000000008 /* SongLibraryPanel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */

@@ -38,8 +38,8 @@ struct MainShellView: View {
                     )
                 }
 
-                HomePanel(accent: OracleTheme.indigo) {
-                    SongLibraryPanel()
+                HomePanel(accent: OracleTheme.gold) {
+                    SongLibrarySection()
                 }
 
                 FeedbackCard()

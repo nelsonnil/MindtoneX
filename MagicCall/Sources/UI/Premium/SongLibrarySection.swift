@@ -6,6 +6,12 @@ struct SongLibrarySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+            HomeSectionTitle(
+                title: "Library",
+                subtitle: "Recently used songs and favorites",
+                eyebrow: "Step 2b"
+            )
+
             librarySubsection(
                 title: "Recently used",
                 emptyMessage: "No recent songs yet",
