@@ -97,22 +97,24 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
     }
 
     func recomputeClip() {
-        guard let p = player else { return }
-        clipStart = min(max(0, Prefs.startOffset), max(0, p.duration - 1))
-        let clipLength = min(Prefs.clipSeconds, RingtoneLimits.clipStepperMax)
-        clipEnd = min(p.duration, clipStart + max(2, clipLength))
+        applyClipBounds(maxLength: min(Prefs.clipSeconds, RingtoneLimits.exportMaxSeconds))
     }
 
     /// Setup-screen preview: same start as ringtone export, up to `maxSeconds` (Apple ringtone cap ~30 s; export uses `RingtoneLimits.exportMaxSeconds`).
     /// Returns how long playback should run before stopping.
     @discardableResult
     func configureSetupPreview(maxSeconds: TimeInterval = RingtoneLimits.exportMaxSeconds) -> TimeInterval {
-        guard let p = player else { return maxSeconds }
+        guard player != nil else { return min(maxSeconds, RingtoneLimits.exportMaxSeconds) }
+        applyClipBounds(maxLength: min(maxSeconds, RingtoneLimits.exportMaxSeconds))
+        return clipEnd - clipStart
+    }
+
+    private func applyClipBounds(maxLength: TimeInterval) {
+        guard let p = player else { return }
         clipStart = min(max(0, Prefs.startOffset), max(0, p.duration - 1))
         let available = max(0, p.duration - clipStart)
-        let length = min(max(2, maxSeconds), available)
+        let length = min(max(2, maxLength), available)
         clipEnd = clipStart + length
-        return clipEnd - clipStart
     }
 
     // MARK: Control
@@ -129,7 +131,7 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
     }
 
     @discardableResult
-    func makeAudible(reconfigureSession: (() throws -> Void)? = nil) -> Bool {
+    func makeAudible(reconfigureSession: (() throws -> Void)? = nil, preserveClipBounds: Bool = false) -> Bool {
         guard let p = player else {
             dlog("[AUDIO] makeAudible: sin reproductor")
             return false
@@ -139,7 +141,7 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
                 dlog("[AUDIO] makeAudible: reconfigure falló \(Self.describe(error))")
             }
         }
-        recomputeClip()
+        if !preserveClipBounds { recomputeClip() }
         fadingAtLoopEdge = false
         p.currentTime = clipStart
         var ok = true
@@ -240,7 +242,9 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
         if now >= clipEnd || now < clipStart - 0.5 {
             p.currentTime = clipStart
             fadingAtLoopEdge = false
-            if isAudible { p.setVolume(1, fadeDuration: edgeFade) }
+            if isAudible {
+                p.setVolume(Float(Prefs.fakePlaybackVolume), fadeDuration: edgeFade)
+            }
         }
     }
 

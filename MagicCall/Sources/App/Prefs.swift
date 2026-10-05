@@ -39,6 +39,9 @@ enum Prefs {
         static let ringtoneUseQuickLook = "ringtone.useQuickLook"
 
         static let performanceMode = "ui.performanceMode"
+
+        /// One-time bump of legacy `clipSeconds` (e.g. 10) to `RingtoneLimits.exportMaxSeconds`.
+        static let clipSecondsMigratedToExportMax = "audio.clipSecondsMigratedToExportMax"
     }
 
     enum PerformanceMode: String, CaseIterable, Identifiable {
@@ -74,7 +77,8 @@ enum Prefs {
     }
 
     static func registerDefaults() {
-        UserDefaults.standard.register(defaults: [
+        let d = UserDefaults.standard
+        d.register(defaults: [
             Key.noInterruptions: true,
             Key.mixWithOthers: false,
             Key.hotStandby: true,
@@ -105,6 +109,18 @@ enum Prefs {
             Key.ringtoneUseQuickLook: false,
             Key.performanceMode: PerformanceMode.fakeRingtone.rawValue,
         ])
+        migrateClipSecondsIfNeeded()
+    }
+
+    /// Bumps stored clip length below the iOS ringtone cap once (registerDefaults does not overwrite existing values).
+    private static func migrateClipSecondsIfNeeded() {
+        guard !d.bool(forKey: Key.clipSecondsMigratedToExportMax) else { return }
+        let stored = d.object(forKey: Key.clipSeconds) != nil ? d.double(forKey: Key.clipSeconds) : RingtoneLimits.defaultClipSeconds
+        if stored < RingtoneLimits.exportMaxSeconds {
+            d.set(RingtoneLimits.exportMaxSeconds, forKey: Key.clipSeconds)
+            dlog("Migración clip: \(String(format: "%.0f", stored)) s → \(Int(RingtoneLimits.exportMaxSeconds)) s")
+        }
+        d.set(true, forKey: Key.clipSecondsMigratedToExportMax)
     }
 
     static var autoStageRingtone: Bool { d.bool(forKey: Key.autoStageRingtone) }
@@ -120,7 +136,10 @@ enum Prefs {
     static var noInterruptions: Bool { d.bool(forKey: Key.noInterruptions) }
     static var mixWithOthers: Bool { d.bool(forKey: Key.mixWithOthers) }
     static var hotStandby: Bool { d.bool(forKey: Key.hotStandby) }
-    static var clipSeconds: Double { d.double(forKey: Key.clipSeconds) }
+    static var clipSeconds: Double {
+        let v = d.object(forKey: Key.clipSeconds) != nil ? d.double(forKey: Key.clipSeconds) : RingtoneLimits.defaultClipSeconds
+        return min(max(v, RingtoneLimits.clipStepperMin), RingtoneLimits.clipStepperMax)
+    }
     static var startOffset: Double { d.double(forKey: Key.startOffset) }
     static var loopClip: Bool { d.bool(forKey: Key.loopClip) }
     static var stopOnAnswer: Bool { d.bool(forKey: Key.stopOnAnswer) }

@@ -158,7 +158,7 @@ final class AppModel: ObservableObject {
         auditionEndWork?.cancel()
         do { try audio.configureSession(preferIPhoneSpeaker: false) } catch { dlog("✗ Sesión: \(RingtoneAudioEngine.describe(error))") }
         let seconds = audio.configureSetupPreview(maxSeconds: RingtoneLimits.exportMaxSeconds)
-        audio.makeAudible()
+        audio.makeAudible(preserveClipBounds: true)
         isAudible = true
         dlog("Audition \(String(format: "%.1f", seconds)) s (ringtone preview window)")
         let work = DispatchWorkItem { [weak self] in
