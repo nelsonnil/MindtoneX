@@ -1,6 +1,6 @@
 import Foundation
 
-/// Lightweight OpenAI check before AI Voice Perform (avoid arming mid-trick on bad key or quota).
+/// Lightweight speech-service check before AI Voice Perform (avoid arming mid-trick on bad key or quota).
 enum VoiceOpenAIPreflight {
     private static let session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
@@ -13,7 +13,7 @@ enum VoiceOpenAIPreflight {
     /// `nil` = OK; non-nil = user-facing English message (stay on home screen).
     static func checkBeforePerform() async -> String? {
         guard let key = VoiceSettings.apiKey else {
-            return "Add your OpenAI API key under Voice → Connection before performing."
+            return "Add your speech connection key under Speech before performing."
         }
         return await validate(apiKey: key)
     }
@@ -41,26 +41,41 @@ enum VoiceOpenAIPreflight {
         }
     }
 
+    /// Strips vendor/model branding from API error text before showing it in alerts.
+    static func scrubVendorBranding(_ text: String) -> String {
+        var s = text
+        let replacements: [(String, String)] = [
+            ("OpenAI", "Speech service"),
+            ("openai", "speech service"),
+            ("GPT", "speech"),
+            ("gpt-", "speech-"),
+        ]
+        for (from, to) in replacements {
+            s = s.replacingOccurrences(of: from, with: to)
+        }
+        return s
+    }
+
     private static func friendlyMessage(httpStatus: Int, body: String) -> String {
         let parsed = parseOpenAIErrorBody(body)
         if parsed.code == "insufficient_quota" || parsed.type == "insufficient_quota" {
-            return "OpenAI account has no remaining balance or quota. Add credits in your OpenAI billing settings, then try Perform again."
+            return "Speech service has no remaining balance or quota. Add credits in your billing settings, then try Perform again."
         }
         switch httpStatus {
         case 401:
-            return "OpenAI API key is invalid or revoked. Update it under Voice → Connection."
+            return "API key is invalid or revoked. Update it under Speech."
         case 403:
-            return "OpenAI rejected this API key (access denied). Check the key and your OpenAI project permissions."
+            return "This API key was rejected (access denied). Check the key and your project permissions."
         case 429:
             if parsed.message.lowercased().contains("quota") || parsed.message.lowercased().contains("billing") {
-                return "OpenAI quota or billing limit reached. Check your account balance, then try Perform again."
+                return "Quota or billing limit reached. Check your account balance, then try Perform again."
             }
-            return "OpenAI rate limit hit. Wait a moment and try Perform again."
+            return "Rate limit reached. Wait a moment and try Perform again."
         case 500...599:
-            return "OpenAI is temporarily unavailable (HTTP \(httpStatus)). Try Perform again in a minute."
+            return "Speech service is temporarily unavailable (HTTP \(httpStatus)). Try Perform again in a minute."
         default:
-            if !parsed.message.isEmpty { return parsed.message }
-            return "OpenAI connection failed (HTTP \(httpStatus)). Check your key and network, then try again."
+            if !parsed.message.isEmpty { return scrubVendorBranding(parsed.message) }
+            return "Connection failed (HTTP \(httpStatus)). Check your key and network, then try again."
         }
     }
 
@@ -70,14 +85,15 @@ enum VoiceOpenAIPreflight {
             case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
                 return "No internet connection. Connect to Wi‑Fi or cellular data, then try Perform again."
             case .timedOut:
-                return "OpenAI connection timed out. Check your network and try Perform again."
+                return "Connection timed out. Check your network and try Perform again."
             case .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
-                return "Can't reach OpenAI. Check your network or VPN, then try Perform again."
+                return "Can't reach the speech service. Check your network or VPN, then try Perform again."
             default:
                 break
             }
         }
-        return "Couldn't reach OpenAI (\(error.localizedDescription)). Check your network and API key."
+        let detail = scrubVendorBranding(error.localizedDescription)
+        return "Couldn't connect (\(detail)). Check your network and API key."
     }
 
     private static func parseOpenAIErrorBody(_ body: String) -> (message: String, type: String, code: String) {

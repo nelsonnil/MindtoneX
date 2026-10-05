@@ -256,7 +256,7 @@ struct AiVoiceInputPanel: View {
         let (text, color): (String, Color) = {
             switch voice.state {
             case .idle: return ("Off", OracleTheme.textSecondary)
-            case .starting: return ("Starting…", OracleTheme.indigo)
+            case .starting: return ("Preparing voice…", OracleTheme.indigo)
             case .listening: return ("Listening", OracleTheme.coral)
             case .locked: return ("Locked", OracleTheme.gold)
             case .failed: return ("Error", OracleTheme.coral)

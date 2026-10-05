@@ -112,7 +112,7 @@ struct ReadinessStatusBar: View {
                 return Status(tone: .warning, icon: "link.circle", text: "Voice — add connection key in settings")
             }
             if model.voiceOpenAIPreflightInProgress {
-                return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Checking OpenAI connection…")
+                return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Checking connection…")
             }
             if case .failed(let message) = voice.state {
                 return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: message)

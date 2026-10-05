@@ -229,7 +229,26 @@ final class OpenAIRealtimeTranscriber: NSObject, LiveTranscriber, URLSessionWebS
 
     private func report(_ message: String) {
         dlog("✗ [VOICE] OpenAI realtime: \(message)")
-        DispatchQueue.main.async { self.onError?(message) }
+        let userMessage = Self.userFacingRealtimeError(message)
+        DispatchQueue.main.async { self.onError?(userMessage) }
+    }
+
+    /// Maps vendor-branded API/WebSocket errors to neutral on-screen copy.
+    private static func userFacingRealtimeError(_ message: String) -> String {
+        let lower = message.lowercased()
+        guard lower.contains("openai") || lower.contains("gpt") else {
+            return VoiceOpenAIPreflight.scrubVendorBranding(message)
+        }
+        if lower.contains("api key") || lower.contains("invalid") || lower.contains("incorrect") || lower.contains("authentication") {
+            return "Speech connection failed. Check your API key under Speech."
+        }
+        if lower.contains("quota") || lower.contains("billing") || lower.contains("insufficient") {
+            return "Speech service quota reached. Check billing and try again."
+        }
+        if lower.contains("rate limit") {
+            return "Rate limit reached. Wait a moment and try again."
+        }
+        return "Speech connection lost. Check your network and try again."
     }
 
     // MARK: URLSessionWebSocketDelegate
