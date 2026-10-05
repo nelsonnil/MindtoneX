@@ -145,7 +145,7 @@ final class AppModel: ObservableObject {
             timings = [searchMs.map { "búsqueda \($0) ms" }, "audio listo \(downloadMs) ms"].compactMap { $0 }.joined(separator: " · ")
             loadState = .ready
             lastReadyTrack = track
-            SongLibraryStore.shared.recordRecent(track, source: "select")
+            SongLibraryStore.shared.recordRecent(track, reason: "select")
             if isArmed { performSessionDisplayTrack = track }
             dlog("Listo: \(track.title) — \(track.artist). \(timings)")
             if isArmed, Prefs.performanceMode == .fakeRingtone {
@@ -423,27 +423,39 @@ final class AppModel: ObservableObject {
             audio.startStandby()
         }
         ensureVolumeButtonWatch()
-        recordRecentLoadedSongIfReady()
+        recordRecentLoadedSongIfReady(reason: "performed:\(reason)")
         dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; long-press stage → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
     }
 
+    /// Home Song input row after Perform (cleared loaded state still shows last perform song).
+    var displayLoadedTrack: PreviewTrack? {
+        if let track = selected, loadState == .ready { return track }
+        if let track = lastReadyTrack { return track }
+        if let track = performSessionDisplayTrack { return track }
+        return SongLibraryStore.shared.lastPerformTrack
+    }
+
     /// Library → Recently used (deduped in `SongLibraryStore`).
-    func recordRecentLoadedSongIfReady() {
+    func recordRecentLoadedSongIfReady(reason: String = "ifReady") {
         guard let track = selected ?? lastReadyTrack else {
-            dlog("[LIBRARY] recordRecentLoadedSongIfReady skipped — no track · loadState=\(loadState)")
+            dlog("[LIBRARY] skip record (\(reason)): no track · loadState=\(loadState)")
             return
         }
         guard loadState == .ready || lastReadyTrack != nil else {
-            dlog("[LIBRARY] recordRecentLoadedSongIfReady skipped — not ready · loadState=\(loadState)")
+            dlog("[LIBRARY] skip record (\(reason)): loadState=\(loadState)")
             return
         }
-        SongLibraryStore.shared.recordRecent(track, source: "recordRecentLoadedSongIfReady")
+        if isArmed, findsSongDuringPerform {
+            SongLibraryStore.shared.commitPerformTrack(track, reason: reason)
+        } else {
+            SongLibraryStore.shared.recordRecent(track, reason: reason)
+        }
     }
 
     /// AI Voice: forget the previous spectator's song so the next Perform starts empty.
     func clearSongForNextPerformance() {
         if let track = selected ?? lastReadyTrack {
-            SongLibraryStore.shared.recordRecent(track)
+            SongLibraryStore.shared.commitPerformTrack(track, reason: "clearForNextPerform")
         }
         audio.unload()
         query = ""

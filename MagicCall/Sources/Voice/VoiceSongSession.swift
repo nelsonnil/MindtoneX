@@ -266,7 +266,9 @@ final class VoiceSongSession: ObservableObject {
                 if self.candidate?.key == next.key {
                     self.prep = ok ? .ready : .notFound
                     if ok {
-                        AppModel.shared.recordRecentLoadedSongIfReady()
+                        await MainActor.run {
+                            AppModel.shared.recordRecentLoadedSongIfReady(reason: "voicePrefetch")
+                        }
                     }
                     if !ok {
                         self.lockTimer?.invalidate()

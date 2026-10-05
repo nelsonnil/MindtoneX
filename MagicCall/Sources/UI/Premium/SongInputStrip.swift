@@ -132,7 +132,7 @@ struct SongInputStrip: View {
                 .disabled(model.query.trimmingCharacters(in: .whitespaces).isEmpty || model.loadState == .searching)
             }
 
-            if let track = model.selected, model.loadState == .ready {
+            if let track = model.displayLoadedTrack {
                 LoadedSongReadyRow(track: track)
             }
 

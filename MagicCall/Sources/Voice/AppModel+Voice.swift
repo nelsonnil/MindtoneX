@@ -145,7 +145,7 @@ extension AppModel {
             applyFakePerformMediaVolumeBoost(reason: "songLocked")
         }
         if context == .perform {
-            recordRecentLoadedSongIfReady()
+            recordRecentLoadedSongIfReady(reason: "voiceDidLock")
         }
         if context == .perform, SharePerformFlow.shared.isActive {
             SharePerformFlow.shared.songLocked()
@@ -156,7 +156,7 @@ extension AppModel {
     /// standby); Share Ringtone opens the Share sheet with it.
     func notesSongReady(context: NotesSongSession.Context) {
         guard context == .perform else { return }
-        recordRecentLoadedSongIfReady()
+        recordRecentLoadedSongIfReady(reason: "notesReady")
         if Prefs.performanceMode == .fakeRingtone, isArmed {
             applyFakePerformMediaVolumeBoost(reason: "notesReady")
         }
@@ -169,7 +169,7 @@ extension AppModel {
     /// API locked a loaded song. Fake Ringtone is already hot via select(); Share opens the Share sheet.
     func apiSongLocked(context: ApiSongSession.Context) {
         if context == .perform {
-            recordRecentLoadedSongIfReady()
+            recordRecentLoadedSongIfReady(reason: "apiLocked")
         }
         if context == .perform, Prefs.performanceMode == .fakeRingtone, isArmed {
             applyFakePerformMediaVolumeBoost(reason: "apiLocked")
@@ -183,7 +183,7 @@ extension AppModel {
     func resetVoicePerformance() {
         SharePerformFlow.shared.reset()
         commitVoicePerformSnapshotIfNeeded(reason: "resetVoicePerformance")
-        recordRecentLoadedSongIfReady()
+        recordRecentLoadedSongIfReady(reason: "leftPerform")
         VoiceSongSession.shared.reset(reason: "left Perform")
         NotesSongSession.shared.reset(reason: "left Perform")
         ApiSongSession.shared.reset(reason: "left Perform")

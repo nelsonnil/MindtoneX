@@ -291,7 +291,7 @@ struct SongLibrarySection: View {
     }
 
     private func loadAndPlay(_ track: PreviewTrack) {
-        dlog("[LIBRARY] tap Recent row “\(track.title) — \(track.artist)” id=\(track.id.prefix(48))")
+        dlog("[LIBRARY] tap Recent row “\(track.title) — \(track.artist)”")
         if let searchQuery = library.searchQuery(forDisplayTrack: track), !searchQuery.isEmpty {
             model.query = searchQuery
             Task {
@@ -308,11 +308,21 @@ struct SongLibrarySection: View {
         model.query = track.source == .imported ? track.title : "\(track.title) \(track.artist)"
         Task {
             await model.select(track)
-            guard model.loadState == .ready, model.selected?.id == track.id else {
-                dlog("[LIBRARY] loadAndPlay select failed loadState=\(model.loadState) selected=\(model.selected?.id ?? "nil")")
+            if model.loadState == .ready, model.selected?.id == track.id {
+                dlog("[LIBRARY] loadAndPlay select ok → audition")
+                model.audition()
                 return
             }
-            dlog("[LIBRARY] loadAndPlay select ok → audition")
+            dlog("[LIBRARY] retry loadAndPlay state=\(model.loadState)")
+            if track.source != .imported {
+                await model.search()
+                let match = model.results.first(where: { $0.id == track.id }) ?? model.results.first
+                if let match { await model.select(match) }
+            }
+            guard model.loadState == .ready else {
+                dlog("[LIBRARY] ✗ loadAndPlay failed")
+                return
+            }
             model.audition()
         }
     }

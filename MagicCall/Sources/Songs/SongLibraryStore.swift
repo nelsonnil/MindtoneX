@@ -16,9 +16,33 @@ final class SongLibraryStore: ObservableObject {
     @Published private(set) var recent: [PreviewTrack] = []
     @Published private(set) var favorites: [PreviewTrack] = []
     @Published private(set) var performSnapshots: [RecentPerformSnapshot] = []
+    /// Last loaded/locked track during Perform — for Home UI after clear.
+    @Published private(set) var lastPerformTrack: PreviewTrack?
 
     private init() {
         reloadFromDisk()
+    }
+
+    /// Recent rows for UI: snapshots not yet in JSON recents + persisted recents.
+    var recentDisplayTracks: [PreviewTrack] {
+        let snapTracks = performSnapshots
+            .sorted { $0.lockedAt > $1.lockedAt }
+            .filter { snap in !recent.contains(where: { snap.matches($0) }) }
+            .map { $0.asSyntheticPreviewTrack() }
+        var merged = snapTracks + recent
+        if let last = lastPerformTrack, !merged.contains(where: { $0.id == last.id }) {
+            merged.insert(last, at: 0)
+        }
+        if merged.count > Self.maxRecent {
+            merged = Array(merged.prefix(Self.maxRecent))
+        }
+        return merged
+    }
+
+    func logRecentDisplayMerge(context: String) {
+        let merged = recentDisplayTracks
+        let snapOnly = merged.filter { RecentPerformSnapshot.isSnapshotPlaceholder($0) }.count
+        dlog("[LIBRARY] recentDisplayTracks (\(context)) merged=\(merged.count) snapOnly=\(snapOnly) recent=\(recent.count) snapshots=\(performSnapshots.count) lastPerform=\(lastPerformTrack?.title ?? "nil")")
     }
 
     /// Re-read persisted lists (e.g. after another code path wrote UserDefaults).
@@ -29,22 +53,10 @@ final class SongLibraryStore: ObservableObject {
         recent = loadedRecent
         favorites = loadedFavorites
         performSnapshots = loadedSnapshots
+        if lastPerformTrack == nil, let first = loadedSnapshots.first {
+            lastPerformTrack = first.asPreviewTrackIfPossible() ?? first.asSyntheticPreviewTrack()
+        }
         dlog("[LIBRARY] reloadFromDisk recent=\(loadedRecent.count) favorites=\(loadedFavorites.count) snapshots=\(loadedSnapshots.count)")
-    }
-
-    /// Recent rows for UI: persisted tracks plus perform snapshots not yet represented in recents.
-    var recentDisplayTracks: [PreviewTrack] {
-        let snapTracks = performSnapshots
-            .sorted { $0.lockedAt > $1.lockedAt }
-            .filter { snap in !recent.contains(where: { snap.matches($0) }) }
-            .map { $0.asSyntheticPreviewTrack() }
-        return snapTracks + recent
-    }
-
-    func logRecentDisplayMerge(context: String) {
-        let merged = recentDisplayTracks
-        let snapOnly = merged.filter { RecentPerformSnapshot.isSnapshotPlaceholder($0) }.count
-        dlog("[LIBRARY] recentDisplayTracks (\(context)) merged=\(merged.count) snapOnly=\(snapOnly) recent=\(recent.count) snapshots=\(performSnapshots.count)")
     }
 
     func searchQuery(forDisplayTrack track: PreviewTrack) -> String? {
@@ -69,22 +81,30 @@ final class SongLibraryStore: ObservableObject {
         }
         performSnapshots = snaps
         persistSnapshots(snaps)
+        let display = snapshot.asPreviewTrackIfPossible() ?? snapshot.asSyntheticPreviewTrack()
+        lastPerformTrack = display
         dlog("[LIBRARY] lock snapshot “\(snapshot.title) — \(snapshot.artist)” query=\(snapshot.searchQuery) preview=\(snapshot.previewURL ?? "nil") · snapshots=\(snaps.count)")
 
         if let track = snapshot.asPreviewTrackIfPossible() {
-            recordRecent(track, source: "performSnapshot")
+            recordRecent(track, reason: "performSnapshot")
         }
     }
 
-    func recordRecent(_ track: PreviewTrack, source: String = "recordRecent") {
+    func commitPerformTrack(_ track: PreviewTrack, reason: String) {
+        lastPerformTrack = track
+        recordRecent(track, reason: "perform:\(reason)")
+        dlog("[LIBRARY] commitPerformTrack (\(reason)) “\(track.title) — \(track.artist)”")
+    }
+
+    func recordRecent(_ track: PreviewTrack, reason: String = "recordRecent") {
         var list = recent.filter { $0.id != track.id }
         list.insert(track, at: 0)
         if list.count > Self.maxRecent {
             list = Array(list.prefix(Self.maxRecent))
         }
         recent = list
-        persist(list, forKey: Keys.recent)
-        dlog("[LIBRARY] recordRecent (\(source)) “\(track.title) — \(track.artist)” · count=\(list.count)")
+        let ok = persist(list, forKey: Keys.recent)
+        dlog("[LIBRARY] recordRecent (\(reason)) “\(track.title) — \(track.artist)” ok=\(ok) count=\(list.count)")
     }
 
     func toggleFavorite(_ track: PreviewTrack) {
@@ -93,7 +113,7 @@ final class SongLibraryStore: ObservableObject {
         } else {
             favorites.insert(track, at: 0)
         }
-        persist(favorites, forKey: Keys.favorites)
+        _ = persist(favorites, forKey: Keys.favorites)
     }
 
     func removeRecent(at index: Int) {
@@ -106,14 +126,14 @@ final class SongLibraryStore: ObservableObject {
         let beforeRecent = recent.count
         recent.removeAll { $0.id == track.id }
         if recent.count != beforeRecent {
-            persist(recent, forKey: Keys.recent)
+            _ = persist(recent, forKey: Keys.recent)
+        }
+        if lastPerformTrack?.id == track.id {
+            lastPerformTrack = nil
         }
         if RecentPerformSnapshot.isSnapshotPlaceholder(track) {
-            let beforeSnaps = performSnapshots.count
             performSnapshots.removeAll { $0.asSyntheticPreviewTrack().id == track.id }
-            if performSnapshots.count != beforeSnaps {
-                persistSnapshots(performSnapshots)
-            }
+            persistSnapshots(performSnapshots)
         } else if let snap = performSnapshots.first(where: { $0.matches(track) }) {
             performSnapshots.removeAll { $0.id == snap.id }
             persistSnapshots(performSnapshots)
@@ -122,11 +142,12 @@ final class SongLibraryStore: ObservableObject {
     }
 
     func clearRecent() {
-        guard !recent.isEmpty || !performSnapshots.isEmpty else { return }
+        guard !recent.isEmpty || !performSnapshots.isEmpty || lastPerformTrack != nil else { return }
         recent = []
         performSnapshots = []
-        persist(recent, forKey: Keys.recent)
-        persistSnapshots([])
+        lastPerformTrack = nil
+        UserDefaults.standard.removeObject(forKey: Keys.recent)
+        UserDefaults.standard.removeObject(forKey: Keys.performSnapshots)
         dlog("[LIBRARY] clearRecent")
     }
 
@@ -134,16 +155,19 @@ final class SongLibraryStore: ObservableObject {
         let before = favorites.count
         favorites.removeAll { $0.id == track.id }
         guard favorites.count != before else { return }
-        persist(favorites, forKey: Keys.favorites)
+        _ = persist(favorites, forKey: Keys.favorites)
     }
 
-    private func persist(_ tracks: [PreviewTrack], forKey key: String) {
+    @discardableResult
+    private func persist(_ tracks: [PreviewTrack], forKey key: String) -> Bool {
         do {
             let data = try JSONEncoder().encode(tracks)
             UserDefaults.standard.set(data, forKey: key)
             dlog("[LIBRARY] persist JSON key=\(key) bytes=\(data.count) tracks=\(tracks.count)")
+            return true
         } catch {
             dlog("[LIBRARY] ✗ persist encode failed key=\(key): \(error.localizedDescription)")
+            return false
         }
     }
 

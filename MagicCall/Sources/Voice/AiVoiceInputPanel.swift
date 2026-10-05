@@ -12,19 +12,16 @@ struct AiVoiceInputPanel: View {
 
     private var configured: Bool { VoiceSettings.isConfigured }
 
-    private var voiceLoadedTrack: PreviewTrack? {
-        if let track = model.selected, model.loadState == .ready { return track }
-        if let track = model.performSessionDisplayTrack { return track }
-        return nil
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             connectionBlock
             VoiceLockingControls()
             liveListenBlock
-            if let track = voiceLoadedTrack {
-                LoadedSongReadyRow(track: track, leadingSystemImage: voice.state == .locked ? "lock.fill" : "checkmark.circle.fill")
+            if let track = model.displayLoadedTrack {
+                LoadedSongReadyRow(
+                    track: track,
+                    leadingSystemImage: voice.state == .locked ? "lock.fill" : "checkmark.circle.fill"
+                )
             }
         }
         .onAppear {
