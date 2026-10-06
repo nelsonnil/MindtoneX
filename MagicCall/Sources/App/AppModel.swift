@@ -359,6 +359,7 @@ final class AppModel: ObservableObject {
         CallDirectorySync.syncPerformArmed(true, reason: "arm")
         startWordApiIfNeeded(context: .perform)
         PerformUserLog.shared.beginSession(inputLabel: VoiceSettings.inputMode.title)
+        CallDirectorySync.reportPerformReadiness()
         dlog("══ ARMADO ══ \(selected.map { "\($0.title) — \($0.artist)" } ?? "?") · \(Prefs.summary())")
     }
 

@@ -5,7 +5,7 @@
  Settings → Phone → Call Blocking & Identification → enable MindtoneX Caller Label
 
  While Perform is armed and a word is locked, this extension publishes the locked label
- for configured phone numbers (optional fallback E.164 in Word API settings).
+ for the caller number set in Word API settings (E.164 digits). Without it no call is labeled.
 
  For **any incoming number** without a known E.164, iOS 18+ Live Caller ID Lookup (PIR server)
  is required — see MagicCallLiveCallerLookup/README.md in the repo.
@@ -18,14 +18,14 @@ final class CallDirectoryHandler: CXCallDirectoryProvider {
     override func beginRequest(with context: CXCallDirectoryExtensionContext) {
         context.delegate = self
         let snapshot = CallerLabelStore.load()
-        guard snapshot.performArmed, snapshot.labelEnabled, !snapshot.lockedLabel.isEmpty else {
-            context.completeRequest()
-            return
+        var entries = 0
+        if snapshot.performArmed, snapshot.labelEnabled, !snapshot.lockedLabel.isEmpty {
+            for number in snapshot.identificationPhoneNumbers {
+                context.addIdentificationEntry(withNextSequentialPhoneNumber: number, label: snapshot.lockedLabel)
+                entries += 1
+            }
         }
-        let label = snapshot.lockedLabel
-        for number in snapshot.identificationPhoneNumbers {
-            context.addIdentificationEntry(withNextSequentialPhoneNumber: number, label: label)
-        }
+        CallerLabelStore.recordLoad(snapshot, entries: entries)
         context.completeRequest()
     }
 }

@@ -1,35 +1,83 @@
 import CallKit
 import Foundation
 
+@MainActor
 enum CallDirectorySync {
-    private static let directoryManager = CXCallDirectoryManager()
-    private static let maxReloadAttempts = 3
-    private static let reloadRetryDelay: TimeInterval = 0.6
+    private static let directoryManager = CXCallDirectoryManager.sharedInstance
+    private static let maxReloadAttempts = 6
     private static var active: Bool { WordApiSettings.callerLabelEnabled }
 
+    /// CallKit rejects a reload while the previous one is still loading (error 7), so reloads are
+    /// serialized: requests during a load collapse into one follow-up that reads the latest store.
+    private static var reloadInFlight = false
+    private static var pendingReason: String?
+
+    static let disabledHint = "⚠ Etiqueta: activa MindtoneX en Ajustes → Teléfono → Bloqueo e identificación de llamadas."
+
+    /// Only the Call Directory extension: Live Caller ID Lookup is not managed by `CXCallDirectoryManager` (always error 1).
     static func reloadExtensions(reason: String) {
         guard active else { return }
-        let ids = [CallerLabelStore.extensionBundleID, CallerLabelStore.liveLookupExtensionBundleID]
-        for id in ids {
-            reloadExtension(withIdentifier: id, reason: reason, attempt: 1)
+        guard !reloadInFlight else {
+            pendingReason = reason
+            return
+        }
+        startReload(reason: reason, attempt: 1)
+    }
+
+    private static func startReload(reason: String, attempt: Int) {
+        reloadInFlight = true
+        let requestedAt = Date()
+        directoryManager.reloadExtension(withIdentifier: CallerLabelStore.extensionBundleID) { error in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    finishReload(error: error, reason: reason, attempt: attempt, requestedAt: requestedAt)
+                }
+            }
         }
     }
 
-    private static func reloadExtension(withIdentifier id: String, reason: String, attempt: Int) {
-        directoryManager.reloadExtension(withIdentifier: id) { error in
-            if let error {
-                let code = (error as NSError).code
-                dlog("✗ [CALL-ID] reload \(id) (\(reason)) attempt \(attempt)/\(maxReloadAttempts): \(error.localizedDescription) (code \(code))")
-                guard attempt < maxReloadAttempts else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + reloadRetryDelay) {
-                    reloadExtension(withIdentifier: id, reason: reason, attempt: attempt + 1)
+    private static func finishReload(error: Error?, reason: String, attempt: Int, requestedAt: Date) {
+        let id = CallerLabelStore.extensionBundleID
+        if let error {
+            let code = (error as? CXErrorCodeCallDirectoryManagerError)?.code
+            dlog("✗ [CALL-ID] reload \(id) (\(reason)) attempt \(attempt)/\(maxReloadAttempts): \(error.localizedDescription) (code \((error as NSError).code))")
+            if let code, isTransient(code), attempt < maxReloadAttempts {
+                let delay = min(0.75 * pow(2, Double(attempt - 1)), 5)
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    MainActor.assumeIsolated {
+                        let next = pendingReason ?? reason
+                        pendingReason = nil
+                        startReload(reason: next, attempt: attempt + 1)
+                    }
                 }
-            } else if attempt > 1 {
-                dlog("[CALL-ID] reload \(id) ok (\(reason)) · succeeded on retry \(attempt)")
-            } else {
-                dlog("[CALL-ID] reload \(id) ok (\(reason))")
+                return
             }
+            if code == .extensionDisabled {
+                PerformUserLog.shared.logConnectionIssue(disabledHint)
+            }
+        } else {
+            let retry = attempt > 1 ? " · succeeded on retry \(attempt)" : ""
+            dlog("[CALL-ID] reload \(id) ok (\(reason))\(retry) · \(extensionLoadSummary(since: requestedAt))")
         }
+        reloadInFlight = false
+        if let next = pendingReason {
+            pendingReason = nil
+            startReload(reason: next, attempt: 1)
+        }
+    }
+
+    private static func isTransient(_ code: CXErrorCodeCallDirectoryManagerError.Code) -> Bool {
+        switch code {
+        case .currentlyLoading, .loadingInterrupted, .unknown: return true
+        default: return false
+        }
+    }
+
+    private static func extensionLoadSummary(since requestedAt: Date) -> String {
+        guard let load = CallerLabelStore.lastExtensionLoad(), load.at >= requestedAt.addingTimeInterval(-1) else {
+            return "extension did not report back (App Group \(CallerLabelStore.appGroupID) missing from signing?)"
+        }
+        return "extension saw armed=\(load.performArmed) label=«\(load.label)» entries=\(load.entries)"
     }
 
     static func syncPerformArmed(_ armed: Bool, reason: String) {
@@ -50,5 +98,29 @@ enum CallDirectorySync {
             numbers.append(fallback)
         }
         CallerLabelStore.setIdentificationPhoneNumbers(numbers)
+    }
+
+    /// Call after the Perform user log session has begun so warnings are visible on the home card.
+    static func reportPerformReadiness() {
+        guard active else { return }
+        let snapshot = CallerLabelStore.load()
+        let appGroup = CallerLabelStore.isAppGroupAvailable
+        dlog("[CALL-ID] readiness · appGroup=\(appGroup) numbers=\(snapshot.identificationPhoneNumbers) armed=\(snapshot.performArmed)")
+        if !appGroup {
+            PerformUserLog.shared.log("⚠ Etiqueta: la app no tiene el App Group \(CallerLabelStore.appGroupID) firmado — la extensión no puede leer la palabra.")
+        }
+        if snapshot.identificationPhoneNumbers.isEmpty {
+            PerformUserLog.shared.log("⚠ Etiqueta: falta el número que llama (Word API → Call Identification). Solo ese número muestra la palabra.")
+        }
+        directoryManager.getEnabledStatusForExtension(withIdentifier: CallerLabelStore.extensionBundleID) { status, error in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    dlog("[CALL-ID] extension status=\(status.rawValue)\(error.map { " error=\($0.localizedDescription)" } ?? "")")
+                    if status != .enabled {
+                        PerformUserLog.shared.log(disabledHint)
+                    }
+                }
+            }
+        }
     }
 }

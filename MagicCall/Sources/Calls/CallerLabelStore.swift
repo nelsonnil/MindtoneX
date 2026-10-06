@@ -11,10 +11,36 @@ enum CallerLabelStore {
         static let lockedLabel = "lockedLabel"
         static let labelEnabled = "labelEnabled"
         static let identificationPhoneNumbers = "identificationPhoneNumbers"
+        static let extensionLastLoadAt = "extensionLastLoadAt"
+        static let extensionLastLoadArmed = "extensionLastLoadArmed"
+        static let extensionLastLoadLabel = "extensionLastLoadLabel"
+        static let extensionLastLoadEntries = "extensionLastLoadEntries"
     }
 
     static var shared: UserDefaults {
         UserDefaults(suiteName: appGroupID) ?? .standard
+    }
+
+    /// `UserDefaults(suiteName:)` silently falls back to a per-process store when the group is not signed in.
+    static var isAppGroupAvailable: Bool {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) != nil
+    }
+
+    struct ExtensionLoad {
+        var at: Date
+        var performArmed: Bool
+        var label: String
+        var entries: Int
+    }
+
+    static func lastExtensionLoad() -> ExtensionLoad? {
+        let d = shared
+        let at = d.double(forKey: SharedKey.extensionLastLoadAt)
+        guard at > 0 else { return nil }
+        return ExtensionLoad(at: Date(timeIntervalSince1970: at),
+                             performArmed: d.bool(forKey: SharedKey.extensionLastLoadArmed),
+                             label: d.string(forKey: SharedKey.extensionLastLoadLabel) ?? "",
+                             entries: d.integer(forKey: SharedKey.extensionLastLoadEntries))
     }
 
     static func setPerformArmed(_ armed: Bool) {
