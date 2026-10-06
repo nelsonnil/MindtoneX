@@ -46,7 +46,7 @@ struct PerformanceCard: View {
                     }
                     Slider(value: $fakePlaybackVolume, in: 0.3...1)
                         .tint(OracleTheme.gold)
-                    Text("Side buttons adjust volume during Perform. After the call ends, long-press the stage to open Share.")
+                    Text("Use **100%** for incoming-call playback. See **Instructions** for screenshot + status bar. Optional Share after lock.")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
                 }
