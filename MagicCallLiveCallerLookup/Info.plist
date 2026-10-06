@@ -24,8 +24,6 @@
 	<dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.live-lookup</string>
-		<key>NSExtensionPrincipalClass</key>
-		<string>$(PRODUCT_MODULE_NAME).LiveCallerLookupExtension</string>
 	</dict>
 </dict>
 </plist>
