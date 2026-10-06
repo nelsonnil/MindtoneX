@@ -66,7 +66,7 @@ enum VoiceSettings {
     /// Registers Voice defaults before any `@AppStorage` view reads (aligned with build 70 English-first setup).
     static func registerDefaults() {
         d.register(defaults: [
-            Key.inputMode: InputMode.manual.rawValue,
+            Key.inputMode: InputMode.card.rawValue,
             Key.engine: Engine.openAIRealtime.rawValue,
             Key.language: defaultLanguage,
             Key.lockDelay: defaultLockDelay,
@@ -74,7 +74,10 @@ enum VoiceSettings {
         ])
     }
 
-    static var inputMode: InputMode { InputMode(rawValue: d.string(forKey: Key.inputMode) ?? "") ?? .manual }
+    static var inputMode: InputMode {
+        let mode = InputMode(rawValue: d.string(forKey: Key.inputMode) ?? "") ?? .card
+        return mode == .manual ? .card : mode
+    }
     static var engine: Engine {
         let raw = d.string(forKey: Key.engine) ?? ""
         if raw == Engine.appleOnDevice.rawValue { return .openAIRealtime }

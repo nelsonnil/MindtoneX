@@ -6,12 +6,12 @@ struct SongInputStrip: View {
     @ObservedObject private var api = ApiSongSession.shared
     @ObservedObject private var card = CardSongSession.shared
     @Binding var inputModeRaw: String
-    @FocusState.Binding var queryFocused: Bool
 
     private let inputColumns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
     private var inputMode: VoiceSettings.InputMode {
-        VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual
+        let mode = VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .card
+        return mode == .manual ? .card : mode
     }
 
     var body: some View {
@@ -23,29 +23,33 @@ struct SongInputStrip: View {
             )
 
             LazyVGrid(columns: inputColumns, spacing: 10) {
-                inputChip("Manual", icon: "keyboard", mode: .manual)
+                inputChip("Card", icon: "doc.viewfinder", mode: .card)
                 inputChip("Voice", icon: "mic.fill", mode: .aiVoice)
                 inputChip("Notes", icon: "note.text", mode: .notes)
                 inputChip("API", icon: "link", mode: .api)
-                inputChip("Card", icon: "doc.viewfinder", mode: .card)
             }
 
             Group {
                 switch inputMode {
-                case .manual:
-                    manualField
                 case .aiVoice:
                     AiVoiceInputPanel()
                 case .notes:
                     NotesInputControls()
                 case .api:
                     ApiInputPanel()
-                case .card:
+                case .card, .manual:
                     CardInputPanel()
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: inputModeRaw)
         }
+        .onAppear(perform: migrateLegacyManualMode)
+    }
+
+    private func migrateLegacyManualMode() {
+        guard inputModeRaw == VoiceSettings.InputMode.manual.rawValue else { return }
+        inputModeRaw = VoiceSettings.InputMode.card.rawValue
+        dlog("Song input migrated Manual → Card")
     }
 
     private func inputChip(_ title: String, icon: String, mode: VoiceSettings.InputMode) -> some View {
@@ -108,44 +112,5 @@ struct SongInputStrip: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    private var manualField: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                TextField("Song title & artist", text: $model.query)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.search)
-                    .focused($queryFocused)
-                    .onSubmit { Task { await model.search() } }
-                    .padding(14)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                Button {
-                    queryFocused = false
-                    Task { await model.search() }
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 48, height: 48)
-                        .background(OracleTheme.goldGradient)
-                        .foregroundStyle(Color(red: 0.12, green: 0.10, blue: 0.05))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .disabled(model.query.trimmingCharacters(in: .whitespaces).isEmpty || model.loadState == .searching)
-            }
-
-            if let track = model.displayLoadedTrack {
-                LoadedSongReadyRow(track: track)
-            }
-
-            if case .failed(let message) = model.loadState {
-                Label(message, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.coral)
-            }
-        }
     }
 }

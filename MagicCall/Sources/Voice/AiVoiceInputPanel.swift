@@ -308,7 +308,7 @@ struct AiVoiceInputPanel: View {
     private var pickBox: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Song pick")
+                Text("Test")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(OracleTheme.textSecondary)
                 if voice.isThinking {

@@ -4,9 +4,7 @@ import SwiftUI
 /// Premium home shell — hero, performance setup, song input, feedback, and a fixed Perform dock.
 struct MainShellView: View {
     @EnvironmentObject private var model: AppModel
-    @FocusState private var queryFocused: Bool
-
-    @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
+    @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.card.rawValue
 
     @State private var photoItem: PhotosPickerItem?
     @State private var stageScreenshotGeneration = 0
@@ -27,10 +25,7 @@ struct MainShellView: View {
                 )
 
                 HomePanel(accent: OracleTheme.indigo) {
-                    SongInputStrip(
-                        inputModeRaw: $inputModeRaw,
-                        queryFocused: $queryFocused
-                    )
+                    SongInputStrip(inputModeRaw: $inputModeRaw)
                 }
 
                 HomePanel(accent: OracleTheme.gold) {
@@ -49,6 +44,9 @@ struct MainShellView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .onAppear {
+            if inputModeRaw == VoiceSettings.InputMode.manual.rawValue {
+                inputModeRaw = VoiceSettings.InputMode.card.rawValue
+            }
             withAnimation(.spring(response: 0.65, dampingFraction: 0.86)) {
                 homeAppeared = true
             }

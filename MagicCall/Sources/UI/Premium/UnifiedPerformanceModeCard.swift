@@ -53,7 +53,7 @@ struct PerformanceCard: View {
                         Text("Auto-open Share when song locks")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(OracleTheme.textPrimary)
-                        Text("Only while performing: opens Use as Ringtone when Voice, Notes, or API locks a song. Manual search on Home is unchanged.")
+                        Text("Only while performing: opens Use as Ringtone when Voice, Notes, API, or Card locks a song during Perform.")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                     }
