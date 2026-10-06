@@ -181,7 +181,8 @@ final class CardSongSession: ObservableObject {
             }
         }
         let texts = CardOCRProcessor.mergedText(from: frameTexts)
-        let orderedLines = CardOCRProcessor.orderedLineTexts(from: bestLineReadings)
+        let rawOrdered = CardOCRProcessor.orderedLineTexts(from: bestLineReadings)
+        let orderedLines = CardLineParser.expandMergedOCRLines(rawOrdered)
         let ocr = CardLineParser.parse(orderedLines: orderedLines)
         if !orderedLines.isEmpty {
             dlog("[CARD] lines top→bottom: \(orderedLines.joined(separator: " | "))")
@@ -196,7 +197,14 @@ final class CardSongSession: ObservableObject {
         }
         guard gen == generation else { return }
 
-        let queriesToTry = songSearchQueries(ocr: ocr, orderedLines: orderedLines, mergedTexts: texts)
+        var queriesToTry = songSearchQueries(ocr: ocr, orderedLines: orderedLines, mergedTexts: texts)
+        for frame in frameTexts {
+            let frameLines = CardLineParser.expandMergedOCRLines(CardOCRProcessor.orderedLineTexts(from: frame))
+            let frameOcr = CardLineParser.parse(orderedLines: frameLines)
+            for q in songSearchQueries(ocr: frameOcr, orderedLines: frameLines, mergedTexts: []) where !queriesToTry.contains(where: { ApiJSON.sameText($0, q) }) {
+                queriesToTry.append(q)
+            }
+        }
         dlog("[CARD] song queries (line 1 first): \(queriesToTry.joined(separator: " · "))")
         if context == .perform {
             PerformUserLog.shared.log("Camera · song search tries: \(queriesToTry.joined(separator: " · "))")
@@ -262,6 +270,9 @@ final class CardSongSession: ObservableObject {
 
         guard let vote, vote.value >= 1, let query, let track else {
             dlog("[CARD] scan #\(scanAttempts): no confident song")
+            if let ocrParse {
+                applyCardWordsIfNeeded(ocrParse)
+            }
             if scanAttempts >= CardSettings.maxScanRetries {
                 failScanMaxRetries()
             } else {
@@ -300,14 +311,15 @@ final class CardSongSession: ObservableObject {
         let skipWords = [CardLineParser.normalizedCallerWord(from: ocr), CardLineParser.normalizedNotesWord(from: ocr)]
             .compactMap { $0 }
         func appendUnique(_ raw: String) {
-            let q = CardTextMapper.clean(raw)
-            guard q.count >= 2 else { return }
-            if skipWords.contains(where: { ApiJSON.sameText(q, $0) }) {
-                dlog("[CARD] skip song query (matches word line): “\(q)”")
-                return
+            for q in CardTextMapper.songSearchVariants(from: raw) {
+                guard q.count >= 2 else { continue }
+                if skipWords.contains(where: { ApiJSON.sameText(q, $0) }) {
+                    dlog("[CARD] skip song query (matches word line): “\(q)”")
+                    continue
+                }
+                guard !queries.contains(where: { ApiJSON.sameText($0, q) }) else { continue }
+                queries.append(q)
             }
-            guard !queries.contains(where: { ApiJSON.sameText($0, q) }) else { return }
-            queries.append(q)
         }
 
         appendUnique(ocr.songQuery)

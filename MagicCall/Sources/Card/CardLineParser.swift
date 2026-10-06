@@ -10,11 +10,32 @@ struct CardOCRParse: Equatable {
 }
 
 enum CardLineParser {
+    /// Vision often merges two physical lines into one string with `|`.
+    static func expandMergedOCRLines(_ lines: [String]) -> [String] {
+        var out: [String] = []
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            if trimmed.contains("|") {
+                let parts = trimmed.split(separator: "|", omittingEmptySubsequences: true)
+                    .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { $0.count >= 2 }
+                if parts.count >= 2 {
+                    out.append(contentsOf: parts)
+                    continue
+                }
+            }
+            out.append(trimmed)
+        }
+        return out
+    }
+
     private static let songPrefixes = ["song:", "canción:", "cancion:", "tema:", "título:", "titulo:"]
     private static let callerPrefixes = ["word:", "palabra:", "w:", "caller:", "contact:", "contacto:"]
     private static let notesPrefixes = ["notes:", "note:", "nota:", "chip:", "notesword:"]
 
     static func parse(orderedLines: [String]) -> CardOCRParse {
+        let orderedLines = expandMergedOCRLines(orderedLines)
         var labeledSong: String?
         var labeledCaller: String?
         var labeledNotes: String?
