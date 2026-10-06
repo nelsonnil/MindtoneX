@@ -61,4 +61,27 @@ final class WordReadingTests: XCTestCase {
         let next = baseline
         XCTAssertFalse(next.shouldLockPerformWord(comparedTo: baseline, previousPoll: previous))
     }
+
+    func testElipsParseWordField() throws {
+        let json = #"{"count":3,"outputWords":"Madrid","receiveCount":9}"#.data(using: .utf8)!
+        guard let object = ApiJSON.object(from: json) else {
+            XCTFail("expected JSON object")
+            return
+        }
+        let reading = try WordApiClient.parse(object, provider: .elips, raw: "")
+        XCTAssertEqual(reading.word, "Madrid")
+        XCTAssertEqual(reading.receiveCount, 9)
+    }
+
+    func testCustomParseLabelWithOptionalCounters() throws {
+        let json = #"{"count":2,"receiveCount":5,"word":"Car"}"#.data(using: .utf8)!
+        guard let object = ApiJSON.object(from: json) else {
+            XCTFail("expected JSON object")
+            return
+        }
+        let reading = try WordApiClient.parse(object, provider: .custom, raw: "")
+        XCTAssertEqual(reading.word, "Car")
+        XCTAssertEqual(reading.count, 2)
+        XCTAssertEqual(reading.receiveCount, 5)
+    }
 }

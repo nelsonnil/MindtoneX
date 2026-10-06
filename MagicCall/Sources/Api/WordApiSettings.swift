@@ -36,9 +36,9 @@ enum WordApiSettings {
             case .inject:
                 return "Enter your Inject ID for the **word** endpoint. The app reads the JSON; a new submission changes count/value and that text becomes the caller label."
             case .elips:
-                return "Paste the full **word** API URL from Elips (https://pag.gg/…). A new word in the response becomes the banner label."
+                return "Paste the full **word** API URL from Elips (https://pag.gg/…). During Perform the app polls every 2 s; if the word changes it updates the banner, otherwise it stays as is."
             case .custom:
-                return "Any URL returning a JSON object. Pick the field for the label (e.g. word, label, value). A new value is used as the caller ID text."
+                return "Any URL returning a JSON object. Pick the field for the label (e.g. word, label, value). Polled every 2 s during Perform; optional `count` / `receiveCount` in JSON help detect changes."
             }
         }
     }
@@ -278,7 +278,7 @@ enum WordApiClient {
                 $0.count != snapshot.0 || $0.receive != snapshot.1 || $0.word != snapshot.2
             } ?? true
             if diag.pollNumber <= 3 || changed {
-                dlog("[WORD] fetch poll #\(diag.pollNumber) parsed count=\(countStr) receive=\(receiveStr) word=«\(reading.label)»")
+                dlog("[WORD] fetch poll #\(diag.pollNumber) · \(provider.title) count=\(countStr) receive=\(receiveStr) word=«\(reading.label)»")
                 lastPerformFetchSnapshot = snapshot
             }
         }
@@ -300,7 +300,10 @@ enum WordApiClient {
         case .custom:
             let field = WordApiSettings.customField
             guard let value = ApiJSON.value(in: object, path: field) else { throw ClientError.missingField(field) }
-            return WordReading(count: nil, receiveCount: nil, word: ApiJSON.text(value), raw: raw)
+            return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),
+                               receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
+                               word: ApiJSON.text(value),
+                               raw: raw)
         }
     }
 }

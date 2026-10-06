@@ -1,7 +1,7 @@
 import Foundation
 import QuartzCore
 
-/// Polls the Word API during Perform. First reading = baseline; next change = spectator word → locked → Call Directory.
+/// Polls Inject / Elips / Custom Word API every 2 s during Perform. Uses the latest label; lock + cues when the response changes.
 @MainActor
 final class WordApiSession: ObservableObject {
     static let shared = WordApiSession()
@@ -39,7 +39,7 @@ final class WordApiSession: ObservableObject {
     private var isRefreshing = false
     private var generation = 0
     private var unchangedCountPolls = 0
-    private var loggedStaleInjectCount = false
+    private var loggedStalePollWarning = false
     private var lastUnchangedPerformUserLogAt: Date?
     private var previousPollReading: WordReading?
 
@@ -140,13 +140,12 @@ final class WordApiSession: ObservableObject {
                 previousPollReading = reading
                 state = .watching
                 unchangedCountPolls = 0
-                loggedStaleInjectCount = false
-                dlog("[WORD] baseline (\(ms) ms): count=\(reading.count.map(String.init) ?? "–") receive=\(reading.receiveCount.map(String.init) ?? "–") “\(reading.label)” — waiting for change")
+                loggedStalePollWarning = false
+                dlog("[WORD] baseline (\(ms) ms) · \(provider.title): count=\(reading.count.map(String.init) ?? "–") receive=\(reading.receiveCount.map(String.init) ?? "–") “\(reading.label)” — waiting for change")
                 if context == .perform {
                     syncLatestWord(reading, reason: "baseline")
-                    let integration = WordApiSettings.provider.title
                     PerformUserLog.shared.log(
-                        "Word API: baseline «\(reading.label)» — cada 2 s usa la última palabra de \(integration); al cambiar: 3 vibraciones y quita el punto."
+                        "Word API (\(provider.title)): «\(reading.label)» — cada 2 s se consulta; si cambia la palabra: 3 vibraciones y quita el punto; si no, se deja igual."
                     )
                 }
                 return
@@ -167,16 +166,14 @@ final class WordApiSession: ObservableObject {
                 unchangedCountPolls += 1
             } else {
                 unchangedCountPolls = 0
-                loggedStaleInjectCount = false
+                loggedStalePollWarning = false
             }
-            if context == .perform, provider == .inject, unchangedCountPolls >= 6, !loggedStaleInjectCount {
+            if context == .perform, unchangedCountPolls >= 6, !loggedStalePollWarning {
                 let c = base.count.map(String.init) ?? "–"
                 let r = base.receiveCount.map(String.init) ?? "–"
-                dlog("[WORD] ⚠ Inject frozen count=\(c) rc=\(r) word=«\(base.label)» · \(unchangedCountPolls) polls unchanged")
-                PerformUserLog.shared.log(
-                    "⚠ Inject congelado: la API sigue en count \(c) y receive \(r). En Safari abre tu enlace 11z.co/…/selection y envía una palabra nueva como espectador (el panel del mago no siempre sube count/receive)."
-                )
-                loggedStaleInjectCount = true
+                dlog("[WORD] ⚠ \(provider.title) frozen count=\(c) rc=\(r) word=«\(base.label)» · \(unchangedCountPolls) polls unchanged")
+                PerformUserLog.shared.log(stalePerformHint(provider: provider, baseline: base))
+                loggedStalePollWarning = true
             }
             if context == .perform, state == .locked, let locked = lockedReading,
                reading.pollDelta(comparedTo: locked) {
@@ -263,10 +260,24 @@ final class WordApiSession: ObservableObject {
         consecutiveErrors = 0
         pollCount = 0
         unchangedCountPolls = 0
-        loggedStaleInjectCount = false
+        loggedStalePollWarning = false
         lastUnchangedPerformUserLogAt = nil
         previousPollReading = nil
         WordApiClient.resetPerformFetchDiagnostics()
+    }
+
+    private func stalePerformHint(provider: WordApiSettings.Provider, baseline: WordReading) -> String {
+        let word = baseline.label
+        switch provider {
+        case .inject:
+            let c = baseline.count.map(String.init) ?? "–"
+            let r = baseline.receiveCount.map(String.init) ?? "–"
+            return "⚠ Inject sin cambios (\(c)/\(r)) · «\(word)». Envía palabra nueva en el enlace del espectador (11z.co/…/selection)."
+        case .elips:
+            return "⚠ Elips sin cambios · «\(word)». Cambia la palabra en pag.gg/Elips y espera el siguiente poll (2 s)."
+        case .custom:
+            return "⚠ Custom API sin cambios · «\(word)». Actualiza el JSON en tu endpoint; la app solo aplica cuando el campo cambia."
+        }
     }
 
     private func fail(_ message: String) {
