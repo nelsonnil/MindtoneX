@@ -22,6 +22,7 @@ final class CardVolumeScanView: UIView {
             let interaction = AVCaptureEventInteraction { event in
                 guard event.phase == .ended else { return }
                 Task { @MainActor in
+                    guard AppModel.shared.acceptsCardVolumeScanTrigger() else { return }
                     CardSongSession.shared.volumeScanTriggered()
                 }
             }

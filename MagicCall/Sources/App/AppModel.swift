@@ -371,16 +371,18 @@ final class AppModel: ObservableObject {
             dlog("✗ configureSession: \(RingtoneAudioEngine.describe(error))")
         }
         applyFakePerformMediaVolumeBoost(reason: "arm")
+        if usesCardInput {
+            ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 2.0)
+            SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "Card perform arm")
+            dlog("[CARD] perform arm · media vol=\(String(format: "%.2f", SystemVolume.shared.outputVolume)) (headroom before volume watch)")
+        }
         if Prefs.forceMediaVolume {
-            ignoreVolumeChangesUntil = CACurrentMediaTime() + 1
+            ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 1.2)
             SystemVolume.shared.set(Float(Prefs.mediaVolumeTarget), label: "stage target", sliderRetries: 5)
         }
         if Prefs.hotStandby { audio.startStandby() }
         calls.reassertDelegate()
         ensureVolumeButtonWatch()
-        if usesCardInput {
-            SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "Card scan")
-        }
         performed = false
         hadCallWhileArmed = false
         autoTriggerCooldownUntil = 0
@@ -905,6 +907,10 @@ final class AppModel: ObservableObject {
                 let new = change.newValue ?? 0
                 dlog("Volumen multimedia \(String(format: "%.2f", old)) → \(String(format: "%.2f", new))")
                 if CardSongSession.shared.capturesVolumeButtons {
+                    guard self.acceptsCardVolumeScanTrigger() else {
+                        dlog("[CARD] volume KVO ignored (programmatic / grace window)")
+                        return
+                    }
                     self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.55
                     SystemVolume.shared.set(old, label: "card scan revert")
                     CardSongSession.shared.volumeScanTriggered()
@@ -956,6 +962,13 @@ final class AppModel: ObservableObject {
         probeResults = results
         dlog("Ruta 1 [\(context)]: intento volumen timbre al máximo — \(results.map { $0.outcome.rawValue }.joined(separator: ", "))")
         #endif
+    }
+
+    /// Card OCR: only react to side-button volume after Perform setup volume settles (no auto-scan on enter).
+    func acceptsCardVolumeScanTrigger() -> Bool {
+        guard usesCardInput, isArmed else { return false }
+        guard CardSongSession.shared.capturesVolumeButtons else { return false }
+        return CACurrentMediaTime() > ignoreVolumeChangesUntil
     }
 
     /// Fake Ringtone: best-effort max media volume via hidden `MPVolumeView` (public API; slider hook undocumented).

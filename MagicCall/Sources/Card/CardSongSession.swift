@@ -114,6 +114,10 @@ final class CardSongSession: ObservableObject {
     /// Fired by `AVCaptureEventInteraction` (iOS 17.2+) on volume press during Perform.
     func volumeScanTriggered() {
         guard context == .perform, isActive, !isLocked else { return }
+        guard AppModel.shared.acceptsCardVolumeScanTrigger() else {
+            dlog("[CARD] volume scan ignored (wait for manual press after Perform settles)")
+            return
+        }
         guard scanTask == nil else {
             dlog("[CARD] scan already in progress")
             return
@@ -142,6 +146,7 @@ final class CardSongSession: ObservableObject {
             return
         }
         state = .scanning
+        SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "pre card scan")
         if context == .perform {
             PerformUserLog.shared.log("Card · scanning — camera on (~\(Int(CardSettings.burstSeconds)) s)")
         }
@@ -185,16 +190,18 @@ final class CardSongSession: ObservableObject {
         if !orderedLines.isEmpty {
             dlog("[CARD] lines top→bottom: \(orderedLines.joined(separator: " | "))")
         }
+        if context == .perform {
+            PerformUserLog.shared.log("Card · OCR lines: \(orderedLines.joined(separator: " | "))")
+            PerformUserLog.shared.log(
+                "Card · parsed song=\"\(dual.songQuery)\" · word=\"\(dual.spectatorWord ?? "—")\""
+            )
+        }
         guard gen == generation else { return }
 
-        var queriesToTry: [String] = []
-        if dual.songQuery.count >= 2 {
-            queriesToTry.append(dual.songQuery)
-        }
-        for text in texts {
-            let query = CardTextMapper.clean(text)
-            guard query.count >= 2, !queriesToTry.contains(where: { ApiJSON.sameText($0, query) }) else { continue }
-            queriesToTry.append(query)
+        let queriesToTry = songSearchQueries(dual: dual, orderedLines: orderedLines, mergedTexts: texts)
+        dlog("[CARD] song queries (line 1 first): \(queriesToTry.joined(separator: " · "))")
+        if context == .perform {
+            PerformUserLog.shared.log("Card · song search tries: \(queriesToTry.joined(separator: " · "))")
         }
 
         var votes: [String: Int] = [:]
@@ -205,14 +212,30 @@ final class CardSongSession: ObservableObject {
             guard query.count >= 2 else { continue }
             let ok = await AppModel.shared.prepareCardQuery(query)
             guard gen == generation else { return }
-            guard ok, let track = AppModel.shared.selected else { continue }
+            guard ok, let track = AppModel.shared.selected else {
+                dlog("[CARD] song try “\(query)” → no match")
+                if context == .perform {
+                    PerformUserLog.shared.log("Card · song try «\(query)» → no match")
+                }
+                continue
+            }
             let key = CardTextMapper.canonicalKey(from: track)
             votes[key, default: 0] += 1
             queryByKey[key] = query
             trackByKey[key] = track
+            dlog("[CARD] song try “\(query)” → \(track.title) — \(track.artist) (votes=\(votes[key] ?? 0))")
+            if context == .perform {
+                PerformUserLog.shared.log("Card · song try «\(query)» → \(track.title) — \(track.artist)")
+            }
         }
 
         let best = votes.max { $0.value < $1.value }
+        if context == .perform, let best {
+            let winner = trackByKey[best.key]
+            PerformUserLog.shared.log(
+                "Card · song winner «\(queryByKey[best.key] ?? "?")» → \(winner?.title ?? "?") — \(winner?.artist ?? "?") (\(best.value) vote(s))"
+            )
+        }
         let sample = texts.first ?? ""
         if let best, let winQuery = queryByKey[best.key] {
             _ = await AppModel.shared.prepareCardQuery(winQuery)
@@ -271,6 +294,30 @@ final class CardSongSession: ObservableObject {
         }
 
         applyCardWordIfNeeded(cardWord)
+    }
+
+    /// Prefer **line 1** for song lookup; never search the spectator word; full-frame OCR only as fallback.
+    private func songSearchQueries(dual: CardDualParse, orderedLines: [String], mergedTexts: [String]) -> [String] {
+        var queries: [String] = []
+        func appendUnique(_ raw: String) {
+            let q = CardTextMapper.clean(raw)
+            guard q.count >= 2 else { return }
+            if let w = dual.spectatorWord, ApiJSON.sameText(q, w) {
+                dlog("[CARD] skip song query (same as word line): “\(q)”")
+                return
+            }
+            guard !queries.contains(where: { ApiJSON.sameText($0, q) }) else { return }
+            queries.append(q)
+        }
+
+        appendUnique(dual.songQuery)
+        if queries.isEmpty, let first = orderedLines.first {
+            appendUnique(first)
+        }
+        if queries.isEmpty {
+            for text in mergedTexts { appendUnique(text) }
+        }
+        return queries
     }
 
     private func applyCardWordIfNeeded(_ cardWord: String?) {

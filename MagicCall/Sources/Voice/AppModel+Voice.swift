@@ -88,6 +88,8 @@ extension AppModel {
         case .card:
             arm(requireSong: false)
             CardSongSession.shared.start(context: .perform)
+            dlog("[CARD] Perform entered · camera idle until volume press · vol=\(String(format: "%.2f", SystemVolume.shared.outputVolume))")
+            PerformUserLog.shared.log("Card · ready — press volume to scan (camera off until then)")
         case .manual:
             performFakeRingtone()
         }
