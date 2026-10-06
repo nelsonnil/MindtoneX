@@ -68,7 +68,12 @@ extension AppModel {
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
             return
         }
+        runPerformWithWordContactPrep()
+    }
+
+    func performNowAfterWordContactPrep() {
         resetAutoSharePresentedFlag()
+        let input = VoiceSettings.inputMode
         switch input {
         case .aiVoice:
             VoiceAudioSession.recordCategoryActive = true

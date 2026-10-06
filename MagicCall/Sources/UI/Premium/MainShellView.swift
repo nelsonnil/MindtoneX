@@ -109,6 +109,15 @@ struct MainShellView: View {
                 ApiSettingsSheet()
             }
         }
+        .sheet(isPresented: $model.wordSpectatorDialSheet) {
+            WordApiSpectatorDialSheet()
+        }
+        .sheet(isPresented: $model.wordKnownContactPicker) {
+            WordApiKnownContactPicker(
+                onPick: { model.handleKnownContactPicked($0) },
+                onCancel: { model.handleKnownContactPickerCancelled() }
+            )
+        }
     }
 
     private var voicePreflightAlertPresented: Binding<Bool> {

@@ -43,11 +43,15 @@ struct WordApiSettingsView: View {
                 }
 
                 oracleCard {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 12) {
                         OracleEyebrow(text: "Call Identification (caller number)")
                         oracleField("34612345678 (country code + number)", text: $fallbackPhoneDigits)
                             .keyboardType(.phonePad)
-                        Text("**Required.** Only calls from this number show the word. Include the country code (e.g. 34 for Spain) and don’t save this number in Contacts — a contact name replaces the label.")
+                        Text("Used when **Save locked word as contact name** is off, or as backup digits. With contact modes on the Word API home card, Known uses the picked contact; Unknown uses the number from the Perform dial sheet.")
+                            .font(.caption2)
+                            .foregroundStyle(OracleTheme.textSecondary)
+
+                        Text("Call Directory still runs if Contacts access is denied.")
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
                     }

@@ -6,8 +6,12 @@ struct WordApiInputPanel: View {
     @AppStorage(WordApiSettings.Key.callerLabelEnabled) private var callerLabelEnabled = false
     @AppStorage(WordApiSettings.Key.provider) private var providerRaw = WordApiSettings.Provider.inject.rawValue
     @AppStorage(WordApiSettings.Key.injectID) private var injectID = ""
+    @AppStorage(WordApiSettings.Key.saveWordAsContact) private var saveWordAsContact = true
+    @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
+    @AppStorage(WordApiSettings.Key.restoreKnownNameOnSettingsExit) private var restoreKnownNameOnSettingsExit = true
 
     @State private var showConnectionSheet = false
+    @State private var showHomeContactPicker = false
 
     private var provider: WordApiSettings.Provider { WordApiSettings.Provider(rawValue: providerRaw) ?? .inject }
     private var configured: Bool { WordApiSettings.hasWordEndpoint }
@@ -30,6 +34,7 @@ struct WordApiInputPanel: View {
             }
 
             if callerLabelEnabled {
+                wordContactCard
                 connectionBlock
                 watchTestBlock
                 if let line = statusLine {
@@ -49,6 +54,130 @@ struct WordApiInputPanel: View {
         }
         .sheet(isPresented: $showConnectionSheet) {
             WordApiSettingsSheet()
+        }
+        .sheet(isPresented: $showHomeContactPicker) {
+            WordApiKnownContactPicker(
+                onPick: { contact in
+                    showHomeContactPicker = false
+                    if let e164 = WordApiContactPhoneParsing.e164(from: contact) {
+                        SpectatorWordContactService.recordKnownContactPicked(contact, phoneE164: e164)
+                    }
+                },
+                onCancel: { showHomeContactPicker = false }
+            )
+        }
+    }
+
+    private var contactMode: WordApiSettings.ContactMode {
+        WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
+    }
+
+    private var wordContactCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            OracleEyebrow(text: "Contact name (caller ID)")
+
+            Toggle(isOn: $saveWordAsContact) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Save locked word as contact name")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    Text("Background save — no Contacts app UI at lock time.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                }
+            }
+            .tint(OracleTheme.gold)
+            .onChange(of: saveWordAsContact) { _, on in
+                WordApiSettings.setSaveWordAsContactEnabled(on)
+            }
+
+            if saveWordAsContact {
+                Picker("Mode", selection: $contactModeRaw) {
+                    ForEach(WordApiSettings.ContactMode.allCases) { mode in
+                        Text("\(mode.title) · \(mode.shortTitleES)").tag(mode.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: contactModeRaw) { _, raw in
+                    if let mode = WordApiSettings.ContactMode(rawValue: raw) {
+                        WordApiSettings.setContactMode(mode)
+                    }
+                }
+
+                if contactMode == .known {
+                    knownContactBlock
+                } else {
+                    unknownContactBlock
+                }
+            }
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+    }
+
+    private var knownContactBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if WordApiSettings.hasKnownContactSelected {
+                Label(WordApiSettings.knownContactDisplayName, systemImage: "person.crop.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(OracleTheme.gold)
+                Text("Phone · +\(WordApiSettings.knownContactPhoneDigits)")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(OracleTheme.textSecondary)
+            } else {
+                Text("Pick the spectator contact before Perform.")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.coral)
+            }
+
+            Button {
+                showHomeContactPicker = true
+            } label: {
+                Label(
+                    WordApiSettings.hasKnownContactSelected ? "Change contact" : "Choose contact",
+                    systemImage: "person.crop.circle.badge.plus"
+                )
+                .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(OracleTheme.gold)
+
+            Toggle(isOn: $restoreKnownNameOnSettingsExit) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Restore original name when leaving Word API settings")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    Text("After lock, revert this contact’s given name when you close connection details (Known only).")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                }
+            }
+            .tint(OracleTheme.gold)
+            .onChange(of: restoreKnownNameOnSettingsExit) { _, on in
+                WordApiSettings.setRestoreKnownNameOnSettingsExit(on)
+            }
+        }
+    }
+
+    private var unknownContactBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("On Perform: dial the spectator, then arm when the outgoing call ends.")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+            if !WordApiSettings.lastDialedPhoneDigits.isEmpty {
+                Text("Last dialed · +\(WordApiSettings.lastDialedPhoneDigits)")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(OracleTheme.textSecondary)
+            } else {
+                Text("No number yet — Perform opens the dial sheet.")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
         }
     }
 
@@ -309,5 +438,8 @@ struct WordApiSettingsSheet: View {
                 }
         }
         .preferredColorScheme(.dark)
+        .onDisappear {
+            SpectatorWordContactService.restoreKnownContactOriginalName(reason: "Word API settings dismissed")
+        }
     }
 }

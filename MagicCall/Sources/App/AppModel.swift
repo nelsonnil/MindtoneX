@@ -1,4 +1,5 @@
 import AVFoundation
+import CallKit
 import QuartzCore
 import SwiftUI
 import UIKit
@@ -59,6 +60,9 @@ final class AppModel: ObservableObject {
     /// Prevents opening auto-share more than once per Perform.
     var autoSharePresentedThisPerform = false
 
+    @Published var wordSpectatorDialSheet = false
+    @Published var wordKnownContactPicker = false
+
     func setVoiceOpenAIPreflightInProgress(_ inProgress: Bool) {
         voiceOpenAIPreflightInProgress = inProgress
     }
@@ -77,7 +81,7 @@ final class AppModel: ObservableObject {
         CardSettings.registerDefaults()
         DebugLog.shared.logDeviceHeader()
         calls.onEvent = { [weak self] event, call in
-            MainActor.assumeIsolated { self?.handle(event, uuid: call.uuid) }
+            MainActor.assumeIsolated { self?.handle(event, call: call) }
         }
         calls.start()
         audio.onFinishedClip = { [weak self] in
@@ -588,7 +592,9 @@ final class AppModel: ObservableObject {
 
     // MARK: Llamadas
 
-    private func handle(_ event: CallMonitor.Event, uuid: UUID) {
+    private func handle(_ event: CallMonitor.Event, call: CXCall) {
+        let uuid = call.uuid
+        noteWordContactCallEvent(event, uuid: uuid, call: call)
         switch event {
         case .incoming:
             guard isArmed else {
@@ -776,7 +782,7 @@ final class AppModel: ObservableObject {
         }
         for call in ringing {
             if incomingCallID != call.uuid {
-                handle(.incoming, uuid: call.uuid)
+                handle(.incoming, call: call)
             } else if !isAudible {
                 attemptAutoTrigger(source: "CXCall.sync")
             }

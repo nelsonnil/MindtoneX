@@ -1,4 +1,5 @@
 import CallKit
+import Contacts
 import Foundation
 
 @MainActor
@@ -110,7 +111,19 @@ enum CallDirectorySync {
             PerformUserLog.shared.log("Caller label: App Group not signed — rebuild with \(CallerLabelStore.appGroupID).")
         }
         if snapshot.identificationPhoneNumbers.isEmpty {
-            PerformUserLog.shared.log("Caller label: add the incoming number in Word API → Call Identification.")
+            if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .unknown {
+                PerformUserLog.shared.log("Caller label: dial the spectator on Perform (Unknown mode) or add a fallback number in Word API settings.")
+            } else if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .known {
+                PerformUserLog.shared.log("Caller label: choose a Known contact on the Word API card.")
+            } else {
+                PerformUserLog.shared.log("Caller label: add the incoming number in Word API → Call Identification.")
+            }
+        }
+        if WordApiSettings.saveWordAsContactEnabled {
+            let contacts = CNContactStore.authorizationStatus(for: .contacts)
+            if contacts == .denied || contacts == .restricted {
+                PerformUserLog.shared.log("Contacts off · word on call screen needs Contacts access, or use Call Directory only.")
+            }
         }
         directoryManager.getEnabledStatusForExtension(withIdentifier: CallerLabelStore.extensionBundleID) { status, error in
             DispatchQueue.main.async {

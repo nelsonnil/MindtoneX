@@ -11,6 +11,7 @@
 		04589F2E27E1B78CBA422EB1 /* WordReadingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A539EED2B566EDCDB04C0CCE /* WordReadingTests.swift */; };
 		09E0EF3810160A5F1BD81E81 /* MagicCallLiveCallerLookup.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A5742EFB2E2186ABC66755D3 /* MagicCallLiveCallerLookup.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B7939F9A17DDF66D8FA6ED4 /* CardInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10F1FAFEC4327EF1C05B2D5 /* CardInputPanel.swift */; };
+		0C13519901D4C9A57CFA2E01 /* SpectatorWordContactService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */; };
 		0C7DD1810B8A32E53E19A6EF /* AiVoiceInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B521B3A9CDF1292800B9E81D /* AiVoiceInputPanel.swift */; };
 		0DC2CA0FAB3EE106008ED273 /* CardOCRProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */; };
 		0FC1EC7B4985F1F6545DE135 /* RingtoneAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */; };
@@ -49,7 +50,9 @@
 		6CC083753E4B6548FDB19A70 /* RecentPerformSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270405B2C76043701C1E008B /* RecentPerformSnapshot.swift */; };
 		6CE7420A8F1FE10C6CBAC293 /* PerformanceGuideSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B504CB2C03963CF7CE9CB8A /* PerformanceGuideSheet.swift */; };
 		6D186875F006FE6842FAE093 /* ApiSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157F18B545F0BC6C204DB511 /* ApiSongSession.swift */; };
+		6DE487B3B435779601483AE7 /* WordApiContactPerformGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */; };
 		75092964F794A1AF322ABF44 /* OracleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8F3AAB4CE4D47C84E6771 /* OracleSheets.swift */; };
+		79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */; };
 		7BA36D68D4A7708928889CA2 /* SongInputStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */; };
 		8BC10BB4807461B2F102F8FA /* ApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30B3D15953FEAA8EA8E7828 /* ApiSettingsView.swift */; };
 		8D205906D0C59112990ED155 /* CardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC77119D4608465FEFC34B61 /* CardSettings.swift */; };
@@ -82,6 +85,7 @@
 		D02E775CDE9544B43A79D499 /* UIWindow+MagicCall.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D33B9D6604B6A2334D1E28 /* UIWindow+MagicCall.swift */; };
 		D1B227CCC8CB65C89C798C8C /* CardTextMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA3CF064D7BB09B92C438B8 /* CardTextMapper.swift */; };
 		D62EC45272208FCF763FED85 /* UIIllustrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = A744DA01C5B2EA22A5B55906 /* UIIllustrations.swift */; };
+		DB0E5A96FCA973B7D2BCC881 /* WordApiContactShowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */; };
 		E35A7B10CDB728AE2BBC1BAA /* ApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE5A3E186B93A76002301E9 /* ApiInputPanel.swift */; };
 		E6AFD06A3F393638BE5731B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8A83ABBC42C589B55EA84806 /* PrivacyInfo.xcprivacy */; };
 		F1A3FA0C9C18CB407A3B9F19 /* VoiceOpenAIPreflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF4C2F9A27E5FA837BB7116B /* VoiceOpenAIPreflight.swift */; };
@@ -90,6 +94,7 @@
 		F69B4D4E4E7EAFF205C5D5EE /* WordApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3706106600373AFBC0DCD995 /* WordApiSettingsView.swift */; };
 		F80AF9FD212EA30200E041F5 /* MainShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1281B461D25A6CC77A54696F /* MainShellView.swift */; };
 		FBB7FBCA32D55B7577416FB3 /* CardVolumeScanHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F371D4729BE744EF07925E /* CardVolumeScanHost.swift */; };
+		FECA2C4469B32D6936668F8A /* AppModel+WordContact.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2520D9C08750800C79413F10 /* AppModel+WordContact.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -141,11 +146,13 @@
 		13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiInputPanel.swift; sourceTree = "<group>"; };
 		15278D9105D3F5FF00D1BAD5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		157F18B545F0BC6C204DB511 /* ApiSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSongSession.swift; sourceTree = "<group>"; };
+		16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactPerformGate.swift; sourceTree = "<group>"; };
 		189566531AAF0DCDD2A3573A /* LiveCallerLookupExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCallerLookupExtension.swift; sourceTree = "<group>"; };
 		1B91AE661642AE376E1DD474 /* ApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettings.swift; sourceTree = "<group>"; };
 		1DFC03C27AB6139290A4DA80 /* SharePerformFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharePerformFlow.swift; sourceTree = "<group>"; };
 		218281B22EB24031B59074EA /* VoiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettings.swift; sourceTree = "<group>"; };
 		246424FC8857825942B19C91 /* WordApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSettings.swift; sourceTree = "<group>"; };
+		2520D9C08750800C79413F10 /* AppModel+WordContact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+WordContact.swift"; sourceTree = "<group>"; };
 		260CB39E9363322425A78261 /* OracleTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleTheme.swift; sourceTree = "<group>"; };
 		266C454CF85DCC717E5765F6 /* SilentShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentShortcut.swift; sourceTree = "<group>"; };
 		270405B2C76043701C1E008B /* RecentPerformSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentPerformSnapshot.swift; sourceTree = "<group>"; };
@@ -189,7 +196,9 @@
 		8D244A5584056A8FBA18DE84 /* CardPracticeScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPracticeScanView.swift; sourceTree = "<group>"; };
 		90D564C26BAEEF26A1D77ABA /* CallerLabelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerLabelStore.swift; sourceTree = "<group>"; };
 		94C29E2CCBFC1086588445F6 /* PreviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewService.swift; sourceTree = "<group>"; };
+		95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactShowState.swift; sourceTree = "<group>"; };
 		97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongPicker.swift; sourceTree = "<group>"; };
+		9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactViews.swift; sourceTree = "<group>"; };
 		9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
 		9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9FA2CF6BD397B91ACAF84FAD /* LiveTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscribers.swift; sourceTree = "<group>"; };
@@ -222,6 +231,7 @@
 		EC77119D4608465FEFC34B61 /* CardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSettings.swift; sourceTree = "<group>"; };
 		F235D4C3F14AB89CF4409734 /* VoiceLockingControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLockingControls.swift; sourceTree = "<group>"; };
 		F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorWordContactService.swift; sourceTree = "<group>"; };
 		FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPerformanceModeCard.swift; sourceTree = "<group>"; };
 		FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongInputStrip.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -328,6 +338,10 @@
 				1B91AE661642AE376E1DD474 /* ApiSettings.swift */,
 				C30B3D15953FEAA8EA8E7828 /* ApiSettingsView.swift */,
 				157F18B545F0BC6C204DB511 /* ApiSongSession.swift */,
+				F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */,
+				16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */,
+				95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */,
+				9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */,
 				13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */,
 				7BDF1EA0492BCF11335526EC /* WordApiSession.swift */,
 				246424FC8857825942B19C91 /* WordApiSettings.swift */,
@@ -390,6 +404,7 @@
 			isa = PBXGroup;
 			children = (
 				F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */,
+				2520D9C08750800C79413F10 /* AppModel+WordContact.swift */,
 				5A5F46051981A4C204711045 /* MagicCallApp.swift */,
 				DEA922A0D263D3309553D389 /* Prefs.swift */,
 			);
@@ -649,6 +664,7 @@
 				8BC10BB4807461B2F102F8FA /* ApiSettingsView.swift in Sources */,
 				6D186875F006FE6842FAE093 /* ApiSongSession.swift in Sources */,
 				3990F1E3960F46E9739453B2 /* AppModel+Voice.swift in Sources */,
+				FECA2C4469B32D6936668F8A /* AppModel+WordContact.swift in Sources */,
 				2759F7EDE468921282C2E330 /* AppModel.swift in Sources */,
 				19FF538245C7E267A53BE4E2 /* CallDirectorySync.swift in Sources */,
 				99C1146710877380EBC55FD9 /* CallMonitor.swift in Sources */,
@@ -703,6 +719,7 @@
 				BBFF503A2A2C25749054043F /* SongLibrarySection.swift in Sources */,
 				567203094B7B7CBAD29085F7 /* SongLibraryStore.swift in Sources */,
 				128B2FC902A3063C29DBBCAB /* SongPicker.swift in Sources */,
+				0C13519901D4C9A57CFA2E01 /* SpectatorWordContactService.swift in Sources */,
 				A4614B1A536192430CFD5A9C /* StageView.swift in Sources */,
 				4C3EAD437CDD61E9E5E6DFE6 /* SystemVolume.swift in Sources */,
 				D62EC45272208FCF763FED85 /* UIIllustrations.swift in Sources */,
@@ -714,6 +731,9 @@
 				F1A3FA0C9C18CB407A3B9F19 /* VoiceOpenAIPreflight.swift in Sources */,
 				F31464D57BF9700BFD4B2325 /* VoiceSettings.swift in Sources */,
 				BAE78790890F3890D985AE32 /* VoiceSongSession.swift in Sources */,
+				6DE487B3B435779601483AE7 /* WordApiContactPerformGate.swift in Sources */,
+				DB0E5A96FCA973B7D2BCC881 /* WordApiContactShowState.swift in Sources */,
+				79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */,
 				9CAF4275C647D0F5AA7516BE /* WordApiInputPanel.swift in Sources */,
 				8EE3FDC0948FC9B790A9AACA /* WordApiSession.swift in Sources */,
 				CFEA5F4AADB2A23B17F7A0AA /* WordApiSettings.swift in Sources */,

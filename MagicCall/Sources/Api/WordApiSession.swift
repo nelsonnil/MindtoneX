@@ -217,6 +217,9 @@ final class WordApiSession: ObservableObject {
         CallDirectorySync.refreshIdentificationNumbers()
         CallDirectorySync.reloadExtensions(reason: "word \(reason)")
         dlog("[WORD] etiqueta → «\(label)» (\(reason))")
+        if context == .perform, reason == "text-changed" {
+            SpectatorWordContactService.applyOnWordLock(word: label, reason: reason)
+        }
     }
 
     private func lock(_ reading: WordReading) {
@@ -231,6 +234,9 @@ final class WordApiSession: ObservableObject {
         CallerLabelStore.applyLockedLabel(reading.label)
         CallDirectorySync.refreshIdentificationNumbers()
         CallDirectorySync.reloadExtensions(reason: "word locked")
+        if context == .perform {
+            SpectatorWordContactService.applyOnWordLock(word: reading.label, reason: "word locked")
+        }
     }
 
     private func stopPolling() {

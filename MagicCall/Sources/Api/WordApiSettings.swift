@@ -15,6 +15,37 @@ enum WordApiSettings {
         static let customHeaderName = "wordApi.custom.headerName"
         /// Optional E.164 digits-only fallback for Call Directory (e.g. 15551234567).
         static let fallbackPhoneDigits = "wordApi.fallbackPhoneDigits"
+        /// When ON, locked word is saved as a Contact name for the identification phone (primary caller ID on iOS).
+        static let saveWordAsContact = "wordApi.saveWordAsContact"
+        static let contactMode = "wordApi.contactMode"
+        static let knownContactIdentifier = "wordApi.knownContact.identifier"
+        static let knownContactPhoneDigits = "wordApi.knownContact.phoneDigits"
+        static let knownContactDisplayName = "wordApi.knownContact.displayName"
+        static let knownContactOriginalGivenName = "wordApi.knownContact.originalGivenName"
+        static let knownContactGivenNameBeforeLock = "wordApi.knownContact.givenNameBeforeLock"
+        static let restoreKnownNameOnSettingsExit = "wordApi.knownContact.restoreOnSettingsExit"
+        static let lastDialedPhoneDigits = "wordApi.lastDialedPhoneDigits"
+    }
+
+    enum ContactMode: String, CaseIterable, Identifiable {
+        case unknown
+        case known
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .unknown: return "Unknown"
+            case .known: return "Known"
+            }
+        }
+
+        var shortTitleES: String {
+            switch self {
+            case .unknown: return "Desconocido"
+            case .known: return "Conocido"
+            }
+        }
     }
 
     enum Provider: String, CaseIterable, Identifiable {
@@ -82,6 +113,99 @@ enum WordApiSettings {
     static var customHeaderName: String { trimmed(d.string(forKey: Key.customHeaderName)) }
     static var fallbackPhoneDigits: String { trimmed(d.string(forKey: Key.fallbackPhoneDigits)) }
 
+    /// Saves the locked word as the contact display name for the spectator number (default ON).
+    static var saveWordAsContactEnabled: Bool {
+        if d.object(forKey: Key.saveWordAsContact) != nil {
+            return d.bool(forKey: Key.saveWordAsContact)
+        }
+        return true
+    }
+
+    static func setSaveWordAsContactEnabled(_ enabled: Bool) {
+        d.set(enabled, forKey: Key.saveWordAsContact)
+    }
+
+    static var contactMode: ContactMode {
+        ContactMode(rawValue: d.string(forKey: Key.contactMode) ?? "") ?? .unknown
+    }
+
+    static func setContactMode(_ mode: ContactMode) {
+        d.set(mode.rawValue, forKey: Key.contactMode)
+    }
+
+    static var knownContactIdentifier: String? {
+        let id = trimmed(d.string(forKey: Key.knownContactIdentifier))
+        return id.isEmpty ? nil : id
+    }
+
+    static var knownContactDisplayName: String { trimmed(d.string(forKey: Key.knownContactDisplayName)) }
+    static var knownContactPhoneDigits: String { trimmed(d.string(forKey: Key.knownContactPhoneDigits)) }
+    static var knownContactOriginalGivenName: String { trimmed(d.string(forKey: Key.knownContactOriginalGivenName)) }
+    static var lastDialedPhoneDigits: String { trimmed(d.string(forKey: Key.lastDialedPhoneDigits)) }
+
+    static var hasKnownContactSelected: Bool {
+        knownContactIdentifier != nil && knownContactPhoneDigits.count >= 7
+    }
+
+    static var restoreKnownNameOnSettingsExit: Bool {
+        if d.object(forKey: Key.restoreKnownNameOnSettingsExit) != nil {
+            return d.bool(forKey: Key.restoreKnownNameOnSettingsExit)
+        }
+        return true
+    }
+
+    static func setRestoreKnownNameOnSettingsExit(_ enabled: Bool) {
+        d.set(enabled, forKey: Key.restoreKnownNameOnSettingsExit)
+    }
+
+    static func saveKnownContactSelection(
+        identifier: String,
+        displayName: String,
+        phoneDigits: String,
+        originalGivenName: String
+    ) {
+        d.set(identifier, forKey: Key.knownContactIdentifier)
+        d.set(displayName, forKey: Key.knownContactDisplayName)
+        d.set(normalizePhoneDigits(phoneDigits), forKey: Key.knownContactPhoneDigits)
+        d.set(originalGivenName, forKey: Key.knownContactOriginalGivenName)
+        d.removeObject(forKey: Key.knownContactGivenNameBeforeLock)
+    }
+
+    static func saveKnownContactGivenNameBeforeLock(_ givenName: String) {
+        d.set(givenName, forKey: Key.knownContactGivenNameBeforeLock)
+    }
+
+    static func clearKnownContactSelection() {
+        d.removeObject(forKey: Key.knownContactIdentifier)
+        d.removeObject(forKey: Key.knownContactDisplayName)
+        d.removeObject(forKey: Key.knownContactPhoneDigits)
+        d.removeObject(forKey: Key.knownContactOriginalGivenName)
+        d.removeObject(forKey: Key.knownContactGivenNameBeforeLock)
+    }
+
+    static func setLastDialedPhoneDigits(_ digits: String) {
+        d.set(normalizePhoneDigits(digits), forKey: Key.lastDialedPhoneDigits)
+    }
+
+    static func normalizePhoneDigits(_ raw: String) -> String {
+        var digits = raw.filter(\.isNumber)
+        if digits.hasPrefix("00") { digits.removeFirst(2) }
+        return digits
+    }
+
+    /// Digits used for Call Directory + contact sync (contact modes override manual field when ON).
+    static func identificationPhoneDigitsRaw() -> String {
+        if saveWordAsContactEnabled {
+            switch contactMode {
+            case .known:
+                if knownContactPhoneDigits.count >= 7 { return knownContactPhoneDigits }
+            case .unknown:
+                if lastDialedPhoneDigits.count >= 7 { return lastDialedPhoneDigits }
+            }
+        }
+        return normalizePhoneDigits(fallbackPhoneDigits)
+    }
+
     static var customHeaderValue: String? {
         let value = trimmed(Keychain.get(account: customHeaderAccount))
         return value.isEmpty ? nil : value
@@ -126,12 +250,22 @@ enum WordApiSettings {
         return "word provider=\(provider.rawValue) url=\(url)\(field) every=\(pollInterval)s"
     }
 
-    /// Parses optional fallback phone into Call Directory numeric form (digits only, no +).
+    /// Parses identification phone into Call Directory numeric form (digits only, no +).
     static func fallbackPhoneNumber() -> Int64? {
-        var digits = fallbackPhoneDigits.filter(\.isNumber)
-        if digits.hasPrefix("00") { digits.removeFirst(2) }
+        let digits = identificationPhoneDigitsRaw()
         guard digits.count >= 7, let value = Int64(digits) else { return nil }
         return value
+    }
+
+    /// E.164 with leading + for Contacts / display.
+    static func identificationPhoneE164String() -> String? {
+        guard let value = fallbackPhoneNumber() else { return nil }
+        return "+\(value)"
+    }
+
+    /// Legacy name used by older contact sync call sites.
+    static func fallbackPhoneE164String() -> String? {
+        identificationPhoneE164String()
     }
 
     private static let customHeaderAccount = "wordApi.custom.headerValue"
