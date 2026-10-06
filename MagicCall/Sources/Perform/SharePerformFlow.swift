@@ -44,6 +44,8 @@ final class SharePerformFlow: ObservableObject {
             ApiSongSession.shared.start(context: .perform)
         case .notes:
             NotesSongSession.shared.start(context: .perform)
+        case .card:
+            CardSongSession.shared.start(context: .perform)
         case .manual:
             Task { await openShare() }
         }
@@ -88,6 +90,7 @@ final class SharePerformFlow: ObservableObject {
         let voice = VoiceSongSession.shared
         if voice.isActive { voice.reset(reason: "share sheet") }
         if ApiSongSession.shared.isActive { ApiSongSession.shared.stopTest() }
+        if CardSongSession.shared.isActive { CardSongSession.shared.reset(reason: "share sheet") }
         VoiceAudioSession.recordCategoryActive = false
         VoiceAudioSession.deactivateIfIdle()
         dlog("[SHARE PERFORM] mic fully stopped before Share (voice state=\(voice.state))")

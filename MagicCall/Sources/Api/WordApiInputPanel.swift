@@ -1,0 +1,278 @@
+import SwiftUI
+
+/// Word API on home — same integration picker pattern as API song input.
+struct WordApiInputPanel: View {
+    @ObservedObject private var session = WordApiSession.shared
+    @AppStorage(WordApiSettings.Key.callerLabelEnabled) private var callerLabelEnabled = false
+    @AppStorage(WordApiSettings.Key.provider) private var providerRaw = WordApiSettings.Provider.inject.rawValue
+    @AppStorage(WordApiSettings.Key.injectID) private var injectID = ""
+
+    @State private var showConnectionSheet = false
+
+    private var provider: WordApiSettings.Provider { WordApiSettings.Provider(rawValue: providerRaw) ?? .inject }
+    private var configured: Bool { WordApiSettings.hasWordEndpoint }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Toggle(isOn: $callerLabelEnabled) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Caller label (incoming call banner)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    Text("Requires MindtoneX in iPhone Settings → Phone → Call Blocking & Identification")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                }
+            }
+            .tint(OracleTheme.gold)
+            .onChange(of: callerLabelEnabled) { _, on in
+                if !on { WordApiSession.shared.reset(reason: "caller label off") }
+            }
+
+            if callerLabelEnabled {
+                connectionBlock
+                watchTestBlock
+                if let line = statusLine {
+                    Label(line.text, systemImage: line.icon)
+                        .font(.caption)
+                        .foregroundStyle(line.warning ? OracleTheme.coral : OracleTheme.textSecondary)
+                        .lineLimit(4)
+                }
+                lockedWordRow
+            }
+        }
+        .sheet(isPresented: $showConnectionSheet) {
+            WordApiSettingsSheet()
+        }
+    }
+
+    private var connectionBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            OracleEyebrow(text: "Spectator word API")
+
+            VStack(alignment: .leading, spacing: 12) {
+                Picker("Integration", selection: $providerRaw) {
+                    ForEach(WordApiSettings.Provider.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .pickerStyle(.segmented)
+
+                HStack(spacing: 8) {
+                    Image(systemName: configured ? "checkmark.circle.fill" : "exclamationmark.circle")
+                        .foregroundStyle(configured ? OracleTheme.gold : OracleTheme.coral)
+                    Text(configured ? "\(provider.title) active" : WordApiSettings.setupHint)
+                        .font(.caption)
+                        .foregroundStyle(configured ? OracleTheme.textSecondary : OracleTheme.coral)
+                }
+
+                if provider == .inject {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Inject ID")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(OracleTheme.textSecondary)
+                        TextField("Paste Inject word API token", text: $injectID)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .font(.subheadline)
+                            .padding(10)
+                            .background(Color.white.opacity(0.06))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
+                }
+
+                Button {
+                    showConnectionSheet = true
+                } label: {
+                    HStack {
+                        Label(
+                            provider == .inject && !injectID.isEmpty ? "Full setup & test connection" : "Enter connection details",
+                            systemImage: "link.circle.fill"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                    }
+                    .foregroundStyle(OracleTheme.gold)
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+
+                Text("On Perform, polls every \(Int(WordApiSettings.pollInterval)) s — first reading is the old word; the **next change** is the spectator’s word for the call banner.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
+            .padding(14)
+            .background(Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+            }
+        }
+    }
+
+    private var watchTestBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            OracleEyebrow(text: "Live watch")
+            Text("Simulate Perform polling: change the word in \(provider.title), then see when the app locks it.")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+
+            if session.isActive && session.context == .test {
+                Button { session.stopTest() } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "stop.circle.fill")
+                            .font(.title3)
+                        Text("Stop watching")
+                            .font(.subheadline.weight(.bold))
+                        Spacer()
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.red.opacity(0.88)))
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button {
+                    session.start(context: .test)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "dot.radiowaves.left.and.right")
+                            .font(.title3)
+                        Text("Watch test")
+                            .font(.subheadline.weight(.bold))
+                        Spacer()
+                        if session.isActive && session.context == .test {
+                            Circle().fill(Color.red).frame(width: 8, height: 8)
+                        }
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: configured
+                                        ? [OracleTheme.sectionTeal, OracleTheme.sectionTeal.opacity(0.72)]
+                                        : [Color.gray.opacity(0.35), Color.gray.opacity(0.25)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(!configured)
+            }
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+    }
+
+    @ViewBuilder
+    private var lockedWordRow: some View {
+        if session.state == .locked, let word = session.lockedReading?.label {
+            HStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(OracleTheme.gold)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Caller label locked")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textSecondary)
+                    Text(word)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                        .lineLimit(2)
+                }
+                Spacer()
+            }
+            .padding(14)
+            .background(Color.white.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(OracleTheme.gold.opacity(0.45), lineWidth: 1)
+            }
+        }
+    }
+
+    private var statusLine: (text: String, icon: String, warning: Bool)? {
+        if session.isStruggling, session.isActive {
+            return ("\(provider.title) not reachable: \(session.lastError ?? "network error") — retrying", "wifi.exclamationmark", true)
+        }
+        switch session.state {
+        case .idle:
+            if let last = session.lastReading, last.hasWord { return ("Last value: “\(last.label)”", "text.quote", false) }
+            return configured ? ("Tap **Watch test**, then change the word in \(provider.title).", "info.circle", false) : nil
+        case .connecting:
+            return ("Connecting to \(provider.title)…", "antenna.radiowaves.left.and.right", false)
+        case .watching:
+            var current = ""
+            if let base = session.baseline, base.hasWord { current = " · now “\(base.label)”" }
+            return ("Waiting for a new word\(current)", "dot.radiowaves.left.and.right", false)
+        case .locked:
+            return nil
+        case .failed(let message):
+            return (message, "exclamationmark.triangle.fill", true)
+        }
+    }
+}
+
+struct WordApiHomeCard: View {
+    @ObservedObject private var session = WordApiSession.shared
+    @AppStorage(WordApiSettings.Key.provider) private var providerRaw = WordApiSettings.Provider.inject.rawValue
+
+    private var provider: WordApiSettings.Provider { WordApiSettings.Provider(rawValue: providerRaw) ?? .inject }
+
+    private var subtitle: String {
+        if session.state == .locked, let w = session.lockedReading?.label {
+            return "Locked: “\(w)” · \(provider.title)"
+        }
+        if !WordApiSettings.callerLabelEnabled {
+            return "Off — Perform unchanged (no call banner)"
+        }
+        if WordApiSettings.hasWordEndpoint {
+            return "\(provider.title) · polls during Perform"
+        }
+        return "Set Inject, Elips, or Custom API"
+    }
+
+    var body: some View {
+        HomePanel(accent: OracleHomeSection.wordApi.accent) {
+            VStack(alignment: .leading, spacing: 16) {
+                HomeSectionTitle(
+                    title: "Word API (caller label)",
+                    subtitle: subtitle,
+                    eyebrow: "Incoming call banner"
+                )
+                WordApiInputPanel()
+            }
+        }
+    }
+}
+
+struct WordApiSettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            WordApiSettingsView()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                            .foregroundStyle(OracleTheme.gold)
+                    }
+                }
+        }
+        .preferredColorScheme(.dark)
+    }
+}

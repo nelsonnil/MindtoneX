@@ -37,6 +37,8 @@
 	<true/>
 	<key>UIFileSharingEnabled</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Card mode uses the camera to read the song title written on a card during your performance. Images are processed on this iPhone and are never saved or uploaded.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Voice mode listens while the spectator names a song during your performance. The microphone stops as soon as the song is locked.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

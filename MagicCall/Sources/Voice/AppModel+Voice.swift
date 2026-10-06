@@ -5,14 +5,15 @@ extension AppModel {
     var usesVoiceInput: Bool { VoiceSettings.inputMode == .aiVoice }
     var usesNotesInput: Bool { VoiceSettings.inputMode == .notes }
     var usesApiInput: Bool { VoiceSettings.inputMode == .api }
-    /// AI Voice, Notes and API find the song during Perform, so each Perform starts with no song.
-    var findsSongDuringPerform: Bool { usesVoiceInput || usesNotesInput || usesApiInput }
+    var usesCardInput: Bool { VoiceSettings.inputMode == .card }
+    /// AI Voice, Notes, API and Card find the song during Perform, so each Perform starts with no song.
+    var findsSongDuringPerform: Bool { usesVoiceInput || usesNotesInput || usesApiInput || usesCardInput }
 
     /// Auto-share on song lock applies only to inputs that lock during Perform (not Manual on Home).
     var inputSupportsAutoShareOnSongLock: Bool {
         switch VoiceSettings.inputMode {
         case .manual: return false
-        case .aiVoice, .notes, .api: return true
+        case .aiVoice, .notes, .api, .card: return true
         }
     }
 
@@ -22,6 +23,7 @@ extension AppModel {
         case .aiVoice: return VoiceSongSession.shared.state == .locked
         case .notes: return NotesSongSession.shared.isLocked
         case .api: return ApiSongSession.shared.state == .locked
+        case .card: return CardSongSession.shared.isLocked
         case .manual: return loadState == .ready
         }
     }
@@ -57,6 +59,8 @@ extension AppModel {
             VoiceSongSession.shared.reset(reason: "new Perform")
             NotesSongSession.shared.reset(reason: "new Perform")
             ApiSongSession.shared.reset(reason: "new Perform")
+            CardSongSession.shared.reset(reason: "new Perform")
+            WordApiSession.shared.reset(reason: "new Perform")
             clearSongForNextPerformance()
         }
         guard StageImageStore.hasScreenshot else {
@@ -76,6 +80,9 @@ extension AppModel {
         case .api:
             arm(requireSong: false)
             ApiSongSession.shared.start(context: .perform)
+        case .card:
+            arm(requireSong: false)
+            CardSongSession.shared.start(context: .perform)
         case .manual:
             performFakeRingtone()
         }
@@ -86,6 +93,7 @@ extension AppModel {
         case .aiVoice: VoiceSettings.isConfigured
         case .notes: true
         case .api: ApiSettings.isConfigured
+        case .card: CardSettings.cameraAuthorized
         case .manual: loadState == .ready
         }
         return inputReady && StageImageStore.hasScreenshot
@@ -103,6 +111,10 @@ extension AppModel {
 
     /// Looks up and loads the spectator's search read from the API with the normal preview lookup.
     func prepareApiQuery(_ query: String) async -> Bool {
+        await prepareSongQuery(query)
+    }
+
+    func prepareCardQuery(_ query: String) async -> Bool {
         await prepareSongQuery(query)
     }
 
@@ -157,6 +169,18 @@ extension AppModel {
         }
     }
 
+    func cardSongLocked(context: CardSongSession.Context) {
+        if context == .perform {
+            recordRecentLoadedSongIfReady(reason: "cardLocked")
+        }
+        if context == .perform, isArmed {
+            applyFakePerformMediaVolumeBoost(reason: "cardLocked")
+        }
+        if context == .perform {
+            autoShareOnSongLockIfEnabled(source: "Card")
+        }
+    }
+
     /// Leaving Perform starts the next performance from zero (no stale song on the next run).
     func resetVoicePerformance() {
         SharePerformFlow.shared.reset()
@@ -166,7 +190,14 @@ extension AppModel {
         VoiceSongSession.shared.reset(reason: "left Perform")
         NotesSongSession.shared.reset(reason: "left Perform")
         ApiSongSession.shared.reset(reason: "left Perform")
+        CardSongSession.shared.reset(reason: "left Perform")
+        WordApiSession.shared.reset(reason: "left Perform")
         clearSongForNextPerformance()
+    }
+
+    func startWordApiIfNeeded(context: WordApiSession.Context) {
+        guard WordApiSettings.callerLabelEnabled, WordApiSettings.hasWordEndpoint else { return }
+        WordApiSession.shared.start(context: context)
     }
 
     /// Home screen: switching song input must not leave a preview loaded from AI Voice / Notes / API Test.
@@ -175,6 +206,8 @@ extension AppModel {
         VoiceSongSession.shared.reset(reason: "input mode \(previous.title) → \(next.title)")
         NotesSongSession.shared.reset(reason: "input mode")
         ApiSongSession.shared.reset(reason: "input mode")
+        CardSongSession.shared.reset(reason: "input mode")
+        WordApiSession.shared.stopTest()
         if previous != .manual || next != .manual {
             clearSongForNextPerformance()
         }

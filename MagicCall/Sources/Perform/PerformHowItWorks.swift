@@ -89,6 +89,8 @@ enum PerformCopy {
             steps.append("Ask the spectator to search a song in \(ApiSettings.provider.title). The app checks every \(Int(ApiSettings.pollInterval)) seconds and locks their search as soon as the preview is loaded.")
         case .notes:
             steps.append("A white note opens instead. The song written in it is searched and loaded in the background.")
+        case .card:
+            steps.append("The back camera reads the spectator’s handwritten card when you press a **volume button** (no screen touch). ALL CAPS on white card works best.")
         case .manual:
             steps.append("The app uses the song you typed above.")
         }
@@ -124,6 +126,14 @@ enum PerformCopy {
         "Stay on the stage screen in MindtoneX — the app keeps the display awake. Don’t press the side button or lock the phone.",
         "While the spectator names the song, share your number and ask them to call you when you are ready.",
         "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you swipe down with two fingers to leave.",
+    ]
+
+    static let wordApiSteps: [String] = [
+        "On home, open **Word API (caller label)** — turn **Caller label (incoming call banner)** **ON**, then choose **Inject**, **Elips**, or **Custom API** (separate from the song API).",
+        "Press **Perform**. With the toggle on, the app polls your word endpoint every \(Int(WordApiSettings.pollInterval)) seconds **in parallel** with your song input.",
+        "The **first reading** is the old word on the backend; the **next change** is the spectator’s word — it **locks** (three short buzzes).",
+        "Pause, then have the spectator call you. The incoming-call **banner** should show the locked word (Stage still plays the song from song input).",
+        "Enable **Settings → Phone → Call Blocking & Identification → MindtoneX Caller Label**. For **any number** on iOS 18+, Live Caller ID Lookup needs a PIR backend (see repo notes).",
     ]
 
     /// Testers often ask for “voicemail says the prediction” — iOS/carrier limits (shown in Instructions).

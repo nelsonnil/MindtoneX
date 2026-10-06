@@ -19,6 +19,7 @@ enum VoiceSettings {
         case aiVoice
         case notes
         case api
+        case card
 
         var id: String { rawValue }
         var title: String {
@@ -27,6 +28,7 @@ enum VoiceSettings {
             case .aiVoice: return "Voice"
             case .notes: return "Notes"
             case .api: return "API"
+            case .card: return "Card"
             }
         }
     }

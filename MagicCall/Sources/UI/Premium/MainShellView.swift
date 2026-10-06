@@ -37,6 +37,8 @@ struct MainShellView: View {
                     SongLibrarySection()
                 }
 
+                WordApiHomeCard()
+
                 FeedbackCard()
             }
             .padding(.horizontal, 16)

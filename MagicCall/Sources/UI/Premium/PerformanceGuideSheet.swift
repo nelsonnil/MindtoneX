@@ -11,6 +11,13 @@ struct PerformanceGuideSheet: View {
                 PerformanceGuideContent(onOpenFavorites: onOpenFavorites)
 
                 TipCard(
+                    title: "Word API (caller label)",
+                    icon: "phone.badge.checkmark",
+                    tint: OracleTheme.sectionTeal,
+                    lines: PerformCopy.wordApiSteps
+                )
+
+                TipCard(
                     title: "Missed call & voicemail",
                     icon: "recordingtape",
                     tint: OracleTheme.textSecondary,
