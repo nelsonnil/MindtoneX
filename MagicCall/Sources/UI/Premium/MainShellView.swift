@@ -27,11 +27,11 @@ struct MainShellView: View {
                     SongInputStrip(inputModeRaw: $inputModeRaw)
                 }
 
+                WordApiHomeCard()
+
                 HomePanel(accent: OracleTheme.gold) {
                     SongLibrarySection()
                 }
-
-                WordApiHomeCard()
 
                 FeedbackCard()
 
