@@ -29,11 +29,11 @@ struct MainShellView: View {
 
                 WordApiHomeCard()
 
+                FeedbackCard()
+
                 HomePanel(accent: OracleTheme.gold) {
                     SongLibrarySection()
                 }
-
-                FeedbackCard()
 
                 PerformUserLogCard()
             }
