@@ -129,11 +129,19 @@ enum PerformCopy {
     ]
 
     static let wordApiSteps: [String] = [
-        "On home, open **Word API (caller label)** — turn **Caller label (incoming call banner)** **ON**, then choose **Inject**, **Elips**, or **Custom API** (separate from the song API).",
-        "Press **Perform**. With the toggle on, the app polls your word endpoint every \(Int(WordApiSettings.pollInterval)) seconds **in parallel** with your song input.",
-        "The **first reading** is the old word on the backend; the **next change** is the spectator’s word — it **locks** (three short buzzes).",
-        "Pause, then have the spectator call you. The incoming-call **banner** should show the locked word (Stage still plays the song from song input).",
-        "Enable **Settings → Phone → Call Blocking & Identification → MindtoneX Caller Label**. For **any number** on iOS 18+, Live Caller ID Lookup needs a PIR backend (see repo notes).",
+        "On home, open **Word API (caller label)** (below Song input). Turn **Caller label** **ON** and connect **Inject**, **Elips**, or **Custom API** — this is a **second endpoint**, separate from the song API under Song input.",
+        "During **Perform**, MindtoneX polls the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with however you load the song (**AI Voice**, **API song input**, **Notes**, **Card**, or manual search). Song and word are independent streams into one performance.",
+        "**Elips example:** enable **API** for the song (spectator searches a title in Elips) and **Elips** for the word (spectator submits a word — often one they chose from the lyrics). When the word **locks**, that text can appear as the **incoming caller name** while your stage plays the locked song.",
+        "The **first poll** is the old value on the server (baseline). The **next change** is the spectator’s new word → **lock** (three short taps). Then have them call you — the banner should show the word, not only the digits.",
+        "Turn on **Settings → Phone → Call Blocking & Identification → MindtoneX**. Optional: **Save locked word as contact name** (below) so iOS shows the prediction even more reliably than Call Directory alone.",
+    ]
+
+    /// Known vs Unknown contact — prediction on the incoming-call name.
+    static let wordApiContactPrediction: [String] = [
+        "**The idea:** the spectator’s word from the API becomes the **name** on the incoming call — a contact “prediction” instead of an anonymous number.",
+        "**Known** (friend, family, repeat volunteer): turn **Save locked word as contact name** **ON** → **Known** → **Choose contact**. When the word locks, MindtoneX **replaces that contact’s first name** with the API word. After the show, close **Word API connection details** with **Restore original name when leaving Word API settings** **ON** — the app puts their real name back.",
+        "**Unknown** (stranger, one-off): same save toggle **ON** → **Unknown**. Press **Perform** — a **dial sheet** appears. Tell the spectator you need their number for a **missed-call** bit and that they should keep your number. Place the outgoing call; when it ends, MindtoneX arms. You are **not** saving their real name — when the word locks, the app **creates or updates** a contact for that number with the **prediction word** as the display name.",
+        "**Routine timing:** run song input and word API together — e.g. spectator searches the song in Elips while you submit their lyric word on the word endpoint; both lock during the same Perform. Then the callback shows **song on stage** + **word on caller ID**.",
     ]
 
     /// Testers often ask for “voicemail says the prediction” — iOS/carrier limits (shown in Instructions).

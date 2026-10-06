@@ -18,6 +18,13 @@ struct PerformanceGuideSheet: View {
                 )
 
                 TipCard(
+                    title: "Contact name prediction",
+                    icon: "person.crop.circle.badge.checkmark",
+                    tint: OracleTheme.gold,
+                    lines: PerformCopy.wordApiContactPrediction
+                )
+
+                TipCard(
                     title: "Missed call & voicemail",
                     icon: "recordingtape",
                     tint: OracleTheme.textSecondary,
