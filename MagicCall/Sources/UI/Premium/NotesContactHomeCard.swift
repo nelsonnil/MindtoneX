@@ -69,7 +69,7 @@ struct NotesContactHomeCard: View {
             summary: collapsedSummary
         ) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("What appears in **Contacts → Notes** on the spectator’s card during a call — not the Apple Notes app. Leave the note empty unless you want copy there.")
+                Text("Preview clonado de la ficha **Contactos** del iPhone (mobile + Notes). No es la app Notas. Deja la nota vacía si no quieres texto ahí.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
