@@ -203,17 +203,14 @@ struct PerformStageStatusDots: View {
         }
     }
 
-    private var wordLocked: Bool {
-        model.isArmed
-            && WordApiSettings.callerLabelEnabled
-            && word.context == .perform
-            && word.state == .locked
-    }
-
     var body: some View {
         VStack(spacing: Self.stackSpacing) {
             StageCueDot(visible: songDotEnabled && songReady, size: songDotSize, colorHex: songColorHex)
-            StageCueDot(visible: wordDotEnabled && wordLocked, size: wordDotSize, colorHex: wordColorHex)
+            PerformWordStatusDot(
+                enabled: wordDotEnabled,
+                size: wordDotSize,
+                colorHex: wordColorHex
+            )
         }
         .padding(.top, 8)
         .padding(.trailing, 12)
@@ -225,6 +222,28 @@ struct PerformStageStatusDots: View {
 
 /// Back-compat name used by `StageView`.
 typealias PerformStatusDot = PerformStageStatusDots
+
+/// Stage corner dot for Word API lock — visible only in `.locked` (never while `.watching`).
+struct PerformWordStatusDot: View {
+    @EnvironmentObject private var model: AppModel
+    @ObservedObject private var word = WordApiSession.shared
+
+    let enabled: Bool
+    let size: Double
+    let colorHex: String
+
+    private var visible: Bool {
+        enabled
+            && model.isArmed
+            && WordApiSettings.callerLabelEnabled
+            && word.context == .perform
+            && word.state == .locked
+    }
+
+    var body: some View {
+        StageCueDot(visible: visible, size: size, colorHex: colorHex)
+    }
+}
 
 private struct StageCueDot: View {
     let visible: Bool

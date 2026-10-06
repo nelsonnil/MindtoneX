@@ -131,6 +131,12 @@ final class WordApiSession: ObservableObject {
                 baseline = reading
                 state = .watching
                 dlog("[WORD] baseline (\(ms) ms): count=\(reading.count.map(String.init) ?? "–") “\(reading.label)” — waiting for change")
+                if context == .perform {
+                    let integration = WordApiSettings.provider.title
+                    PerformUserLog.shared.log(
+                        "Word API: baseline «\(reading.label)» — change \(integration) during show for lock (3 short buzzes)."
+                    )
+                }
                 return
             }
             guard reading.isNewWord(comparedTo: base) else { return }

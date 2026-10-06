@@ -216,6 +216,14 @@ struct WordApiInputPanel: View {
         case .connecting:
             return ("Connecting to \(provider.title)…", "antenna.radiowaves.left.and.right", false)
         case .watching:
+            if session.context == .perform {
+                let baselineLabel = session.baseline?.label ?? "…"
+                return (
+                    "Waiting for word change — baseline «\(baselineLabel)» · change in \(provider.title) to lock caller label",
+                    "dot.radiowaves.left.and.right",
+                    false
+                )
+            }
             var current = ""
             if let base = session.baseline, base.hasWord { current = " · now “\(base.label)”" }
             return ("Waiting for a new word\(current)", "dot.radiowaves.left.and.right", false)
