@@ -222,9 +222,8 @@ final class WordApiSession: ObservableObject {
     private func lock(_ reading: WordReading) {
         lockedReading = reading
         state = .locked
-        let wordDotEnabled = UserDefaults.standard.bool(forKey: PerformanceCues.Key.wordDotEnabled)
         let buzzOn = PerformanceCues.vibrateOnLock
-        dlog("[WORD] 🔒 lock “\(reading.label)” after \(pollCount) polls · callerLabelEnabled=\(WordApiSettings.callerLabelEnabled) wordDotEnabled=\(wordDotEnabled) buzzOn=\(buzzOn) · polling continues")
+        dlog("[WORD] 🔒 lock “\(reading.label)” after \(pollCount) polls · callerLabelEnabled=\(WordApiSettings.callerLabelEnabled) buzzOn=\(buzzOn) · polling continues")
         if context == .perform {
             PerformanceCues.wordLocked(source: "Word API", label: reading.label)
         }
