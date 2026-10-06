@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// Notes-style preview + independent word input for the contact chip.
+/// Contacts **Notes** field preview + word source for the Notes chip (API / OCR / Voice).
 struct NotesContactHomeCard: View {
     @ObservedObject private var wordSession = NotesContactWordSession.shared
+    @ObservedObject private var callerSession = WordApiSession.shared
     @AppStorage(NotesContactSettings.Key.noteBody) private var noteBody = ""
     @AppStorage(NotesContactSettings.Key.buttonPlaceholder) private var buttonPlaceholder = NotesContactSettings.defaultButtonPlaceholder
     @AppStorage(NotesContactWordSettings.Key.wordInputEnabled) private var wordInputEnabled = true
@@ -25,12 +26,24 @@ struct NotesContactHomeCard: View {
         return nil
     }
 
-    private var hasLiveWord: Bool { spectatorWord != nil }
-
-    private var chipTitle: String {
+    private var previewContactName: String {
+        if let caller = callerSession.lockedReading?.label.trimmingCharacters(in: .whitespacesAndNewlines),
+           !caller.isEmpty {
+            return caller
+        }
         if let word = spectatorWord { return word }
-        let place = buttonPlaceholder.trimmingCharacters(in: .whitespacesAndNewlines)
-        return place.isEmpty ? NotesContactSettings.defaultButtonPlaceholder : place
+        return "Contact"
+    }
+
+    private var previewPhoneDigits: String {
+        let digits = WordApiSettings.lastDialedPhoneDigits.isEmpty
+            ? WordApiSettings.fallbackPhoneDigits
+            : WordApiSettings.lastDialedPhoneDigits
+        return digits
+    }
+
+    private var previewNotesText: String {
+        NotesContactSettings.resolvedContactNote(lockedWord: spectatorWord)
     }
 
     private var collapsedSummary: String {
@@ -38,112 +51,70 @@ struct NotesContactHomeCard: View {
             return "Word: «\(WordApiInputPanel.truncated(word, max: 28))» · \(NotesContactWordSettings.provider.gridTitle)"
         }
         if !wordInputEnabled { return "Word input off" }
-        if NotesContactWordSettings.hasWordEndpoint {
-            return "\(NotesContactWordSettings.provider.gridTitle) · chip placeholder"
+        if !noteBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Contact note · \(NotesContactWordSettings.provider.gridTitle)"
         }
-        return "Set word source (Inject, API, Card…)"
+        if NotesContactWordSettings.hasWordEndpoint {
+            return "\(NotesContactWordSettings.provider.gridTitle) · empty note"
+        }
+        return "Set word source (Inject, API, Camera…)"
     }
 
     var body: some View {
         CollapsibleHomeSection(
             expandedKey: HomeSectionExpandKey.notesContact,
             accent: OracleTheme.sectionTeal,
-            icon: "note.text.badge.plus",
+            icon: "person.crop.circle.badge.checkmark",
             title: "Notes contact",
             summary: collapsedSummary
         ) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Your note copy and a contact chip. The chip shows your placeholder until the **Notes word** source locks a spectator word during Perform.")
+                Text("What appears in **Contacts → Notes** on the spectator’s card during a call — not the Apple Notes app. Leave the note empty unless you want copy there.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 NotesContactWordInputPanel()
 
-                notesPreview
+                NotesContactCallDetailPreview(
+                    contactName: previewContactName,
+                    phoneDigits: previewPhoneDigits,
+                    notesText: previewNotesText
+                )
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Chip placeholder (before word arrives)")
+                    Text("Note text (Contacts field)")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    TextField("Contact", text: $buttonPlaceholder)
-                        .textInputAutocapitalization(.words)
+                    TextEditor(text: $noteBody)
+                        .font(.subheadline)
+                        .foregroundStyle(OracleTheme.textPrimary)
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 72, maxHeight: 120)
+                        .padding(10)
+                        .background(Color.white.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    Text("Empty by default. Only this text is saved — no MindtoneX boilerplate.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Word placeholder (optional)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    TextField("e.g. WORD", text: $buttonPlaceholder)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                         .padding(12)
                         .background(Color.white.opacity(0.06))
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    Text("If this exact word appears in the note above, it is replaced by the locked **Notes chip** word (Inject / Camera line 3 / Voice). Without a placeholder, the note is copied as-is.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
-    }
-
-    private var notesPreview: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Image(systemName: "chevron.left")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.black.opacity(0.75))
-                Spacer()
-                Text("Notes")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.black.opacity(0.85))
-                Spacer()
-                Image(systemName: "square.and.arrow.up")
-                    .font(.body)
-                    .foregroundStyle(.black.opacity(0.5))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Color(white: 0.97))
-
-            ZStack(alignment: .topLeading) {
-                if noteBody.isEmpty {
-                    Text("Type your note…")
-                        .font(.body)
-                        .foregroundStyle(.black.opacity(0.28))
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
-                }
-                TextEditor(text: $noteBody)
-                    .font(.body)
-                    .foregroundStyle(.black)
-                    .scrollContentBackground(.hidden)
-                    .frame(minHeight: 100, maxHeight: 140)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-            }
-            .background(Color.white)
-
-            HStack {
-                contactChip
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(Color(white: 0.98))
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.black.opacity(0.08), lineWidth: 1)
-        }
-        .animation(.easeInOut(duration: 0.25), value: chipTitle)
-    }
-
-    private var contactChip: some View {
-        HStack(spacing: 6) {
-            Image(systemName: hasLiveWord ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
-                .font(.caption.weight(.semibold))
-            Text(chipTitle)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .foregroundStyle(hasLiveWord ? Color.white : Color.black.opacity(0.72))
-        .background {
-            Capsule()
-                .fill(hasLiveWord ? OracleTheme.sectionTeal : Color(white: 0.92))
-        }
-        .accessibilityLabel(hasLiveWord ? "Contact suggestion \(chipTitle)" : "Placeholder \(chipTitle)")
     }
 }

@@ -115,6 +115,7 @@ final class NotesContactWordSession: ObservableObject {
         dlog("[NOTES-WORD] 🔒 \(source) · «\(label)»")
         if context == .perform {
             PerformLogReporter.logRecognition(.notesContact, value: label, via: Self.recognitionVia(source: source))
+            SpectatorWordContactService.applyContactNoteFromSettings(reason: "notes-\(source)")
         }
     }
 
@@ -186,6 +187,7 @@ final class NotesContactWordSession: ObservableObject {
         state = .locked
         dlog("[NOTES-WORD] 🔒 «\(label)» poll #\(pollCount)")
         PerformLogReporter.logRecognition(.notesContact, value: label, via: NotesContactWordSettings.provider.title)
+        SpectatorWordContactService.applyContactNoteFromSettings(reason: "notes-word locked")
         _ = priorPoll
     }
 

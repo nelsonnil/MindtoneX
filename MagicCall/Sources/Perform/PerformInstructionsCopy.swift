@@ -99,10 +99,10 @@ enum PerformInstructionsCopy {
     // MARK: - Notes contact
 
     static let notesContact: [String] = [
-        "Home → **Notes contact** (below Caller name). **Word for Notes chip** feeds the suggestion button in your Notes routine.",
-        "Uses its **own** Inject / Elips / Custom / **Camera line 3** / **Voice** source — independent from Caller name.",
+        "Home → **Notes contact**. Sets the **Contacts → Notes** field on the spectator’s card (preview matches the real call sheet).",
+        "**Note text** is empty by default — only what you type is saved. Optional **word placeholder**: if that word appears in your note, it is replaced by the locked **Notes chip** word (Inject / OCR line 3 / Voice).",
+        "Uses its **own** word source — independent from Caller name.",
         "**Camera:** **Line 3** on the card (line 1 = song, line 2 = caller if enabled).",
-        "**Voice:** Separate prompt from song and caller — “what word on the contact chip in my note?”",
     ]
 
     // MARK: - Feedback

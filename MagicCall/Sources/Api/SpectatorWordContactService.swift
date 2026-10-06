@@ -4,8 +4,6 @@ import Foundation
 /// Creates or renames Contacts for the Word API spectator phone (no Contacts UI during save).
 enum SpectatorWordContactService {
     private static let store = CNContactStore()
-    private static let noteMarker = "MindtoneX"
-
     @MainActor
     static func applyOnWordLock(word: String, reason: String) {
         guard WordApiSettings.saveWordAsContactEnabled else {
@@ -160,14 +158,12 @@ enum SpectatorWordContactService {
             keysToFetch: keys
         )
         let save = CNSaveRequest()
-        let note = "\(noteMarker) · spectator word for show. Safe to delete after performance."
+        let note = NotesContactSettings.contactNoteForPerform()
 
         if let existing = matches.first {
             let mutable = existing.mutableCopy() as! CNMutableContact
             mutable.givenName = word
-            if !mutable.note.contains(noteMarker) {
-                mutable.note = mutable.note.isEmpty ? note : "\(mutable.note)\n\(note)"
-            }
+            mutable.note = note
             ensurePhone(mutable, phone: phone, number: number)
             save.update(mutable)
         } else {
@@ -186,14 +182,79 @@ enum SpectatorWordContactService {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
+            CNContactNoteKey as CNKeyDescriptor,
         ]
         let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
         WordApiSettings.saveKnownContactGivenNameBeforeLock(contact.givenName)
         let mutable = contact.mutableCopy() as! CNMutableContact
         mutable.givenName = word
+        mutable.note = NotesContactSettings.contactNoteForPerform()
         let save = CNSaveRequest()
         save.update(mutable)
         try store.execute(save)
+    }
+
+    /// Refresh Contacts **Notes** when the Notes chip word locks (template + placeholder).
+    @MainActor
+    static func applyContactNoteFromSettings(reason: String) {
+        guard WordApiSettings.saveWordAsContactEnabled else { return }
+        let note = NotesContactSettings.contactNoteForPerform()
+        guard !note.isEmpty || !NotesContactSettings.storedNoteBody.isEmpty else { return }
+
+        switch WordApiSettings.contactMode {
+        case .unknown:
+            guard let phone = WordApiSettings.identificationPhoneE164String() else { return }
+            Task { await updateNoteForPhone(phone: phone, note: note, reason: reason) }
+        case .known:
+            guard let id = WordApiSettings.knownContactIdentifier else { return }
+            Task { await updateNoteForKnown(identifier: id, note: note, reason: reason) }
+        }
+    }
+
+    @MainActor
+    private static func updateNoteForPhone(phone: String, note: String, reason: String) async {
+        guard await ensureContactsAccess(reason: reason) else { return }
+        do {
+            let keys: [CNKeyDescriptor] = [
+                CNContactIdentifierKey as CNKeyDescriptor,
+                CNContactNoteKey as CNKeyDescriptor,
+                CNContactPhoneNumbersKey as CNKeyDescriptor,
+            ]
+            let number = CNPhoneNumber(stringValue: phone)
+            let matches = try store.unifiedContacts(
+                matching: CNContact.predicateForContacts(matching: number),
+                keysToFetch: keys
+            )
+            guard let existing = matches.first else { return }
+            let mutable = existing.mutableCopy() as! CNMutableContact
+            mutable.note = note
+            let save = CNSaveRequest()
+            save.update(mutable)
+            try store.execute(save)
+            dlog("[CONTACT] note updated (\(reason)) · \(note.prefix(40))…")
+        } catch {
+            dlog("✗ [CONTACT] note (\(reason)): \(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
+    private static func updateNoteForKnown(identifier: String, note: String, reason: String) async {
+        guard await ensureContactsAccess(reason: reason) else { return }
+        do {
+            let keys: [CNKeyDescriptor] = [
+                CNContactIdentifierKey as CNKeyDescriptor,
+                CNContactNoteKey as CNKeyDescriptor,
+            ]
+            let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
+            let mutable = contact.mutableCopy() as! CNMutableContact
+            mutable.note = note
+            let save = CNSaveRequest()
+            save.update(mutable)
+            try store.execute(save)
+            dlog("[CONTACT] known note updated (\(reason))")
+        } catch {
+            dlog("✗ [CONTACT] known note (\(reason)): \(error.localizedDescription)")
+        }
     }
 
     private static func setGivenName(identifier: String, givenName: String) throws {

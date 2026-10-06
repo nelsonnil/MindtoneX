@@ -25,6 +25,7 @@
 		1A496C1D95A030425C92AF6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B6949E0964299D0E2E8531C7 /* Assets.xcassets */; };
 		20ACC5FFA594DEB4E92EAC0B /* CardCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B18EC83ADCF3B62E44CB7E5 /* CardCaptureService.swift */; };
 		232F0E4CF4F90CFD03D0F2CB /* MicCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A36339EA50D410DA83A649 /* MicCapture.swift */; };
+		342DABB09E7C4CAAB2AE4B2F /* NotesContactCallDetailPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13582596BEA54FA8BE854C12 /* NotesContactCallDetailPreview.swift */; };
 		242C6F29DEE6403FB8F2C94D /* NotesContactHomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE811A2D141570F6DE6CD107 /* NotesContactHomeCard.swift */; };
 		24E7F1F82A624CBD51EE706F /* SpectatorWordPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3B9638F6383C01B28002D3C /* SpectatorWordPicker.swift */; };
 		256D9EDE07BBB6F76804461F /* NotesSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0F19A8FF481F9116B87B9 /* NotesSongSession.swift */; };
@@ -254,6 +255,7 @@
 		E67C120E02A9B4EB6176A78B /* CallDirectorySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallDirectorySync.swift; sourceTree = "<group>"; };
 		EC77119D4608465FEFC34B61 /* CardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSettings.swift; sourceTree = "<group>"; };
 		ECBAC1F2474CCF158CF15B87 /* NotesContactWordSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactWordSession.swift; sourceTree = "<group>"; };
+		13582596BEA54FA8BE854C12 /* NotesContactCallDetailPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactCallDetailPreview.swift; sourceTree = "<group>"; };
 		EE811A2D141570F6DE6CD107 /* NotesContactHomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactHomeCard.swift; sourceTree = "<group>"; };
 		F1E1FD9BD793A8EA7B167E69 /* NotesContactConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactConnectionView.swift; sourceTree = "<group>"; };
 		F235D4C3F14AB89CF4409734 /* VoiceLockingControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLockingControls.swift; sourceTree = "<group>"; };
@@ -530,6 +532,7 @@
 				2A1FF07ACEFA69383ABF652C /* LibrarySongSearchBlock.swift */,
 				088157D88358BCAC626D0D35 /* LoadedSongReadyRow.swift */,
 				1281B461D25A6CC77A54696F /* MainShellView.swift */,
+				13582596BEA54FA8BE854C12 /* NotesContactCallDetailPreview.swift */,
 				EE811A2D141570F6DE6CD107 /* NotesContactHomeCard.swift */,
 				44F8F3AAB4CE4D47C84E6771 /* OracleSheets.swift */,
 				260CB39E9363322425A78261 /* OracleTheme.swift */,
@@ -735,6 +738,7 @@
 				F80AF9FD212EA30200E041F5 /* MainShellView.swift in Sources */,
 				232F0E4CF4F90CFD03D0F2CB /* MicCapture.swift in Sources */,
 				290C81AF65DA4D457A2ED9D6 /* NotesContactConnectionView.swift in Sources */,
+				342DABB09E7C4CAAB2AE4B2F /* NotesContactCallDetailPreview.swift in Sources */,
 				242C6F29DEE6403FB8F2C94D /* NotesContactHomeCard.swift in Sources */,
 				E88465E0B481CA795AB50C86 /* NotesContactSettings.swift in Sources */,
 				30E24F3095BA52459B3334A9 /* NotesContactWordInputPanel.swift in Sources */,
