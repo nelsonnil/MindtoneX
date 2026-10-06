@@ -21,6 +21,34 @@
                ReferencedContainer = "container:MagicCall.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DD0000700000000000000070"
+               BuildableName = "MagicCallCallDirectory.appex"
+               BlueprintName = "MagicCallCallDirectory"
+               ReferencedContainer = "container:MagicCall.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DD0000720000000000000072"
+               BuildableName = "MagicCallLiveCallerLookup.appex"
+               BlueprintName = "MagicCallLiveCallerLookup"
+               ReferencedContainer = "container:MagicCall.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
