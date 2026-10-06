@@ -93,13 +93,12 @@ struct PerformanceCard: View {
                 Text("Status bar (top of iPhone)")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(OracleTheme.textPrimary)
-                Text("The strip with the **time**, **signal**, and **battery** above your wallpaper. Pick icon color so it matches your screenshot during Perform.")
+                Text("The strip with the time, signal, and battery above your wallpaper. Tap Auto, Dark, or Light in the preview to see icon color on stage.")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                StageStatusBarStylePicker(selection: statusBarContentSelection)
-                StageStatusBarPreviewPanel(
-                    selection: statusBarContentSelection.wrappedValue,
+                StageStatusBarIntegratedPreviewCard(
+                    selection: statusBarContentSelection,
                     screenshotGeneration: stageScreenshotGeneration
                 )
             }
@@ -135,226 +134,179 @@ struct PerformanceCard: View {
     }
 }
 
-// MARK: - Status bar style
+// MARK: - Status bar preview + style (single card)
 
-private struct StageStatusBarStylePicker: View {
-    @Binding var selection: StageStatusBarContent
-    @Namespace private var selectionNS
-
-    var body: some View {
-        HStack(spacing: 5) {
-            ForEach(StageStatusBarContent.allCases) { mode in
-                let selected = selection == mode
-                Button {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
-                        selection = mode
-                    }
-                } label: {
-                    VStack(spacing: 5) {
-                        Image(systemName: mode.pickerSymbol)
-                            .font(.system(size: 17, weight: .semibold))
-                            .symbolRenderingMode(.hierarchical)
-                        Text(mode.segmentTitle)
-                            .font(.caption2.weight(.bold))
-                        Text(mode.pickerHint)
-                            .font(.system(size: 9, weight: .medium))
-                            .opacity(selected ? 0.85 : 0.55)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 11)
-                    .foregroundStyle(selected ? OracleTheme.ink : OracleTheme.textSecondary)
-                    .background {
-                        if selected {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(OracleTheme.goldGradient)
-                                .matchedGeometryEffect(id: "statusBarStyleFill", in: selectionNS)
-                                .shadow(color: OracleTheme.gold.opacity(0.35), radius: 8, y: 3)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(mode.label)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .padding(5)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-        }
-    }
+private enum StageStatusBarPreviewSky {
+    /// Sky backdrop so black and white status icons both read clearly.
+    static let celeste = Color(red: 0.45, green: 0.78, blue: 0.96)
 }
 
-// MARK: - Status bar preview (Dark / Light icon styles)
-
-private struct StageStatusBarPreviewPanel: View {
-    let selection: StageStatusBarContent
+private struct StageStatusBarIntegratedPreviewCard: View {
+    @Binding var selection: StageStatusBarContent
     let screenshotGeneration: Int
 
     @AppStorage(StageImageStore.luminanceDefaultsKey) private var stageStatusBarLuminance = 0.0
     @AppStorage(StageImageStore.revisionDefaultsKey) private var stageScreenshotRevision = ""
+    @Namespace private var modeHighlight
 
-    private var screenshot: UIImage? { StageImageStore.load() }
+    private var hasScreenshot: Bool { StageImageStore.hasScreenshot }
+
     private var autoPrefersDarkIcons: Bool {
         _ = stageStatusBarLuminance
         _ = stageScreenshotRevision
-        return StageStatusBarContent.automatic.prefersDarkContent(hasScreenshot: screenshot != nil)
+        return StageStatusBarContent.automatic.prefersDarkContent(hasScreenshot: hasScreenshot)
+    }
+
+    private var previewPrefersDarkIcons: Bool {
+        switch selection {
+        case .dark: return true
+        case .light: return false
+        case .automatic: return autoPrefersDarkIcons
+        }
+    }
+
+    private var modeCaption: String {
+        switch selection {
+        case .automatic:
+            if hasScreenshot {
+                return autoPrefersDarkIcons ? "Auto · dark icons from your screenshot" : "Auto · light icons from your screenshot"
+            }
+            return "Auto · from screenshot top (when set)"
+        case .dark: return "Dark · black time & signal"
+        case .light: return "Light · white time & signal"
+        }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            switch selection {
-            case .automatic:
-                HStack(spacing: 12) {
-                    previewCard(
-                        prefersDarkContent: true,
-                        caption: "Dark icons",
-                        subtitle: "Light wallpaper",
-                        emphasized: screenshot != nil && autoPrefersDarkIcons
-                    )
-                    previewCard(
-                        prefersDarkContent: false,
-                        caption: "Light icons",
-                        subtitle: "Dark wallpaper",
-                        emphasized: screenshot != nil && !autoPrefersDarkIcons
-                    )
+        VStack(spacing: 0) {
+            StageStatusBarPhoneTopPreview(prefersDarkContent: previewPrefersDarkIcons)
+                .padding(.horizontal, 14)
+                .padding(.top, 14)
+                .padding(.bottom, 10)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.12))
+                .frame(height: 1)
+
+            HStack(spacing: 6) {
+                ForEach(StageStatusBarContent.allCases) { mode in
+                    modeChip(mode)
                 }
-                if screenshot != nil {
-                    Label(
-                        autoPrefersDarkIcons ? "Auto · your screenshot uses dark icons" : "Auto · your screenshot uses light icons",
-                        systemImage: "sparkles"
-                    )
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(OracleTheme.gold)
-                } else {
-                    Text("Add a screenshot above — Auto picks dark or light icons from the top of the image.")
-                        .font(.caption2)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
-            case .dark:
-                previewCard(
-                    prefersDarkContent: true,
-                    caption: "Dark icons on your stage",
-                    subtitle: "Black time & signal",
-                    emphasized: true,
-                    fullWidth: true
-                )
-            case .light:
-                previewCard(
-                    prefersDarkContent: false,
-                    caption: "Light icons on your stage",
-                    subtitle: "White time & signal",
-                    emphasized: true,
-                    fullWidth: true
-                )
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+
+            Text(modeCaption)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(OracleTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
         .id(screenshotGeneration)
-        .animation(.easeInOut(duration: 0.22), value: selection)
-        .animation(.easeInOut(duration: 0.22), value: stageScreenshotRevision)
+        .animation(.spring(response: 0.38, dampingFraction: 0.82), value: selection)
+        .animation(.spring(response: 0.38, dampingFraction: 0.82), value: previewPrefersDarkIcons)
     }
 
-    @ViewBuilder
-    private func previewCard(
-        prefersDarkContent: Bool,
-        caption: String,
-        subtitle: String,
-        emphasized: Bool,
-        fullWidth: Bool = false
-    ) -> some View {
-        VStack(spacing: 6) {
-            StageStatusBarPhonePreview(
-                prefersDarkContent: prefersDarkContent,
-                backgroundImage: screenshot
-            )
-            .frame(maxWidth: fullWidth ? .infinity : nil)
-            Text(caption)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(OracleTheme.textPrimary)
-            Text(subtitle)
-                .font(.system(size: 10))
-                .foregroundStyle(OracleTheme.textSecondary)
+    private func modeChip(_ mode: StageStatusBarContent) -> some View {
+        let selected = selection == mode
+        return Button {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                selection = mode
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: mode.pickerSymbol)
+                    .font(.system(size: 14, weight: .semibold))
+                Text(mode.segmentTitle)
+                    .font(.caption.weight(.bold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .foregroundStyle(selected ? OracleTheme.ink : OracleTheme.textSecondary)
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(OracleTheme.goldGradient)
+                        .matchedGeometryEffect(id: "statusBarMode", in: modeHighlight)
+                }
+            }
         }
-        .frame(maxWidth: fullWidth ? .infinity : .infinity)
-        .padding(8)
-        .background(Color.white.opacity(emphasized ? 0.07 : 0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(
-                    emphasized ? OracleTheme.gold.opacity(0.55) : OracleTheme.cardBorder,
-                    lineWidth: emphasized ? 1.5 : 1
-                )
-        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(mode.label)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
-/// Mini phone mockup — status bar strip only (what performers need to match).
-private struct StageStatusBarPhonePreview: View {
+/// Large top-of-iPhone mock — status bar only on sky backdrop (no stage screenshot).
+private struct StageStatusBarPhoneTopPreview: View {
     let prefersDarkContent: Bool
-    var backgroundImage: UIImage?
 
     private var iconColor: Color { prefersDarkContent ? .black : .white }
-    private var fallbackBackdrop: Color {
-        prefersDarkContent ? Color(white: 0.92) : Color(white: 0.12)
-    }
 
     var body: some View {
         ZStack(alignment: .top) {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.black.opacity(0.85))
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color.black.opacity(0.88))
+                .padding(2)
+
             VStack(spacing: 0) {
                 ZStack(alignment: .top) {
-                    Group {
-                        if let backgroundImage {
-                            Image(uiImage: backgroundImage)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            fallbackBackdrop
-                        }
-                    }
-                    .frame(height: 72)
-                    .clipped()
-
-                    statusBarRow
-                        .padding(.horizontal, 10)
-                        .padding(.top, 8)
+                    StageStatusBarPreviewSky.celeste
 
                     Capsule()
                         .fill(Color.black)
-                        .frame(width: 52, height: 14)
-                        .padding(.top, 6)
-                }
-                .frame(height: 72)
+                        .frame(width: 88, height: 22)
+                        .padding(.top, 10)
 
-                Rectangle()
-                    .fill(Color.white.opacity(0.06))
-                    .frame(height: 36)
+                    statusBarRow
+                        .padding(.horizontal, 18)
+                        .padding(.top, 14)
+                }
+                .frame(height: 56)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 20,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 20,
+                        style: .continuous
+                    )
+                )
             }
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .padding(3)
+            .padding(4)
         }
-        .frame(width: 118, height: 114)
+        .frame(maxWidth: .infinity)
+        .frame(height: 72)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(prefersDarkContent ? "Preview dark status bar icons" : "Preview light status bar icons")
+        .accessibilityLabel(
+            prefersDarkContent ? "Status bar preview, dark icons" : "Status bar preview, light icons"
+        )
     }
 
     private var statusBarRow: some View {
-        HStack(alignment: .center, spacing: 0) {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text("9:41")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .foregroundStyle(iconColor)
-            Spacer(minLength: 4)
-            HStack(spacing: 3) {
+            Spacer(minLength: 8)
+            HStack(spacing: 5) {
                 Image(systemName: "cellularbars")
                 Image(systemName: "wifi")
                 Image(systemName: "battery.100")
             }
-            .font(.system(size: 9, weight: .semibold))
+            .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(iconColor)
         }
+        .animation(.easeInOut(duration: 0.28), value: prefersDarkContent)
     }
 }
