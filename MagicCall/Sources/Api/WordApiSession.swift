@@ -43,6 +43,7 @@ final class WordApiSession: ObservableObject {
     private var previousPollReading: WordReading?
     /// Last label written to Call Directory this Perform (poll-to-poll text compare).
     private var lastAppliedLabel: String?
+    private var loggedSameJsonUserHint = false
 
     private init() {}
 
@@ -170,9 +171,30 @@ final class WordApiSession: ObservableObject {
         let pollDelta = priorPoll.map { reading.pollDelta(comparedTo: $0) } ?? false
         dlog("[WORD] poll #\(pollCount) · \(provider.title) «\(label)» textChanged=\(textChanged) pollDelta=\(pollDelta) (\(ms) ms)")
 
+        if let prior = priorPoll, prior.hasWord, reading.hasWord,
+           !ApiJSON.sameText(prior.word, reading.word) {
+            let snippet = WordApiInputPanel.truncated(reading.label, max: 36)
+            PerformUserLog.shared.log("Word API · word=«\(snippet)»")
+        }
+
         trackStalePolls(reading, baseline: baseline!)
 
-        guard textChanged else { return }
+        guard textChanged else {
+            let base = baseline!
+            if reading.matchesSnapshot(of: base) {
+                if !loggedSameJsonUserHint {
+                    let count = reading.count.map(String.init) ?? "–"
+                    let rc = reading.receiveCount.map(String.init) ?? "–"
+                    let snippet = WordApiInputPanel.truncated(label, max: 32)
+                    PerformUserLog.shared.log("Word API · mismo JSON · count \(count) · rc \(rc) · «\(snippet)»")
+                    loggedSameJsonUserHint = true
+                }
+            } else {
+                dlog("[WORD] poll #\(pollCount) sin cambio de etiqueta · \(reading.unchangedVsBaselineReason(comparedTo: base))")
+            }
+            return
+        }
+        loggedSameJsonUserHint = false
 
         pushCallerLabel(label, reason: "text-changed")
         lastAppliedLabel = label
@@ -257,6 +279,7 @@ final class WordApiSession: ObservableObject {
         loggedStalePollWarning = false
         previousPollReading = nil
         lastAppliedLabel = nil
+        loggedSameJsonUserHint = false
         WordApiClient.resetPerformFetchDiagnostics()
     }
 

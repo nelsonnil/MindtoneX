@@ -6,8 +6,12 @@ enum SpectatorWordContactService {
     private static let store = CNContactStore()
     private static let noteMarker = "MindtoneX"
 
+    @MainActor
     static func applyOnWordLock(word: String, reason: String) {
-        guard WordApiSettings.saveWordAsContactEnabled else { return }
+        guard WordApiSettings.saveWordAsContactEnabled else {
+            dlog("[CONTACT] skip (\(reason)): save-word-as-contact off")
+            return
+        }
         let label = word.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !label.isEmpty else { return }
 
@@ -15,15 +19,68 @@ enum SpectatorWordContactService {
         case .unknown:
             guard let phone = WordApiSettings.identificationPhoneE164String() else {
                 dlog("[CONTACT] skip (\(reason)): no phone (unknown mode — dial before Perform)")
+                PerformUserLog.shared.log("Contact not saved · dial spectator number before Perform (Unknown mode)")
                 return
             }
             Task { await createUnknownIfNeeded(word: label, phone: phone, reason: reason) }
         case .known:
             guard let id = WordApiSettings.knownContactIdentifier else {
                 dlog("[CONTACT] skip (\(reason)): no known contact picked")
+                PerformUserLog.shared.log("Contact not renamed · choose a contact on the Word API card (Known mode)")
                 return
             }
             Task { await renameKnownContact(identifier: id, word: label, reason: reason) }
+        }
+    }
+
+    /// Modo prueba (home card): renombra el contacto conocido sin Perform.
+    @MainActor
+    static func applyTestWordToKnownContact(word: String) async -> String {
+        let label = word.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !label.isEmpty else {
+            let msg = "Escribe una palabra de prueba"
+            dlog("[CONTACT] test skip: empty word")
+            return msg
+        }
+        guard let id = WordApiSettings.knownContactIdentifier else {
+            let msg = "Elige un contacto de prueba primero"
+            dlog("[CONTACT] test skip: no contact")
+            return msg
+        }
+        guard await ensureContactsAccess(reason: "test apply") else {
+            return "Sin acceso a Contactos — actívalo en Ajustes del iPhone"
+        }
+        do {
+            try renameGivenName(identifier: id, word: label)
+            WordApiContactShowState.shared.knownContactRenamedForShow = true
+            dlog("[CONTACT] test apply «\(label)» → contact \(id.prefix(8))…")
+            return "Contacto renombrado · «\(WordApiInputPanel.truncated(label, max: 32))»"
+        } catch {
+            dlog("✗ [CONTACT] test apply: \(error.localizedDescription)")
+            return "Error al renombrar · \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    static func restoreTestKnownContact() async -> String {
+        guard let id = WordApiSettings.knownContactIdentifier else {
+            return "No hay contacto de prueba"
+        }
+        let original = WordApiSettings.knownContactOriginalGivenName
+        guard !original.isEmpty else {
+            return "No hay nombre original guardado (vuelve a elegir contacto)"
+        }
+        guard await ensureContactsAccess(reason: "test restore") else {
+            return "Sin acceso a Contactos"
+        }
+        do {
+            try setGivenName(identifier: id, givenName: original)
+            WordApiContactShowState.shared.knownContactRenamedForShow = false
+            dlog("[CONTACT] test restore «\(original)»")
+            return "Nombre restaurado · «\(WordApiInputPanel.truncated(original, max: 32))»"
+        } catch {
+            dlog("✗ [CONTACT] test restore: \(error.localizedDescription)")
+            return "Error al restaurar · \(error.localizedDescription)"
         }
     }
 
@@ -67,9 +124,7 @@ enum SpectatorWordContactService {
     private static func createUnknownIfNeeded(word: String, phone: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            try await Task.detached(priority: .userInitiated) {
-                try upsertUnknown(word: word, phone: phone)
-            }.value
+            try upsertUnknown(word: word, phone: phone)
             dlog("[CONTACT] created/updated unknown «\(word)» → \(phone) (\(reason))")
             PerformUserLog.shared.log("Contact saved · incoming call will show “\(WordApiInputPanel.truncated(word, max: 32))”")
         } catch {
@@ -82,9 +137,7 @@ enum SpectatorWordContactService {
     private static func renameKnownContact(identifier: String, word: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            try await Task.detached(priority: .userInitiated) {
-                try renameGivenName(identifier: identifier, word: word)
-            }.value
+            try renameGivenName(identifier: identifier, word: word)
             WordApiContactShowState.shared.knownContactRenamedForShow = true
             dlog("[CONTACT] renamed known → «\(word)» (\(reason))")
             PerformUserLog.shared.log("Contact renamed · incoming call will show “\(WordApiInputPanel.truncated(word, max: 32))”")
@@ -98,9 +151,7 @@ enum SpectatorWordContactService {
     private static func runRestore(identifier: String, givenName: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            try await Task.detached(priority: .userInitiated) {
-                try setGivenName(identifier: identifier, givenName: givenName)
-            }.value
+            try setGivenName(identifier: identifier, givenName: givenName)
             WordApiContactShowState.shared.knownContactRenamedForShow = false
             dlog("[CONTACT] restored givenName «\(givenName)» (\(reason))")
             PerformUserLog.shared.log("Contact name restored · «\(WordApiInputPanel.truncated(givenName, max: 32))»")

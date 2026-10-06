@@ -48,6 +48,8 @@ struct ReadinessStatusBar: View {
     @ObservedObject private var voice = VoiceSongSession.shared
     @ObservedObject private var api = ApiSongSession.shared
     @ObservedObject private var card = CardSongSession.shared
+    @ObservedObject private var wordSession = WordApiSession.shared
+    @AppStorage(WordApiSettings.Key.callerLabelEnabled) private var callerLabelEnabled = false
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
     @AppStorage(NotesSettings.Key.idleSearchEnabled) private var idleSearchEnabled = true
     @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
@@ -72,6 +74,10 @@ struct ReadinessStatusBar: View {
                 icon: "photo.on.rectangle.angled",
                 text: "Choose a stage screenshot in Performance"
             )
+        }
+        if model.isArmed, callerLabelEnabled, WordApiSettings.hasWordEndpoint,
+           wordSession.context == .perform, wordSession.isActive || wordSession.lastReading != nil {
+            if let wordStatus = wordApiPerformStatus { return wordStatus }
         }
         switch inputMode {
         case .manual:
@@ -163,6 +169,42 @@ struct ReadinessStatusBar: View {
             case .idle:
                 return Status(tone: .ready, icon: "doc.viewfinder", text: "Ready · Card scans on volume during Perform")
             }
+        }
+    }
+
+    private var wordApiPerformStatus: Status? {
+        if wordSession.isStruggling {
+            return Status(
+                tone: .warning,
+                icon: "wifi.exclamationmark",
+                text: "Word API · sin red · reintentando"
+            )
+        }
+        let reading = wordSession.lastReading ?? wordSession.baseline
+        let word = reading.map { WordApiInputPanel.truncated($0.label, max: 22) } ?? "…"
+        let count = reading?.count.map(String.init) ?? "–"
+        let rc = reading?.receiveCount.map(String.init) ?? "–"
+        switch wordSession.state {
+        case .connecting:
+            return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Word API · conectando…")
+        case .watching:
+            let base = wordSession.baseline.map { WordApiInputPanel.truncated($0.label, max: 18) } ?? "…"
+            return Status(
+                tone: .working,
+                icon: "phone.arrow.down.left",
+                text: "Word API · base «\(base)» · word=\(word) · \(count)/\(rc)"
+            )
+        case .locked:
+            let locked = wordSession.lockedReading?.label ?? word
+            return Status(
+                tone: .ready,
+                icon: "lock.fill",
+                text: "Word API · bloqueada · word=\(WordApiInputPanel.truncated(locked, max: 24))"
+            )
+        case .failed(let message):
+            return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: "Word API · \(message)")
+        case .idle:
+            return nil
         }
     }
 
