@@ -56,6 +56,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var voiceOpenAIPreflightInProgress = false
     @Published var voiceOpenAIPreflightAlert: String?
 
+    /// Prevents opening auto-share more than once per Perform.
+    var autoSharePresentedThisPerform = false
+
     func setVoiceOpenAIPreflightInProgress(_ inProgress: Bool) {
         voiceOpenAIPreflightInProgress = inProgress
     }
@@ -148,7 +151,7 @@ final class AppModel: ObservableObject {
             SongLibraryStore.shared.recordRecent(track, reason: "select")
             if isArmed { performSessionDisplayTrack = track }
             dlog("Listo: \(track.title) — \(track.artist). \(timings)")
-            if isArmed, Prefs.performanceMode == .fakeRingtone {
+            if isArmed {
                 applyFakePerformMediaVolumeBoost(reason: "songReady")
             }
             if Prefs.autoStageRingtone {
@@ -253,7 +256,6 @@ final class AppModel: ObservableObject {
     /// Fake Ringtone: after hang-up, long-press the stage to open Share (Use as Ringtone).
     func openFakeShareAfterCallIfNeeded() {
         guard FakePostCallShareGate.shouldOpenShareOnLongPress(
-            performanceMode: Prefs.performanceMode,
             phase: phase,
             performed: performed,
             isArmed: isArmed
@@ -334,9 +336,8 @@ final class AppModel: ObservableObject {
         } catch {
             dlog("✗ configureSession: \(RingtoneAudioEngine.describe(error))")
         }
-        if Prefs.performanceMode == .fakeRingtone {
-            applyFakePerformMediaVolumeBoost(reason: "arm")
-        } else if Prefs.forceMediaVolume {
+        applyFakePerformMediaVolumeBoost(reason: "arm")
+        if Prefs.forceMediaVolume {
             ignoreVolumeChangesUntil = CACurrentMediaTime() + 1
             SystemVolume.shared.set(Float(Prefs.mediaVolumeTarget), label: "stage target", sliderRetries: 5)
         }
@@ -631,7 +632,7 @@ final class AppModel: ObservableObject {
             let raw = n.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt ?? 0
             let prev = n.userInfo?[AVAudioSessionRouteChangePreviousRouteKey]
             dlog("[ROUTE] cambió reason=\(raw) prev=\(prev != nil) → \(RingtoneAudioEngine.routeDescription()) · \(self.calls.describeCalls())")
-            if self.isArmed, Prefs.performanceMode == .fakeRingtone {
+            if self.isArmed {
                 RingtoneAudioEngine.applyBuiltInSpeakerOverride(reason: "routeChange(\(raw))")
             }
             if self.isArmed, self.hasLikelyIncomingCallSignal() {
@@ -904,7 +905,6 @@ final class AppModel: ObservableObject {
 
     /// Fake Ringtone: best-effort max media volume via hidden `MPVolumeView` (public API; slider hook undocumented).
     func applyFakePerformMediaVolumeBoost(reason: String) {
-        guard Prefs.performanceMode == .fakeRingtone else { return }
         guard Prefs.boostMediaVolumeOnFakePerform else { return }
         ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
         let target = Float(Prefs.fakePlaybackVolume)
@@ -917,11 +917,7 @@ final class AppModel: ObservableObject {
     private func applySystemVolumeBoostForTrigger() {
         guard Prefs.boostSystemVolumeOnTrigger else { return }
         ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
-        if Prefs.performanceMode == .fakeRingtone {
-            SystemVolume.shared.set(Float(Prefs.fakePlaybackVolume), label: "fake trigger", sliderRetries: 5)
-        } else {
-            SystemVolume.shared.captureAndBoostToMaximum()
-        }
+        SystemVolume.shared.set(Float(Prefs.fakePlaybackVolume), label: "fake trigger", sliderRetries: 5)
     }
 
 }

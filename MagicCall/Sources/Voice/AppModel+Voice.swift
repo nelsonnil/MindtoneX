@@ -18,10 +18,8 @@ extension AppModel {
         }
     }
 
-    /// Perform button for both modes and all song inputs. Runs the Silent On/Off Shortcut first
-    /// when enabled, and continues when Shortcuts returns to the app.
+    /// Perform for all song inputs — enters stage/call audio directly (no Silent Shortcut preamble).
     func perform() {
-        let mode = Prefs.performanceMode
         if usesVoiceInput {
             guard !voiceOpenAIPreflightInProgress else { return }
             setVoiceOpenAIPreflightInProgress(true)
@@ -32,19 +30,11 @@ extension AppModel {
                     UINotificationFeedbackGenerator().notificationOccurred(.warning)
                     return
                 }
-                continuePerformAfterPreflight(mode: mode)
+                performNow()
             }
             return
         }
-        continuePerformAfterPreflight(mode: mode)
-    }
-
-    private func continuePerformAfterPreflight(mode: Prefs.PerformanceMode) {
-        if SilentShortcut.isEnabled(for: mode) {
-            SilentShortcut.shared.runBeforePerform(mode: mode) { [weak self] in self?.performNow() }
-        } else {
-            performNow()
-        }
+        performNow()
     }
 
     private func performNow() {
@@ -53,7 +43,7 @@ extension AppModel {
             disarm()
         }
         let input = VoiceSettings.inputMode
-        dlog("══ PERFORM ══ mode=\(Prefs.performanceMode.title) input=\(input.title)")
+        dlog("══ PERFORM ══ input=\(input.title)")
         if findsSongDuringPerform {
             clearPerformSessionDisplayTrack()
             VoiceSongSession.shared.reset(reason: "new Perform")
@@ -61,29 +51,25 @@ extension AppModel {
             ApiSongSession.shared.reset(reason: "new Perform")
             clearSongForNextPerformance()
         }
-        switch Prefs.performanceMode {
-        case .fakeRingtone:
-            guard StageImageStore.hasScreenshot else {
-                dlog("══ PERFORM ══ blocked: no stage screenshot")
-                UINotificationFeedbackGenerator().notificationOccurred(.warning)
-                return
-            }
-            switch input {
-            case .aiVoice:
-                VoiceAudioSession.recordCategoryActive = true
-                arm(requireSong: false)
-                scheduleVoicePerformStart()
-            case .notes:
-                NotesSongSession.shared.start(context: .perform)
-                arm(requireSong: false)
-            case .api:
-                arm(requireSong: false)
-                ApiSongSession.shared.start(context: .perform)
-            case .manual:
-                performFakeRingtone()
-            }
-        case .shareRingtone:
-            SharePerformFlow.shared.start(input: input)
+        guard StageImageStore.hasScreenshot else {
+            dlog("══ PERFORM ══ blocked: no stage screenshot")
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            return
+        }
+        resetAutoSharePresentedFlag()
+        switch input {
+        case .aiVoice:
+            VoiceAudioSession.recordCategoryActive = true
+            arm(requireSong: false)
+            scheduleVoicePerformStart()
+        case .notes:
+            NotesSongSession.shared.start(context: .perform)
+            arm(requireSong: false)
+        case .api:
+            arm(requireSong: false)
+            ApiSongSession.shared.start(context: .perform)
+        case .manual:
+            performFakeRingtone()
         }
     }
 
@@ -94,10 +80,7 @@ extension AppModel {
         case .api: ApiSettings.isConfigured
         case .manual: loadState == .ready
         }
-        if Prefs.performanceMode == .fakeRingtone {
-            return inputReady && StageImageStore.hasScreenshot
-        }
-        return inputReady
+        return inputReady && StageImageStore.hasScreenshot
     }
 
     /// Looks up and loads a voice candidate with the normal preview lookup.
@@ -117,15 +100,10 @@ extension AppModel {
 
     private func prepareSongQuery(_ text: String) async -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Always discard loaded bytes before a Voice/Notes/API lookup (same query + new Inject count
-        // used to leave the previous preview armed — same class of bug as stale AI Voice songs).
         dropPreviewForNewLookup()
         query = trimmed
         await search()
         guard loadState == .ready else { return false }
-        if Prefs.performanceMode == .shareRingtone, !Prefs.autoStageRingtone {
-            await stageRingtoneFile(showShare: false, discreet: false)
-        }
         return true
     }
 
@@ -141,47 +119,40 @@ extension AppModel {
                 VoiceAudioSession.deactivateIfIdle()
             }
         }
-        if context == .perform, Prefs.performanceMode == .fakeRingtone, isArmed {
+        if context == .perform, isArmed {
             applyFakePerformMediaVolumeBoost(reason: "songLocked")
         }
         if context == .perform {
             recordRecentLoadedSongIfReady(reason: "voiceDidLock")
-        }
-        if context == .perform, SharePerformFlow.shared.isActive {
-            SharePerformFlow.shared.songLocked()
+            autoShareOnSongLockIfEnabled(source: "Voice")
         }
     }
 
-    /// Notes found and loaded a song. Fake Ringtone keeps it hot (select() already restarted
-    /// standby); Share Ringtone opens the Share sheet with it.
     func notesSongReady(context: NotesSongSession.Context) {
         guard context == .perform else { return }
         recordRecentLoadedSongIfReady(reason: "notesReady")
-        if Prefs.performanceMode == .fakeRingtone, isArmed {
+        if isArmed {
             applyFakePerformMediaVolumeBoost(reason: "notesReady")
         }
-        if SharePerformFlow.shared.isActive {
-            NotesSongSession.shared.lockForShare()
-            SharePerformFlow.shared.songLocked()
-        }
+        autoShareOnSongLockIfEnabled(source: "Notes")
     }
 
-    /// API locked a loaded song. Fake Ringtone is already hot via select(); Share opens the Share sheet.
     func apiSongLocked(context: ApiSongSession.Context) {
         if context == .perform {
             recordRecentLoadedSongIfReady(reason: "apiLocked")
         }
-        if context == .perform, Prefs.performanceMode == .fakeRingtone, isArmed {
+        if context == .perform, isArmed {
             applyFakePerformMediaVolumeBoost(reason: "apiLocked")
         }
-        if context == .perform, SharePerformFlow.shared.isActive {
-            SharePerformFlow.shared.songLocked()
+        if context == .perform {
+            autoShareOnSongLockIfEnabled(source: "API")
         }
     }
 
     /// Leaving Perform starts the next performance from zero (no stale song on the next run).
     func resetVoicePerformance() {
         SharePerformFlow.shared.reset()
+        resetAutoSharePresentedFlag()
         commitVoicePerformSnapshotIfNeeded(reason: "resetVoicePerformance")
         recordRecentLoadedSongIfReady(reason: "leftPerform")
         VoiceSongSession.shared.reset(reason: "left Perform")
@@ -199,5 +170,34 @@ extension AppModel {
         if previous != .manual || next != .manual {
             clearSongForNextPerformance()
         }
+    }
+
+    // MARK: Auto-share on song lock
+
+    func resetAutoSharePresentedFlag() {
+        autoSharePresentedThisPerform = false
+    }
+
+    func autoShareOnSongLockIfEnabled(source: String) {
+        guard Prefs.autoShareOnSongLock, isArmed, phase == .stage, !autoSharePresentedThisPerform else { return }
+        guard loadState == .ready else { return }
+        autoSharePresentedThisPerform = true
+        dlog("[AUTO-SHARE] song locked (\(source)) → Share sheet")
+        Task { await presentShareDuringPerform() }
+    }
+
+    private func presentShareDuringPerform() async {
+        let voice = VoiceSongSession.shared
+        if voice.isActive { voice.reset(reason: "auto-share") }
+        if ApiSongSession.shared.isActive { ApiSongSession.shared.stopTest() }
+        VoiceAudioSession.recordCategoryActive = false
+        VoiceAudioSession.deactivateIfIdle()
+        guard loadState == .ready else { return }
+        var waited = 0
+        while Prefs.autoStageRingtone, !ringtoneStaged, waited < 40 {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            waited += 1
+        }
+        await performShareRingtone()
     }
 }

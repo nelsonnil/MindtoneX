@@ -1,152 +1,141 @@
 import PhotosUI
 import SwiftUI
 
-/// Mode picker + mode-specific setup in one panel (Fake or Share).
-struct UnifiedPerformanceModeCard: View {
-    @Binding var modeRaw: String
+/// Single Performance setup — volume, stage screenshot, auto-share toggle, Favorites link.
+struct PerformanceCard: View {
     @Binding var photoItem: PhotosPickerItem?
     var stageScreenshotGeneration: Int
-    @Namespace private var selection
+    var onOpenFavorites: () -> Void
 
-    @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
-    @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
-    @AppStorage("ui.modeSetupExpanded") private var setupExpanded = true
+    @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
+    @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
+    @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
 
-    private var mode: Prefs.PerformanceMode {
-        Prefs.PerformanceMode(rawValue: modeRaw) ?? .fakeRingtone
-    }
+    private var hasScreenshot: Bool { StageImageStore.hasScreenshot }
 
-    private var shortcutReady: Bool {
-        switch mode {
-        case .fakeRingtone: return silentOnEnabled && StageImageStore.hasScreenshot
-        case .shareRingtone: return silentOffEnabled
-        }
+    private var statusBarContentSelection: Binding<StageStatusBarContent> {
+        Binding(
+            get: { StageStatusBarContent(rawValue: stageStatusBarContentRaw) ?? .automatic },
+            set: { stageStatusBarContentRaw = $0.rawValue }
+        )
     }
 
     var body: some View {
         HomePanel(accent: OracleTheme.gold) {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 18) {
                 HomeSectionTitle(
-                    title: "Performance mode",
-                    subtitle: Prefs.PerformanceMode.modePickerSubtitle,
-                    eyebrow: "Step 1"
+                    title: "Performance",
+                    subtitle: "Stage disguise · in-app playback on incoming call",
+                    eyebrow: nil
                 )
 
-                VStack(spacing: 10) {
-                    modeTile(.fakeRingtone, title: Prefs.PerformanceMode.fakeRingtone.title, subtitle: Prefs.PerformanceMode.fakeRingtone.tileSubtitle, icon: "bell.slash.fill")
-                    modeTile(.shareRingtone, title: Prefs.PerformanceMode.shareRingtone.title, subtitle: Prefs.PerformanceMode.shareRingtone.tileSubtitle, icon: "bell.badge.fill")
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Playback volume")
+                            .font(.subheadline)
+                            .foregroundStyle(OracleTheme.textPrimary)
+                        Spacer()
+                        Text("\(Int(fakePlaybackVolume * 100))%")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(OracleTheme.textSecondary)
+                    }
+                    Slider(value: $fakePlaybackVolume, in: 0.3...1)
+                        .tint(OracleTheme.gold)
+                    Text("Side buttons adjust volume during Perform. After the call ends, long-press the stage to open Share.")
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textSecondary)
                 }
 
-                setupDisclosure
+                stageScreenshotSection
+
+                Toggle(isOn: $autoShareOnSongLock) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Auto-open Share when song locks")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(OracleTheme.textPrimary)
+                        Text("During Perform, opens Use as Ringtone when Voice, Notes, or API locks a song.")
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                    }
+                }
+                .tint(OracleTheme.gold)
+
+                Button(action: onOpenFavorites) {
+                    Label("Favorites setup — Use as Ringtone on first row", systemImage: "star.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.bordered)
+                .tint(OracleTheme.gold)
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Performance mode")
-        .onAppear {
-            if !shortcutReady { setupExpanded = true }
-        }
-        .onChange(of: modeRaw) { _, _ in
-            if !shortcutReady { setupExpanded = true }
-        }
+        .accessibilityLabel("Performance")
     }
 
-    private var setupDisclosure: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.22)) { setupExpanded.toggle() }
-            } label: {
-                HStack(spacing: 8) {
-                    Text("Performance setup")
-                        .font(.subheadline.weight(.semibold))
+    private var stageScreenshotSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Stage screenshot")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+            Text("Required. Pick a full-screen screenshot of your Home or Lock screen — the stage shows only this image during Perform.")
+                .font(.caption)
+                .foregroundStyle(hasScreenshot ? OracleTheme.textSecondary : OracleTheme.coral.opacity(0.95))
+            HStack(spacing: 12) {
+                stageThumb
+                    .id(stageScreenshotGeneration)
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    Label(hasScreenshot ? "Replace screenshot" : "Choose screenshot", systemImage: "photo.on.rectangle.angled")
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    if shortcutReady {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(OracleTheme.gold)
-                    }
-                    Spacer(minLength: 8)
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(OracleTheme.textSecondary)
-                        .rotationEffect(.degrees(setupExpanded ? 180 : 0))
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(hasScreenshot ? OracleTheme.gold.opacity(0.85) : OracleTheme.gold)
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(setupExpanded ? "Collapse performance setup" : "Expand performance setup")
 
-            if setupExpanded {
-                Group {
-                    switch mode {
-                    case .fakeRingtone:
-                        FakeModeContent(
-                            photoItem: $photoItem,
-                            stageScreenshotGeneration: stageScreenshotGeneration
-                        )
-                    case .shareRingtone:
-                        ShareModeContent()
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Status bar icons")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Picker("Status bar icons", selection: statusBarContentSelection) {
+                    ForEach(StageStatusBarContent.allCases) { mode in
+                        Text(mode.segmentTitle).tag(mode)
                     }
                 }
-                .padding(.top, 14)
-                .animation(.easeInOut(duration: 0.25), value: modeRaw)
+                .pickerStyle(.segmented)
+                Text("Dark = black icons (light wallpaper). Light = white icons (dark wallpaper). Auto matches the top of your screenshot.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
             }
         }
     }
 
-    private func modeTile(_ value: Prefs.PerformanceMode, title: String, subtitle: String, icon: String) -> some View {
-        let selected = mode == value
-        return Button {
-            guard !selected else { return }
-            UISelectionFeedbackGenerator().selectionChanged()
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { modeRaw = value.rawValue }
-        } label: {
-            HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(selected ? OracleTheme.gold : OracleTheme.textSecondary)
-                    .frame(width: 44, height: 44)
-                    .background(selected ? OracleTheme.gold.opacity(0.18) : Color.white.opacity(0.06))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(selected ? OracleTheme.textPrimary : OracleTheme.textSecondary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                        .lineLimit(2)
-                }
-                Spacer(minLength: 0)
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(OracleTheme.gold)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background {
-                if selected {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(OracleTheme.gold.opacity(0.10))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .strokeBorder(OracleTheme.gold.opacity(0.55), lineWidth: 1.5)
-                        }
-                        .matchedGeometryEffect(id: "modeSelection", in: selection)
+    @ViewBuilder
+    private var stageThumb: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color.white.opacity(0.06))
+            .frame(width: 52, height: 68)
+            .overlay {
+                if let image = StageImageStore.load() {
+                    Image(uiImage: image).resizable().scaledToFill()
                 } else {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-                        }
+                    VStack(spacing: 4) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.title3)
+                        Text("Required")
+                            .font(.system(size: 9, weight: .semibold))
+                    }
+                    .foregroundStyle(OracleTheme.coral.opacity(0.9))
                 }
             }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(
+                        hasScreenshot ? OracleTheme.cardBorderHighlight : OracleTheme.coral.opacity(0.65),
+                        style: hasScreenshot ? StrokeStyle(lineWidth: 1) : StrokeStyle(lineWidth: 1.5, dash: [4, 3])
+                    )
+            }
     }
 }

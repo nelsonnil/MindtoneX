@@ -46,9 +46,7 @@ struct StageView: View {
 
             StageGestureLayer(
                 onTap: {
-                    if SharePerformFlow.shared.isActive {
-                        SharePerformFlow.shared.handleTap()
-                    } else if Prefs.tapTrigger {
+                    if Prefs.tapTrigger {
                         model.toggleManual()
                     }
                 },

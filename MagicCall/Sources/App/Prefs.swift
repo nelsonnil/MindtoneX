@@ -39,9 +39,12 @@ enum Prefs {
         static let ringtoneUseQuickLook = "ringtone.useQuickLook"
 
         static let performanceMode = "ui.performanceMode"
+        /// When ON, present ringtone Share sheet as soon as the song locks during Perform.
+        static let autoShareOnSongLock = "performance.autoShareOnSongLock"
 
         /// One-time bump of legacy `clipSeconds` (e.g. 10) to `RingtoneLimits.exportMaxSeconds`.
         static let clipSecondsMigratedToExportMax = "audio.clipSecondsMigratedToExportMax"
+        static let performanceModeMigratedToSingle = "ui.performanceModeMigratedToSingle"
     }
 
     enum PerformanceMode: String, CaseIterable, Identifiable {
@@ -108,8 +111,22 @@ enum Prefs {
             Key.discreetRingtoneUI: true,
             Key.ringtoneUseQuickLook: false,
             Key.performanceMode: PerformanceMode.fakeRingtone.rawValue,
+            Key.autoShareOnSongLock: false,
         ])
         migrateClipSecondsIfNeeded()
+        migratePerformanceModeToSingleIfNeeded()
+    }
+
+    /// Former Phone Ringtone mode → single Performance + auto-share toggle.
+    private static func migratePerformanceModeToSingleIfNeeded() {
+        guard !d.bool(forKey: Key.performanceModeMigratedToSingle) else { return }
+        let mode = PerformanceMode(rawValue: d.string(forKey: Key.performanceMode) ?? "") ?? .fakeRingtone
+        if mode == .shareRingtone {
+            d.set(true, forKey: Key.autoShareOnSongLock)
+            d.set(PerformanceMode.fakeRingtone.rawValue, forKey: Key.performanceMode)
+            dlog("Migración: Phone Ringtone → Performance + autoShareOnSongLock")
+        }
+        d.set(true, forKey: Key.performanceModeMigratedToSingle)
     }
 
     /// Bumps stored clip length below the iOS ringtone cap once (registerDefaults does not overwrite existing values).
@@ -132,6 +149,8 @@ enum Prefs {
     static var performanceMode: PerformanceMode {
         PerformanceMode(rawValue: d.string(forKey: Key.performanceMode) ?? "") ?? .fakeRingtone
     }
+
+    static var autoShareOnSongLock: Bool { d.bool(forKey: Key.autoShareOnSongLock) }
 
     static var noInterruptions: Bool { d.bool(forKey: Key.noInterruptions) }
     static var mixWithOthers: Bool { d.bool(forKey: Key.mixWithOthers) }
