@@ -36,6 +36,16 @@ final class SystemVolume {
         set(saved, label: "restaurar")
     }
 
+    /// iOS only emits `outputVolume` KVO when the level can change — nudge off 0 % / 100 % so side buttons work during Card scan.
+    func ensureHeadroomForHardwareVolumeButtons(reason: String) {
+        let v = outputVolume
+        if v >= 0.985 {
+            set(0.92, label: "\(reason) headroom", sliderRetries: 5)
+        } else if v <= 0.015 {
+            set(0.08, label: "\(reason) headroom", sliderRetries: 5)
+        }
+    }
+
     func set(_ value: Float, label: String? = nil, sliderRetries: Int = 0) {
         guard let slider else {
             if sliderRetries > 0 {

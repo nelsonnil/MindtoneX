@@ -2,7 +2,7 @@ import AVKit
 import SwiftUI
 import UIKit
 
-/// Invisible host for `AVCaptureEventInteraction` — volume / Camera Control triggers OCR burst (iOS 17.2+).
+/// Invisible host for `AVCaptureEventInteraction` — **Camera Control** (iPhone 16+) OCR trigger. Side **volume** buttons use `AppModel` volume KVO during Card Perform.
 struct CardVolumeScanHost: UIViewRepresentable {
     func makeUIView(context: Context) -> CardVolumeScanView {
         let view = CardVolumeScanView()

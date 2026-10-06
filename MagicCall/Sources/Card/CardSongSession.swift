@@ -142,6 +142,9 @@ final class CardSongSession: ObservableObject {
             return
         }
         state = .scanning
+        if context == .perform {
+            PerformUserLog.shared.log("Card · scanning — camera on (~\(Int(CardSettings.burstSeconds)) s)")
+        }
         let gen = generation
         scanTask = Task { [weak self] in
             await self?.runBurstScan(gen: gen)
@@ -154,7 +157,7 @@ final class CardSongSession: ObservableObject {
         }
         startCamera()
         defer { stopCamera() }
-        try? await Task.sleep(nanoseconds: 450_000_000)
+        try? await Task.sleep(nanoseconds: 280_000_000)
         guard gen == generation else { return }
         let frames = await capture.collectBurst(duration: CardSettings.burstSeconds, scanPulse: false)
         guard gen == generation else { return }

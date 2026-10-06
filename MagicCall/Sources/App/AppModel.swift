@@ -352,6 +352,9 @@ final class AppModel: ObservableObject {
         if Prefs.hotStandby { audio.startStandby() }
         calls.reassertDelegate()
         ensureVolumeButtonWatch()
+        if usesCardInput {
+            SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "Card scan")
+        }
         performed = false
         hadCallWhileArmed = false
         autoTriggerCooldownUntil = 0
@@ -875,12 +878,18 @@ final class AppModel: ObservableObject {
                 let old = change.oldValue ?? 0
                 let new = change.newValue ?? 0
                 dlog("Volumen multimedia \(String(format: "%.2f", old)) → \(String(format: "%.2f", new))")
+                if CardSongSession.shared.capturesVolumeButtons {
+                    self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.55
+                    SystemVolume.shared.set(old, label: "card scan revert")
+                    CardSongSession.shared.volumeScanTriggered()
+                    return
+                }
                 guard CACurrentMediaTime() > self.ignoreVolumeChangesUntil else { return }
                 guard FakePostCallVolumeGate.shouldTogglePlayOnVolume(
                     volumeButtonTrigger: Prefs.volumeButtonTrigger,
                     isArmed: self.isArmed,
                     performed: self.performed,
-                    cardCaptureUsesVolume: CardSongSession.shared.capturesVolumeButtons
+                    cardCaptureUsesVolume: false
                 ) else { return }
                 self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.6
                 SystemVolume.shared.set(old)
