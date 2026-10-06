@@ -4,8 +4,6 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
 
-    @AppStorage(Prefs.Key.performanceMode) private var performanceModeRaw = Prefs.PerformanceMode.fakeRingtone.rawValue
-
     @AppStorage(Prefs.Key.noInterruptions) private var noInterruptions = true
     @AppStorage(Prefs.Key.mixWithOthers) private var mixWithOthers = false
     @AppStorage(Prefs.Key.hotStandby) private var hotStandby = true
@@ -31,15 +29,11 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.ringtoneUseQuickLook) private var ringtoneUseQuickLook = false
     @AppStorage(SharePerformFlow.hapticOnShareKey) private var hapticOnShare = true
 
-    private var mode: Prefs.PerformanceMode {
-        Prefs.PerformanceMode(rawValue: performanceModeRaw) ?? .fakeRingtone
-    }
-
     var body: some View {
         Form {
             audioSection
-            if mode == .fakeRingtone { triggerSection }
-            if mode == .shareRingtone { shareRingtoneSection }
+            triggerSection
+            shareRingtoneSection
             previewsSection
         }
         .navigationTitle("Engine & lab")
@@ -74,7 +68,7 @@ struct SettingsView: View {
             Toggle("Tap screen to start/stop song", isOn: $tapTrigger)
             Toggle("Volume buttons to start/stop", isOn: $volumeButtonTrigger)
         } header: {
-            Text("\(Prefs.PerformanceMode.fakeRingtone.title) triggers")
+            Text("Performance triggers")
         } footer: {
             Text("Leave auto-start on for performances. Tap is a backup if detection fails.")
         }
@@ -99,7 +93,7 @@ struct SettingsView: View {
             Toggle("Use Quick Look instead of Share", isOn: $ringtoneUseQuickLook)
             Toggle("Soft vibration when ringtone is added", isOn: $hapticOnShare)
         } header: {
-            Text("\(Prefs.PerformanceMode.shareRingtone.title) export")
+            Text("Ringtone export")
         } footer: {
             Text("iOS 26 opens Settings → Ringtone after “Use as Ringtone” — press Home once if needed.")
         }

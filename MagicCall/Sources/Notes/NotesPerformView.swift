@@ -7,8 +7,6 @@ import UIKit
 struct NotesPerformView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var session = NotesSongSession.shared
-    @ObservedObject private var share = SharePerformFlow.shared
-
     static let gold = Color(red: 0.91, green: 0.73, blue: 0.02)
     static let goldUIColor = UIColor(red: 0.91, green: 0.73, blue: 0.02, alpha: 1)
 
@@ -30,11 +28,7 @@ struct NotesPerformView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
 
-            if share.acceptsStageTap {
-                Color.white.opacity(0.001)
-                    .ignoresSafeArea()
-                    .onTapGesture { SharePerformFlow.shared.handleTap() }
-            } else if Prefs.performanceMode == .fakeRingtone, model.performed {
+            if model.performed {
                 Color.white.opacity(0.001)
                     .ignoresSafeArea()
                     .onLongPressGesture(minimumDuration: 0.55) {

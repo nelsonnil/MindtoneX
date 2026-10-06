@@ -1,12 +1,11 @@
 import PhotosUI
 import SwiftUI
 
-/// Premium home shell — hero, mode picker, song input, feedback, and a fixed Perform dock.
+/// Premium home shell — hero, performance setup, song input, feedback, and a fixed Perform dock.
 struct MainShellView: View {
     @EnvironmentObject private var model: AppModel
     @FocusState private var queryFocused: Bool
 
-    @AppStorage(Prefs.Key.performanceMode) private var performanceModeRaw = Prefs.PerformanceMode.fakeRingtone.rawValue
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     @State private var photoItem: PhotosPickerItem?
@@ -16,19 +15,15 @@ struct MainShellView: View {
     @AppStorage("ui.performanceGuideOpened") private var performanceGuideOpened = false
     @State private var instructionsPulse = false
 
-    private var mode: Prefs.PerformanceMode {
-        Prefs.PerformanceMode(rawValue: performanceModeRaw) ?? .fakeRingtone
-    }
-
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 HeroLogoView(onTripleTap: { activeSheet = .debugLog })
 
-                UnifiedPerformanceModeCard(
-                    modeRaw: $performanceModeRaw,
+                PerformanceCard(
                     photoItem: $photoItem,
-                    stageScreenshotGeneration: stageScreenshotGeneration
+                    stageScreenshotGeneration: stageScreenshotGeneration,
+                    onOpenFavorites: { activeSheet = .favoritesSetup }
                 )
 
                 HomePanel(accent: OracleTheme.indigo) {
@@ -41,6 +36,8 @@ struct MainShellView: View {
                 HomePanel(accent: OracleTheme.gold) {
                     SongLibrarySection()
                 }
+
+                WordApiHomeCard()
 
                 FeedbackCard()
             }
@@ -66,7 +63,7 @@ struct MainShellView: View {
             instructionsButton
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            PerformBottomBar(mode: mode)
+            PerformBottomBar()
         }
         .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
@@ -100,10 +97,7 @@ struct MainShellView: View {
             switch sheet {
             case .performanceGuide:
                 NavigationStack {
-                    PerformanceGuideSheet(
-                        initialMode: mode,
-                        onOpenFavorites: { activeSheet = .favoritesSetup }
-                    )
+                    PerformanceGuideSheet(onOpenFavorites: { activeSheet = .favoritesSetup })
                 }
             case .shortcutsSetup:
                 NavigationStack { ShortcutsSetupSheet() }
@@ -162,6 +156,6 @@ struct MainShellView: View {
         .padding(.top, 6)
         .padding(.trailing, 14)
         .accessibilityLabel("Instructions — start here")
-        .accessibilityHint("Opens performance mode instructions")
+        .accessibilityHint("Opens performance instructions")
     }
 }

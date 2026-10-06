@@ -18,10 +18,9 @@ settings:
     SWIFT_STRICT_CONCURRENCY: minimal
     TARGETED_DEVICE_FAMILY: "1"
     CODE_SIGN_STYLE: Automatic
-    # Pon aquí tu Team ID o elígelo en Xcode > Signing & Capabilities.
     DEVELOPMENT_TEAM: "6XSHKM2M34"
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "100"
+    CURRENT_PROJECT_VERSION: "104"
 
 targets:
   MagicCall:
@@ -30,9 +29,10 @@ targets:
     sources:
       - path: MagicCall/Sources
       - path: MagicCall/Resources
+    entitlements:
+      path: MagicCall/MagicCall.entitlements
     settings:
       base:
-        # Cámbialo por uno único tuyo (p. ej. com.tunombre.tonos).
         PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono
         PRODUCT_NAME: MagicCall
         INFOPLIST_FILE: MagicCall/Resources/Info.plist
@@ -48,20 +48,55 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG MAGIC_PRIVATE_PROBES"
-        # App Store / TestFlight externo / Archive producción: SIN APIs privadas (evita ITMS-90338).
         Release:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
         AppStore:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
-        # Solo probadores internos: experimentos privados (dlopen, tonos, etc.).
         TestFlight:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "MAGIC_PRIVATE_PROBES"
+    dependencies:
+      - target: MagicCallCallDirectory
+        embed: true
+      - target: MagicCallLiveCallerLookup
+        embed: true
+
+  MagicCallCallDirectory:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: MagicCallCallDirectory
+    entitlements:
+      path: MagicCallCallDirectory/MagicCallCallDirectory.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono.CallDirectory
+        INFOPLIST_FILE: MagicCallCallDirectory/Info.plist
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+        SKIP_INSTALL: YES
+
+  MagicCallLiveCallerLookup:
+    type: app-extension
+    platform: iOS
+    deploymentTarget:
+      iOS: "18.0"
+    sources:
+      - path: MagicCallLiveCallerLookup
+    entitlements:
+      path: MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono.LiveCallerLookup
+        INFOPLIST_FILE: MagicCallLiveCallerLookup/Info.plist
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+        SKIP_INSTALL: YES
 
 schemes:
   MagicCall:
     build:
       targets:
         MagicCall: all
+        MagicCallCallDirectory: all
+        MagicCallLiveCallerLookup: all
     run:
       config: Debug
     profile:
@@ -74,6 +109,8 @@ schemes:
     build:
       targets:
         MagicCall: all
+        MagicCallCallDirectory: all
+        MagicCallLiveCallerLookup: all
     run:
       config: Release
     archive:
@@ -82,6 +119,8 @@ schemes:
     build:
       targets:
         MagicCall: all
+        MagicCallCallDirectory: all
+        MagicCallLiveCallerLookup: all
     run:
       config: TestFlight
     archive:

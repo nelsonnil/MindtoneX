@@ -1,23 +1,17 @@
 import SwiftUI
 
-/// Fixed bottom bar: one always-visible readiness strip above the mode-colored Perform CTA.
+/// Fixed bottom bar: readiness strip above the Perform CTA.
 struct PerformBottomBar: View {
     @EnvironmentObject private var model: AppModel
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
-    @AppStorage(ApiSettings.Key.provider) private var apiProviderRaw = ApiSettings.Provider.inject.rawValue
-    @AppStorage(ApiSettings.Key.injectID) private var injectID = ""
-    @AppStorage(ApiSettings.Key.elipsURL) private var elipsURL = ""
-    @AppStorage(ApiSettings.Key.customURL) private var customURL = ""
-    @AppStorage(ApiSettings.Key.customField) private var customField = ApiSettings.defaultCustomField
-    let mode: Prefs.PerformanceMode
 
     var body: some View {
         VStack(spacing: 10) {
-            ReadinessStatusBar(mode: mode)
+            ReadinessStatusBar()
 
             OraclePerformButton(
                 title: model.voiceOpenAIPreflightInProgress ? "Checking…" : "Perform",
-                gradient: OracleTheme.performGradient(for: mode),
+                gradient: OracleTheme.goldGradient,
                 disabled: !model.canPerform || model.voiceOpenAIPreflightInProgress,
                 emphasizeReady: model.canPerform && !model.voiceOpenAIPreflightInProgress
             ) {
@@ -53,19 +47,11 @@ struct ReadinessStatusBar: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
     @ObservedObject private var api = ApiSongSession.shared
+    @ObservedObject private var card = CardSongSession.shared
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
-    @AppStorage(SilentShortcut.Key.silentOnEnabled) private var silentOnEnabled = false
-    @AppStorage(ApiSettings.Key.provider) private var apiProviderRaw = ApiSettings.Provider.inject.rawValue
-    @AppStorage(ApiSettings.Key.injectID) private var injectID = ""
-    @AppStorage(ApiSettings.Key.elipsURL) private var elipsURL = ""
-    @AppStorage(ApiSettings.Key.customURL) private var customURL = ""
-    @AppStorage(ApiSettings.Key.customField) private var customField = ApiSettings.defaultCustomField
-    @AppStorage(SilentShortcut.Key.silentOffEnabled) private var silentOffEnabled = false
     @AppStorage(NotesSettings.Key.idleSearchEnabled) private var idleSearchEnabled = true
     @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
     @AppStorage(NotesSettings.Key.searchOnReturn) private var searchOnReturn = true
-
-    let mode: Prefs.PerformanceMode
 
     private enum Tone { case idle, working, ready, warning }
 
@@ -79,14 +65,12 @@ struct ReadinessStatusBar: View {
         VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual
     }
 
-    private var shortcutOn: Bool { mode == .fakeRingtone ? silentOnEnabled : silentOffEnabled }
-
     private var status: Status {
-        if mode == .fakeRingtone, !StageImageStore.hasScreenshot {
+        if !StageImageStore.hasScreenshot {
             return Status(
                 tone: .warning,
                 icon: "photo.on.rectangle.angled",
-                text: "Choose a stage screenshot in Performance setup"
+                text: "Choose a stage screenshot in Performance"
             )
         }
         switch inputMode {
@@ -100,9 +84,6 @@ struct ReadinessStatusBar: View {
                 return Status(tone: .working, icon: "arrow.down.circle", text: "Downloading preview…")
             case .ready:
                 let title = model.selected.map { "\($0.title) — \($0.artist)" } ?? "Song loaded"
-                if mode == .shareRingtone, model.ringtoneStaged {
-                    return Status(tone: .ready, icon: "checkmark.seal.fill", text: "Ready · ringtone file prepared · \(title)")
-                }
                 return Status(tone: .ready, icon: "checkmark.circle.fill", text: "Ready · \(title)")
             case .failed:
                 return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: "Search failed — try again")
@@ -162,6 +143,26 @@ struct ReadinessStatusBar: View {
                         searchOnReturn ? "on Return" : nil].compactMap { $0 }
             let detail = when.isEmpty ? "searches on ✓ or call" : "searches \(when.joined(separator: " / "))"
             return Status(tone: .ready, icon: "note.text", text: "Ready · Notes \(detail)")
+        case .card:
+            guard CardSettings.cameraAuthorized else {
+                return Status(tone: .warning, icon: "camera.fill", text: "Card — allow camera in Settings")
+            }
+            switch card.state {
+            case .failed(let message):
+                return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: message)
+            case .locked:
+                let title = model.selected.map { "\($0.title) — \($0.artist)" } ?? card.candidateLabel ?? "song"
+                return Status(tone: .ready, icon: "lock.fill", text: "Locked · \(title)")
+            case .scanning:
+                return Status(tone: .working, icon: "camera.viewfinder", text: "Reading card…")
+            case .candidate:
+                let title = card.candidateLabel ?? "song"
+                return Status(tone: .working, icon: "questionmark.circle", text: "Candidate · \(title) · press volume to confirm")
+            case .armed:
+                return Status(tone: .working, icon: "camera.fill", text: "Ready · press volume to scan card")
+            case .idle:
+                return Status(tone: .ready, icon: "doc.viewfinder", text: "Ready · Card scans on volume during Perform")
+            }
         }
     }
 
@@ -188,16 +189,6 @@ struct ReadinessStatusBar: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 6)
-            HStack(spacing: 4) {
-                if shortcutOn {
-                    Image(systemName: "bolt.fill")
-                        .accessibilityLabel("Silent shortcut on")
-                }
-                Text(mode.shortBadge)
-                    .tracking(1)
-            }
-            .font(.system(size: 10, weight: .bold, design: .monospaced))
-            .opacity(0.75)
         }
         .foregroundStyle(label)
         .padding(.horizontal, 12)

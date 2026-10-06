@@ -4,6 +4,7 @@ struct SongInputStrip: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
     @ObservedObject private var api = ApiSongSession.shared
+    @ObservedObject private var card = CardSongSession.shared
     @Binding var inputModeRaw: String
     @FocusState.Binding var queryFocused: Bool
 
@@ -26,6 +27,7 @@ struct SongInputStrip: View {
                 inputChip("Voice", icon: "mic.fill", mode: .aiVoice)
                 inputChip("Notes", icon: "note.text", mode: .notes)
                 inputChip("API", icon: "link", mode: .api)
+                inputChip("Card", icon: "doc.viewfinder", mode: .card)
             }
 
             Group {
@@ -38,6 +40,8 @@ struct SongInputStrip: View {
                     NotesInputControls()
                 case .api:
                     ApiInputPanel()
+                case .card:
+                    CardInputPanel()
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: inputModeRaw)
@@ -49,6 +53,7 @@ struct SongInputStrip: View {
         return Button {
             VoiceSongSession.shared.stopTest()
             ApiSongSession.shared.stopTest()
+            CardSongSession.shared.stopTest()
             let previous = inputMode
             withAnimation(.easeInOut(duration: 0.2)) { inputModeRaw = mode.rawValue }
             model.resetAfterSongInputModeChange(from: previous, to: mode)

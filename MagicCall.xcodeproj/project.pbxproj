@@ -46,8 +46,6 @@
 		AA0000040000000000000004 /* HeroLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000030000000000000003 /* HeroLogoView.swift */; };
 		AA0000460000000000000046 /* UnifiedPerformanceModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000470000000000000047 /* UnifiedPerformanceModeCard.swift */; };
 		AA0000080000000000000008 /* SongInputStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000070000000000000007 /* SongInputStrip.swift */; };
-		AA00000A000000000000000A /* FakeModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000090000000000000009 /* FakeModeCard.swift */; };
-		AA00000C000000000000000C /* ShareModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000B000000000000000B /* ShareModeCard.swift */; };
 		AA00000E000000000000000E /* OracleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000D000000000000000D /* OracleSheets.swift */; };
 		AA0000100000000000000010 /* OracleTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000F000000000000000F /* OracleTheme.swift */; };
 		AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000110000000000000011 /* SilentShortcutStatusRow.swift */; };
@@ -70,7 +68,28 @@
 		CC0000030000000000000003 /* SongLibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000040000000000000004 /* SongLibrarySection.swift */; };
 		CC0000090000000000000009 /* RecentPerformSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000A000000000000000A /* RecentPerformSnapshot.swift */; };
 		CC00000B000000000000000B /* LoadedSongReadyRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000C000000000000000C /* LoadedSongReadyRow.swift */; };
-/* End PBXBuildFile section */
+
+		DD0000020000000000000002 /* WordApiSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000010000000000000001 /* WordApiSettings.swift */; };
+		DD0000040000000000000004 /* WordApiSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000030000000000000003 /* WordApiSession.swift */; };
+		DD0000060000000000000006 /* WordApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000050000000000000005 /* WordApiInputPanel.swift */; };
+		DD0000080000000000000008 /* WordApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000070000000000000007 /* WordApiSettingsView.swift */; };
+		DD0000100000000000000010 /* CallerLabelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000090000000000000009 /* CallerLabelStore.swift */; };
+		DD0000120000000000000012 /* CallDirectorySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000110000000000000011 /* CallDirectorySync.swift */; };
+		DD0000220000000000000022 /* CallDirectoryHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000210000000000000021 /* CallDirectoryHandler.swift */; };
+		DD0000240000000000000024 /* CallerLabelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000230000000000000023 /* CallerLabelStore.swift */; };
+		DD0000320000000000000032 /* LiveCallerLookupExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000310000000000000031 /* LiveCallerLookupExtension.swift */; };
+		DD0000410000000000000041 /* MagicCallCallDirectory.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DD0000400000000000000040 /* MagicCallCallDirectory.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DD0000430000000000000043 /* MagicCallLiveCallerLookup.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = DD0000420000000000000042 /* MagicCallLiveCallerLookup.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+
+				EE0000020000000000000002 /* CardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0000010000000000000001 /* CardSettings.swift */; };
+				EE0000040000000000000004 /* CardCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0000030000000000000003 /* CardCaptureService.swift */; };
+				EE0000060000000000000006 /* CardOCRProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0000050000000000000005 /* CardOCRProcessor.swift */; };
+				EE0000080000000000000008 /* CardTextMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0000070000000000000007 /* CardTextMapper.swift */; };
+				EE00000A000000000000000A /* CardSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0000090000000000000009 /* CardSongSession.swift */; };
+				EE00000C000000000000000C /* CardVolumeScanHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000B000000000000000B /* CardVolumeScanHost.swift */; };
+				EE00000E000000000000000E /* CardInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000D000000000000000D /* CardInputPanel.swift */; };
+				EE0000100000000000000010 /* CardPracticeScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000F000000000000000F /* CardPracticeScanView.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		041A68340E90792EDFC50A97 /* RingtoneSharePresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneSharePresenter.swift; sourceTree = "<group>"; };
@@ -125,8 +144,6 @@
 		AA00004A000000000000004A /* VoiceOpenAILanguages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceOpenAILanguages.swift; sourceTree = "<group>"; };
 		AA0000510000000000000051 /* VoiceOpenAIPreflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceOpenAIPreflight.swift; sourceTree = "<group>"; };
 		AA0000070000000000000007 /* SongInputStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongInputStrip.swift; sourceTree = "<group>"; };
-		AA0000090000000000000009 /* FakeModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeModeCard.swift; sourceTree = "<group>"; };
-		AA00000B000000000000000B /* ShareModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareModeCard.swift; sourceTree = "<group>"; };
 		AA00000D000000000000000D /* OracleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleSheets.swift; sourceTree = "<group>"; };
 		AA00000F000000000000000F /* OracleTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleTheme.swift; sourceTree = "<group>"; };
 		AA0000110000000000000011 /* SilentShortcutStatusRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentShortcutStatusRow.swift; sourceTree = "<group>"; };
@@ -140,13 +157,41 @@
 		BB0000050000000000000005 /* ApiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettingsView.swift; sourceTree = "<group>"; };
 		BB0000070000000000000007 /* ApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiInputPanel.swift; sourceTree = "<group>"; };
 		AA0000400000000000000040 /* PerformanceCues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceCues.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+
+		DD0000010000000000000001 /* WordApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSettings.swift; sourceTree = "<group>"; };
+		DD0000030000000000000003 /* WordApiSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSession.swift; sourceTree = "<group>"; };
+		DD0000050000000000000005 /* WordApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiInputPanel.swift; sourceTree = "<group>"; };
+		DD0000070000000000000007 /* WordApiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSettingsView.swift; sourceTree = "<group>"; };
+		DD0000090000000000000009 /* CallerLabelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerLabelStore.swift; sourceTree = "<group>"; };
+		DD0000110000000000000011 /* CallDirectorySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallDirectorySync.swift; sourceTree = "<group>"; };
+		DD0000210000000000000021 /* CallDirectoryHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallDirectoryHandler.swift; sourceTree = "<group>"; };
+		DD0000230000000000000023 /* CallerLabelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerLabelStore.swift; sourceTree = "<group>"; };
+		DD0000310000000000000031 /* LiveCallerLookupExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCallerLookupExtension.swift; sourceTree = "<group>"; };
+		DD0000400000000000000040 /* MagicCallCallDirectory.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MagicCallCallDirectory.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD0000420000000000000042 /* MagicCallLiveCallerLookup.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MagicCallLiveCallerLookup.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD0000500000000000000050 /* MagicCall.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicCall.entitlements; sourceTree = "<group>"; };
+		DD0000510000000000000051 /* MagicCallCallDirectory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicCallCallDirectory.entitlements; sourceTree = "<group>"; };
+		DD0000520000000000000052 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		DD0000530000000000000053 /* MagicCallLiveCallerLookup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicCallLiveCallerLookup.entitlements; sourceTree = "<group>"; };
+		DD0000540000000000000054 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+
+				EE0000010000000000000001 /* CardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSettings.swift; sourceTree = "<group>"; };
+				EE0000030000000000000003 /* CardCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCaptureService.swift; sourceTree = "<group>"; };
+				EE0000050000000000000005 /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
+				EE0000070000000000000007 /* CardTextMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardTextMapper.swift; sourceTree = "<group>"; };
+				EE0000090000000000000009 /* CardSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSongSession.swift; sourceTree = "<group>"; };
+				EE00000B000000000000000B /* CardVolumeScanHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardVolumeScanHost.swift; sourceTree = "<group>"; };
+				EE00000D000000000000000D /* CardInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardInputPanel.swift; sourceTree = "<group>"; };
+				EE00000F000000000000000F /* CardPracticeScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPracticeScanView.swift; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		20E28B94AB89346A94B87FBD /* Calls */ = {
 			isa = PBXGroup;
 			children = (
 				303BA173088357A9233FE003 /* CallMonitor.swift */,
+				DD0000090000000000000009 /* CallerLabelStore.swift */,
+				DD0000110000000000000011 /* CallDirectorySync.swift */,
 			);
 			path = Calls;
 			sourceTree = "<group>";
@@ -163,6 +208,8 @@
 			isa = PBXGroup;
 			children = (
 				5693E6CE804C14C3ECFA3469 /* MagicCall */,
+				DD0000600000000000000060 /* MagicCallCallDirectory */,
+				DD0000610000000000000061 /* MagicCallLiveCallerLookup */,
 				97903A5057FC6639C99E702B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -170,6 +217,7 @@
 		384477B141C03EACD86AB823 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				DD0000500000000000000050 /* MagicCall.entitlements */,
 				B6949E0964299D0E2E8531C7 /* Assets.xcassets */,
 				72AC74524CAF7C0D6B683FE2 /* Info.plist */,
 				AA00004C000000000000004C /* PrivacyInfo.xcprivacy */,
@@ -220,6 +268,8 @@
 			isa = PBXGroup;
 			children = (
 				3FB1C9E9F6808800CBC3E5E4 /* MagicCall.app */,
+				DD0000400000000000000040 /* MagicCallCallDirectory.appex */,
+				DD0000420000000000000042 /* MagicCallLiveCallerLookup.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -249,6 +299,7 @@
 			isa = PBXGroup;
 			children = (
 				9FF1C4C7A77B04B62ED7949E /* App */,
+				EE0000110000000000000011 /* Card */,
 				BB0000200000000000000020 /* Api */,
 				81D45F486E9CD99D614BA4C4 /* Audio */,
 				20E28B94AB89346A94B87FBD /* Calls */,
@@ -296,8 +347,6 @@
 				AA0000070000000000000007 /* SongInputStrip.swift */,
 				CC0000040000000000000004 /* SongLibrarySection.swift */,
 				CC00000C000000000000000C /* LoadedSongReadyRow.swift */,
-				AA0000090000000000000009 /* FakeModeCard.swift */,
-				AA00000B000000000000000B /* ShareModeCard.swift */,
 				AA00000D000000000000000D /* OracleSheets.swift */,
 				AA00000F000000000000000F /* OracleTheme.swift */,
 				AA0000110000000000000011 /* SilentShortcutStatusRow.swift */,
@@ -353,6 +402,10 @@
 			isa = PBXGroup;
 			children = (
 				BB0000010000000000000001 /* ApiSettings.swift */,
+				DD0000010000000000000001 /* WordApiSettings.swift */,
+				DD0000030000000000000003 /* WordApiSession.swift */,
+				DD0000050000000000000005 /* WordApiInputPanel.swift */,
+				DD0000070000000000000007 /* WordApiSettingsView.swift */,
 				BB0000030000000000000003 /* ApiSongSession.swift */,
 				BB0000050000000000000005 /* ApiSettingsView.swift */,
 				BB0000070000000000000007 /* ApiInputPanel.swift */,
@@ -360,7 +413,44 @@
 			path = Api;
 			sourceTree = "<group>";
 		};
-/* End PBXGroup section */
+
+		DD0000600000000000000060 /* MagicCallCallDirectory */ = {
+			isa = PBXGroup;
+			children = (
+				DD0000210000000000000021 /* CallDirectoryHandler.swift */,
+				DD0000230000000000000023 /* CallerLabelStore.swift */,
+				DD0000520000000000000052 /* Info.plist */,
+				DD0000510000000000000051 /* MagicCallCallDirectory.entitlements */,
+			);
+			path = MagicCallCallDirectory;
+			sourceTree = "<group>";
+		};
+		DD0000610000000000000061 /* MagicCallLiveCallerLookup */ = {
+			isa = PBXGroup;
+			children = (
+				DD0000310000000000000031 /* LiveCallerLookupExtension.swift */,
+				DD0000540000000000000054 /* Info.plist */,
+				DD0000530000000000000053 /* MagicCallLiveCallerLookup.entitlements */,
+			);
+			path = MagicCallLiveCallerLookup;
+			sourceTree = "<group>";
+		};
+		EE0000110000000000000011 /* Card */ = {
+			isa = PBXGroup;
+			children = (
+				EE0000010000000000000001 /* CardSettings.swift */,
+				EE0000030000000000000003 /* CardCaptureService.swift */,
+				EE0000050000000000000005 /* CardOCRProcessor.swift */,
+				EE0000070000000000000007 /* CardTextMapper.swift */,
+				EE0000090000000000000009 /* CardSongSession.swift */,
+				EE00000B000000000000000B /* CardVolumeScanHost.swift */,
+				EE00000D000000000000000D /* CardInputPanel.swift */,
+				EE00000F000000000000000F /* CardPracticeScanView.swift */,
+			);
+			path = Card;
+			sourceTree = "<group>";
+		};
+		/* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		505AFC5C4964632A09807C63 /* MagicCall */ = {
@@ -369,10 +459,13 @@
 			buildPhases = (
 				1546E35EA9A7059A8371B1A9 /* Sources */,
 				F5F8DC551CD01D330F3CDF61 /* Resources */,
+				DD0000900000000000000090 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DD0000910000000000000091 /* PBXTargetDependency */,
+				DD0000920000000000000092 /* PBXTargetDependency */,
 			);
 			name = MagicCall;
 			packageProductDependencies = (
@@ -380,6 +473,37 @@
 			productName = MagicCall;
 			productReference = 3FB1C9E9F6808800CBC3E5E4 /* MagicCall.app */;
 			productType = "com.apple.product-type.application";
+		};
+
+		DD0000700000000000000070 /* MagicCallCallDirectory */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DD0000800000000000000080 /* Build configuration list for PBXNativeTarget "MagicCallCallDirectory" */;
+			buildPhases = (
+				DD0000710000000000000071 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MagicCallCallDirectory;
+			productName = MagicCallCallDirectory;
+			productReference = DD0000400000000000000040 /* MagicCallCallDirectory.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		DD0000720000000000000072 /* MagicCallLiveCallerLookup */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DD0000810000000000000081 /* Build configuration list for PBXNativeTarget "MagicCallLiveCallerLookup" */;
+			buildPhases = (
+				DD0000730000000000000073 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MagicCallLiveCallerLookup;
+			productName = MagicCallLiveCallerLookup;
+			productReference = DD0000420000000000000042 /* MagicCallLiveCallerLookup.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -389,7 +513,15 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
+					TargetAttributes = {
+					DD0000700000000000000070 = {
+						DevelopmentTeam = 6XSHKM2M34;
+						ProvisioningStyle = Automatic;
+					};
+					DD0000720000000000000072 = {
+						DevelopmentTeam = 6XSHKM2M34;
+						ProvisioningStyle = Automatic;
+					};
 					505AFC5C4964632A09807C63 = {
 						DevelopmentTeam = 6XSHKM2M34;
 						ProvisioningStyle = Automatic;
@@ -414,6 +546,52 @@
 			);
 		};
 /* End PBXProject section */
+
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DD0000900000000000000090 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DD0000410000000000000041 /* MagicCallCallDirectory.appex in Embed App Extensions */,
+				DD0000430000000000000043 /* MagicCallLiveCallerLookup.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		DD0000930000000000000093 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 15D6056134C49597EE1EDAA0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD0000700000000000000070;
+			remoteInfo = MagicCallCallDirectory;
+		};
+		DD0000940000000000000094 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 15D6056134C49597EE1EDAA0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD0000720000000000000072;
+			remoteInfo = MagicCallLiveCallerLookup;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		DD0000910000000000000091 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD0000700000000000000070 /* MagicCallCallDirectory */;
+			targetProxy = DD0000930000000000000093 /* PBXContainerItemProxy */;
+		};
+		DD0000920000000000000092 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD0000720000000000000072 /* MagicCallLiveCallerLookup */;
+			targetProxy = DD0000940000000000000094 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXResourcesBuildPhase section */
 		F5F8DC551CD01D330F3CDF61 /* Resources */ = {
@@ -457,6 +635,14 @@
 				AA0000270000000000000027 /* NotesPerformView.swift in Sources */,
 				AA0000290000000000000029 /* NotesInputControls.swift in Sources */,
 				585AC343960B24E3E4BC65BD /* VoiceSongSession.swift in Sources */,
+				EE0000020000000000000002 /* CardSettings.swift in Sources */,
+				EE0000040000000000000004 /* CardCaptureService.swift in Sources */,
+				EE0000060000000000000006 /* CardOCRProcessor.swift in Sources */,
+				EE0000080000000000000008 /* CardTextMapper.swift in Sources */,
+				EE00000A000000000000000A /* CardSongSession.swift in Sources */,
+				EE00000C000000000000000C /* CardVolumeScanHost.swift in Sources */,
+				EE00000E000000000000000E /* CardInputPanel.swift in Sources */,
+				EE0000100000000000000010 /* CardPracticeScanView.swift in Sources */,
 				2759F7EDE468921282C2E330 /* AppModel.swift in Sources */,
 				99C1146710877380EBC55FD9 /* CallMonitor.swift in Sources */,
 				0252A189382C473B6FAD70AB /* DebugLog.swift in Sources */,
@@ -487,12 +673,34 @@
 				AA0000460000000000000046 /* UnifiedPerformanceModeCard.swift in Sources */,
 				AA0000490000000000000049 /* PerformanceGuideSheet.swift in Sources */,
 				AA0000080000000000000008 /* SongInputStrip.swift in Sources */,
-				AA00000A000000000000000A /* FakeModeCard.swift in Sources */,
-				AA00000C000000000000000C /* ShareModeCard.swift in Sources */,
 				AA00000E000000000000000E /* OracleSheets.swift in Sources */,
 				AA0000100000000000000010 /* OracleTheme.swift in Sources */,
 				AA0000120000000000000012 /* SilentShortcutStatusRow.swift in Sources */,
 				AA0000140000000000000014 /* PerformBottomBar.swift in Sources */,
+				DD0000020000000000000002 /* WordApiSettings.swift in Sources */,
+				DD0000040000000000000004 /* WordApiSession.swift in Sources */,
+				DD0000060000000000000006 /* WordApiInputPanel.swift in Sources */,
+				DD0000080000000000000008 /* WordApiSettingsView.swift in Sources */,
+				DD0000100000000000000010 /* CallerLabelStore.swift in Sources */,
+				DD0000120000000000000012 /* CallDirectorySync.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+
+		DD0000710000000000000071 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DD0000220000000000000022 /* CallDirectoryHandler.swift in Sources */,
+				DD0000240000000000000024 /* CallerLabelStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD0000730000000000000073 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DD0000320000000000000032 /* LiveCallerLookupExtension.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -534,7 +742,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 104;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -596,7 +804,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 104;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -658,7 +866,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 104;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 6XSHKM2M34;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -767,6 +975,121 @@
 			};
 			name = TestFlight;
 		};
+
+		DD0000A000000000000000A0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MagicCallCallDirectory/MagicCallCallDirectory.entitlements;
+				CURRENT_PROJECT_VERSION = 104;
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MagicCallCallDirectory/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.CallDirectory;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		DD0000A100000000000000A1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MagicCallCallDirectory/MagicCallCallDirectory.entitlements;
+				CURRENT_PROJECT_VERSION = 104;
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MagicCallCallDirectory/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.CallDirectory;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		DD0000A200000000000000A2 /* TestFlight */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MagicCallCallDirectory/MagicCallCallDirectory.entitlements;
+				CURRENT_PROJECT_VERSION = 104;
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MagicCallCallDirectory/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.CallDirectory;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = TestFlight;
+		};
+		DD0000B000000000000000B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements;
+				CURRENT_PROJECT_VERSION = 104;
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MagicCallLiveCallerLookup/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.LiveCallerLookup;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		DD0000B100000000000000B1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements;
+				CURRENT_PROJECT_VERSION = 104;
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MagicCallLiveCallerLookup/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.LiveCallerLookup;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		DD0000B200000000000000B2 /* TestFlight */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements;
+				CURRENT_PROJECT_VERSION = 104;
+				DEVELOPMENT_TEAM = 6XSHKM2M34;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MagicCallLiveCallerLookup/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.LiveCallerLookup;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = TestFlight;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -786,6 +1109,27 @@
 				9A9984142BF3C68607D27496 /* Debug */,
 				7CEA86A5FA0315FF823FD5F5 /* Release */,
 				DC42BCBD9236E9D4DB5126E5 /* TestFlight */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+
+		DD0000800000000000000080 /* Build configuration list for PBXNativeTarget "MagicCallCallDirectory" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD0000A000000000000000A0 /* Debug */,
+				DD0000A100000000000000A1 /* Release */,
+				DD0000A200000000000000A2 /* TestFlight */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DD0000810000000000000081 /* Build configuration list for PBXNativeTarget "MagicCallLiveCallerLookup" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD0000B000000000000000B0 /* Debug */,
+				DD0000B100000000000000B1 /* Release */,
+				DD0000B200000000000000B2 /* TestFlight */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -1,36 +1,28 @@
 import SwiftUI
 
-/// Unified performance instructions — mode picker + polished guide content.
+/// Performance instructions — single flow (stage + optional auto-share).
 struct PerformanceGuideSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(Prefs.Key.performanceMode) private var performanceModeRaw = Prefs.PerformanceMode.fakeRingtone.rawValue
-    @State private var guideMode: Prefs.PerformanceMode
     var onOpenFavorites: () -> Void
-
-    init(initialMode: Prefs.PerformanceMode, onOpenFavorites: @escaping () -> Void) {
-        _guideMode = State(initialValue: initialMode)
-        self.onOpenFavorites = onOpenFavorites
-    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Picker("Mode", selection: $guideMode) {
-                    ForEach(Prefs.PerformanceMode.allCases) { mode in
-                        Text(mode.title).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
+                PerformanceGuideContent(onOpenFavorites: onOpenFavorites)
 
-                Group {
-                    switch guideMode {
-                    case .fakeRingtone:
-                        FakeGuideContent(onOpenFavorites: onOpenFavorites)
-                    case .shareRingtone:
-                        ShareGuideContent(onOpenFavorites: onOpenFavorites)
-                    }
-                }
-                .animation(.easeInOut(duration: 0.22), value: guideMode)
+                TipCard(
+                    title: "Word API (caller label)",
+                    icon: "phone.badge.checkmark",
+                    tint: OracleTheme.sectionTeal,
+                    lines: PerformCopy.wordApiSteps
+                )
+
+                TipCard(
+                    title: "Missed call & voicemail",
+                    icon: "recordingtape",
+                    tint: OracleTheme.textSecondary,
+                    lines: PerformCopy.voicemailAndMissedCall
+                )
             }
             .padding(20)
         }
@@ -46,26 +38,39 @@ struct PerformanceGuideSheet: View {
     }
 }
 
-struct FakeGuideContent: View {
+struct PerformanceGuideContent: View {
+    @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
     var onOpenFavorites: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             guideIntro(
-                title: Prefs.PerformanceMode.fakeRingtone.title,
-                icon: "bell.slash.fill",
+                title: "Performance",
+                icon: "theatermasks.fill",
                 tint: OracleTheme.gold,
                 text: """
-                Put your iPhone on Silent. When a real call arrives, the system ringtone stays quiet, but MindtoneX plays your song through the iPhone speaker when iOS allows. When the caller hangs up, playback stops.
+                Choose a **stage screenshot** (Home or Lock screen) so Perform looks like your iPhone. When a real call arrives, MindtoneX plays your song through the speaker when iOS allows. When the caller hangs up, playback stops.
                 """
             )
 
-            SilentModeIllustration()
-
             OracleGuideSection(title: "Before you perform", items: [
+                "Performance card → **Choose screenshot** (required)",
                 "Settings → Apps → Phone → Incoming Calls: Banner",
                 "Stay in MindtoneX (screen stays awake while performing)",
             ])
+
+            TipCard(
+                title: "Auto-open Share (optional)",
+                icon: "square.and.arrow.up.fill",
+                tint: OracleTheme.indigo,
+                lines: [
+                    "Turn on **Auto-open Share when song locks** on the Performance card if you want **Use as Ringtone** as soon as Voice, Notes, or API locks a song **during Perform**.",
+                    "Does **not** apply to **Manual** song search on Home — only live lock during Perform.",
+                    autoShareOnSongLock
+                        ? "Toggle is **ON** on this device."
+                        : "Toggle is **OFF** — you can still long-press the stage after hang-up.",
+                ]
+            )
 
             TipCard(
                 title: "Long-press the stage → Share",
@@ -73,7 +78,7 @@ struct FakeGuideContent: View {
                 tint: OracleTheme.gold,
                 lines: [
                     "Set **Playback volume** on the home card, or use the side volume buttons during Perform.",
-                    "After the call **ends**, **press and hold** the stage screen about **half a second** — the Share sheet opens.",
+                    "After the call **ends**, **press and hold** the stage about **half a second** — the Share sheet opens.",
                     "Tap **Use as Ringtone** (pin it to Favorites once — see below — then it is always one tap).",
                     "Only works **after hang-up** — not while the phone is ringing or while the song is still playing.",
                 ]
@@ -86,48 +91,6 @@ struct FakeGuideContent: View {
             Text("Exit Perform: two-finger swipe down from mid-screen.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
-        }
-    }
-}
-
-struct ShareGuideContent: View {
-    @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
-    @AppStorage(VoiceSettings.Key.lockDelay) private var lockDelay = VoiceSettings.defaultLockDelay
-    var onOpenFavorites: () -> Void
-
-    private var input: VoiceSettings.InputMode {
-        VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            guideIntro(
-                title: Prefs.PerformanceMode.shareRingtone.title,
-                icon: "bell.badge.fill",
-                tint: OracleTheme.coral,
-                text: """
-                Sets your song as a real iOS ringtone (Use as Ringtone). Turn Silent OFF and ringer volume up. After setup, one tap in the Share sheet is enough each performance.
-                """
-            )
-
-            Label("Silent must be OFF in this mode", systemImage: "bell.fill")
-                .font(.subheadline.weight(.semibold))
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(OracleTheme.coral.opacity(0.18))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            FavoritesQuickAccessSection(onOpenFavorites: onOpenFavorites)
-
-            HowItWorksCard(
-                title: "How Perform works",
-                icon: "list.number",
-                steps: PerformCopy.shareSteps(input: input, lockSeconds: Int(lockDelay))
-            )
-
-            TipCard(title: "One Home press", icon: "house.fill", tint: OracleTheme.danger, lines: [PerformCopy.shareHomeStep])
-            TipCard(title: "Timing", icon: "clock", tint: OracleTheme.coral, lines: PerformCopy.shareTiming(lockSeconds: Int(lockDelay)))
-            TipCard(title: "Good to know", icon: "exclamationmark.triangle", tint: .yellow, lines: PerformCopy.shareCaveats)
         }
     }
 }
@@ -156,7 +119,6 @@ private func guideIntro(title: String, icon: String, tint: Color, text: String) 
     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 }
 
-/// One-time Share sheet setup so **Use as Ringtone** stays on the first row (Fake long-press Share and Share mode).
 private struct FavoritesQuickAccessSection: View {
     var onOpenFavorites: () -> Void
 
@@ -167,7 +129,7 @@ private struct FavoritesQuickAccessSection: View {
                 icon: "star.circle.fill",
                 tint: OracleTheme.gold,
                 lines: [
-                    "Do this **once** the first time you see the Share sheet (\(Prefs.PerformanceMode.fakeRingtone.title) after long-press, or \(Prefs.PerformanceMode.shareRingtone.title) Perform).",
+                    "Do this **once** the first time you see the Share sheet (auto-share or long-press after hang-up).",
                     "Tap **More** (•••) → **Edit Actions** → tap **+** next to **Use as Ringtone** → **Favorites**.",
                     "From then on, **Use as Ringtone** appears on the **top row** — fast access every performance.",
                 ]

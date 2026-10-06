@@ -46,9 +46,7 @@ struct StageView: View {
 
             StageGestureLayer(
                 onTap: {
-                    if SharePerformFlow.shared.isActive {
-                        SharePerformFlow.shared.handleTap()
-                    } else if Prefs.tapTrigger {
+                    if Prefs.tapTrigger {
                         model.toggleManual()
                     }
                 },
@@ -60,6 +58,10 @@ struct StageView: View {
             .ignoresSafeArea()
 
             HiddenVolumeView().frame(width: 1, height: 1)
+
+            CardVolumeScanHost()
+                .frame(width: 44, height: 44)
+                .opacity(0.01)
 
             Color.clear
                 .frame(width: 90, height: 90)
