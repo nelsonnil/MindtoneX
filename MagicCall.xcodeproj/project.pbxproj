@@ -17,6 +17,7 @@
 		0DC2CA0FAB3EE106008ED273 /* CardOCRProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */; };
 		0FC1EC7B4985F1F6545DE135 /* RingtoneAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */; };
 		0FE67C1D8EAF1D7628E95531 /* PerformanceCues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B11F0512B02E2D4ABFE71B4 /* PerformanceCues.swift */; };
+		1050B2B05B2960E836279D3F /* VoiceListenPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6238274795CDF8F6168324 /* VoiceListenPlan.swift */; };
 		128B2FC902A3063C29DBBCAB /* SongPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */; };
 		1382BAB7BC9D069605252703 /* SilentShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266C454CF85DCC717E5765F6 /* SilentShortcut.swift */; };
 		15BFEC09D92D308DEF7D9A54 /* OracleTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260CB39E9363322425A78261 /* OracleTheme.swift */; };
@@ -25,6 +26,7 @@
 		20ACC5FFA594DEB4E92EAC0B /* CardCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B18EC83ADCF3B62E44CB7E5 /* CardCaptureService.swift */; };
 		232F0E4CF4F90CFD03D0F2CB /* MicCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A36339EA50D410DA83A649 /* MicCapture.swift */; };
 		242C6F29DEE6403FB8F2C94D /* NotesContactHomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE811A2D141570F6DE6CD107 /* NotesContactHomeCard.swift */; };
+		24E7F1F82A624CBD51EE706F /* SpectatorWordPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3B9638F6383C01B28002D3C /* SpectatorWordPicker.swift */; };
 		256D9EDE07BBB6F76804461F /* NotesSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0F19A8FF481F9116B87B9 /* NotesSongSession.swift */; };
 		2759F7EDE468921282C2E330 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */; };
 		2826965C4287D1C90DFB1C1C /* SilentShortcutStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038495DF0F13C324D46A2120 /* SilentShortcutStatusRow.swift */; };
@@ -222,6 +224,7 @@
 		A5E5E3E1B9AA9AAC9611103D /* NotesInputControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesInputControls.swift; sourceTree = "<group>"; };
 		A744DA01C5B2EA22A5B55906 /* UIIllustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIIllustrations.swift; sourceTree = "<group>"; };
 		A8A0F19A8FF481F9116B87B9 /* NotesSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSongSession.swift; sourceTree = "<group>"; };
+		AB6238274795CDF8F6168324 /* VoiceListenPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceListenPlan.swift; sourceTree = "<group>"; };
 		AF4C2F9A27E5FA837BB7116B /* VoiceOpenAIPreflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceOpenAIPreflight.swift; sourceTree = "<group>"; };
 		B22312604EAA954600AED69E /* NotesContactSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactSettings.swift; sourceTree = "<group>"; };
 		B2F05FB0012259530FD41441 /* MagicCallLiveCallerLookup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicCallLiveCallerLookup.entitlements; sourceTree = "<group>"; };
@@ -248,6 +251,7 @@
 		EE811A2D141570F6DE6CD107 /* NotesContactHomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactHomeCard.swift; sourceTree = "<group>"; };
 		F1E1FD9BD793A8EA7B167E69 /* NotesContactConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactConnectionView.swift; sourceTree = "<group>"; };
 		F235D4C3F14AB89CF4409734 /* VoiceLockingControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLockingControls.swift; sourceTree = "<group>"; };
+		F3B9638F6383C01B28002D3C /* SpectatorWordPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorWordPicker.swift; sourceTree = "<group>"; };
 		F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorWordContactService.swift; sourceTree = "<group>"; };
 		FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPerformanceModeCard.swift; sourceTree = "<group>"; };
@@ -497,7 +501,9 @@
 				9FA2CF6BD397B91ACAF84FAD /* LiveTranscribers.swift */,
 				66A36339EA50D410DA83A649 /* MicCapture.swift */,
 				97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */,
+				F3B9638F6383C01B28002D3C /* SpectatorWordPicker.swift */,
 				46AF651BC85FB45939959E6E /* VoiceInputCard.swift */,
+				AB6238274795CDF8F6168324 /* VoiceListenPlan.swift */,
 				F235D4C3F14AB89CF4409734 /* VoiceLockingControls.swift */,
 				BDC4B319DA3C7F0894EA4675 /* VoiceOpenAILanguages.swift */,
 				AF4C2F9A27E5FA837BB7116B /* VoiceOpenAIPreflight.swift */,
@@ -755,12 +761,14 @@
 				567203094B7B7CBAD29085F7 /* SongLibraryStore.swift in Sources */,
 				128B2FC902A3063C29DBBCAB /* SongPicker.swift in Sources */,
 				0C13519901D4C9A57CFA2E01 /* SpectatorWordContactService.swift in Sources */,
+				24E7F1F82A624CBD51EE706F /* SpectatorWordPicker.swift in Sources */,
 				A4614B1A536192430CFD5A9C /* StageView.swift in Sources */,
 				4C3EAD437CDD61E9E5E6DFE6 /* SystemVolume.swift in Sources */,
 				D62EC45272208FCF763FED85 /* UIIllustrations.swift in Sources */,
 				D02E775CDE9544B43A79D499 /* UIWindow+MagicCall.swift in Sources */,
 				424BC87CA51E4E2654D834A4 /* UnifiedPerformanceModeCard.swift in Sources */,
 				F33C5A446182609089F4C384 /* VoiceInputCard.swift in Sources */,
+				1050B2B05B2960E836279D3F /* VoiceListenPlan.swift in Sources */,
 				9978DE3738110CE3E511178A /* VoiceLockingControls.swift in Sources */,
 				C34E419E549DB769DE5D3716 /* VoiceOpenAILanguages.swift in Sources */,
 				F1A3FA0C9C18CB407A3B9F19 /* VoiceOpenAIPreflight.swift in Sources */,

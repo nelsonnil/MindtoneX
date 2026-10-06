@@ -61,6 +61,8 @@ enum NotesContactWordSettings {
         switch provider {
         case .card:
             return VoiceSettings.inputMode == .card
+        case .voice:
+            return VoiceListenPlan.current.notesContact
         case .custom:
             guard endpoint(for: provider) != nil else { return false }
             return !customField.isEmpty
@@ -79,6 +81,7 @@ enum NotesContactWordSettings {
         case .elips: return "Add your Elips word URL in connection details"
         case .custom: return customURL.isEmpty ? "Add your API URL in connection details" : "Pick the JSON field in connection details"
         case .card: return "Set Song input to Card — line 2 on volume scan"
+        case .voice: return "Set Song input to Voice — use the Notes contact script on this card"
         }
     }
 
@@ -95,7 +98,7 @@ enum NotesContactWordSettings {
         case .inject: return injectEndpoint(for: injectID)
         case .elips: return httpURL(elipsURL)
         case .custom: return httpURL(customURL)
-        case .card: return nil
+        case .card, .voice: return nil
         }
     }
 

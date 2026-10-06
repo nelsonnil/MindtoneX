@@ -37,6 +37,8 @@ final class VoiceSongSession: ObservableObject {
     @Published private(set) var isThinking = false
     @Published private(set) var lastAIError: String?
     @Published private(set) var level: Float = 0
+    @Published private(set) var callerWordCandidate: WordPick?
+    @Published private(set) var notesWordCandidate: WordPick?
 
     var isActive: Bool { state == .starting || state == .listening }
     var hasContent: Bool { !lines.isEmpty || candidate != nil || lockedPick != nil || state != .idle }
@@ -198,29 +200,78 @@ final class VoiceSongSession: ObservableObject {
         let previous = candidate
         isThinking = true
         let t0 = CACurrentMediaTime()
+        let plan = VoiceListenPlan.current
         evalTask = Task { [weak self] in
-            let result: Result<SongPick?, Error>
-            do {
-                result = .success(try await SongPicker.pick(transcript: text, previous: previous))
-            } catch {
-                result = .failure(error)
-            }
             guard let self, gen == self.generation else { return }
-            self.evalTask = nil
-            self.isThinking = false
-            let ms = PreviewService.ms(since: t0)
-            switch result {
-            case .success(let pick):
-                self.lastAIError = nil
-                self.handle(pick, ms: ms)
-            case .failure(let error):
+            defer {
+                if gen == self.generation {
+                    self.evalTask = nil
+                    self.isThinking = false
+                    if self.evalPending {
+                        self.evalPending = false
+                        self.evaluate()
+                    }
+                }
+            }
+            do {
+                if plan.song {
+                    let pick = try await SongPicker.pick(transcript: text, previous: previous)
+                    guard gen == self.generation else { return }
+                    self.lastAIError = nil
+                    self.handle(pick, ms: PreviewService.ms(since: t0))
+                }
+                if plan.callerName {
+                    let pick = try await SpectatorWordPicker.pick(
+                        channel: .callerName,
+                        transcript: text,
+                        previous: self.callerWordCandidate
+                    )
+                    guard gen == self.generation else { return }
+                    self.handleWordPick(pick, channel: .callerName)
+                }
+                if plan.notesContact {
+                    let pick = try await SpectatorWordPicker.pick(
+                        channel: .notesContact,
+                        transcript: text,
+                        previous: self.notesWordCandidate
+                    )
+                    guard gen == self.generation else { return }
+                    self.handleWordPick(pick, channel: .notesContact)
+                }
+            } catch {
+                guard gen == self.generation else { return }
                 self.lastAIError = error.localizedDescription
-                dlog("✗ [VOICE] AI pick failed (\(ms) ms): \(error.localizedDescription)")
+                dlog("✗ [VOICE] AI evaluate failed: \(error.localizedDescription)")
             }
-            if self.evalPending {
-                self.evalPending = false
-                self.evaluate()
+        }
+    }
+
+    private func handleWordPick(_ pick: WordPick?, channel: SpectatorListenChannel) {
+        guard state == .listening || state == .locked else { return }
+        guard let pick, pick.hasWord else { return }
+        let word = pick.normalizedWord
+        guard word.count >= 2 else { return }
+        guard pick.confidence >= VoiceSettings.minConfidence else {
+            dlog("[VOICE] \(channel.title) word ignored · confidence \(Self.percent(pick.confidence))")
+            return
+        }
+        switch channel {
+        case .callerName:
+            if callerWordCandidate?.word == word { return }
+            callerWordCandidate = pick
+            dlog("[VOICE] ★ caller name word → «\(word)» · \(pick.reasoning)")
+            if WordApiSession.shared.state != .locked {
+                WordApiSession.shared.ingestVoiceWord(word)
             }
+        case .notesContact:
+            if notesWordCandidate?.word == word { return }
+            notesWordCandidate = pick
+            dlog("[VOICE] ★ notes contact word → «\(word)» · \(pick.reasoning)")
+            if NotesContactWordSession.shared.state != .locked {
+                NotesContactWordSession.shared.ingestVoiceWord(word)
+            }
+        case .song:
+            break
         }
     }
 
@@ -362,6 +413,8 @@ final class VoiceSongSession: ObservableObject {
         prefetchTask?.cancel()
         prefetchTask = nil
         pendingCallLock = false
+        callerWordCandidate = nil
+        notesWordCandidate = nil
     }
 
     private func fail(_ message: String) {

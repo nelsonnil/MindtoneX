@@ -82,7 +82,7 @@ enum SongPicker {
         "additionalProperties": false,
     ]
 
-    private static let session: URLSession = {
+    static let openAISession: URLSession = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 20
         return URLSession(configuration: config)
@@ -108,7 +108,7 @@ enum SongPicker {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await openAISession.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard status == 200 else { throw SongPickerError.http(status, String(decoding: data, as: UTF8.self)) }
 
@@ -122,7 +122,7 @@ enum SongPicker {
         return pick
     }
 
-    private static func outputText(_ json: [String: Any]) -> String? {
+    static func outputText(_ json: [String: Any]) -> String? {
         if let text = json["output_text"] as? String, !text.isEmpty { return text }
         for item in json["output"] as? [[String: Any]] ?? [] where item["type"] as? String == "message" {
             for part in item["content"] as? [[String: Any]] ?? [] {

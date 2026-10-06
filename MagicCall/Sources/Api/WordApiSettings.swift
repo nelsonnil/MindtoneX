@@ -69,6 +69,7 @@ enum WordApiSettings {
         case elips
         case custom
         case card
+        case voice
 
         var id: String { rawValue }
         var title: String {
@@ -77,6 +78,7 @@ enum WordApiSettings {
             case .elips: return "Elips"
             case .custom: return "Custom API"
             case .card: return "Card (OCR)"
+            case .voice: return "Voice (AI)"
             }
         }
 
@@ -87,6 +89,7 @@ enum WordApiSettings {
             case .elips: return "Elips"
             case .custom: return "Custom"
             case .card: return "Card OCR"
+            case .voice: return "Voice"
             }
         }
 
@@ -96,6 +99,7 @@ enum WordApiSettings {
             case .elips: return "link.circle.fill"
             case .custom: return "curlybraces"
             case .card: return "doc.viewfinder"
+            case .voice: return "mic.fill"
             }
         }
 
@@ -105,6 +109,7 @@ enum WordApiSettings {
             case .elips: return "pag.gg URL · poll"
             case .custom: return "REST + field"
             case .card: return "Volume scan"
+            case .voice: return "Own AI prompt"
             }
         }
 
@@ -118,6 +123,8 @@ enum WordApiSettings {
                 return "Any URL returning a JSON object. Pick the field for the label (e.g. word, label, value). Polled every 2 s during Perform; optional `count` / `receiveCount` in JSON help detect changes."
             case .card:
                 return "Same **volume scan** as Card song input. **Line 1** = song title · **Line 2** = one spectator word (or `SONG:` / `WORD:` labels). No network poll."
+            case .voice:
+                return "Uses the **Song input = Voice** microphone with a **separate AI prompt** for the contact word (see script hint). Requires OpenAI key in Voice settings."
             }
         }
     }
@@ -151,6 +158,8 @@ enum WordApiSettings {
         switch provider {
         case .card:
             return VoiceSettings.inputMode == .card
+        case .voice:
+            return VoiceListenPlan.current.callerName
         case .custom:
             guard endpoint(for: provider) != nil else { return false }
             return !customField.isEmpty
@@ -285,7 +294,7 @@ enum WordApiSettings {
         case .inject: return injectEndpoint(for: injectID)
         case .elips: return httpURL(elipsURL)
         case .custom: return httpURL(customURL)
-        case .card: return nil
+        case .card, .voice: return nil
         }
     }
 
@@ -299,6 +308,7 @@ enum WordApiSettings {
         case .elips: return "Tap connection details and paste your Elips URL"
         case .custom: return customURL.isEmpty ? "Tap connection details and add your API URL" : "Choose the JSON field in connection details"
         case .card: return "Select **Card** as song input — write song on line 1, word on line 2"
+        case .voice: return "Set **Song input** to **Voice** and add OpenAI key — use the contact-word script on this card"
         }
     }
 
@@ -486,7 +496,7 @@ enum WordApiClient {
         customField: String? = nil
     ) throws -> WordReading {
         switch provider {
-        case .card:
+        case .card, .voice:
             throw ClientError.notConfigured
         case .inject:
             return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),

@@ -42,6 +42,7 @@ struct NotesContactConnectionSheet: View {
                     case .elips: elipsFields
                     case .custom: customFields
                     case .card: cardHint
+                    case .voice: voiceHint
                     }
 
                     oracleCard {
@@ -56,7 +57,7 @@ struct NotesContactConnectionSheet: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .disabled(testing || !NotesContactWordSettings.hasWordEndpoint || provider == .card)
+                        .disabled(testing || !NotesContactWordSettings.hasWordEndpoint || provider == .card || provider == .voice)
 
                         if let testResult {
                             Text(testResult.text)
@@ -148,6 +149,17 @@ struct NotesContactConnectionSheet: View {
             Text("Uses **line 2** from the Card volume scan (same as song input = Card). No network URL.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
+        }
+    }
+
+    private var voiceHint: some View {
+        oracleCard {
+            VStack(alignment: .leading, spacing: 12) {
+                VoiceMagicianScriptBlock(channel: .notesContact, accent: OracleTheme.sectionTeal)
+                Text("No URL — Song input must be **Voice** with OpenAI key. Prompt is separate from Caller name and from the song picker.")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
         }
     }
 

@@ -19,6 +19,9 @@ struct WordApiInputPanel: View {
     private var songInputIsCard: Bool {
         (VoiceSettings.InputMode(rawValue: songInputModeRaw) ?? .manual) == .card
     }
+    private var songInputIsVoice: Bool {
+        (VoiceSettings.InputMode(rawValue: songInputModeRaw) ?? .manual) == .aiVoice
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -249,6 +252,8 @@ struct WordApiInputPanel: View {
                             .foregroundStyle(OracleTheme.coral)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                } else if provider == .voice {
+                    voiceScriptBlock(channel: .callerName)
                 } else if provider == .inject {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Inject ID")
@@ -264,7 +269,7 @@ struct WordApiInputPanel: View {
                     }
                 }
 
-                if provider != .card {
+                if provider != .card && provider != .voice {
                     Button {
                         showConnectionSheet = true
                     } label: {
@@ -286,8 +291,13 @@ struct WordApiInputPanel: View {
                     Text("On Perform, polls every \(Int(WordApiSettings.pollInterval)) s — first reading is the old word; the **next change** is the spectator’s word for the call banner.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
-                } else {
+                } else if provider == .card {
                     Text("On Perform, press **volume** once — same scan loads the song (line 1) and locks the caller name from **line 2**. No network poll.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if provider == .voice {
+                    Text("On Perform, the **same Voice mic** as song input runs a **separate AI prompt** for the contact word — no Inject poll.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -337,6 +347,9 @@ struct WordApiInputPanel: View {
         if provider == .card {
             return session.state == .locked ? "Card scan · locked «\(word)»" : "Card scan · last «\(word)»"
         }
+        if provider == .voice {
+            return session.state == .locked ? "Voice AI · locked «\(word)»" : "Voice AI · last «\(word)»"
+        }
         let count = reading.count.map(String.init) ?? "–"
         let rc = reading.receiveCount.map(String.init) ?? "–"
         return "Last poll · count \(count) · rc \(rc) · «\(word)»"
@@ -354,6 +367,11 @@ struct WordApiInputPanel: View {
                     ? ("Card OCR word — line 2 on the same volume scan as the song.", "doc.viewfinder", false)
                     : nil
             }
+            if provider == .voice {
+                return configured
+                    ? ("Voice AI listens on the shared mic — ask the contact-word script.", "mic.fill", false)
+                    : nil
+            }
             return configured
                 ? ("Polls every \(Int(WordApiSettings.pollInterval)) s during Perform — change the word in \(provider.title) to lock the caller name.", "info.circle", false)
                 : nil
@@ -364,6 +382,13 @@ struct WordApiInputPanel: View {
                 return (
                     "Waiting for volume scan — write the word on **line 2** of the card (or WORD: label).",
                     "camera.viewfinder",
+                    false
+                )
+            }
+            if provider == .voice {
+                return (
+                    "Listening — use the contact-word script; AI locks when the spectator commits to one word.",
+                    "mic.fill",
                     false
                 )
             }
@@ -413,9 +438,12 @@ struct WordApiHomeCard: View {
         }
         if WordApiSettings.hasWordEndpoint {
             if provider == .card { return "Card (OCR) · line 2 on volume scan" }
+            if provider == .voice { return "Voice (AI) · contact-word prompt on shared mic" }
             return "\(provider.title) · polls during Perform"
         }
-        return provider == .card ? "Card word needs Song input = Card" : "Set Inject, Elips, Custom, or Card OCR"
+        if provider == .card { return "Card word needs Song input = Card" }
+        if provider == .voice { return "Voice word needs Song input = Voice + OpenAI key" }
+        return "Set Inject, Elips, Custom, Card OCR, or Voice"
     }
 
     var body: some View {
@@ -554,6 +582,60 @@ private struct WordContactModePicker: View {
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+    }
+}
+
+// MARK: - Voice script hint (shared mic, separate AI prompt)
+
+struct VoiceMagicianScriptBlock: View {
+    let channel: SpectatorListenChannel
+    var accent: Color = OracleTheme.gold
+
+    private var songInputIsVoice: Bool { VoiceSettings.inputMode == .aiVoice }
+    private var voiceConfigured: Bool { VoiceSettings.isConfigured }
+    private var channelReady: Bool {
+        switch channel {
+        case .callerName: return VoiceListenPlan.current.callerName
+        case .notesContact: return VoiceListenPlan.current.notesContact
+        case .song: return VoiceListenPlan.current.song
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Magician script", systemImage: "text.quote")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(accent)
+            Text(channel.magicianScriptHint)
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if !songInputIsVoice {
+                Label("Set **Song input** to **Voice** on the home screen.", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.coral)
+            } else if !voiceConfigured {
+                Label("Add your OpenAI key under **Voice → Speech**.", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.coral)
+            } else if channelReady {
+                Label("Ready — \(VoiceListenPlan.current.activeChannels.count) AI listener(s) on one mic.", systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(accent)
+            }
+        }
+    }
+}
+
+private extension WordApiInputPanel {
+    func voiceScriptBlock(channel: SpectatorListenChannel) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(provider.detail)
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            VoiceMagicianScriptBlock(channel: channel)
         }
     }
 }

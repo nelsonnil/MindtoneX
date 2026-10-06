@@ -29,7 +29,7 @@ final class NotesContactWordSession: ObservableObject {
     var isActive: Bool {
         switch state {
         case .connecting, .watching, .locked:
-            if provider == .card { return true }
+            if provider == .card || provider == .voice { return true }
             return timer != nil
         default: return false
         }
@@ -65,6 +65,11 @@ final class NotesContactWordSession: ObservableObject {
             dlog("[NOTES-WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · Card line 2 on volume scan")
             return
         }
+        if provider == .voice {
+            state = .watching
+            dlog("[NOTES-WORD] ▶︎ start · Voice AI prompt for Notes chip (shared mic with Song = Voice)")
+            return
+        }
 
         state = .connecting
         dlog("[NOTES-WORD] ▶︎ start · \(NotesContactWordSettings.summary())")
@@ -85,19 +90,29 @@ final class NotesContactWordSession: ObservableObject {
         dlog("[NOTES-WORD] ■ test stopped")
     }
 
+    func ingestVoiceWord(_ rawWord: String) {
+        guard NotesContactWordSettings.wordInputEnabled else { return }
+        guard provider == .voice else { return }
+        ingestLockedWord(rawWord, source: "voice")
+    }
+
     func ingestCardScanWord(_ rawWord: String) {
         guard NotesContactWordSettings.wordInputEnabled else { return }
         guard provider == .card else { return }
+        ingestLockedWord(rawWord, source: "card")
+    }
+
+    private func ingestLockedWord(_ rawWord: String, source: String) {
         guard context == .perform || context == .test else { return }
         let label = rawWord.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !label.isEmpty else { return }
         guard state != .locked else { return }
 
-        let reading = WordReading(count: nil, receiveCount: nil, word: label, raw: "card:«\(label)»")
+        let reading = WordReading(count: nil, receiveCount: nil, word: label, raw: "\(source):«\(label)»")
         lastReading = reading
         lockedReading = reading
         state = .locked
-        dlog("[NOTES-WORD] 🔒 card scan · «\(label)»")
+        dlog("[NOTES-WORD] 🔒 \(source) · «\(label)»")
         if context == .perform {
             PerformUserLog.shared.log("Notes contact · «\(WordApiInputPanel.truncated(label, max: 36))»")
         }

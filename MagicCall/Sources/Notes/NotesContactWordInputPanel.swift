@@ -54,6 +54,16 @@ struct NotesContactWordInputPanel: View {
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.coral)
                         }
+                    } else if provider == .voice {
+                        Text(provider.detail)
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        VoiceMagicianScriptBlock(channel: .notesContact, accent: OracleTheme.sectionTeal)
+                        Text("On Perform, the Notes chip word uses its **own AI prompt** on the same Voice mic as the song.")
+                            .font(.caption2)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     } else if provider == .inject {
                         TextField("Inject word ID", text: $injectID)
                             .textInputAutocapitalization(.never)
@@ -63,7 +73,7 @@ struct NotesContactWordInputPanel: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
 
-                    if provider != .card {
+                    if provider != .card && provider != .voice {
                         Button { showConnectionSheet = true } label: {
                             HStack {
                                 Label("Connection details", systemImage: "link.circle.fill")

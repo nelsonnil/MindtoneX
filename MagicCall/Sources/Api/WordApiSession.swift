@@ -29,7 +29,7 @@ final class WordApiSession: ObservableObject {
     var isActive: Bool {
         switch state {
         case .connecting, .watching, .locked:
-            if provider == .card { return true }
+            if provider == .card || provider == .voice { return true }
             return timer != nil
         default: return false
         }
@@ -72,6 +72,11 @@ final class WordApiSession: ObservableObject {
             dlog("[WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · Card OCR word · press volume to scan line 2")
             return
         }
+        if provider == .voice {
+            state = .watching
+            dlog("[WORD] ▶︎ start · Voice AI prompt for caller name (shared mic with Song = Voice)")
+            return
+        }
         state = .connecting
         WordApiClient.resetPerformFetchDiagnostics()
         dlog("[WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(WordApiSettings.summary())")
@@ -92,29 +97,39 @@ final class WordApiSession: ObservableObject {
         dlog("[WORD] ■ test stopped after \(pollCount) polls")
     }
 
+    /// Voice (AI) provider: word from SpectatorWordPicker on the shared Voice mic.
+    func ingestVoiceWord(_ rawWord: String) {
+        guard provider == .voice else { return }
+        ingestWordLabel(rawWord, source: "voice")
+    }
+
     /// Card (OCR) provider: spectator word from line 2 of the same volume scan as the song.
     func ingestCardScanWord(_ rawWord: String) {
         guard provider == .card else { return }
+        ingestWordLabel(rawWord, source: "card-scan")
+    }
+
+    private func ingestWordLabel(_ rawWord: String, source: String) {
         guard context == .perform || context == .test else { return }
         let label = rawWord.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !label.isEmpty else { return }
         guard state != .locked else { return }
 
-        let reading = WordReading(count: nil, receiveCount: nil, word: label, raw: "card:«\(label)»")
+        let reading = WordReading(count: nil, receiveCount: nil, word: label, raw: "\(source):«\(label)»")
         lastReading = reading
         pollCount += 1
         lastAppliedLabel = label
         lockedReading = reading
         state = .locked
 
-        dlog("[WORD] 🔒 card scan · «\(label)»")
+        dlog("[WORD] 🔒 \(source) · «\(label)»")
         if context == .perform {
-            PerformUserLog.shared.log("Word API (card) · «\(WordApiInputPanel.truncated(label, max: 36))»")
+            PerformUserLog.shared.log("Caller name · «\(WordApiInputPanel.truncated(label, max: 36))»")
         }
         guard WordApiSettings.callerLabelEnabled else { return }
-        pushCallerLabel(label, reason: "card-scan")
+        pushCallerLabel(label, reason: source)
         if context == .perform {
-            PerformanceCues.wordLocked(source: "Word API (card)", label: label)
+            PerformanceCues.wordLocked(source: "Caller name (\(source))", label: label)
         }
     }
 
@@ -329,6 +344,8 @@ final class WordApiSession: ObservableObject {
             return "Custom API unchanged «\(word)»"
         case .card:
             return "Card unchanged «\(word)»"
+        case .voice:
+            return "Voice unchanged «\(word)»"
         }
     }
 

@@ -38,6 +38,7 @@ struct WordApiSettingsView: View {
                 case .elips: elipsCard
                 case .custom: customCards
                 case .card: cardSetupCard
+                case .voice: voiceSetupCard
                 }
 
                 oracleCard {
@@ -73,7 +74,7 @@ struct WordApiSettingsView: View {
                             .padding(.vertical, 4)
                         }
                         .buttonStyle(.plain)
-                        .disabled(testing || !WordApiSettings.hasWordEndpoint || provider == .card)
+                        .disabled(testing || !WordApiSettings.hasWordEndpoint || provider == .card || provider == .voice)
 
                         if let testResult {
                             Text(testResult.text)
@@ -82,6 +83,10 @@ struct WordApiSettingsView: View {
                                 .textSelection(.enabled)
                         } else if provider == .card {
                             Text("No network test — run a full **Perform** volume scan with Card song input.")
+                                .font(.caption)
+                                .foregroundStyle(OracleTheme.textSecondary)
+                        } else if provider == .voice {
+                            Text("No network test — use **Voice** song input and the contact-word script during Perform or Voice test.")
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.textSecondary)
                         } else {
@@ -95,9 +100,7 @@ struct WordApiSettingsView: View {
                 oracleCard {
                     VStack(alignment: .leading, spacing: 10) {
                         OracleEyebrow(text: "On Perform")
-                        Text(provider == .card
-                            ? "Turn **Show word on incoming call** on. Set **Song input** to **Card** and write **line 1** = song, **line 2** = word. One **volume** scan during Perform locks both."
-                            : "Turn **Show word on incoming call** on the **Caller name** card first. Then polls every \(Int(WordApiSettings.pollInterval)) seconds alongside song input. First reading = old word; **next change** = spectator word → locked → name on incoming call.")
+                        Text(performOnStageHint)
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -129,6 +132,26 @@ struct WordApiSettingsView: View {
             Text("Where the spectator’s word comes from (Inject, Elips, your API, or Card). Separate from song input.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
+        }
+    }
+
+    private var performOnStageHint: String {
+        switch provider {
+        case .card:
+            return "Turn **Show word on incoming call** on. Set **Song input** to **Card** and write **line 1** = song, **line 2** = word. One **volume** scan during Perform locks both."
+        case .voice:
+            return "Turn **Show word on incoming call** on. Set **Song input** to **Voice**. Ask the contact-word script; AI locks the caller name when the spectator commits to one word (same mic as the song)."
+        default:
+            return "Turn **Show word on incoming call** on the **Caller name** card first. Then polls every \(Int(WordApiSettings.pollInterval)) seconds alongside song input. First reading = old word; **next change** = spectator word → locked → name on incoming call."
+        }
+    }
+
+    private var voiceSetupCard: some View {
+        oracleCard {
+            VStack(alignment: .leading, spacing: 12) {
+                OracleEyebrow(text: "Voice (AI)")
+                VoiceMagicianScriptBlock(channel: .callerName)
+            }
         }
     }
 
