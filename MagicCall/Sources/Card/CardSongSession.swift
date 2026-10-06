@@ -195,8 +195,10 @@ final class CardSongSession: ObservableObject {
         }
         if context == .perform {
             PerformUserLog.shared.log("Camera · OCR lines: \(orderedLines.joined(separator: " | "))")
+            let l2 = ocr.callerLine.map { WordApiInputPanel.truncated($0, max: 24) } ?? "—"
+            let l3 = ocr.notesLine.map { WordApiInputPanel.truncated($0, max: 24) } ?? "—"
             PerformUserLog.shared.log(
-                "Card · parsed song=\"\(ocr.songQuery)\" · L2 caller=\"\(ocr.callerLine ?? "—")\" · L3 notes=\"\(ocr.notesLine ?? "—")\""
+                "Camera · OCR read · L1 «\(WordApiInputPanel.truncated(ocr.songQuery, max: 28))» · L2 «\(l2)» · L3 «\(l3)»"
             )
         }
         guard gen == generation else { return }
