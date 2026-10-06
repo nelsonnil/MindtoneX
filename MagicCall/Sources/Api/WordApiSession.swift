@@ -63,6 +63,8 @@ final class WordApiSession: ObservableObject {
             return
         }
         state = .connecting
+        WordApiClient.resetPerformFetchDiagnostics()
+        lastUnchangedPerformUserLogAt = nil
         dlog("[WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(WordApiSettings.summary())")
         let timer = Timer(timeInterval: WordApiSettings.pollInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
@@ -98,11 +100,13 @@ final class WordApiSession: ObservableObject {
         isRefreshing = true
         let gen = generation
         let provider = self.provider
+        let upcomingPoll = pollCount + 1
+        let performDiag = context == .perform ? WordFetchDiagnostics(pollNumber: upcomingPoll) : nil
         let t0 = CACurrentMediaTime()
         Task { [weak self] in
             let result: Result<WordReading, Error>
             do {
-                result = .success(try await WordApiClient.fetch(provider))
+                result = .success(try await WordApiClient.fetch(provider, performDiagnostics: performDiag))
             } catch {
                 result = .failure(error)
             }
@@ -143,6 +147,11 @@ final class WordApiSession: ObservableObject {
                     )
                 }
                 return
+            }
+            if context == .perform, case .watching = state {
+                let baseCount = base.count.map(String.init) ?? "–"
+                let baseReceive = base.receiveCount.map(String.init) ?? "–"
+                dlog("[WORD] poll #\(pollCount) watching (\(ms) ms) baseline count=\(baseCount) receive=\(baseReceive) word=«\(base.label)» · now count=\(reading.count.map(String.init) ?? "–") receive=\(reading.receiveCount.map(String.init) ?? "–") word=«\(reading.label)» isNew=\(reading.isNewWord(comparedTo: base))")
             }
             let snapshotUnchanged = reading.count == base.count
                 && reading.receiveCount == base.receiveCount
@@ -185,9 +194,9 @@ final class WordApiSession: ObservableObject {
         dlog("[WORD] poll #\(pollCount) unchanged vs baseline count=\(baseCount) word=«\(base.label)» (\(ms) ms; now count=\(nowCount) word=«\(reading.label)» · \(reason))")
         guard context == .perform else { return }
         let now = Date()
-        if let last = lastUnchangedPerformUserLogAt, now.timeIntervalSince(last) < 10 { return }
+        if let last = lastUnchangedPerformUserLogAt, now.timeIntervalSince(last) < 12 { return }
         lastUnchangedPerformUserLogAt = now
-        PerformUserLog.shared.log("Word API: sin cambio · «\(reading.label)» (\(reason))")
+        PerformUserLog.shared.log("Word API: esperando cambio · «\(reading.label)» (\(reason))")
     }
 
     private func lock(_ reading: WordReading) {
@@ -198,8 +207,12 @@ final class WordApiSession: ObservableObject {
         let dotShouldShow = wordDotEnabled
             && WordApiSettings.callerLabelEnabled
             && context == .perform
-        dlog("[WORD] 🔒 lock “\(reading.label)” after \(pollCount) polls · callerLabelEnabled=\(WordApiSettings.callerLabelEnabled) wordDotEnabled=\(wordDotEnabled) state=locked dotShouldShow=\(dotShouldShow)")
+        let buzzOn = PerformanceCues.vibrateOnLock
+        dlog("[WORD] 🔒 lock “\(reading.label)” after \(pollCount) polls · callerLabelEnabled=\(WordApiSettings.callerLabelEnabled) wordDotEnabled=\(wordDotEnabled) buzzOn=\(buzzOn) state=locked dotShouldShow=\(dotShouldShow)")
         if context == .perform {
+            PerformUserLog.shared.log(
+                "Word bloqueada · punto naranja \(dotShouldShow ? "ON" : "OFF") · vibración \(buzzOn ? "3 toques" : "desactivada")"
+            )
             PerformanceCues.wordLocked(source: "Word API", label: reading.label)
         }
         guard WordApiSettings.callerLabelEnabled else { return }

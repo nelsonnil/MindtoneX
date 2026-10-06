@@ -159,14 +159,19 @@ struct WordReading: Equatable {
 
     /// True when this poll is a new spectator word compared with baseline `old`.
     func isNewWord(comparedTo old: WordReading) -> Bool {
-        guard hasWord else { return false }
         if let count, let oldCount = old.count, count > oldCount { return true }
         if let receiveCount, let oldReceive = old.receiveCount, receiveCount > oldReceive { return true }
+        guard hasWord else { return false }
         return !ApiJSON.sameText(word, old.word)
     }
 
     func unchangedVsBaselineReason(comparedTo old: WordReading) -> String {
-        if !hasWord { return "empty word in response (ignored)" }
+        if !hasWord {
+            if let count, let oldCount = old.count, count > oldCount {
+                return "count bumped but word empty — should lock via count"
+            }
+            return "empty word in response (ignored)"
+        }
         let sameCount = count == old.count
         let sameReceive = receiveCount == old.receiveCount
         let sameWord = ApiJSON.sameText(word, old.word)
@@ -260,7 +265,7 @@ enum WordApiClient {
         case .inject:
             return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),
                                receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
-                               word: ApiJSON.string(in: object, keys: ["word", "label", "value", "selection"]),
+                               word: ApiJSON.string(in: object, keys: ["value", "word", "label", "selection"]),
                                raw: raw)
         case .elips:
             return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),
