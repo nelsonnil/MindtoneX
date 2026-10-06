@@ -247,7 +247,7 @@ struct WordApiInputPanel: View {
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     if !songInputIsCard {
-                        Label("Set **Song input** to Card — word line 2 is read on the same volume scan.", systemImage: "exclamationmark.triangle.fill")
+                        Label("Set **Song input** to Card — caller word is **line 2** on the same volume scan.", systemImage: "exclamationmark.triangle.fill")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.coral)
                             .fixedSize(horizontal: false, vertical: true)
@@ -292,7 +292,7 @@ struct WordApiInputPanel: View {
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                 } else if provider == .card {
-                    Text("On Perform, press **volume** once — same scan loads the song (line 1) and locks the caller name from **line 2**. No network poll.")
+                    Text("On Perform, press **volume** once — **line 1** loads the song; **line 2** locks caller name when this card uses Card OCR. No network poll.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -364,7 +364,7 @@ struct WordApiInputPanel: View {
             if let last = session.lastReading, last.hasWord { return ("Last value: “\(last.label)”", "text.quote", false) }
             if provider == .card {
                 return configured
-                    ? ("Card OCR word — line 2 on the same volume scan as the song.", "doc.viewfinder", false)
+                    ? ("Card OCR — caller word on **line 2** (see Instructions for line 3 Notes).", "doc.viewfinder", false)
                     : nil
             }
             if provider == .voice {
@@ -380,7 +380,7 @@ struct WordApiInputPanel: View {
         case .watching:
             if provider == .card {
                 return (
-                    "Waiting for volume scan — write the word on **line 2** of the card (or WORD: label).",
+                    "Waiting for volume scan — caller word on **line 2** (or WORD:/CALLER: label).",
                     "camera.viewfinder",
                     false
                 )
@@ -437,7 +437,7 @@ struct WordApiHomeCard: View {
             return "Off — incoming call shows the number only"
         }
         if WordApiSettings.hasWordEndpoint {
-            if provider == .card { return "Card (OCR) · line 2 on volume scan" }
+            if provider == .card { return "Card (OCR) · line 2 caller · line 3 Notes" }
             if provider == .voice { return "Voice (AI) · contact-word prompt on shared mic" }
             return "\(provider.title) · polls during Perform"
         }

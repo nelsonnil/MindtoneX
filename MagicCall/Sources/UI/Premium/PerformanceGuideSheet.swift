@@ -11,6 +11,13 @@ struct PerformanceGuideSheet: View {
                 PerformanceGuideContent(onOpenFavorites: onOpenFavorites)
 
                 TipCard(
+                    title: "Card & Voice input",
+                    icon: "doc.viewfinder",
+                    tint: OracleTheme.gold,
+                    lines: PerformCopy.cardAndVoiceInputLines
+                )
+
+                TipCard(
                     title: "Caller name",
                     icon: "phone.badge.checkmark",
                     tint: OracleTheme.sectionTeal,

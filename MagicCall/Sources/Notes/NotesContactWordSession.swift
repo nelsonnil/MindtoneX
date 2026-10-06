@@ -62,7 +62,7 @@ final class NotesContactWordSession: ObservableObject {
 
         if provider == .card {
             state = .watching
-            dlog("[NOTES-WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · Card line 2 on volume scan")
+            dlog("[NOTES-WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · Card line 3 on volume scan")
             return
         }
         if provider == .voice {

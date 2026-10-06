@@ -186,19 +186,19 @@ final class CardSongSession: ObservableObject {
         }
         let texts = CardOCRProcessor.mergedText(from: frameTexts)
         let orderedLines = CardOCRProcessor.orderedLineTexts(from: bestLineReadings)
-        let dual = CardLineParser.parse(orderedLines: orderedLines)
+        let ocr = CardLineParser.parse(orderedLines: orderedLines)
         if !orderedLines.isEmpty {
             dlog("[CARD] lines top→bottom: \(orderedLines.joined(separator: " | "))")
         }
         if context == .perform {
             PerformUserLog.shared.log("Card · OCR lines: \(orderedLines.joined(separator: " | "))")
             PerformUserLog.shared.log(
-                "Card · parsed song=\"\(dual.songQuery)\" · word=\"\(dual.spectatorWord ?? "—")\""
+                "Card · parsed song=\"\(ocr.songQuery)\" · L2 caller=\"\(ocr.callerLine ?? "—")\" · L3 notes=\"\(ocr.notesLine ?? "—")\""
             )
         }
         guard gen == generation else { return }
 
-        let queriesToTry = songSearchQueries(dual: dual, orderedLines: orderedLines, mergedTexts: texts)
+        let queriesToTry = songSearchQueries(ocr: ocr, orderedLines: orderedLines, mergedTexts: texts)
         dlog("[CARD] song queries (line 1 first): \(queriesToTry.joined(separator: " · "))")
         if context == .perform {
             PerformUserLog.shared.log("Card · song search tries: \(queriesToTry.joined(separator: " · "))")
@@ -247,7 +247,7 @@ final class CardSongSession: ObservableObject {
             query: best.flatMap { queryByKey[$0.key] },
             ocrSample: sample,
             track: best.flatMap { trackByKey[$0.key] },
-            cardWord: dual.spectatorWord
+            ocrParse: ocr
         )
     }
 
@@ -257,7 +257,7 @@ final class CardSongSession: ObservableObject {
         query: String?,
         ocrSample: String,
         track: PreviewTrack? = nil,
-        cardWord: String? = nil
+        ocrParse: CardOCRParse? = nil
     ) async {
         guard gen == generation else { return }
         lastOCRText = ocrSample
@@ -293,24 +293,26 @@ final class CardSongSession: ObservableObject {
             state = .candidate
         }
 
-        applyCardWordIfNeeded(cardWord)
+        applyCardWordsIfNeeded(ocrParse)
     }
 
-    /// Prefer **line 1** for song lookup; never search the spectator word; full-frame OCR only as fallback.
-    private func songSearchQueries(dual: CardDualParse, orderedLines: [String], mergedTexts: [String]) -> [String] {
+    /// Prefer **line 1** for song lookup; never search word lines; full-frame OCR only as fallback.
+    private func songSearchQueries(ocr: CardOCRParse, orderedLines: [String], mergedTexts: [String]) -> [String] {
         var queries: [String] = []
+        let skipWords = [CardLineParser.normalizedCallerWord(from: ocr), CardLineParser.normalizedNotesWord(from: ocr)]
+            .compactMap { $0 }
         func appendUnique(_ raw: String) {
             let q = CardTextMapper.clean(raw)
             guard q.count >= 2 else { return }
-            if let w = dual.spectatorWord, ApiJSON.sameText(q, w) {
-                dlog("[CARD] skip song query (same as word line): “\(q)”")
+            if skipWords.contains(where: { ApiJSON.sameText(q, $0) }) {
+                dlog("[CARD] skip song query (matches word line): “\(q)”")
                 return
             }
             guard !queries.contains(where: { ApiJSON.sameText($0, q) }) else { return }
             queries.append(q)
         }
 
-        appendUnique(dual.songQuery)
+        appendUnique(ocr.songQuery)
         if queries.isEmpty, let first = orderedLines.first {
             appendUnique(first)
         }
@@ -320,18 +322,21 @@ final class CardSongSession: ObservableObject {
         return queries
     }
 
-    private func applyCardWordIfNeeded(_ cardWord: String?) {
-        guard let word = cardWord, !word.isEmpty else {
-            if context == .perform {
-                dlog("[CARD] no word line — ask for line 2 or WORD:/PALABRA: label")
+    private func applyCardWordsIfNeeded(_ parse: CardOCRParse?) {
+        guard let parse else { return }
+        if CardOCRLayout.usesCallerLine {
+            if let word = CardLineParser.normalizedCallerWord(from: parse) {
+                WordApiSession.shared.ingestCardScanWord(word)
+            } else if context == .perform {
+                dlog("[CARD] caller Card OCR on — line 2 empty or unreadable")
             }
-            return
         }
-        if WordApiSettings.callerLabelEnabled, WordApiSettings.provider == .card {
-            WordApiSession.shared.ingestCardScanWord(word)
-        }
-        if NotesContactWordSettings.wordInputEnabled, NotesContactWordSettings.provider == .card {
-            NotesContactWordSession.shared.ingestCardScanWord(word)
+        if CardOCRLayout.usesNotesLine {
+            if let word = CardLineParser.normalizedNotesWord(from: parse) {
+                NotesContactWordSession.shared.ingestCardScanWord(word)
+            } else if context == .perform {
+                dlog("[CARD] Notes Card OCR on — line 3 empty or unreadable")
+            }
         }
     }
 

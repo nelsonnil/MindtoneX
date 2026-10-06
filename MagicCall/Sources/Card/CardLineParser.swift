@@ -1,26 +1,35 @@
 import Foundation
 
-/// Parses a handwritten card into song (line 1) and spectator word (line 2).
-struct CardDualParse: Equatable {
+/// Handwritten card layout (top → bottom): line 1 = song · line 2 = caller word · line 3 = Notes chip word.
+struct CardOCRParse: Equatable {
     var songQuery: String
-    var spectatorWord: String?
+    /// Raw text on **line 2** (caller name when Card OCR is enabled for Caller name).
+    var callerLine: String?
+    /// Raw text on **line 3** (Notes contact chip when Card OCR is enabled for Notes word).
+    var notesLine: String?
 }
 
 enum CardLineParser {
     private static let songPrefixes = ["song:", "canción:", "cancion:", "tema:", "título:", "titulo:"]
-    private static let wordPrefixes = ["word:", "palabra:", "w:"]
+    private static let callerPrefixes = ["word:", "palabra:", "w:", "caller:", "contact:", "contacto:"]
+    private static let notesPrefixes = ["notes:", "note:", "nota:", "chip:", "notesword:"]
 
-    static func parse(orderedLines: [String]) -> CardDualParse {
+    static func parse(orderedLines: [String]) -> CardOCRParse {
         var labeledSong: String?
-        var labeledWord: String?
+        var labeledCaller: String?
+        var labeledNotes: String?
         var plain: [String] = []
 
         for raw in orderedLines {
             let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard trimmed.count >= 1 else { continue }
             let lower = trimmed.lowercased()
-            if let stripped = stripPrefix(lower, trimmed, prefixes: wordPrefixes) {
-                labeledWord = stripped
+            if let stripped = stripPrefix(lower, trimmed, prefixes: notesPrefixes) {
+                labeledNotes = stripped
+                continue
+            }
+            if let stripped = stripPrefix(lower, trimmed, prefixes: callerPrefixes) {
+                labeledCaller = stripped
                 continue
             }
             if let stripped = stripPrefix(lower, trimmed, prefixes: songPrefixes) {
@@ -31,24 +40,40 @@ enum CardLineParser {
         }
 
         var song = labeledSong.map { CardTextMapper.clean($0) } ?? ""
-        var word = labeledWord.map { normalizeWord($0) } ?? nil
+        var callerLine = labeledCaller.map { CardTextMapper.clean($0) }
+        var notesLine = labeledNotes.map { CardTextMapper.clean($0) }
 
         if song.isEmpty, plain.count >= 1 {
             song = plain[0]
         }
-        if word == nil, plain.count >= 2 {
-            word = normalizeWord(plain[1])
+        if callerLine == nil, plain.count >= 2 {
+            callerLine = plain[1]
+        }
+        if notesLine == nil, plain.count >= 3 {
+            notesLine = plain[2]
         }
 
-        if let w = word, ApiJSON.sameText(w, song) {
-            word = plain.count >= 2 ? normalizeWord(plain[1]) : nil
+        callerLine = callerLine.flatMap { line in
+            let w = normalizeWord(line)
+            return w == nil || ApiJSON.sameText(w!, song) ? nil : line
         }
-        if let w = word, song.split(separator: " ").contains(where: { ApiJSON.sameText(String($0), w) }) {
-            // Word is only a title token — prefer explicit line 2; drop if ambiguous single-line card.
-            if plain.count < 2 { word = nil }
+        notesLine = notesLine.flatMap { line in
+            let w = normalizeWord(line)
+            guard let w else { return nil }
+            if ApiJSON.sameText(w, song) { return nil }
+            if let c = callerLine.flatMap(normalizeWord), ApiJSON.sameText(w, c) { return nil }
+            return line
         }
 
-        return CardDualParse(songQuery: song, spectatorWord: word)
+        return CardOCRParse(songQuery: song, callerLine: callerLine, notesLine: notesLine)
+    }
+
+    static func normalizedCallerWord(from parse: CardOCRParse) -> String? {
+        parse.callerLine.flatMap { normalizeWord($0) }
+    }
+
+    static func normalizedNotesWord(from parse: CardOCRParse) -> String? {
+        parse.notesLine.flatMap { normalizeWord($0) }
     }
 
     private static func stripPrefix(_ lower: String, _ original: String, prefixes: [String]) -> String? {

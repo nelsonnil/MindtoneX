@@ -90,7 +90,7 @@ enum PerformCopy {
         case .notes:
             steps.append("A white note opens instead. The song written in it is searched and loaded in the background.")
         case .card:
-            steps.append("The back camera reads the card on **volume** (no screen touch). **Line 1** = song · **line 2** = word when **Caller name** is **Card (OCR)**. ALL CAPS on white card works best.")
+            steps.append("The back camera reads the card on **volume** (no screen touch). \(CardOCRLayout.lineAssignmentSummary). ALL CAPS on white card works best.")
         case .manual:
             steps.append("The app uses the song you typed above.")
         }
@@ -129,8 +129,8 @@ enum PerformCopy {
     ]
 
     static let wordApiSteps: [String] = [
-        "On home, open **Caller name** (below Song input). Turn **Show word on incoming call** **ON** and pick **Inject**, **Elips**, **Custom API**, or **Card (OCR)** — separate from the song API unless you choose Card for both.",
-        "During **Perform**, networked providers poll the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with song input (**AI Voice**, **API**, **Notes**, **Card**, manual). **Card (OCR)** skips polling: **line 2** of the handwritten card on the **volume scan** locks the caller name while **line 1** loads the song.",
+        "On home, open **Caller name** (below Song input). Turn **Show word on incoming call** **ON** and pick **Inject**, **Elips**, **Custom API**, **Card (OCR)**, or **Voice (AI)** — separate from the song API unless you share Card or Voice with song input.",
+        "During **Perform**, networked providers poll the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with song input. **Card (OCR)** uses fixed lines on the card (**line 1** song · **line 2** caller · **line 3** Notes chip — see **Card & Voice input** in Instructions). **Voice (AI)** uses conversation context instead of lines.",
         "**Elips example:** enable **API** for the song (spectator searches a title in Elips) and **Elips** for the word (spectator submits a word — often one they chose from the lyrics). When the word **locks**, that text can appear as the **incoming caller name** while your stage plays the locked song.",
         "The **first poll** is the old value on the server (baseline). The **next change** is the spectator’s new word → **lock** (three short taps). Then have them call you — the banner should show the word, not only the digits.",
         "Turn on **Settings → Phone → Call Blocking & Identification → MindtoneX**. Optional: **Save locked word as contact name** (below) so iOS shows the prediction even more reliably than Call Directory alone.",
@@ -145,6 +145,18 @@ enum PerformCopy {
     ]
 
     /// Testers often ask for “voicemail says the prediction” — iOS/carrier limits (shown in Instructions).
+    /// Card OCR line layout + Voice AI context (Instructions → Card & Voice input).
+    static var cardAndVoiceInputLines: [String] {
+        CardOCRLayout.instructionLines + voiceAIContextLines
+    }
+
+    static let voiceAIContextLines: [String] = [
+        "**Song input = Voice (AI):** one microphone listens to the whole conversation.",
+        "Separate AI prompts pick the **song title**, the **caller name word**, and the **Notes chip word** from what the spectator says — not from the card.",
+        "Ask clear questions: any song · what word they think you saved as their contact · what word appears on the Notes contact button (see script hints on **Caller name** and **Notes contact** when Voice is selected).",
+        "You can mix methods: e.g. **Card** for the song (line 1) and **Voice** or **Inject** for words — each feature uses its own source.",
+    ]
+
     static let voicemailAndMissedCall = [
         "**Voicemail with the song name?** No app (including MindtoneX) can speak a **new prediction** on your **carrier voicemail** when you don’t answer. After the ring, callers hear **your carrier’s voicemail** and a **fixed greeting** you set in **Settings → Phone**, not text generated per show.",
         "**Stage Ringtone:** if you don’t pick up, the caller hears normal ringing; **your song plays on your iPhone** during the ring — not as their voicemail message.",

@@ -69,7 +69,7 @@ final class WordApiSession: ObservableObject {
         }
         if provider == .card {
             state = .watching
-            dlog("[WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · Card OCR word · press volume to scan line 2")
+            dlog("[WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · Card OCR caller · line 2 on volume scan")
             return
         }
         if provider == .voice {
@@ -103,7 +103,7 @@ final class WordApiSession: ObservableObject {
         ingestWordLabel(rawWord, source: "voice")
     }
 
-    /// Card (OCR) provider: spectator word from line 2 of the same volume scan as the song.
+    /// Card (OCR) provider: caller word from **line 2** of the same volume scan as the song (line 1).
     func ingestCardScanWord(_ rawWord: String) {
         guard provider == .card else { return }
         ingestWordLabel(rawWord, source: "card-scan")

@@ -26,7 +26,7 @@ struct NotesContactWordInputPanel: View {
                     Text("Word for Notes chip")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Independent from Caller name — own Inject / API / Card line 2")
+                    Text("Independent from Caller name — own Inject / API / Card line 3")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                 }
@@ -50,7 +50,7 @@ struct NotesContactWordInputPanel: View {
 
                     if provider == .card {
                         if !songInputIsCard {
-                            Label("Song input must be **Card** for line 2 OCR.", systemImage: "exclamationmark.triangle.fill")
+                            Label("Song input must be **Card** — Notes word is **line 3** on the card.", systemImage: "exclamationmark.triangle.fill")
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.coral)
                         }

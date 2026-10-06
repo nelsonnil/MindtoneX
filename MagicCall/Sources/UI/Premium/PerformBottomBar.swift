@@ -179,7 +179,7 @@ struct ReadinessStatusBar: View {
                 return Status(
                     tone: .working,
                     icon: "doc.viewfinder",
-                    text: "Caller name · scan card line 2 · press volume"
+                    text: "Caller name · card line 2 · press volume"
                 )
             case .locked:
                 let locked = wordSession.lockedReading?.label ?? "…"

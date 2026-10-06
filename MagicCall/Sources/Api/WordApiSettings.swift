@@ -122,7 +122,7 @@ enum WordApiSettings {
             case .custom:
                 return "Any URL returning a JSON object. Pick the field for the label (e.g. word, label, value). Polled every 2 s during Perform; optional `count` / `receiveCount` in JSON help detect changes."
             case .card:
-                return "Same **volume scan** as Card song input. **Line 1** = song title · **Line 2** = one spectator word (or `SONG:` / `WORD:` labels). No network poll."
+                return "Same **volume scan** as Card song input. **Line 1** = song · **line 2** = caller name word (this card). Notes chip uses **line 3** on the Notes contact card when that source is Card OCR. No network poll."
             case .voice:
                 return "Uses the **Song input = Voice** microphone with a **separate AI prompt** for the contact word (see script hint). Requires OpenAI key in Voice settings."
             }
@@ -307,7 +307,7 @@ enum WordApiSettings {
         case .inject: return "Enter your Inject ID above"
         case .elips: return "Tap connection details and paste your Elips URL"
         case .custom: return customURL.isEmpty ? "Tap connection details and add your API URL" : "Choose the JSON field in connection details"
-        case .card: return "Select **Card** as song input — write song on line 1, word on line 2"
+        case .card: return "Select **Card** as song input — line 1 song · line 2 caller word (see Instructions)"
         case .voice: return "Set **Song input** to **Voice** and add OpenAI key — use the contact-word script on this card"
         }
     }

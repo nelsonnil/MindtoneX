@@ -146,7 +146,7 @@ struct NotesContactConnectionSheet: View {
 
     private var cardHint: some View {
         oracleCard {
-            Text("Uses **line 2** from the Card volume scan (same as song input = Card). No network URL.")
+            Text("Uses **line 3** from the Card volume scan (line 1 = song, line 2 = caller name if enabled). No network URL.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
         }
