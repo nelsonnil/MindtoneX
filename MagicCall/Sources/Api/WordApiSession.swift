@@ -165,7 +165,10 @@ final class WordApiSession: ObservableObject {
             if context == .perform, provider == .inject, unchangedCountPolls >= 6, !loggedStaleInjectCount {
                 let c = base.count.map(String.init) ?? "–"
                 let r = base.receiveCount.map(String.init) ?? "–"
-                PerformUserLog.shared.log("Inject still count \(c) receive \(r) — submit new word on 11z.co")
+                dlog("[WORD] ⚠ Inject frozen count=\(c) rc=\(r) word=«\(base.label)» · \(unchangedCountPolls) polls unchanged")
+                PerformUserLog.shared.log(
+                    "⚠ Inject congelado: la API sigue en count \(c) y receive \(r). En Safari abre tu enlace 11z.co/…/selection y envía una palabra nueva como espectador (el panel del mago no siempre sube count/receive)."
+                )
                 loggedStaleInjectCount = true
             }
             guard reading.isNewWord(comparedTo: base) else {

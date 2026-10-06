@@ -241,8 +241,9 @@ struct WordApiSettingsView: View {
         do {
             let reading = try await WordApiClient.fetch(provider)
             let count = reading.count.map { "count \($0) · " } ?? ""
+            let rc = reading.receiveCount.map { "rc \($0) · " } ?? ""
             if reading.hasWord {
-                testResult = (true, "Connected · \(count)current label “\(reading.label)”")
+                testResult = (true, "Connected · \(count)\(rc)label “\(WordApiInputPanel.truncated(reading.label, max: 40))”")
             } else {
                 testResult = (true, "Connected · \(count)no word yet. Response: \(reading.raw.prefix(200))")
             }

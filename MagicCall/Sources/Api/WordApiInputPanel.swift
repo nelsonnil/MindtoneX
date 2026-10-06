@@ -38,6 +38,12 @@ struct WordApiInputPanel: View {
                         .foregroundStyle(line.warning ? OracleTheme.coral : OracleTheme.textSecondary)
                         .lineLimit(4)
                 }
+                if let poll = lastPollSummaryLine {
+                    Text(poll)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .lineLimit(2)
+                }
                 lockedWordRow
             }
         }
@@ -205,6 +211,15 @@ struct WordApiInputPanel: View {
         }
     }
 
+    /// Last successful poll (Perform or Watch test) — helps Nelson see frozen Inject counters.
+    private var lastPollSummaryLine: String? {
+        guard let reading = session.lastReading ?? session.baseline else { return nil }
+        let count = reading.count.map(String.init) ?? "–"
+        let rc = reading.receiveCount.map(String.init) ?? "–"
+        let word = WordApiInputPanel.truncated(reading.label, max: 28)
+        return "Último poll · count \(count) · rc \(rc) · «\(word)»"
+    }
+
     private var statusLine: (text: String, icon: String, warning: Bool)? {
         if session.isStruggling, session.isActive {
             return ("\(provider.title) not reachable: \(session.lastError ?? "network error") — retrying", "wifi.exclamationmark", true)
@@ -233,6 +248,12 @@ struct WordApiInputPanel: View {
             return (message, "exclamationmark.triangle.fill", true)
         }
     }
+
+    static func truncated(_ text: String, max: Int) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > max else { return trimmed.isEmpty ? "—" : trimmed }
+        return String(trimmed.prefix(max - 1)) + "…"
+    }
 }
 
 struct WordApiHomeCard: View {
@@ -243,7 +264,13 @@ struct WordApiHomeCard: View {
 
     private var subtitle: String {
         if session.state == .locked, let w = session.lockedReading?.label {
-            return "Locked: “\(w)” · \(provider.title)"
+            return "Locked: “\(WordApiInputPanel.truncated(w, max: 32))” · \(provider.title)"
+        }
+        if let reading = session.lastReading ?? session.baseline {
+            let count = reading.count.map(String.init) ?? "–"
+            let rc = reading.receiveCount.map(String.init) ?? "–"
+            let word = WordApiInputPanel.truncated(reading.label, max: 24)
+            return "count \(count) · rc \(rc) · «\(word)» · \(provider.title)"
         }
         if !WordApiSettings.callerLabelEnabled {
             return "Off — Perform unchanged (no call banner)"
