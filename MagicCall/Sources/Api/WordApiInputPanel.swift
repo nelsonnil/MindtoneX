@@ -71,6 +71,23 @@ struct WordApiInputPanel: View {
         }
     }
 
+    private var callerPreviewPhoneDigits: String {
+        if WordApiSettings.hasKnownContactSelected {
+            return WordApiSettings.knownContactPhoneDigits
+        }
+        if !WordApiSettings.lastDialedPhoneDigits.isEmpty {
+            return WordApiSettings.lastDialedPhoneDigits
+        }
+        let fallback = WordApiSettings.identificationPhoneDigitsRaw()
+        return fallback.count >= 7 ? fallback : "34612345678"
+    }
+
+    private var callerPreviewPredictionWord: String {
+        if let locked = session.lockedReading?.label, !locked.isEmpty { return locked }
+        if let last = session.lastReading?.label, !last.isEmpty { return last }
+        return "ECLIPSE"
+    }
+
     private var contactMode: WordApiSettings.ContactMode {
         WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
     }
@@ -88,6 +105,12 @@ struct WordApiInputPanel: View {
     private var wordContactCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             OracleEyebrow(text: "Contact name (caller ID)")
+
+            WordApiIncomingCallBannerPreview(
+                phoneDigits: callerPreviewPhoneDigits,
+                predictionWord: callerPreviewPredictionWord
+            )
+            .padding(.vertical, 4)
 
             Text("When the spectator word locks, iOS can show that word on the incoming call screen instead of the phone number. MindtoneX writes it to Contacts (Call Directory is backup if Contacts is denied).")
                 .font(.caption)
