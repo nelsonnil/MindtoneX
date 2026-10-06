@@ -25,10 +25,7 @@ struct WordApiSettingsView: View {
                 oracleCard {
                     VStack(alignment: .leading, spacing: 12) {
                         OracleEyebrow(text: "Integration")
-                        Picker("Integration", selection: $providerRaw) {
-                            ForEach(WordApiSettings.Provider.allCases) { Text($0.title).tag($0.rawValue) }
-                        }
-                        .pickerStyle(.segmented)
+                        WordApiProviderPicker(selectionRaw: $providerRaw)
                         Text(provider.detail)
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)

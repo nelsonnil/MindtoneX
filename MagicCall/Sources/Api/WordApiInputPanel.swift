@@ -228,10 +228,7 @@ struct WordApiInputPanel: View {
             OracleEyebrow(text: "Spectator word API")
 
             VStack(alignment: .leading, spacing: 12) {
-                Picker("Integration", selection: $providerRaw) {
-                    ForEach(WordApiSettings.Provider.allCases) { Text($0.title).tag($0.rawValue) }
-                }
-                .pickerStyle(.segmented)
+                WordApiProviderPicker(selectionRaw: $providerRaw)
 
                 HStack(spacing: 8) {
                     Image(systemName: configured ? "checkmark.circle.fill" : "exclamationmark.circle")
@@ -432,6 +429,81 @@ struct WordApiHomeCard: View {
                 WordApiInputPanel()
             }
         }
+    }
+}
+
+// MARK: - Word API provider grid
+
+struct WordApiProviderPicker: View {
+    @Binding var selectionRaw: String
+    @Namespace private var selectionNS
+
+    private var selection: WordApiSettings.Provider {
+        WordApiSettings.Provider(rawValue: selectionRaw) ?? .inject
+    }
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+            ForEach(WordApiSettings.Provider.allCases) { provider in
+                providerCell(provider)
+            }
+        }
+        .padding(6)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Spectator word integration")
+    }
+
+    private func providerCell(_ provider: WordApiSettings.Provider) -> some View {
+        let selected = selection == provider
+        return Button {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                selectionRaw = provider.rawValue
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: provider.pickerSymbol)
+                        .font(.system(size: 18, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                    Spacer(minLength: 0)
+                    if selected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(OracleTheme.ink.opacity(0.85))
+                    }
+                }
+                Text(provider.gridTitle)
+                    .font(.subheadline.weight(.bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Text(provider.pickerHint)
+                    .font(.caption2.weight(.medium))
+                    .opacity(selected ? 0.88 : 0.55)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .foregroundStyle(selected ? OracleTheme.ink : OracleTheme.textSecondary)
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(OracleTheme.goldGradient)
+                        .matchedGeometryEffect(id: "wordApiProviderFill", in: selectionNS)
+                        .shadow(color: OracleTheme.gold.opacity(0.28), radius: 8, y: 3)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(provider.title)
+        .accessibilityHint(provider.pickerHint)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

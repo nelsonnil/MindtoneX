@@ -80,6 +80,34 @@ enum WordApiSettings {
             }
         }
 
+        /// Compact label for the home integration grid.
+        var gridTitle: String {
+            switch self {
+            case .inject: return "Inject"
+            case .elips: return "Elips"
+            case .custom: return "Custom"
+            case .card: return "Card OCR"
+            }
+        }
+
+        var pickerSymbol: String {
+            switch self {
+            case .inject: return "antenna.radiowaves.left.and.right"
+            case .elips: return "link.circle.fill"
+            case .custom: return "curlybraces"
+            case .card: return "doc.viewfinder"
+            }
+        }
+
+        var pickerHint: String {
+            switch self {
+            case .inject: return "Word JSON · poll"
+            case .elips: return "pag.gg URL · poll"
+            case .custom: return "REST + field"
+            case .card: return "Volume scan"
+            }
+        }
+
         var detail: String {
             switch self {
             case .inject:
