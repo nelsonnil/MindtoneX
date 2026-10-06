@@ -40,7 +40,6 @@ struct WordApiInputPanel: View {
             if callerLabelEnabled {
                 wordContactCard
                 connectionBlock
-                watchTestBlock
                 contactTestModeBlock
                 if let line = statusLine {
                     Label(line.text, systemImage: line.icon)
@@ -370,73 +369,6 @@ struct WordApiInputPanel: View {
         PerformUserLog.shared.log("[CONTACT] test restore · \(result)")
     }
 
-    private var watchTestBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            OracleEyebrow(text: "Live watch")
-            Text("Simulate Perform polling: change the word in \(provider.title), then see when the app locks it.")
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-
-            if session.isActive && session.context == .test {
-                Button { session.stopTest() } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "stop.circle.fill")
-                            .font(.title3)
-                        Text("Stop watching")
-                            .font(.subheadline.weight(.bold))
-                        Spacer()
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .frame(maxWidth: .infinity)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.red.opacity(0.88)))
-                }
-                .buttonStyle(.plain)
-            } else {
-                Button {
-                    session.start(context: .test)
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "dot.radiowaves.left.and.right")
-                            .font(.title3)
-                        Text("Watch test")
-                            .font(.subheadline.weight(.bold))
-                        Spacer()
-                        if session.isActive && session.context == .test {
-                            Circle().fill(Color.red).frame(width: 8, height: 8)
-                        }
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .frame(maxWidth: .infinity)
-                    .background {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: configured
-                                        ? [OracleTheme.sectionTeal, OracleTheme.sectionTeal.opacity(0.72)]
-                                        : [Color.gray.opacity(0.35), Color.gray.opacity(0.25)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
-                }
-                .buttonStyle(.plain)
-                .disabled(!configured)
-            }
-        }
-        .padding(14)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-        }
-    }
-
     @ViewBuilder
     private var lockedWordRow: some View {
         if session.state == .locked, let word = session.lockedReading?.label {
@@ -464,7 +396,7 @@ struct WordApiInputPanel: View {
         }
     }
 
-    /// Last successful poll (Perform or Watch test) — helps Nelson see frozen Inject counters.
+    /// Last successful poll during Perform — helps spot frozen Inject counters.
     private var lastPollSummaryLine: String? {
         guard let reading = session.lastReading ?? session.baseline else { return nil }
         let count = reading.count.map(String.init) ?? "–"
@@ -480,7 +412,9 @@ struct WordApiInputPanel: View {
         switch session.state {
         case .idle:
             if let last = session.lastReading, last.hasWord { return ("Last value: “\(last.label)”", "text.quote", false) }
-            return configured ? ("Tap **Watch test**, then change the word in \(provider.title).", "info.circle", false) : nil
+            return configured
+                ? ("Polls every \(Int(WordApiSettings.pollInterval)) s during Perform — change the word in \(provider.title) to lock the caller label.", "info.circle", false)
+                : nil
         case .connecting:
             return ("Connecting to \(provider.title)…", "antenna.radiowaves.left.and.right", false)
         case .watching:
