@@ -44,10 +44,10 @@ struct WordApiSettingsView: View {
 
                 oracleCard {
                     VStack(alignment: .leading, spacing: 10) {
-                        OracleEyebrow(text: "Call Identification (optional fallback)")
-                        oracleField("15551234567 (digits only, E.164)", text: $fallbackPhoneDigits)
+                        OracleEyebrow(text: "Call Identification (caller number)")
+                        oracleField("34612345678 (country code + number)", text: $fallbackPhoneDigits)
                             .keyboardType(.phonePad)
-                        Text("For **any-number** labels, enable **Live Caller ID Lookup** (iOS 18+) in Settings → Phone. This field helps **Call Directory** label one known number if Live Lookup is not set up yet.")
+                        Text("**Required.** Only calls from this number show the word. Include the country code (e.g. 34 for Spain) and don’t save this number in Contacts — a contact name replaces the label.")
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
                     }

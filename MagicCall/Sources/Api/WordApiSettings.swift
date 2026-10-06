@@ -128,7 +128,8 @@ enum WordApiSettings {
 
     /// Parses optional fallback phone into Call Directory numeric form (digits only, no +).
     static func fallbackPhoneNumber() -> Int64? {
-        let digits = fallbackPhoneDigits.filter(\.isNumber)
+        var digits = fallbackPhoneDigits.filter(\.isNumber)
+        if digits.hasPrefix("00") { digits.removeFirst(2) }
         guard digits.count >= 7, let value = Int64(digits) else { return nil }
         return value
     }
