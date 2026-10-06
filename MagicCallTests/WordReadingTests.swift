@@ -47,4 +47,18 @@ final class WordReadingTests: XCTestCase {
         let next = WordReading(count: 6, receiveCount: nil, word: "X", raw: "")
         XCTAssertTrue(next.isNewWord(comparedTo: base))
     }
+
+    func testShouldLockOnPollDeltaFromBaseline() {
+        let baseline = WordReading(count: 786, receiveCount: 291, word: "Old", raw: #"{"value":"Old"}"#)
+        let previous = baseline
+        let next = WordReading(count: 786, receiveCount: 292, word: "Old", raw: #"{"value":"Old","receiveCount":292}"#)
+        XCTAssertTrue(next.shouldLockPerformWord(comparedTo: baseline, previousPoll: previous))
+    }
+
+    func testShouldNotLockWhenFrozenLikeBaseline() {
+        let baseline = WordReading(count: 786, receiveCount: 291, word: "Same", raw: "{}")
+        let previous = baseline
+        let next = baseline
+        XCTAssertFalse(next.shouldLockPerformWord(comparedTo: baseline, previousPoll: previous))
+    }
 }

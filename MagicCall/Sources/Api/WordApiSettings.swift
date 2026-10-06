@@ -157,12 +157,37 @@ struct WordReading: Equatable {
     var hasWord: Bool { !word.isEmpty }
     var label: String { word }
 
+    /// Any movement since the previous poll (counters, label, or raw JSON).
+    func pollDelta(comparedTo previous: WordReading) -> Bool {
+        if raw != previous.raw { return true }
+        if count != previous.count { return true }
+        if receiveCount != previous.receiveCount { return true }
+        return !ApiJSON.sameText(word, previous.word)
+    }
+
+    /// Same snapshot as baseline (Inject frozen polls look like this).
+    func matchesSnapshot(of baseline: WordReading) -> Bool {
+        count == baseline.count
+            && receiveCount == baseline.receiveCount
+            && ApiJSON.sameText(word, baseline.word)
+            && raw == baseline.raw
+    }
+
     /// True when this poll is a new spectator word compared with baseline `old`.
     func isNewWord(comparedTo old: WordReading) -> Bool {
         if let count, let oldCount = old.count, count > oldCount { return true }
         if let receiveCount, let oldReceive = old.receiveCount, receiveCount > oldReceive { return true }
+        if raw != old.raw, hasWord { return true }
         guard hasWord else { return false }
         return !ApiJSON.sameText(word, old.word)
+    }
+
+    /// Perform lock: baseline change, or any poll-to-poll delta once baseline exists.
+    func shouldLockPerformWord(comparedTo baseline: WordReading, previousPoll: WordReading?) -> Bool {
+        if isNewWord(comparedTo: baseline) { return true }
+        guard let previousPoll else { return false }
+        guard pollDelta(comparedTo: previousPoll) else { return false }
+        return !matchesSnapshot(of: baseline)
     }
 
     func unchangedVsBaselineReason(comparedTo old: WordReading) -> String {

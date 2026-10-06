@@ -223,7 +223,7 @@ struct PerformStageStatusDots: View {
 /// Back-compat name used by `StageView`.
 typealias PerformStatusDot = PerformStageStatusDots
 
-/// Stage corner dot for Word API lock — visible only in `.locked` (never while `.watching`).
+/// Stage corner dot while Word API is watching for a change — hidden after lock (label applied).
 struct PerformWordStatusDot: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var word = WordApiSession.shared
@@ -237,7 +237,7 @@ struct PerformWordStatusDot: View {
             && model.isArmed
             && WordApiSettings.callerLabelEnabled
             && word.context == .perform
-            && word.state == .locked
+            && word.state == .watching
     }
 
     var body: some View {
@@ -423,7 +423,7 @@ struct FeedbackCard: View {
                 Text("Status dot when word locks")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(OracleTheme.textPrimary)
-                Text("Below song dot · Word API caller label")
+                Text("On while waiting · off after word locks")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
             }
