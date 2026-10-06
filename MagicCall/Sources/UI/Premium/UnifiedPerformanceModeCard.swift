@@ -23,9 +23,9 @@ struct PerformanceCard: View {
         HomePanel(accent: OracleTheme.gold) {
             VStack(alignment: .leading, spacing: 18) {
                 HomeSectionTitle(
-                    title: "Performance",
-                    subtitle: "Stage disguise · in-app playback on incoming call",
-                    eyebrow: nil
+                    title: "Performance settings",
+                    subtitle: "Stage screenshot, volume, and ringtone share during Perform",
+                    eyebrow: "Before you perform"
                 )
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -61,7 +61,7 @@ struct PerformanceCard: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Performance")
+        .accessibilityLabel("Performance settings")
     }
 
     private var stageScreenshotSection: some View {
