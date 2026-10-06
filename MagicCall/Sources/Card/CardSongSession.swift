@@ -144,7 +144,8 @@ final class CardSongSession: ObservableObject {
         state = .scanning
         SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "pre card scan")
         if context == .perform {
-            PerformUserLog.shared.log("Camera · scanning — green dot on (~\(Int(CardSettings.burstSeconds)) s)")
+            let mode = VoiceSettings.apiKey != nil ? "snapshot + OpenAI" : "snapshot + local OCR"
+            PerformUserLog.shared.log("Camera · \(mode) (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)")
         }
         let gen = generation
         scanTask = Task { [weak self] in
@@ -158,28 +159,86 @@ final class CardSongSession: ObservableObject {
         }
         startCamera()
         defer { stopCamera() }
-        try? await Task.sleep(nanoseconds: 280_000_000)
+        try? await Task.sleep(nanoseconds: 320_000_000)
         guard gen == generation else { return }
-        let frames = await capture.collectBurst(duration: CardSettings.burstSeconds, scanPulse: false)
-        guard gen == generation else { return }
-        guard !frames.isEmpty else {
-            dlog("[OCR] no frames in burst")
-            await handleScanOutcome(gen: gen, vote: nil, query: nil, ocrSample: "")
-            return
+        await MainActor.run { PerformanceCues.cardScanningPulse() }
+
+        let ranked = await capture.collectFramesRankedByText(duration: CardSettings.burstSeconds, maxCandidates: 4)
+        var frameTexts: [[CardOCRReading]] = ranked.map(\.readings)
+        var bestLineReadings = ranked.first?.readings ?? []
+        var bestBuffer = ranked.first?.buffer
+
+        if ranked.isEmpty {
+            let frames = await capture.collectBurst(duration: CardSettings.burstSeconds, scanPulse: false)
+            guard gen == generation else { return }
+            guard !frames.isEmpty else {
+                dlog("[OCR] no frames in snapshot")
+                await handleScanOutcome(gen: gen, vote: nil, query: nil, ocrSample: "")
+                return
+            }
+            bestBuffer = frames.first
+            for (i, buf) in frames.prefix(4).enumerated() {
+                let lines = await CardOCRProcessor.recognize(buf)
+                if !lines.isEmpty {
+                    dlog("[OCR] frame \(i + 1): \(lines.map(\.text).joined(separator: " | "))")
+                }
+                frameTexts.append(lines)
+                if CardOCRProcessor.lineScore(lines) > CardOCRProcessor.lineScore(bestLineReadings) {
+                    bestLineReadings = lines
+                    bestBuffer = buf
+                }
+            }
+        } else {
+            for (i, sample) in ranked.enumerated() {
+                dlog("[OCR] ranked \(i + 1): \(sample.readings.map(\.text).joined(separator: " | "))")
+            }
         }
 
-        var frameTexts: [[CardOCRReading]] = []
-        var bestLineReadings: [CardOCRReading] = []
-        for (i, buf) in frames.prefix(6).enumerated() {
-            let lines = await CardOCRProcessor.recognize(buf)
-            if !lines.isEmpty {
-                dlog("[OCR] frame \(i + 1): \(lines.map(\.text).joined(separator: " | "))")
-            }
-            frameTexts.append(lines)
-            if CardOCRProcessor.lineScore(lines) > CardOCRProcessor.lineScore(bestLineReadings) {
-                bestLineReadings = lines
+        guard gen == generation else { return }
+
+        if VoiceSettings.apiKey != nil, let buf = bestBuffer, let jpeg = CardImageEncoder.jpegData(from: buf) {
+            let hint = bestLineReadings.map(\.text).joined(separator: "\n")
+            do {
+                let ai = try await CardHandwritingPicker.pick(
+                    jpeg: jpeg,
+                    visionOCRHint: hint,
+                    expectCallerLine: CardOCRLayout.usesCallerLine,
+                    expectNotesLine: CardOCRLayout.usesNotesLine
+                )
+                dlog("[CARD] OpenAI vision · \(ai.reasoning) · conf=\(String(format: "%.2f", ai.confidence))")
+                if context == .perform {
+                    PerformUserLog.shared.log("Camera · OpenAI · \(WordApiInputPanel.truncated(ai.reasoning, max: 48))")
+                }
+                let ocr = ai.asOCRParse(
+                    expectCaller: CardOCRLayout.usesCallerLine,
+                    expectNotes: CardOCRLayout.usesNotesLine
+                )
+                if let song = ai.asSongPick(), song.hasSong {
+                    let query = song.searchQuery
+                    let ok = await AppModel.shared.prepareCardQuery(query)
+                    guard gen == generation else { return }
+                    if ok, let track = AppModel.shared.selected {
+                        let key = CardTextMapper.canonicalKey(from: track)
+                        await handleScanOutcome(
+                            gen: gen,
+                            vote: (key, 2),
+                            query: query,
+                            ocrSample: hint,
+                            track: track,
+                            ocrParse: ocr
+                        )
+                        return
+                    }
+                    dlog("[CARD] OpenAI song “\(query)” → store no preview")
+                }
+            } catch {
+                dlog("[CARD] OpenAI vision fallback: \(error.localizedDescription)")
+                if context == .perform {
+                    PerformUserLog.shared.log("Camera · OpenAI failed · local OCR")
+                }
             }
         }
+
         let texts = CardOCRProcessor.mergedText(from: frameTexts)
         let rawOrdered = CardOCRProcessor.orderedLineTexts(from: bestLineReadings)
         let orderedLines = CardLineParser.expandMergedOCRLines(rawOrdered)

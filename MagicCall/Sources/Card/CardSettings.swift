@@ -9,7 +9,8 @@ enum CardSettings {
         static let practiceTipsSeen = "card.practiceTipsSeen"
     }
 
-    static let defaultBurstSeconds = 2.5
+    /// Short grab after volume press — best frame by text amount, not a long burst.
+    static let defaultBurstSeconds = 0.45
     static let defaultMaxScanRetries = 3
 
     private static var d: UserDefaults { .standard }

@@ -26,7 +26,7 @@ enum CardOCRLayout {
     static var instructionLines: [String] {
         var lines = [
             "**Song input = Camera.** Write on a white card in ALL CAPS when you can.",
-            "**Line 1 (top)** is always the **song title** — one volume scan loads and locks the track.",
+            "**Line 1 (top)** is always the **song title**. Press **volume** when the card is in focus — a quick snapshot goes to **OpenAI vision** (same token as Voice) to fix handwriting errors; without a token, local OCR is used.",
         ]
         if usesCallerLine {
             lines.append("**Line 2** is the **incoming caller name** word when **Caller name → Card (OCR)** is on.")

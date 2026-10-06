@@ -104,8 +104,33 @@ final class CardCaptureService: NSObject {
         }
         collected.sort { $0.score > $1.score }
         let top = collected.prefix(maxFrames).map(\.buffer)
-        dlog("[OCR] burst \(String(format: "%.1f", duration))s → \(collected.count) frames, using top \(top.count)")
+        dlog("[OCR] snapshot \(String(format: "%.2f", duration))s → \(collected.count) frames, using top \(top.count)")
         return top
+    }
+
+    /// Frames with most recognized text (for volume-trigger snapshot).
+    func collectFramesRankedByText(duration: TimeInterval, maxCandidates: Int = 4) async -> [(buffer: CVPixelBuffer, readings: [CardOCRReading], textScore: Double)] {
+        var samples: [(CVPixelBuffer, [CardOCRReading], Double)] = []
+        let end = Date().addingTimeInterval(duration)
+        while Date() < end {
+            if let buf = copyLatestBuffer() {
+                let lines = await CardOCRProcessor.recognize(buf)
+                let chars = lines.reduce(0) { $0 + $1.text.count }
+                let score = Double(chars) + CardOCRProcessor.lineScore(lines) * 12
+                if chars >= 2 {
+                    samples.append((buf, lines, score))
+                }
+            }
+            try? await Task.sleep(nanoseconds: 55_000_000)
+        }
+        samples.sort { $0.2 > $1.2 }
+        let top = samples.prefix(maxCandidates)
+        if let best = top.first {
+            dlog("[OCR] best text frame score=\(Int(best.2)) lines=\(best.1.map(\.text).joined(separator: " | "))")
+        } else {
+            dlog("[OCR] snapshot \(String(format: "%.2f", duration))s → no readable text")
+        }
+        return top.map { ($0.0, $0.1, $0.2) }
     }
 
     private func copyLatestBuffer() -> CVPixelBuffer? {

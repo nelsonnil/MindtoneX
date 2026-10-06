@@ -14,6 +14,8 @@
 		0B7939F9A17DDF66D8FA6ED4 /* CardInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10F1FAFEC4327EF1C05B2D5 /* CardInputPanel.swift */; };
 		0C13519901D4C9A57CFA2E01 /* SpectatorWordContactService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */; };
 		0C7DD1810B8A32E53E19A6EF /* AiVoiceInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B521B3A9CDF1292800B9E81D /* AiVoiceInputPanel.swift */; };
+		E7FB5B1DF1294B279AF4C757 /* CardHandwritingPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C50AE28CFE344C389AD52947 /* CardHandwritingPicker.swift */; };
+		F85E0A4A1BC6426988498813 /* CardImageEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9C8C3312524B0985087781 /* CardImageEncoder.swift */; };
 		0DC2CA0FAB3EE106008ED273 /* CardOCRProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */; };
 		0FC1EC7B4985F1F6545DE135 /* RingtoneAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */; };
 		0FE67C1D8EAF1D7628E95531 /* PerformanceCues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B11F0512B02E2D4ABFE71B4 /* PerformanceCues.swift */; };
@@ -219,6 +221,8 @@
 		95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactShowState.swift; sourceTree = "<group>"; };
 		97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongPicker.swift; sourceTree = "<group>"; };
 		9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactViews.swift; sourceTree = "<group>"; };
+		C50AE28CFE344C389AD52947 /* CardHandwritingPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardHandwritingPicker.swift; sourceTree = "<group>"; };
+		0C9C8C3312524B0985087781 /* CardImageEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardImageEncoder.swift; sourceTree = "<group>"; };
 		9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
 		9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9FA2CF6BD397B91ACAF84FAD /* LiveTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscribers.swift; sourceTree = "<group>"; };
@@ -322,6 +326,8 @@
 				C10F1FAFEC4327EF1C05B2D5 /* CardInputPanel.swift */,
 				223FF801202E5B7C647700E7 /* CardLineParser.swift */,
 				DE8E82BCFD38058C2E0B516B /* CardOCRLayout.swift */,
+				C50AE28CFE344C389AD52947 /* CardHandwritingPicker.swift */,
+				0C9C8C3312524B0985087781 /* CardImageEncoder.swift */,
 				9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */,
 				EC77119D4608465FEFC34B61 /* CardSettings.swift */,
 				CDBF167EB2FC9F9FEC46A0C9 /* CardSongSession.swift */,
@@ -718,6 +724,8 @@
 				0B7939F9A17DDF66D8FA6ED4 /* CardInputPanel.swift in Sources */,
 				8C4101AD9A1105D40C87AAAA /* CardLineParser.swift in Sources */,
 				42C8AEF7433386023083BFCE /* CardOCRLayout.swift in Sources */,
+				E7FB5B1DF1294B279AF4C757 /* CardHandwritingPicker.swift in Sources */,
+				F85E0A4A1BC6426988498813 /* CardImageEncoder.swift in Sources */,
 				0DC2CA0FAB3EE106008ED273 /* CardOCRProcessor.swift in Sources */,
 				8D205906D0C59112990ED155 /* CardSettings.swift in Sources */,
 				2CFC38C7A63678D43141D4BC /* CardSongSession.swift in Sources */,
