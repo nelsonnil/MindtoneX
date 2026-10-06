@@ -48,6 +48,7 @@ targets:
       configs:
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG MAGIC_PRIVATE_PROBES"
+          ENABLE_TESTABILITY: YES
         Release:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
         AppStore:
@@ -85,10 +86,25 @@ targets:
       path: MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements
     settings:
       base:
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono.LiveCallerLookup
         INFOPLIST_FILE: MagicCallLiveCallerLookup/Info.plist
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
         SKIP_INSTALL: YES
+
+  MagicCallTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MagicCallTests
+    dependencies:
+      - target: MagicCall
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/MagicCall.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MagicCall"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 
 schemes:
   MagicCall:
@@ -97,6 +113,10 @@ schemes:
         MagicCall: all
         MagicCallCallDirectory: all
         MagicCallLiveCallerLookup: all
+        MagicCallTests: [test]
+    test:
+      targets:
+        - MagicCallTests
     run:
       config: Debug
     profile:

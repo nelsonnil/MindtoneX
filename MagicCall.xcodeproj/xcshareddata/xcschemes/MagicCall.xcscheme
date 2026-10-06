@@ -29,7 +29,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DD0000700000000000000070"
+               BlueprintIdentifier = "82F6CE481CE82E38A1293AAC"
                BuildableName = "MagicCallCallDirectory.appex"
                BlueprintName = "MagicCallCallDirectory"
                ReferencedContainer = "container:MagicCall.xcodeproj">
@@ -43,7 +43,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DD0000720000000000000072"
+               BlueprintIdentifier = "F4C7E9F38150AFC8D5BBD590"
                BuildableName = "MagicCallLiveCallerLookup.appex"
                BlueprintName = "MagicCallLiveCallerLookup"
                ReferencedContainer = "container:MagicCall.xcodeproj">
@@ -67,7 +67,20 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "33868C6DE8298B832877BC0F"
+               BuildableName = "MagicCallTests.xctest"
+               BlueprintName = "MagicCallTests"
+               ReferencedContainer = "container:MagicCall.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -115,7 +128,7 @@
       buildConfiguration = "Debug">
    </AnalyzeAction>
    <ArchiveAction
-      buildConfiguration = "Release"
+      buildConfiguration = "AppStore"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>

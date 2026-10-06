@@ -13,6 +13,7 @@
 import Foundation
 import IdentityLookup
 
+@available(iOS 18.0, *)
 @main
 struct LiveCallerLookupExtension: LiveCallerIDLookupProtocol {
     var context: LiveCallerIDLookupExtensionContext {
