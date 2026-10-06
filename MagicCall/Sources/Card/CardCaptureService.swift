@@ -87,10 +87,14 @@ final class CardCaptureService: NSObject {
     }
 
     /// Collects frames for `duration` seconds and returns the sharpest buffers (up to `maxFrames`).
-    func collectBurst(duration: TimeInterval, maxFrames: Int = 9) async -> [CVPixelBuffer] {
+    func collectBurst(duration: TimeInterval, maxFrames: Int = 9, scanPulse: Bool = true) async -> [CVPixelBuffer] {
         var collected: [(buffer: CVPixelBuffer, score: Double)] = []
         let end = Date().addingTimeInterval(duration)
-        PerformanceCues.cardScanningPulse()
+        if scanPulse {
+            await MainActor.run {
+                PerformanceCues.cardScanningPulse()
+            }
+        }
         while Date() < end {
             if let buf = copyLatestBuffer() {
                 let score = Self.sharpnessScore(for: buf)

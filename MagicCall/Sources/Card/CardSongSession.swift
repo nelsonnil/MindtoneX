@@ -66,9 +66,10 @@ final class CardSongSession: ObservableObject {
         state = .armed
         scanAttempts = 0
         dlog("[CARD] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(CardSettings.summary())")
-        startCamera()
-        if context == .perform {
-            dlog("[CARD] press volume to scan (no screen touch)")
+        if context == .test {
+            startCamera()
+        } else {
+            dlog("[CARD] back camera off until volume scan (no green dot until then)")
         }
     }
 
@@ -101,7 +102,7 @@ final class CardSongSession: ObservableObject {
         scanTask?.cancel()
         scanTask = nil
         if AppModel.shared.loadState == .ready, AppModel.shared.selected != nil {
-            lock(reason: "call/trigger (\(source))", auto: true)
+            lock(reason: "call/trigger (\(source))", auto: true, playLockHaptic: false)
             return
         }
         dlog("[CARD] call/trigger (\(source)) with no song ready (state=\(state))")
@@ -127,7 +128,7 @@ final class CardSongSession: ObservableObject {
            let track = AppModel.shared.selected {
             let current = CardTextMapper.canonicalKey(from: track)
             if current == key {
-                lock(reason: "volume confirm", auto: false)
+                lock(reason: "volume confirm", auto: false, playLockHaptic: false)
                 return
             }
         }
@@ -152,7 +153,11 @@ final class CardSongSession: ObservableObject {
         defer {
             if gen == generation { scanTask = nil }
         }
-        let frames = await capture.collectBurst(duration: CardSettings.burstSeconds)
+        startCamera()
+        defer { stopCamera() }
+        try? await Task.sleep(nanoseconds: 450_000_000)
+        guard gen == generation else { return }
+        let frames = await capture.collectBurst(duration: CardSettings.burstSeconds, scanPulse: false)
         guard gen == generation else { return }
         guard !frames.isEmpty else {
             dlog("[OCR] no frames in burst")
@@ -228,23 +233,29 @@ final class CardSongSession: ObservableObject {
         pendingCandidateKey = vote.key
         pendingCandidateQuery = query
 
+        if context == .perform {
+            PerformanceCues.cardSongRecognized()
+            if AppModel.shared.loadState == .ready {
+                PerformanceCues.cardSongReady()
+            }
+        }
+
         if highConfidence {
             dlog("[CARD] ★ auto-lock (\(vote.value) votes) · \(candidateLabel ?? "?")")
-            lock(reason: "OCR consensus", auto: true)
+            lock(reason: "OCR consensus", auto: true, playLockHaptic: false)
         } else {
             dlog("[CARD] ? candidate (1 vote) · \(candidateLabel ?? "?") — volume again to confirm")
             state = .candidate
-            PerformanceCues.cardCandidateUncertain()
         }
     }
 
-    private func lock(reason: String, auto: Bool) {
+    private func lock(reason: String, auto: Bool, playLockHaptic: Bool = true) {
         scanTask?.cancel()
         scanTask = nil
         stopCamera()
         state = .locked
         dlog("[CARD] 🔒 locked · \(candidateLabel ?? pendingCandidateQuery) · \(reason)")
-        if context == .perform {
+        if context == .perform, playLockHaptic {
             PerformanceCues.songLocked(source: "Card")
         }
         AppModel.shared.cardSongLocked(context: context)

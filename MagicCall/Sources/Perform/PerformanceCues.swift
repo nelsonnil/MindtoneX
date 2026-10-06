@@ -108,6 +108,22 @@ enum PerformanceCues {
         dlog("[CUE] card scanning pulse")
     }
 
+    /// OCR matched a song title (first performer cue during Card scan).
+    @MainActor
+    static func cardSongRecognized() {
+        guard vibrateOnLock else { return }
+        playOneLongBuzz(duration: 0.26, sharpness: 0.55)
+        dlog("[CUE] card song recognized (1× medium buzz)")
+    }
+
+    /// Preview loaded and ready after Card OCR (strong cue — same as song lock).
+    @MainActor
+    static func cardSongReady() {
+        guard vibrateOnLock else { return }
+        playSongLockVibration()
+        dlog("[CUE] card song ready (2× long buzz)")
+    }
+
     /// Single long buzz — song loaded but needs volume confirm (handwriting uncertain).
     @MainActor
     static func cardCandidateUncertain() {
