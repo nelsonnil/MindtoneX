@@ -84,7 +84,7 @@ struct WordApiSettingsView: View {
                                 .foregroundStyle(testResult.ok ? OracleTheme.gold : OracleTheme.coral)
                                 .textSelection(.enabled)
                         } else if provider == .card {
-                            Text("No network test — use **Practice scan** on the Card song panel or a full Perform volume scan.")
+                            Text("No network test — run a full **Perform** volume scan with Card song input.")
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.textSecondary)
                         } else {

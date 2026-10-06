@@ -63,7 +63,6 @@
 		9978DE3738110CE3E511178A /* VoiceLockingControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = F235D4C3F14AB89CF4409734 /* VoiceLockingControls.swift */; };
 		9990A04F2EB44210E992A302 /* NotesInputControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E5E3E1B9AA9AAC9611103D /* NotesInputControls.swift */; };
 		99C1146710877380EBC55FD9 /* CallMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303BA173088357A9233FE003 /* CallMonitor.swift */; };
-		9A486164EE84EDE5D2F0DAC0 /* CardPracticeScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D244A5584056A8FBA18DE84 /* CardPracticeScanView.swift */; };
 		9BC788D2F180C967FBFF14AB /* MagicIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48131BF78F88DFF0CB3E192 /* MagicIntents.swift */; };
 		9CAF4275C647D0F5AA7516BE /* WordApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */; };
 		A1527BE9FA2E86C4B75BAB86 /* NotesPerformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C269D939BB5F7D004EF20F /* NotesPerformView.swift */; };
@@ -197,7 +196,6 @@
 		8A83ABBC42C589B55EA84806 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		8CC0BDAA31FC35FD10BE1DC7 /* NotesSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSettings.swift; sourceTree = "<group>"; };
 		8CCF4B2A04391ED446729DA8 /* RingtoneAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneAudioEngine.swift; sourceTree = "<group>"; };
-		8D244A5584056A8FBA18DE84 /* CardPracticeScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPracticeScanView.swift; sourceTree = "<group>"; };
 		90D564C26BAEEF26A1D77ABA /* CallerLabelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerLabelStore.swift; sourceTree = "<group>"; };
 		94C29E2CCBFC1086588445F6 /* PreviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewService.swift; sourceTree = "<group>"; };
 		95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactShowState.swift; sourceTree = "<group>"; };
@@ -296,7 +294,6 @@
 				C10F1FAFEC4327EF1C05B2D5 /* CardInputPanel.swift */,
 				223FF801202E5B7C647700E7 /* CardLineParser.swift */,
 				9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */,
-				8D244A5584056A8FBA18DE84 /* CardPracticeScanView.swift */,
 				EC77119D4608465FEFC34B61 /* CardSettings.swift */,
 				CDBF167EB2FC9F9FEC46A0C9 /* CardSongSession.swift */,
 				2EA3CF064D7BB09B92C438B8 /* CardTextMapper.swift */,
@@ -679,7 +676,6 @@
 				0B7939F9A17DDF66D8FA6ED4 /* CardInputPanel.swift in Sources */,
 				8C4101AD9A1105D40C87AAAA /* CardLineParser.swift in Sources */,
 				0DC2CA0FAB3EE106008ED273 /* CardOCRProcessor.swift in Sources */,
-				9A486164EE84EDE5D2F0DAC0 /* CardPracticeScanView.swift in Sources */,
 				8D205906D0C59112990ED155 /* CardSettings.swift in Sources */,
 				2CFC38C7A63678D43141D4BC /* CardSongSession.swift in Sources */,
 				D1B227CCC8CB65C89C798C8C /* CardTextMapper.swift in Sources */,

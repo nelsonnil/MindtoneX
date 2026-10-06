@@ -335,15 +335,4 @@ final class CardSongSession: ObservableObject {
         captureRunning = false
     }
 
-    /// Practice scan sheet: shared capture + preview layer.
-    func makePreviewLayer() -> AVCaptureVideoPreviewLayer {
-        capture.previewLayer
-    }
-
-    func practiceScanOnce() async -> String {
-        let frames = await capture.collectBurst(duration: 2.0, maxFrames: 4)
-        guard let buf = frames.first else { return "" }
-        let lines = await CardOCRProcessor.recognize(buf)
-        return CardOCRProcessor.mergedText(from: [lines]).first ?? ""
-    }
 }
