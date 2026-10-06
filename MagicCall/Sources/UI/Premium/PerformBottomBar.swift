@@ -173,11 +173,32 @@ struct ReadinessStatusBar: View {
     }
 
     private var wordApiPerformStatus: Status? {
+        if WordApiSettings.provider == .card {
+            switch wordSession.state {
+            case .watching:
+                return Status(
+                    tone: .working,
+                    icon: "doc.viewfinder",
+                    text: "Word API · scan card line 2 · press volume"
+                )
+            case .locked:
+                let locked = wordSession.lockedReading?.label ?? "…"
+                return Status(
+                    tone: .ready,
+                    icon: "lock.fill",
+                    text: "Word API · «\(WordApiInputPanel.truncated(locked, max: 24))»"
+                )
+            case .failed(let message):
+                return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: "Word API · \(message)")
+            case .idle, .connecting:
+                return nil
+            }
+        }
         if wordSession.isStruggling {
             return Status(
                 tone: .warning,
                 icon: "wifi.exclamationmark",
-                text: "Word API · sin red · reintentando"
+                text: "Word API · offline · retrying"
             )
         }
         let reading = wordSession.lastReading ?? wordSession.baseline

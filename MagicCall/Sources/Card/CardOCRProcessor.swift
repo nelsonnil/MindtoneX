@@ -4,6 +4,8 @@ import Vision
 struct CardOCRReading: Sendable {
     let text: String
     let confidence: Float
+    /// Vision normalized Y (higher = closer to top of frame) for top-to-bottom line order.
+    let topRank: CGFloat
 }
 
 /// Vision text recognition (revision 3, accurate, EN+ES).
@@ -22,7 +24,9 @@ enum CardOCRProcessor {
                     guard let best = obs.topCandidates(1).first else { continue }
                     let t = best.string.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard t.count >= 2 else { continue }
-                    lines.append(CardOCRReading(text: t, confidence: best.confidence))
+                    let box = obs.boundingBox
+                    let topRank = box.origin.y + box.height
+                    lines.append(CardOCRReading(text: t, confidence: best.confidence, topRank: topRank))
                 }
                 cont.resume(returning: lines)
             }
@@ -40,6 +44,16 @@ enum CardOCRProcessor {
                 cont.resume(returning: [])
             }
         }
+    }
+
+    static func orderedLineTexts(from readings: [CardOCRReading]) -> [String] {
+        readings
+            .sorted { $0.topRank > $1.topRank }
+            .map(\.text)
+    }
+
+    static func lineScore(_ readings: [CardOCRReading]) -> Double {
+        readings.reduce(0) { $0 + Double($1.confidence) }
     }
 
     static func mergedText(from readings: [[CardOCRReading]]) -> [String] {

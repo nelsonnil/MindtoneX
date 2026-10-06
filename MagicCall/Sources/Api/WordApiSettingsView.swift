@@ -40,6 +40,7 @@ struct WordApiSettingsView: View {
                 case .inject: injectCard
                 case .elips: elipsCard
                 case .custom: customCards
+                case .card: cardSetupCard
                 }
 
                 oracleCard {
@@ -75,13 +76,17 @@ struct WordApiSettingsView: View {
                             .padding(.vertical, 4)
                         }
                         .buttonStyle(.plain)
-                        .disabled(testing || !WordApiSettings.hasWordEndpoint)
+                        .disabled(testing || !WordApiSettings.hasWordEndpoint || provider == .card)
 
                         if let testResult {
                             Text(testResult.text)
                                 .font(.caption)
                                 .foregroundStyle(testResult.ok ? OracleTheme.gold : OracleTheme.coral)
                                 .textSelection(.enabled)
+                        } else if provider == .card {
+                            Text("No network test — use **Practice scan** on the Card song panel or a full Perform volume scan.")
+                                .font(.caption)
+                                .foregroundStyle(OracleTheme.textSecondary)
                         } else {
                             Text("Reads the Word API once and shows the current label text.")
                                 .font(.caption)
@@ -93,7 +98,9 @@ struct WordApiSettingsView: View {
                 oracleCard {
                     VStack(alignment: .leading, spacing: 10) {
                         OracleEyebrow(text: "On Perform")
-                        Text("Turn **Caller label** on the home card first. Then polls every \(Int(WordApiSettings.pollInterval)) seconds in parallel with your song input. First reading = old word; **next change** = spectator word → locked → incoming call banner.")
+                        Text(provider == .card
+                            ? "Turn **Caller label** on. Set **Song input** to **Card** and write **line 1** = song, **line 2** = word. One **volume** scan during Perform locks both."
+                            : "Turn **Caller label** on the home card first. Then polls every \(Int(WordApiSettings.pollInterval)) seconds in parallel with your song input. First reading = old word; **next change** = spectator word → locked → incoming call banner.")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -125,6 +132,27 @@ struct WordApiSettingsView: View {
             Text("Separate from the song API — own URL, Inject ID, and JSON field. Used only for the incoming-call label.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
+        }
+    }
+
+    private var cardSetupCard: some View {
+        oracleCard {
+            VStack(alignment: .leading, spacing: 10) {
+                OracleEyebrow(text: "Card layout")
+                Text("Same physical card as song input. **Line 1** (top) = song title in ALL CAPS. **Line 2** = one spectator word. Optional labels: `SONG:` / `WORD:` or `PALABRA:`.")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if VoiceSettings.inputMode != .card {
+                    Label("Song input is not Card — switch it on the home screen.", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.coral)
+                } else {
+                    Label("Song input = Card — ready for combined scan.", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.gold)
+                }
+            }
         }
     }
 

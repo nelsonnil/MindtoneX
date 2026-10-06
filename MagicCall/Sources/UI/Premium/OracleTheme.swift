@@ -363,6 +363,7 @@ enum OracleHomeSection {
     case songInput
     case feedback
     case advanced
+    case wordApi
 
     var accent: Color {
         switch self {
@@ -370,6 +371,7 @@ enum OracleHomeSection {
         case .songInput: OracleTheme.indigo
         case .feedback: OracleTheme.sectionTeal
         case .advanced: OracleTheme.sectionSlate
+        case .wordApi: OracleTheme.coral
         }
     }
 

@@ -1,5 +1,4 @@
 import AVFoundation
-import AVFoundation
 import Foundation
 import QuartzCore
 import UIKit
@@ -166,22 +165,40 @@ final class CardSongSession: ObservableObject {
         }
 
         var frameTexts: [[CardOCRReading]] = []
+        var bestLineReadings: [CardOCRReading] = []
         for (i, buf) in frames.prefix(6).enumerated() {
             let lines = await CardOCRProcessor.recognize(buf)
             if !lines.isEmpty {
                 dlog("[OCR] frame \(i + 1): \(lines.map(\.text).joined(separator: " | "))")
             }
             frameTexts.append(lines)
+            if CardOCRProcessor.lineScore(lines) > CardOCRProcessor.lineScore(bestLineReadings) {
+                bestLineReadings = lines
+            }
         }
         let texts = CardOCRProcessor.mergedText(from: frameTexts)
+        let orderedLines = CardOCRProcessor.orderedLineTexts(from: bestLineReadings)
+        let dual = CardLineParser.parse(orderedLines: orderedLines)
+        if !orderedLines.isEmpty {
+            dlog("[CARD] lines top→bottom: \(orderedLines.joined(separator: " | "))")
+        }
         guard gen == generation else { return }
+
+        var queriesToTry: [String] = []
+        if dual.songQuery.count >= 2 {
+            queriesToTry.append(dual.songQuery)
+        }
+        for text in texts {
+            let query = CardTextMapper.clean(text)
+            guard query.count >= 2, !queriesToTry.contains(where: { ApiJSON.sameText($0, query) }) else { continue }
+            queriesToTry.append(query)
+        }
 
         var votes: [String: Int] = [:]
         var queryByKey: [String: String] = [:]
         var trackByKey: [String: PreviewTrack] = [:]
 
-        for text in texts {
-            let query = CardTextMapper.clean(text)
+        for query in queriesToTry {
             guard query.count >= 2 else { continue }
             let ok = await AppModel.shared.prepareCardQuery(query)
             guard gen == generation else { return }
@@ -203,7 +220,8 @@ final class CardSongSession: ObservableObject {
             vote: best,
             query: best.flatMap { queryByKey[$0.key] },
             ocrSample: sample,
-            track: best.flatMap { trackByKey[$0.key] }
+            track: best.flatMap { trackByKey[$0.key] },
+            cardWord: dual.spectatorWord
         )
     }
 
@@ -212,7 +230,8 @@ final class CardSongSession: ObservableObject {
         vote: (key: String, value: Int)?,
         query: String?,
         ocrSample: String,
-        track: PreviewTrack? = nil
+        track: PreviewTrack? = nil,
+        cardWord: String? = nil
     ) async {
         guard gen == generation else { return }
         lastOCRText = ocrSample
@@ -247,6 +266,20 @@ final class CardSongSession: ObservableObject {
             dlog("[CARD] ? candidate (1 vote) · \(candidateLabel ?? "?") — volume again to confirm")
             state = .candidate
         }
+
+        applyCardWordIfNeeded(cardWord)
+    }
+
+    private func applyCardWordIfNeeded(_ cardWord: String?) {
+        guard WordApiSettings.callerLabelEnabled, WordApiSettings.provider == .card else { return }
+        guard let word = cardWord, !word.isEmpty else {
+            if context == .perform {
+                dlog("[CARD] no word line — ask for line 2 or WORD:/PALABRA: label")
+                PerformUserLog.shared.log("Word API (card) · no word line — use line 2 or WORD:")
+            }
+            return
+        }
+        WordApiSession.shared.ingestCardScanWord(word)
     }
 
     private func lock(reason: String, auto: Bool, playLockHaptic: Bool = true) {

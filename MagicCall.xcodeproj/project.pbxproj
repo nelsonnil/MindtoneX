@@ -55,6 +55,7 @@
 		79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */; };
 		7BA36D68D4A7708928889CA2 /* SongInputStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */; };
 		8BC10BB4807461B2F102F8FA /* ApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30B3D15953FEAA8EA8E7828 /* ApiSettingsView.swift */; };
+		8C4101AD9A1105D40C87AAAA /* CardLineParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223FF801202E5B7C647700E7 /* CardLineParser.swift */; };
 		8D205906D0C59112990ED155 /* CardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC77119D4608465FEFC34B61 /* CardSettings.swift */; };
 		8EE3FDC0948FC9B790A9AACA /* WordApiSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BDF1EA0492BCF11335526EC /* WordApiSession.swift */; };
 		924BA1D7520A74BEAA0986A7 /* MCObjC.m in Sources */ = {isa = PBXBuildFile; fileRef = 778066FED077319EC23EDCEE /* MCObjC.m */; };
@@ -151,6 +152,7 @@
 		1B91AE661642AE376E1DD474 /* ApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettings.swift; sourceTree = "<group>"; };
 		1DFC03C27AB6139290A4DA80 /* SharePerformFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharePerformFlow.swift; sourceTree = "<group>"; };
 		218281B22EB24031B59074EA /* VoiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettings.swift; sourceTree = "<group>"; };
+		223FF801202E5B7C647700E7 /* CardLineParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardLineParser.swift; sourceTree = "<group>"; };
 		246424FC8857825942B19C91 /* WordApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSettings.swift; sourceTree = "<group>"; };
 		2520D9C08750800C79413F10 /* AppModel+WordContact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+WordContact.swift"; sourceTree = "<group>"; };
 		260CB39E9363322425A78261 /* OracleTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleTheme.swift; sourceTree = "<group>"; };
@@ -290,6 +292,7 @@
 			children = (
 				2B18EC83ADCF3B62E44CB7E5 /* CardCaptureService.swift */,
 				C10F1FAFEC4327EF1C05B2D5 /* CardInputPanel.swift */,
+				223FF801202E5B7C647700E7 /* CardLineParser.swift */,
 				9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */,
 				8D244A5584056A8FBA18DE84 /* CardPracticeScanView.swift */,
 				EC77119D4608465FEFC34B61 /* CardSettings.swift */,
@@ -671,6 +674,7 @@
 				331E9430747CFF4456798229 /* CallerLabelStore.swift in Sources */,
 				20ACC5FFA594DEB4E92EAC0B /* CardCaptureService.swift in Sources */,
 				0B7939F9A17DDF66D8FA6ED4 /* CardInputPanel.swift in Sources */,
+				8C4101AD9A1105D40C87AAAA /* CardLineParser.swift in Sources */,
 				0DC2CA0FAB3EE106008ED273 /* CardOCRProcessor.swift in Sources */,
 				9A486164EE84EDE5D2F0DAC0 /* CardPracticeScanView.swift in Sources */,
 				8D205906D0C59112990ED155 /* CardSettings.swift in Sources */,

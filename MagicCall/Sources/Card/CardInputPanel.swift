@@ -12,7 +12,7 @@ struct CardInputPanel: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 tipRow("doc.plaintext", "White matte card + thick black marker")
-                tipRow("textformat.size.larger", "Ask for ALL CAPS — title only")
+                tipRow("textformat.size.larger", "ALL CAPS · **line 1** = song title · **line 2** = one spectator word (optional SONG:/WORD: labels)")
                 tipRow("camera.fill", "Back camera turns on only while scanning (press volume during Perform)")
                 tipRow("button.programmable", "1 buzz = song read · 2 strong buzzes = preview ready")
             }

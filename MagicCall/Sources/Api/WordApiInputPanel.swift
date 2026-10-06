@@ -9,12 +9,16 @@ struct WordApiInputPanel: View {
     @AppStorage(WordApiSettings.Key.saveWordAsContact) private var saveWordAsContact = true
     @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
     @AppStorage(WordApiSettings.Key.restoreKnownNameOnSettingsExit) private var restoreKnownNameOnSettingsExit = true
+    @AppStorage(VoiceSettings.Key.inputMode) private var songInputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     @State private var showConnectionSheet = false
     @State private var showHomeContactPicker = false
 
     private var provider: WordApiSettings.Provider { WordApiSettings.Provider(rawValue: providerRaw) ?? .inject }
     private var configured: Bool { WordApiSettings.hasWordEndpoint }
+    private var songInputIsCard: Bool {
+        (VoiceSettings.InputMode(rawValue: songInputModeRaw) ?? .manual) == .card
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -214,7 +218,18 @@ struct WordApiInputPanel: View {
                         .foregroundStyle(configured ? OracleTheme.textSecondary : OracleTheme.coral)
                 }
 
-                if provider == .inject {
+                if provider == .card {
+                    Text(provider.detail)
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !songInputIsCard {
+                        Label("Set **Song input** to Card — word line 2 is read on the same volume scan.", systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.coral)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } else if provider == .inject {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Inject ID")
                             .font(.caption.weight(.semibold))
@@ -229,27 +244,34 @@ struct WordApiInputPanel: View {
                     }
                 }
 
-                Button {
-                    showConnectionSheet = true
-                } label: {
-                    HStack {
-                        Label(
-                            provider == .inject && !injectID.isEmpty ? "Full setup & test connection" : "Enter connection details",
-                            systemImage: "link.circle.fill"
-                        )
-                        .font(.subheadline.weight(.semibold))
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.bold))
+                if provider != .card {
+                    Button {
+                        showConnectionSheet = true
+                    } label: {
+                        HStack {
+                            Label(
+                                provider == .inject && !injectID.isEmpty ? "Full setup & test connection" : "Enter connection details",
+                                systemImage: "link.circle.fill"
+                            )
+                            .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.bold))
+                        }
+                        .foregroundStyle(OracleTheme.gold)
+                        .padding(.vertical, 4)
                     }
-                    .foregroundStyle(OracleTheme.gold)
-                    .padding(.vertical, 4)
-                }
-                .buttonStyle(.plain)
+                    .buttonStyle(.plain)
 
-                Text("On Perform, polls every \(Int(WordApiSettings.pollInterval)) s — first reading is the old word; the **next change** is the spectator’s word for the call banner.")
-                    .font(.caption2)
-                    .foregroundStyle(OracleTheme.textSecondary)
+                    Text("On Perform, polls every \(Int(WordApiSettings.pollInterval)) s — first reading is the old word; the **next change** is the spectator’s word for the call banner.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                } else {
+                    Text("On Perform, press **volume** once — same scan loads the song (line 1) and locks the caller label from **line 2**. No network poll.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .padding(14)
             .background(Color.white.opacity(0.04))
@@ -291,9 +313,12 @@ struct WordApiInputPanel: View {
     /// Last successful poll during Perform — helps spot frozen Inject counters.
     private var lastPollSummaryLine: String? {
         guard let reading = session.lastReading ?? session.baseline else { return nil }
+        let word = WordApiInputPanel.truncated(reading.label, max: 28)
+        if provider == .card {
+            return session.state == .locked ? "Card scan · locked «\(word)»" : "Card scan · last «\(word)»"
+        }
         let count = reading.count.map(String.init) ?? "–"
         let rc = reading.receiveCount.map(String.init) ?? "–"
-        let word = WordApiInputPanel.truncated(reading.label, max: 28)
         return "Last poll · count \(count) · rc \(rc) · «\(word)»"
     }
 
@@ -304,12 +329,24 @@ struct WordApiInputPanel: View {
         switch session.state {
         case .idle:
             if let last = session.lastReading, last.hasWord { return ("Last value: “\(last.label)”", "text.quote", false) }
+            if provider == .card {
+                return configured
+                    ? ("Card OCR word — line 2 on the same volume scan as the song.", "doc.viewfinder", false)
+                    : nil
+            }
             return configured
                 ? ("Polls every \(Int(WordApiSettings.pollInterval)) s during Perform — change the word in \(provider.title) to lock the caller label.", "info.circle", false)
                 : nil
         case .connecting:
             return ("Connecting to \(provider.title)…", "antenna.radiowaves.left.and.right", false)
         case .watching:
+            if provider == .card {
+                return (
+                    "Waiting for volume scan — write the word on **line 2** of the card (or WORD: label).",
+                    "camera.viewfinder",
+                    false
+                )
+            }
             if session.context == .perform {
                 let baselineLabel = session.baseline?.label ?? "…"
                 return (
@@ -355,9 +392,10 @@ struct WordApiHomeCard: View {
             return "Off — Perform unchanged (no call banner)"
         }
         if WordApiSettings.hasWordEndpoint {
+            if provider == .card { return "Card (OCR) · line 2 on volume scan" }
             return "\(provider.title) · polls during Perform"
         }
-        return "Set Inject, Elips, or Custom API"
+        return provider == .card ? "Card word needs Song input = Card" : "Set Inject, Elips, Custom, or Card OCR"
     }
 
     var body: some View {

@@ -90,7 +90,7 @@ enum PerformCopy {
         case .notes:
             steps.append("A white note opens instead. The song written in it is searched and loaded in the background.")
         case .card:
-            steps.append("The back camera reads the spectator’s handwritten card when you press a **volume button** (no screen touch). ALL CAPS on white card works best.")
+            steps.append("The back camera reads the card on **volume** (no screen touch). **Line 1** = song · **line 2** = word when Word API is **Card (OCR)**. ALL CAPS on white card works best.")
         case .manual:
             steps.append("The app uses the song you typed above.")
         }
@@ -129,8 +129,8 @@ enum PerformCopy {
     ]
 
     static let wordApiSteps: [String] = [
-        "On home, open **Word API (caller label)** (below Song input). Turn **Caller label** **ON** and connect **Inject**, **Elips**, or **Custom API** — this is a **second endpoint**, separate from the song API under Song input.",
-        "During **Perform**, MindtoneX polls the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with however you load the song (**AI Voice**, **API song input**, **Notes**, **Card**, or manual search). Song and word are independent streams into one performance.",
+        "On home, open **Word API (caller label)** (below Song input). Turn **Caller label** **ON** and pick **Inject**, **Elips**, **Custom API**, or **Card (OCR)** — separate from the song API unless you choose Card for both.",
+        "During **Perform**, networked providers poll the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with song input (**AI Voice**, **API**, **Notes**, **Card**, manual). **Card (OCR)** skips polling: **line 2** of the handwritten card on the **volume scan** locks the caller label while **line 1** loads the song.",
         "**Elips example:** enable **API** for the song (spectator searches a title in Elips) and **Elips** for the word (spectator submits a word — often one they chose from the lyrics). When the word **locks**, that text can appear as the **incoming caller name** while your stage plays the locked song.",
         "The **first poll** is the old value on the server (baseline). The **next change** is the spectator’s new word → **lock** (three short taps). Then have them call you — the banner should show the word, not only the digits.",
         "Turn on **Settings → Phone → Call Blocking & Identification → MindtoneX**. Optional: **Save locked word as contact name** (below) so iOS shows the prediction even more reliably than Call Directory alone.",
