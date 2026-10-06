@@ -266,7 +266,7 @@ final class VoiceSongSession: ObservableObject {
                 if self.candidate?.key == next.key {
                     self.prep = ok ? .ready : .notFound
                     if !ok, self.context == .perform {
-                        PerformUserLog.shared.log("Voz · no encontré “\(next.label)”")
+                        PerformUserLog.shared.log("Voice · no match for “\(next.label)”")
                     }
                     if ok {
                         await MainActor.run {
@@ -368,7 +368,7 @@ final class VoiceSongSession: ObservableObject {
         stopListening()
         state = .failed(message)
         if context == .perform {
-            PerformUserLog.shared.log("Voz · \(message)")
+            PerformUserLog.shared.log("Voice · \(message)")
         }
         VoiceAudioSession.recordCategoryActive = false
         VoiceAudioSession.deactivateIfIdle()

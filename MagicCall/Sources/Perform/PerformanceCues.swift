@@ -51,9 +51,9 @@ enum PerformanceCues {
         if AppModel.shared.isArmed {
             let track = AppModel.shared.selected ?? AppModel.shared.lastReadyTrack
             if let track {
-                PerformUserLog.shared.log("Canción lista · “\(track.title) — \(track.artist)”")
+                PerformUserLog.shared.log("Song ready · “\(track.title) — \(track.artist)”")
             } else {
-                PerformUserLog.shared.log("Canción lista · \(source)")
+                PerformUserLog.shared.log("Song ready · \(source)")
             }
         }
         guard vibrateOnLock else { return }
@@ -66,9 +66,9 @@ enum PerformanceCues {
     static func wordLocked(source: String, label: String? = nil) {
         if AppModel.shared.isArmed {
             if let label, !label.isEmpty {
-                PerformUserLog.shared.log("Palabra del espectador · “\(label)”")
+                PerformUserLog.shared.log("Spectator word · “\(label)”")
             } else {
-                PerformUserLog.shared.log("Palabra bloqueada · \(source)")
+                PerformUserLog.shared.log("Word locked · \(source)")
             }
         }
         guard vibrateOnLock else { return }

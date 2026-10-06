@@ -40,7 +40,6 @@ final class WordApiSession: ObservableObject {
     private var generation = 0
     private var unchangedCountPolls = 0
     private var loggedStalePollWarning = false
-    private var lastUnchangedPerformUserLogAt: Date?
     private var previousPollReading: WordReading?
     /// Last label written to Call Directory this Perform (poll-to-poll text compare).
     private var lastAppliedLabel: String?
@@ -67,7 +66,6 @@ final class WordApiSession: ObservableObject {
         }
         state = .connecting
         WordApiClient.resetPerformFetchDiagnostics()
-        lastUnchangedPerformUserLogAt = nil
         dlog("[WORD] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(WordApiSettings.summary())")
         let timer = Timer(timeInterval: WordApiSettings.pollInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
@@ -128,7 +126,7 @@ final class WordApiSession: ObservableObject {
             consecutiveErrors += 1
             lastError = error.localizedDescription
             if context == .perform, consecutiveErrors == 3 {
-                PerformUserLog.shared.logConnectionIssue("Word API sin conexión · reintentando")
+                PerformUserLog.shared.logConnectionIssue("Word API offline · retrying")
             }
             if consecutiveErrors == 1 || consecutiveErrors % 10 == 0 {
                 dlog("✗ [WORD] poll #\(pollCount) failed ×\(consecutiveErrors) (\(ms) ms): \(error.localizedDescription)")
@@ -165,9 +163,6 @@ final class WordApiSession: ObservableObject {
             loggedStalePollWarning = false
             pushCallerLabel(label, reason: "start")
             dlog("[WORD] start (\(ms) ms) · \(provider.title) «\(label)»")
-            PerformUserLog.shared.log(
-                "Word API (\(provider.title)): «\(label)» — cada 2 s; si el texto cambia, actualiza la etiqueta de llamada."
-            )
             return
         }
 
@@ -184,8 +179,7 @@ final class WordApiSession: ObservableObject {
         lockedReading = reading
         state = .locked
         let buzzOn = PerformanceCues.vibrateOnLock
-        dlog("[WORD] 🔒 «\(label)» poll #\(pollCount) · etiqueta actualizada · buzz=\(buzzOn)")
-        PerformUserLog.shared.log("Etiqueta llamada · «\(label)» · vibración \(buzzOn ? "3 toques" : "off")")
+        dlog("[WORD] 🔒 «\(label)» poll #\(pollCount) · label updated · buzz=\(buzzOn)")
         PerformanceCues.wordLocked(source: "Word API", label: label)
     }
 
@@ -212,7 +206,7 @@ final class WordApiSession: ObservableObject {
             loggedStalePollWarning = false
         }
         if unchangedCountPolls >= 6, !loggedStalePollWarning {
-            PerformUserLog.shared.log(stalePerformHint(provider: provider, baseline: baseline))
+            dlog("[WORD] ⚠ \(stalePerformHint(provider: provider, baseline: baseline))")
             loggedStalePollWarning = true
         }
     }
@@ -225,23 +219,6 @@ final class WordApiSession: ObservableObject {
         dlog("[WORD] etiqueta → «\(label)» (\(reason))")
     }
 
-    private func logUnchangedPoll(_ reading: WordReading, baseline base: WordReading, ms: Int) {
-        let baseCount = base.count.map(String.init) ?? "–"
-        let nowCount = reading.count.map(String.init) ?? "–"
-        let slightlyDifferent = reading.count != base.count
-            || reading.receiveCount != base.receiveCount
-            || reading.word != base.word
-        let periodic = pollCount % 5 == 0
-        guard periodic || slightlyDifferent else { return }
-        let reason = reading.unchangedVsBaselineReason(comparedTo: base)
-        dlog("[WORD] poll #\(pollCount) unchanged vs baseline count=\(baseCount) word=«\(base.label)» (\(ms) ms; now count=\(nowCount) word=«\(reading.label)» · \(reason))")
-        guard context == .perform else { return }
-        let now = Date()
-        if let last = lastUnchangedPerformUserLogAt, now.timeIntervalSince(last) < 12 { return }
-        lastUnchangedPerformUserLogAt = now
-        PerformUserLog.shared.log("Word API: esperando cambio · «\(reading.label)» (\(reason))")
-    }
-
     private func lock(_ reading: WordReading) {
         lockedReading = reading
         state = .locked
@@ -249,9 +226,6 @@ final class WordApiSession: ObservableObject {
         let buzzOn = PerformanceCues.vibrateOnLock
         dlog("[WORD] 🔒 lock “\(reading.label)” after \(pollCount) polls · callerLabelEnabled=\(WordApiSettings.callerLabelEnabled) wordDotEnabled=\(wordDotEnabled) buzzOn=\(buzzOn) · polling continues")
         if context == .perform {
-            PerformUserLog.shared.log(
-                "Word bloqueada · «\(reading.label)» · punto naranja OFF · vibración \(buzzOn ? "3 toques" : "desactivada")"
-            )
             PerformanceCues.wordLocked(source: "Word API", label: reading.label)
         }
         guard WordApiSettings.callerLabelEnabled else { return }
@@ -276,7 +250,6 @@ final class WordApiSession: ObservableObject {
         pollCount = 0
         unchangedCountPolls = 0
         loggedStalePollWarning = false
-        lastUnchangedPerformUserLogAt = nil
         previousPollReading = nil
         lastAppliedLabel = nil
         WordApiClient.resetPerformFetchDiagnostics()
@@ -288,11 +261,11 @@ final class WordApiSession: ObservableObject {
         case .inject:
             let c = baseline.count.map(String.init) ?? "–"
             let r = baseline.receiveCount.map(String.init) ?? "–"
-            return "⚠ Inject sin cambios (\(c)/\(r)) · «\(word)». Envía palabra nueva en el enlace del espectador (11z.co/…/selection)."
+            return "Inject unchanged (\(c)/\(r)) «\(word)»"
         case .elips:
-            return "⚠ Elips sin cambios · «\(word)». Cambia la palabra en pag.gg/Elips y espera el siguiente poll (2 s)."
+            return "Elips unchanged «\(word)»"
         case .custom:
-            return "⚠ Custom API sin cambios · «\(word)». Actualiza el JSON en tu endpoint; la app solo aplica cuando el campo cambia."
+            return "Custom API unchanged «\(word)»"
         }
     }
 

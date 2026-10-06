@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// Home card: recent Perform sessions with plain Spanish event lines.
+/// Home card: recent Perform sessions with plain English event lines.
 struct PerformUserLogCard: View {
     @ObservedObject private var log = PerformUserLog.shared
     @AppStorage("ui.performLogExpanded") private var expanded = false
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "es_ES")
+        f.locale = Locale(identifier: "en_US_POSIX")
         f.dateStyle = .none
         f.timeStyle = .short
         return f
@@ -15,18 +15,19 @@ struct PerformUserLogCard: View {
 
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "es_ES")
+        f.locale = Locale(identifier: "en_US")
         f.dateStyle = .medium
         f.timeStyle = .short
         return f
     }()
 
     private var summary: String {
-        if let active = log.activeSession {
-            return "En curso · \(active.entries.count) eventos"
+        if log.activeSession != nil {
+            let count = log.activeSession?.entries.count ?? 0
+            return "In progress · \(count) events"
         }
-        guard let latest = log.sessions.first else { return "Sin actuaciones recientes" }
-        return "\(latest.entries.count) eventos · \(Self.dayFormatter.string(from: latest.startedAt))"
+        guard let latest = log.sessions.first else { return "No recent performs" }
+        return "\(latest.entries.count) events · \(Self.dayFormatter.string(from: latest.startedAt))"
     }
 
     var body: some View {
@@ -43,7 +44,7 @@ struct PerformUserLogCard: View {
                             .background(OracleHomeSection.advanced.accent.opacity(0.14))
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Registro de actuación")
+                            Text("Perform log")
                                 .font(.headline.weight(.semibold))
                                 .foregroundStyle(OracleTheme.textPrimary)
                             Text(summary)
@@ -59,12 +60,12 @@ struct PerformUserLogCard: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(expanded ? "Contraer registro" : "Expandir registro")
+                .accessibilityLabel(expanded ? "Collapse perform log" : "Expand perform log")
 
                 if expanded {
                     VStack(alignment: .leading, spacing: 12) {
                         if log.sessions.isEmpty {
-                            Text("Aquí verás qué pasó en cada actuación: canción, palabra, llamada y avisos de conexión.")
+                            Text("Song locks, spectator words, incoming calls, and setup warnings appear here after each perform.")
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.textSecondary)
                                 .padding(.top, 16)
@@ -78,7 +79,7 @@ struct PerformUserLogCard: View {
                             Button(role: .destructive) {
                                 log.clearAll()
                             } label: {
-                                Text("Borrar historial")
+                                Text("Clear history")
                                     .font(.caption.weight(.semibold))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 10)
@@ -102,7 +103,7 @@ struct PerformUserLogCard: View {
                     .foregroundStyle(OracleTheme.textPrimary)
                 Spacer(minLength: 4)
                 if session.endedAt == nil {
-                    Text("En curso")
+                    Text("Live")
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(OracleTheme.gold)
                         .padding(.horizontal, 8)

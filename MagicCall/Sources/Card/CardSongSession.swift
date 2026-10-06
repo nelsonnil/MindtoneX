@@ -254,17 +254,17 @@ final class CardSongSession: ObservableObject {
         stopCamera()
         state = .failed(message)
         if context == .perform {
-            PerformUserLog.shared.log("Tarjeta · \(message)")
+            PerformUserLog.shared.log("Card · \(message)")
         }
         dlog("✗ [CARD] \(message)")
     }
 
     private func failScanMaxRetries() {
         stopCamera()
-        let message = "No pude leer la tarjeta — prueba Notas u otro método"
+        let message = "Could not read the card — try Notes or another input"
         state = .failed(message)
         if context == .perform {
-            PerformUserLog.shared.log("Tarjeta · \(message)")
+            PerformUserLog.shared.log("Card · \(message)")
         }
         PerformanceCues.cardScanFailed()
         dlog("[CARD] max scan retries reached")

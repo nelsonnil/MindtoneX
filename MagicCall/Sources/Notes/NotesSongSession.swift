@@ -145,7 +145,7 @@ final class NotesSongSession: ObservableObject {
                     if !self.isLocked {
                         self.state = .notFound
                         if self.context == .perform {
-                            PerformUserLog.shared.log("Notas · no vi una canción en la nota")
+                            PerformUserLog.shared.log("Notes · no song found in note")
                         }
                     }
                     continue
@@ -162,7 +162,7 @@ final class NotesSongSession: ObservableObject {
                 } else if !self.isLocked {
                     self.state = .notFound
                     if self.context == .perform {
-                        PerformUserLog.shared.log("Notas · no encontré “\(query)”")
+                        PerformUserLog.shared.log("Notes · no match for “\(query)”")
                     }
                 }
             }

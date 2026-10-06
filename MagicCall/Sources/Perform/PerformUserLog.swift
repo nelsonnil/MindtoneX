@@ -1,6 +1,6 @@
 import Foundation
 
-/// User-facing Perform history for the home screen (plain Spanish, magician-friendly).
+/// User-facing Perform history for the home screen (plain English, magician-friendly).
 @MainActor
 final class PerformUserLog: ObservableObject {
     static let shared = PerformUserLog()
@@ -54,15 +54,15 @@ final class PerformUserLog: ObservableObject {
 
     func beginSession(inputLabel: String) {
         lastConnectionWarningAt = nil
-        if activeSessionID != nil { endSession(reason: "Nueva actuación") }
+        if activeSessionID != nil { endSession(reason: "New perform") }
         var session = Session(title: inputLabel)
-        session.entries.append(Entry(message: "Actuación iniciada · \(inputLabel)"))
+        session.entries.append(Entry(message: "Perform started · \(inputLabel)"))
         sessions.insert(session, at: 0)
         activeSessionID = session.id
         trimAndPersist()
     }
 
-    func endSession(reason: String = "Actuación terminada") {
+    func endSession(reason: String = "Perform ended") {
         guard let id = activeSessionID, let index = sessions.firstIndex(where: { $0.id == id }) else { return }
         sessions[index].entries.append(Entry(message: reason))
         sessions[index].endedAt = Date()

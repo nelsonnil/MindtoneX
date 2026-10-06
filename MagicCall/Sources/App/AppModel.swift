@@ -173,7 +173,7 @@ final class AppModel: ObservableObject {
             ringtoneStaged = false
             loadState = .failed(error.localizedDescription)
             if isArmed {
-                PerformUserLog.shared.log("No pude cargar el audio · \(error.localizedDescription)")
+                PerformUserLog.shared.log("Could not load audio · \(error.localizedDescription)")
             }
             dlog("✗ Cargar audio: \(error.localizedDescription)")
         }
@@ -603,7 +603,7 @@ final class AppModel: ObservableObject {
             incomingDetectedAt = CACurrentMediaTime()
             callSignalActive = true
             hadCallWhileArmed = true
-            PerformUserLog.shared.log("Llamada entrante detectada")
+            PerformUserLog.shared.log("Incoming call detected")
             VoiceSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             NotesSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             ApiSongSession.shared.callArrived(source: "CXCallObserver.incoming")

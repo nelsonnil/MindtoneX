@@ -127,7 +127,7 @@ final class ApiSongSession: ObservableObject {
             consecutiveErrors += 1
             lastError = error.localizedDescription
             if context == .perform, consecutiveErrors == 3 {
-                PerformUserLog.shared.logConnectionIssue("Song API sin conexión · reintentando")
+                PerformUserLog.shared.logConnectionIssue("Song API offline · retrying")
             }
             if consecutiveErrors == 1 || consecutiveErrors % 10 == 0 {
                 dlog("✗ [API] poll #\(pollCount) failed ×\(consecutiveErrors) (\(ms) ms): \(error.localizedDescription)")
@@ -169,7 +169,7 @@ final class ApiSongSession: ObservableObject {
             notFound = reading.label
             state = .watching
             if context == .perform {
-                PerformUserLog.shared.log("No encontré canción para “\(reading.label)”")
+                PerformUserLog.shared.log("No song found for “\(reading.label)”")
             }
         }
     }

@@ -12,7 +12,7 @@ enum CallDirectorySync {
     private static var reloadInFlight = false
     private static var pendingReason: String?
 
-    static let disabledHint = "⚠ Etiqueta: activa MindtoneX en Ajustes → Teléfono → Bloqueo e identificación de llamadas."
+    static let disabledHint = "Enable MindtoneX under Settings → Phone → Call Blocking & Identification."
 
     /// Only the Call Directory extension: Live Caller ID Lookup is not managed by `CXCallDirectoryManager` (always error 1).
     static func reloadExtensions(reason: String) {
@@ -107,10 +107,10 @@ enum CallDirectorySync {
         let appGroup = CallerLabelStore.isAppGroupAvailable
         dlog("[CALL-ID] readiness · appGroup=\(appGroup) numbers=\(snapshot.identificationPhoneNumbers) armed=\(snapshot.performArmed)")
         if !appGroup {
-            PerformUserLog.shared.log("⚠ Etiqueta: la app no tiene el App Group \(CallerLabelStore.appGroupID) firmado — la extensión no puede leer la palabra.")
+            PerformUserLog.shared.log("Caller label: App Group not signed — rebuild with \(CallerLabelStore.appGroupID).")
         }
         if snapshot.identificationPhoneNumbers.isEmpty {
-            PerformUserLog.shared.log("⚠ Etiqueta: falta el número que llama (Word API → Call Identification). Solo ese número muestra la palabra.")
+            PerformUserLog.shared.log("Caller label: add the incoming number in Word API → Call Identification.")
         }
         directoryManager.getEnabledStatusForExtension(withIdentifier: CallerLabelStore.extensionBundleID) { status, error in
             DispatchQueue.main.async {
