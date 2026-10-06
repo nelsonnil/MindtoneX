@@ -12,10 +12,6 @@ struct WordApiInputPanel: View {
 
     @State private var showConnectionSheet = false
     @State private var showHomeContactPicker = false
-    @State private var showTestContactPicker = false
-    @State private var testWordDraft = ""
-    @State private var testContactFeedback: (ok: Bool, text: String)?
-    @State private var testContactBusy = false
 
     private var provider: WordApiSettings.Provider { WordApiSettings.Provider(rawValue: providerRaw) ?? .inject }
     private var configured: Bool { WordApiSettings.hasWordEndpoint }
@@ -40,7 +36,6 @@ struct WordApiInputPanel: View {
             if callerLabelEnabled {
                 wordContactCard
                 connectionBlock
-                contactTestModeBlock
                 if let line = statusLine {
                     Label(line.text, systemImage: line.icon)
                         .font(.caption)
@@ -68,18 +63,6 @@ struct WordApiInputPanel: View {
                     }
                 },
                 onCancel: { showHomeContactPicker = false }
-            )
-        }
-        .sheet(isPresented: $showTestContactPicker) {
-            WordApiKnownContactPicker(
-                onPick: { contact in
-                    showTestContactPicker = false
-                    if let e164 = WordApiContactPhoneParsing.e164(from: contact) {
-                        SpectatorWordContactService.recordKnownContactPicked(contact, phoneE164: e164)
-                        testContactFeedback = (true, "Contacto de prueba · \(WordApiSettings.knownContactDisplayName)")
-                    }
-                },
-                onCancel: { showTestContactPicker = false }
             )
         }
     }
@@ -276,97 +259,6 @@ struct WordApiInputPanel: View {
                     .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
             }
         }
-    }
-
-    private var contactTestModeBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            OracleEyebrow(text: "Modo prueba (contacto)")
-            Text("Prueba renombrar un contacto **sin** Perform — útil si no eres desarrollador.")
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-
-            TextField("Palabra de prueba", text: $testWordDraft)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .font(.subheadline)
-                .padding(10)
-                .background(Color.white.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .foregroundStyle(OracleTheme.textPrimary)
-
-            if WordApiSettings.hasKnownContactSelected {
-                Text("Contacto · \(WordApiSettings.knownContactDisplayName)")
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.textSecondary)
-            }
-
-            HStack(spacing: 10) {
-                Button {
-                    showTestContactPicker = true
-                } label: {
-                    Label("Elegir contacto", systemImage: "person.crop.circle")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.bordered)
-                .tint(OracleTheme.gold)
-
-                Button {
-                    Task { await runTestContactApply() }
-                } label: {
-                    HStack(spacing: 6) {
-                        if testContactBusy { ProgressView().scaleEffect(0.85) }
-                        Text("Aplicar nombre al contacto")
-                            .font(.caption.weight(.semibold))
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(OracleTheme.sectionTeal)
-                .disabled(testContactBusy || testWordDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-
-            if WordApiSettings.knownContactOriginalGivenName.isEmpty == false {
-                Button {
-                    Task { await runTestContactRestore() }
-                } label: {
-                    Label("Restaurar nombre original", systemImage: "arrow.uturn.backward")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .disabled(testContactBusy)
-            }
-
-            if let testContactFeedback {
-                Text(testContactFeedback.text)
-                    .font(.caption)
-                    .foregroundStyle(testContactFeedback.ok ? OracleTheme.gold : OracleTheme.coral)
-            }
-        }
-        .padding(14)
-        .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-        }
-    }
-
-    private func runTestContactApply() async {
-        testContactBusy = true
-        defer { testContactBusy = false }
-        let result = await SpectatorWordContactService.applyTestWordToKnownContact(word: testWordDraft)
-        let ok = !result.contains("Error") && !result.contains("Elige") && !result.contains("Escribe") && !result.contains("Sin acceso")
-        testContactFeedback = (ok, result)
-        PerformUserLog.shared.log("[CONTACT] test · \(result)")
-    }
-
-    private func runTestContactRestore() async {
-        testContactBusy = true
-        defer { testContactBusy = false }
-        let result = await SpectatorWordContactService.restoreTestKnownContact()
-        let ok = !result.contains("Error") && !result.contains("No hay")
-        testContactFeedback = (ok, result)
-        PerformUserLog.shared.log("[CONTACT] test restore · \(result)")
     }
 
     @ViewBuilder

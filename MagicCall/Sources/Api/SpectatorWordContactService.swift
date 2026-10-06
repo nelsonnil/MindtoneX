@@ -33,57 +33,6 @@ enum SpectatorWordContactService {
         }
     }
 
-    /// Modo prueba (home card): renombra el contacto conocido sin Perform.
-    @MainActor
-    static func applyTestWordToKnownContact(word: String) async -> String {
-        let label = word.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !label.isEmpty else {
-            let msg = "Escribe una palabra de prueba"
-            dlog("[CONTACT] test skip: empty word")
-            return msg
-        }
-        guard let id = WordApiSettings.knownContactIdentifier else {
-            let msg = "Elige un contacto de prueba primero"
-            dlog("[CONTACT] test skip: no contact")
-            return msg
-        }
-        guard await ensureContactsAccess(reason: "test apply") else {
-            return "Sin acceso a Contactos — actívalo en Ajustes del iPhone"
-        }
-        do {
-            try renameGivenName(identifier: id, word: label)
-            WordApiContactShowState.shared.knownContactRenamedForShow = true
-            dlog("[CONTACT] test apply «\(label)» → contact \(id.prefix(8))…")
-            return "Contacto renombrado · «\(WordApiInputPanel.truncated(label, max: 32))»"
-        } catch {
-            dlog("✗ [CONTACT] test apply: \(error.localizedDescription)")
-            return "Error al renombrar · \(error.localizedDescription)"
-        }
-    }
-
-    @MainActor
-    static func restoreTestKnownContact() async -> String {
-        guard let id = WordApiSettings.knownContactIdentifier else {
-            return "No hay contacto de prueba"
-        }
-        let original = WordApiSettings.knownContactOriginalGivenName
-        guard !original.isEmpty else {
-            return "No hay nombre original guardado (vuelve a elegir contacto)"
-        }
-        guard await ensureContactsAccess(reason: "test restore") else {
-            return "Sin acceso a Contactos"
-        }
-        do {
-            try setGivenName(identifier: id, givenName: original)
-            WordApiContactShowState.shared.knownContactRenamedForShow = false
-            dlog("[CONTACT] test restore «\(original)»")
-            return "Nombre restaurado · «\(WordApiInputPanel.truncated(original, max: 32))»"
-        } catch {
-            dlog("✗ [CONTACT] test restore: \(error.localizedDescription)")
-            return "Error al restaurar · \(error.localizedDescription)"
-        }
-    }
-
     /// Restores the known contact’s original given name (Settings exit / manual cleanup).
     @MainActor
     static func restoreKnownContactOriginalName(reason: String) {
