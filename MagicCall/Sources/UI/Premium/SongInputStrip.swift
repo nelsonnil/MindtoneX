@@ -28,7 +28,7 @@ struct SongInputStrip: View {
         ) {
             VStack(alignment: .leading, spacing: 16) {
             LazyVGrid(columns: inputColumns, spacing: 10) {
-                inputChip("Card", icon: "doc.viewfinder", mode: .card)
+                inputChip("Camera", icon: "camera.fill", mode: .card)
                 inputChip("Voice", icon: "mic.fill", mode: .aiVoice)
                 inputChip("Notes", icon: "note.text", mode: .notes)
                 inputChip("API", icon: "link", mode: .api)
@@ -55,7 +55,7 @@ struct SongInputStrip: View {
     private func migrateLegacyManualMode() {
         guard inputModeRaw == VoiceSettings.InputMode.manual.rawValue else { return }
         inputModeRaw = VoiceSettings.InputMode.card.rawValue
-        dlog("Song input migrated Manual → Card")
+        dlog("Song input migrated Manual → Camera")
     }
 
     private func inputChip(_ title: String, icon: String, mode: VoiceSettings.InputMode) -> some View {

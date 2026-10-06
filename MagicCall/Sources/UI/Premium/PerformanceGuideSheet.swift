@@ -11,7 +11,7 @@ struct PerformanceGuideSheet: View {
                 PerformanceGuideContent(onOpenFavorites: onOpenFavorites)
 
                 TipCard(
-                    title: "Card & Voice input",
+                    title: "Camera & Voice input",
                     icon: "doc.viewfinder",
                     tint: OracleTheme.gold,
                     lines: PerformCopy.cardAndVoiceInputLines

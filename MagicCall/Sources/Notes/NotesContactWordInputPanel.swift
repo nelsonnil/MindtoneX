@@ -50,7 +50,7 @@ struct NotesContactWordInputPanel: View {
 
                     if provider == .card {
                         if !songInputIsCard {
-                            Label("Song input must be **Card** — Notes word is **line 3** on the card.", systemImage: "exclamationmark.triangle.fill")
+                            Label("Song input must be **Camera** — Notes word is **line 3** on the card.", systemImage: "exclamationmark.triangle.fill")
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.coral)
                         }

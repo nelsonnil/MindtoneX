@@ -115,7 +115,10 @@ final class CardSongSession: ObservableObject {
     func volumeScanTriggered() {
         guard context == .perform, isActive, !isLocked else { return }
         guard AppModel.shared.acceptsCardVolumeScanTrigger() else {
-            dlog("[CARD] volume scan ignored (wait for manual press after Perform settles)")
+            dlog("[CARD] volume scan ignored (session settling — retry in a moment)")
+            if context == .perform {
+                PerformUserLog.shared.log("Camera · hold on — press volume again in a second")
+            }
             return
         }
         guard scanTask == nil else {
@@ -148,7 +151,7 @@ final class CardSongSession: ObservableObject {
         state = .scanning
         SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "pre card scan")
         if context == .perform {
-            PerformUserLog.shared.log("Card · scanning — camera on (~\(Int(CardSettings.burstSeconds)) s)")
+            PerformUserLog.shared.log("Camera · scanning — green dot on (~\(Int(CardSettings.burstSeconds)) s)")
         }
         let gen = generation
         scanTask = Task { [weak self] in
@@ -191,7 +194,7 @@ final class CardSongSession: ObservableObject {
             dlog("[CARD] lines top→bottom: \(orderedLines.joined(separator: " | "))")
         }
         if context == .perform {
-            PerformUserLog.shared.log("Card · OCR lines: \(orderedLines.joined(separator: " | "))")
+            PerformUserLog.shared.log("Camera · OCR lines: \(orderedLines.joined(separator: " | "))")
             PerformUserLog.shared.log(
                 "Card · parsed song=\"\(ocr.songQuery)\" · L2 caller=\"\(ocr.callerLine ?? "—")\" · L3 notes=\"\(ocr.notesLine ?? "—")\""
             )
@@ -201,7 +204,7 @@ final class CardSongSession: ObservableObject {
         let queriesToTry = songSearchQueries(ocr: ocr, orderedLines: orderedLines, mergedTexts: texts)
         dlog("[CARD] song queries (line 1 first): \(queriesToTry.joined(separator: " · "))")
         if context == .perform {
-            PerformUserLog.shared.log("Card · song search tries: \(queriesToTry.joined(separator: " · "))")
+            PerformUserLog.shared.log("Camera · song search tries: \(queriesToTry.joined(separator: " · "))")
         }
 
         var votes: [String: Int] = [:]
@@ -215,7 +218,7 @@ final class CardSongSession: ObservableObject {
             guard ok, let track = AppModel.shared.selected else {
                 dlog("[CARD] song try “\(query)” → no match")
                 if context == .perform {
-                    PerformUserLog.shared.log("Card · song try «\(query)» → no match")
+                    PerformUserLog.shared.log("Camera · song try «\(query)» → no match")
                 }
                 continue
             }
@@ -225,7 +228,7 @@ final class CardSongSession: ObservableObject {
             trackByKey[key] = track
             dlog("[CARD] song try “\(query)” → \(track.title) — \(track.artist) (votes=\(votes[key] ?? 0))")
             if context == .perform {
-                PerformUserLog.shared.log("Card · song try «\(query)» → \(track.title) — \(track.artist)")
+                PerformUserLog.shared.log("Camera · song try «\(query)» → \(track.title) — \(track.artist)")
             }
         }
 
@@ -356,7 +359,7 @@ final class CardSongSession: ObservableObject {
         stopCamera()
         state = .failed(message)
         if context == .perform {
-            PerformUserLog.shared.log("Card · \(message)")
+            PerformUserLog.shared.log("Camera · \(message)")
         }
         dlog("✗ [CARD] \(message)")
     }
@@ -366,7 +369,7 @@ final class CardSongSession: ObservableObject {
         let message = "Could not read the card — try Notes or another input"
         state = .failed(message)
         if context == .perform {
-            PerformUserLog.shared.log("Card · \(message)")
+            PerformUserLog.shared.log("Camera · \(message)")
         }
         PerformanceCues.cardScanFailed()
         dlog("[CARD] max scan retries reached")

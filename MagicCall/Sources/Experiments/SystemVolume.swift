@@ -11,6 +11,12 @@ final class SystemVolume {
 
     /// Volumen multimedia que había antes del primer “subir al máximo” de la llamada.
     private var savedOutputVolume: Float?
+    /// Ignore side-button KVO briefly after we move the slider in code (headroom / boost).
+    private var programmaticChangeUntil: CFTimeInterval = 0
+
+    var isProgrammaticVolumeChange: Bool {
+        CACurrentMediaTime() < programmaticChangeUntil
+    }
 
     private var slider: UISlider? {
         volumeView?.subviews.compactMap { $0 as? UISlider }.first
@@ -60,6 +66,7 @@ final class SystemVolume {
         let clamped = min(max(value, 0), 1)
         // El slider necesita un ciclo de runloop tras aparecer para aceptar valores.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            self.programmaticChangeUntil = CACurrentMediaTime() + 0.5
             slider.value = clamped
             slider.sendActions(for: .valueChanged)
             let tag = label.map { " (\($0))" } ?? ""

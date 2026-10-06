@@ -6,7 +6,7 @@ struct CardInputPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            OracleEyebrow(text: "Card (handwriting OCR)")
+            OracleEyebrow(text: "Camera · handwriting OCR")
 
             VStack(alignment: .leading, spacing: 10) {
                 tipRow("doc.plaintext", "White matte card + thick black marker")

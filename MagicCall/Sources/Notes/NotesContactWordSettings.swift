@@ -80,7 +80,7 @@ enum NotesContactWordSettings {
         case .inject: return "Enter your Inject ID for the Notes word"
         case .elips: return "Add your Elips word URL in connection details"
         case .custom: return customURL.isEmpty ? "Add your API URL in connection details" : "Pick the JSON field in connection details"
-        case .card: return "Set Song input to Card — write the Notes chip word on **line 3**"
+        case .card: return "Set Song input to Camera — write the Notes chip word on **line 3**"
         case .voice: return "Set Song input to Voice — use the Notes contact script on this card"
         }
     }

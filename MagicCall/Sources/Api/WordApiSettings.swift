@@ -77,7 +77,7 @@ enum WordApiSettings {
             case .inject: return "Inject"
             case .elips: return "Elips"
             case .custom: return "Custom API"
-            case .card: return "Card (OCR)"
+            case .card: return "Camera (OCR)"
             case .voice: return "Voice (AI)"
             }
         }
@@ -88,7 +88,7 @@ enum WordApiSettings {
             case .inject: return "Inject"
             case .elips: return "Elips"
             case .custom: return "Custom"
-            case .card: return "Card OCR"
+            case .card: return "Camera OCR"
             case .voice: return "Voice"
             }
         }

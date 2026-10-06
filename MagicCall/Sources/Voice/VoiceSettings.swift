@@ -28,7 +28,17 @@ enum VoiceSettings {
             case .aiVoice: return "Voice"
             case .notes: return "Notes"
             case .api: return "API"
-            case .card: return "Card"
+            case .card: return "Camera"
+            }
+        }
+
+        var pickerSymbol: String {
+            switch self {
+            case .manual: return "keyboard"
+            case .aiVoice: return "mic.fill"
+            case .notes: return "note.text"
+            case .api: return "link"
+            case .card: return "camera.fill"
             }
         }
     }

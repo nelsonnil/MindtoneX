@@ -151,7 +151,7 @@ struct ReadinessStatusBar: View {
             return Status(tone: .ready, icon: "note.text", text: "Ready · Notes \(detail)")
         case .card:
             guard CardSettings.cameraAuthorized else {
-                return Status(tone: .warning, icon: "camera.fill", text: "Card — allow camera in Settings")
+                return Status(tone: .warning, icon: "camera.fill", text: "Camera — allow access in Settings")
             }
             switch card.state {
             case .failed(let message):
@@ -167,7 +167,7 @@ struct ReadinessStatusBar: View {
             case .armed:
                 return Status(tone: .working, icon: "camera.fill", text: "Ready · press volume to scan card")
             case .idle:
-                return Status(tone: .ready, icon: "doc.viewfinder", text: "Ready · Card scans on volume during Perform")
+                return Status(tone: .ready, icon: "camera.fill", text: "Ready · press volume to scan text")
             }
         }
     }

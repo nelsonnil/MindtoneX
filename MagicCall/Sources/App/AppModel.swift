@@ -40,6 +40,8 @@ final class AppModel: ObservableObject {
     private var observers: [NSObjectProtocol] = []
     private var volumeObservation: NSKeyValueObservation?
     private var ignoreVolumeChangesUntil: CFTimeInterval = 0
+    /// Camera OCR: ignore side-volume until Perform UI + MPVolumeView are ready (separate from playback boost grace).
+    private var cameraVolumeScanReadyAt: CFTimeInterval = 0
     private var incomingCallID: UUID?
     private var incomingDetectedAt: CFTimeInterval = 0
     private var callPollTimer: Timer?
@@ -370,11 +372,12 @@ final class AppModel: ObservableObject {
         } catch {
             dlog("✗ configureSession: \(RingtoneAudioEngine.describe(error))")
         }
-        applyFakePerformMediaVolumeBoost(reason: "arm")
         if usesCardInput {
-            ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 2.0)
-            SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "Card perform arm")
-            dlog("[CARD] perform arm · media vol=\(String(format: "%.2f", SystemVolume.shared.outputVolume)) (headroom before volume watch)")
+            cameraVolumeScanReadyAt = CACurrentMediaTime() + 0.55
+            SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "Camera perform arm")
+            dlog("[CARD] perform arm · media vol=\(String(format: "%.2f", SystemVolume.shared.outputVolume)) · scan unlocks in ~0.5s")
+        } else {
+            applyFakePerformMediaVolumeBoost(reason: "arm")
         }
         if Prefs.forceMediaVolume {
             ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 1.2)
@@ -908,8 +911,12 @@ final class AppModel: ObservableObject {
                 let new = change.newValue ?? 0
                 dlog("Volumen multimedia \(String(format: "%.2f", old)) → \(String(format: "%.2f", new))")
                 if CardSongSession.shared.capturesVolumeButtons {
+                    if SystemVolume.shared.isProgrammaticVolumeChange {
+                        dlog("[CARD] volume KVO ignored (programmatic slider)")
+                        return
+                    }
                     guard self.acceptsCardVolumeScanTrigger() else {
-                        dlog("[CARD] volume KVO ignored (programmatic / grace window)")
+                        dlog("[CARD] volume KVO ignored (session settling)")
                         return
                     }
                     self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.55
@@ -965,10 +972,11 @@ final class AppModel: ObservableObject {
         #endif
     }
 
-    /// Card OCR: only react to side-button volume after Perform setup volume settles (no auto-scan on enter).
+    /// Camera OCR: side-button volume after stage + session are ready (not programmatic headroom).
     func acceptsCardVolumeScanTrigger() -> Bool {
         guard usesCardInput, isArmed else { return false }
         guard CardSongSession.shared.capturesVolumeButtons else { return false }
+        guard CACurrentMediaTime() >= cameraVolumeScanReadyAt else { return false }
         return CACurrentMediaTime() > ignoreVolumeChangesUntil
     }
 

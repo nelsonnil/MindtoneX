@@ -25,7 +25,7 @@ enum CardOCRLayout {
     /// English steps for Instructions sheet.
     static var instructionLines: [String] {
         var lines = [
-            "**Song input = Card.** Write on a white card in ALL CAPS when you can.",
+            "**Song input = Camera.** Write on a white card in ALL CAPS when you can.",
             "**Line 1 (top)** is always the **song title** — one volume scan loads and locks the track.",
         ]
         if usesCallerLine {

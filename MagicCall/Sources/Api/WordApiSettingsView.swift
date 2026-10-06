@@ -138,7 +138,7 @@ struct WordApiSettingsView: View {
     private var performOnStageHint: String {
         switch provider {
         case .card:
-            return "Turn **Show word on incoming call** on. Set **Song input** to **Card** — **line 1** song, **line 2** caller word. One **volume** scan locks song + words on the lines you use."
+            return "Turn **Show word on incoming call** on. Set **Song input** to **Camera** — **line 1** song, **line 2** caller word. One **volume** scan locks song + words on the lines you use."
         case .voice:
             return "Turn **Show word on incoming call** on. Set **Song input** to **Voice**. Ask the contact-word script; AI locks the caller name when the spectator commits to one word (same mic as the song)."
         default:
@@ -158,17 +158,17 @@ struct WordApiSettingsView: View {
     private var cardSetupCard: some View {
         oracleCard {
             VStack(alignment: .leading, spacing: 10) {
-                OracleEyebrow(text: "Card layout")
+                OracleEyebrow(text: "Camera card layout")
                 Text("Same physical card as song input. **Line 1** = song in ALL CAPS. **Line 2** = caller name word when this integration is Card. **Line 3** = Notes chip when Notes uses Card. Labels: `SONG:` · `WORD:`/`CALLER:` · `NOTES:`/`CHIP:`.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if VoiceSettings.inputMode != .card {
-                    Label("Song input is not Card — switch it on the home screen.", systemImage: "exclamationmark.triangle.fill")
+                    Label("Song input is not Camera — switch it on the home screen.", systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.coral)
                 } else {
-                    Label("Song input = Card — ready for combined scan.", systemImage: "checkmark.circle.fill")
+                    Label("Song input = Camera — ready for combined scan.", systemImage: "checkmark.circle.fill")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.gold)
                 }

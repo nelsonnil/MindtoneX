@@ -247,7 +247,7 @@ struct WordApiInputPanel: View {
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     if !songInputIsCard {
-                        Label("Set **Song input** to Card — caller word is **line 2** on the same volume scan.", systemImage: "exclamationmark.triangle.fill")
+                        Label("Set **Song input** to Camera — caller word is **line 2** on the same volume scan.", systemImage: "exclamationmark.triangle.fill")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.coral)
                             .fixedSize(horizontal: false, vertical: true)
@@ -292,7 +292,7 @@ struct WordApiInputPanel: View {
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                 } else if provider == .card {
-                    Text("On Perform, press **volume** once — **line 1** loads the song; **line 2** locks caller name when this card uses Card OCR. No network poll.")
+                    Text("On Perform, press **volume** once — **line 1** loads the song; **line 2** locks caller name when this card uses Camera OCR. No network poll.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -345,7 +345,7 @@ struct WordApiInputPanel: View {
         guard let reading = session.lastReading ?? session.baseline else { return nil }
         let word = WordApiInputPanel.truncated(reading.label, max: 28)
         if provider == .card {
-            return session.state == .locked ? "Card scan · locked «\(word)»" : "Card scan · last «\(word)»"
+            return session.state == .locked ? "Camera scan · locked «\(word)»" : "Camera scan · last «\(word)»"
         }
         if provider == .voice {
             return session.state == .locked ? "Voice AI · locked «\(word)»" : "Voice AI · last «\(word)»"
@@ -364,7 +364,7 @@ struct WordApiInputPanel: View {
             if let last = session.lastReading, last.hasWord { return ("Last value: “\(last.label)”", "text.quote", false) }
             if provider == .card {
                 return configured
-                    ? ("Card OCR — caller word on **line 2** (see Instructions for line 3 Notes).", "doc.viewfinder", false)
+                    ? ("Camera OCR — caller word on **line 2** (see Instructions for line 3 Notes).", "doc.viewfinder", false)
                     : nil
             }
             if provider == .voice {
@@ -437,13 +437,13 @@ struct WordApiHomeCard: View {
             return "Off — incoming call shows the number only"
         }
         if WordApiSettings.hasWordEndpoint {
-            if provider == .card { return "Card (OCR) · line 2 caller · line 3 Notes" }
+            if provider == .card { return "Camera (OCR) · line 2 caller · line 3 Notes" }
             if provider == .voice { return "Voice (AI) · contact-word prompt on shared mic" }
             return "\(provider.title) · polls during Perform"
         }
-        if provider == .card { return "Card word needs Song input = Card" }
+        if provider == .card { return "Camera word needs Song input = Camera" }
         if provider == .voice { return "Voice word needs Song input = Voice + OpenAI key" }
-        return "Set Inject, Elips, Custom, Card OCR, or Voice"
+        return "Set Inject, Elips, Custom, Camera OCR, or Voice"
     }
 
     var body: some View {
