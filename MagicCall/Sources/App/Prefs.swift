@@ -222,6 +222,22 @@ enum StageStatusBarContent: String, CaseIterable, Identifiable {
         }
     }
 
+    var pickerSymbol: String {
+        switch self {
+        case .automatic: return "sparkles"
+        case .dark: return "sun.max.fill"
+        case .light: return "moon.stars.fill"
+        }
+    }
+
+    var pickerHint: String {
+        switch self {
+        case .automatic: return "From screenshot"
+        case .dark: return "Black icons"
+        case .light: return "White icons"
+        }
+    }
+
     /// Accessibility / menu label.
     var label: String {
         switch self {

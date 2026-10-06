@@ -1,11 +1,10 @@
 import PhotosUI
 import SwiftUI
 
-/// Single Performance setup — volume, stage screenshot, auto-share toggle, Favorites link.
+/// Single Performance setup — volume, stage screenshot, auto-share toggle.
 struct PerformanceCard: View {
     @Binding var photoItem: PhotosPickerItem?
     var stageScreenshotGeneration: Int
-    var onOpenFavorites: () -> Void
 
     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
     @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
@@ -59,14 +58,6 @@ struct PerformanceCard: View {
                     }
                 }
                 .tint(OracleTheme.gold)
-
-                Button(action: onOpenFavorites) {
-                    Label("Favorites setup — Use as Ringtone on first row", systemImage: "star.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.bordered)
-                .tint(OracleTheme.gold)
             }
         }
         .accessibilityElement(children: .contain)
@@ -94,17 +85,12 @@ struct PerformanceCard: View {
                 Spacer(minLength: 0)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Status bar icons")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(OracleTheme.textPrimary)
-                Picker("Status bar icons", selection: statusBarContentSelection) {
-                    ForEach(StageStatusBarContent.allCases) { mode in
-                        Text(mode.segmentTitle).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                Text("Dark = black icons (light wallpaper). Light = white icons (dark wallpaper). Auto matches the top of your screenshot.")
+                StageStatusBarStylePicker(selection: statusBarContentSelection)
+                Text("Match the clock and signal icons to your wallpaper.")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
             }
@@ -137,5 +123,57 @@ struct PerformanceCard: View {
                         style: hasScreenshot ? StrokeStyle(lineWidth: 1) : StrokeStyle(lineWidth: 1.5, dash: [4, 3])
                     )
             }
+    }
+}
+
+// MARK: - Status bar style
+
+private struct StageStatusBarStylePicker: View {
+    @Binding var selection: StageStatusBarContent
+    @Namespace private var selectionNS
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(StageStatusBarContent.allCases) { mode in
+                let selected = selection == mode
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                        selection = mode
+                    }
+                } label: {
+                    VStack(spacing: 5) {
+                        Image(systemName: mode.pickerSymbol)
+                            .font(.system(size: 17, weight: .semibold))
+                            .symbolRenderingMode(.hierarchical)
+                        Text(mode.segmentTitle)
+                            .font(.caption2.weight(.bold))
+                        Text(mode.pickerHint)
+                            .font(.system(size: 9, weight: .medium))
+                            .opacity(selected ? 0.85 : 0.55)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 11)
+                    .foregroundStyle(selected ? OracleTheme.ink : OracleTheme.textSecondary)
+                    .background {
+                        if selected {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(OracleTheme.goldGradient)
+                                .matchedGeometryEffect(id: "statusBarStyleFill", in: selectionNS)
+                                .shadow(color: OracleTheme.gold.opacity(0.35), radius: 8, y: 3)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(mode.label)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(5)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
     }
 }

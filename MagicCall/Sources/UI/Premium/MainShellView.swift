@@ -20,8 +20,7 @@ struct MainShellView: View {
 
                 PerformanceCard(
                     photoItem: $photoItem,
-                    stageScreenshotGeneration: stageScreenshotGeneration,
-                    onOpenFavorites: { activeSheet = .favoritesSetup }
+                    stageScreenshotGeneration: stageScreenshotGeneration
                 )
 
                 HomePanel(accent: OracleTheme.indigo) {
