@@ -71,7 +71,10 @@ enum SpectatorWordContactService {
     private static func createUnknownIfNeeded(word: String, phone: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            try upsertUnknown(word: word, phone: phone)
+            let note = NotesContactSettings.resolvedContactNote(
+                lockedWord: NotesContactWordSession.shared.lockedReading?.label
+            )
+            try upsertUnknown(word: word, phone: phone, note: note)
             dlog("[CONTACT] created/updated unknown «\(word)» → \(phone) (\(reason))")
             PerformUserLog.shared.log("Contact saved · incoming call will show “\(WordApiInputPanel.truncated(word, max: 32))”")
         } catch {
@@ -84,7 +87,10 @@ enum SpectatorWordContactService {
     private static func renameKnownContact(identifier: String, word: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            try renameGivenName(identifier: identifier, word: word)
+            let note = NotesContactSettings.resolvedContactNote(
+                lockedWord: NotesContactWordSession.shared.lockedReading?.label
+            )
+            try renameGivenName(identifier: identifier, word: word, note: note)
             WordApiContactShowState.shared.knownContactRenamedForShow = true
             dlog("[CONTACT] renamed known → «\(word)» (\(reason))")
             PerformUserLog.shared.log("Contact renamed · incoming call will show “\(WordApiInputPanel.truncated(word, max: 32))”")
@@ -145,7 +151,7 @@ enum SpectatorWordContactService {
         )
     }
 
-    private static func upsertUnknown(word: String, phone: String) throws {
+    private static func upsertUnknown(word: String, phone: String, note: String) throws {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
@@ -158,7 +164,6 @@ enum SpectatorWordContactService {
             keysToFetch: keys
         )
         let save = CNSaveRequest()
-        let note = NotesContactSettings.contactNoteForPerform()
 
         if let existing = matches.first {
             let mutable = existing.mutableCopy() as! CNMutableContact
@@ -178,7 +183,7 @@ enum SpectatorWordContactService {
         try store.execute(save)
     }
 
-    private static func renameGivenName(identifier: String, word: String) throws {
+    private static func renameGivenName(identifier: String, word: String, note: String) throws {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
@@ -188,7 +193,7 @@ enum SpectatorWordContactService {
         WordApiSettings.saveKnownContactGivenNameBeforeLock(contact.givenName)
         let mutable = contact.mutableCopy() as! CNMutableContact
         mutable.givenName = word
-        mutable.note = NotesContactSettings.contactNoteForPerform()
+        mutable.note = note
         let save = CNSaveRequest()
         save.update(mutable)
         try store.execute(save)
@@ -198,7 +203,9 @@ enum SpectatorWordContactService {
     @MainActor
     static func applyContactNoteFromSettings(reason: String) {
         guard WordApiSettings.saveWordAsContactEnabled else { return }
-        let note = NotesContactSettings.contactNoteForPerform()
+        let note = NotesContactSettings.resolvedContactNote(
+            lockedWord: NotesContactWordSession.shared.lockedReading?.label
+        )
         guard !note.isEmpty || !NotesContactSettings.storedNoteBody.isEmpty else { return }
 
         switch WordApiSettings.contactMode {

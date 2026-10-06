@@ -37,10 +37,6 @@ enum NotesContactSettings {
             .nilIfEmpty ?? token
         return template.replacingOccurrences(of: token, with: replacement)
     }
-
-    static func contactNoteForPerform() -> String {
-        resolvedContactNote(lockedWord: NotesContactWordSession.shared.lockedReading?.label)
-    }
 }
 
 private extension String {
