@@ -128,6 +128,7 @@ enum Prefs {
         ])
         registerHomeSectionDefaults()
         NotesContactSettings.registerDefaults()
+        NotesContactWordSettings.registerDefaults()
         migrateClipSecondsIfNeeded()
         migratePerformanceModeToSingleIfNeeded()
     }

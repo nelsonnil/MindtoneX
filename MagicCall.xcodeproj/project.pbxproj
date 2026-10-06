@@ -28,15 +28,18 @@
 		256D9EDE07BBB6F76804461F /* NotesSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0F19A8FF481F9116B87B9 /* NotesSongSession.swift */; };
 		2759F7EDE468921282C2E330 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */; };
 		2826965C4287D1C90DFB1C1C /* SilentShortcutStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038495DF0F13C324D46A2120 /* SilentShortcutStatusRow.swift */; };
+		290C81AF65DA4D457A2ED9D6 /* NotesContactConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E1FD9BD793A8EA7B167E69 /* NotesContactConnectionView.swift */; };
 		2CFC38C7A63678D43141D4BC /* CardSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBF167EB2FC9F9FEC46A0C9 /* CardSongSession.swift */; };
 		2E7126CCE44C14489C54AA8E /* MagicCallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5F46051981A4C204711045 /* MagicCallApp.swift */; };
 		30CF1BD0AF300884CF55328D /* RingtoneSharePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041A68340E90792EDFC50A97 /* RingtoneSharePresenter.swift */; };
+		30E24F3095BA52459B3334A9 /* NotesContactWordInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D8577CB607F1A6119083309 /* NotesContactWordInputPanel.swift */; };
 		31BFA5A3B42AD87279A73D6D /* HeroLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2A7D6817DA44304F1D5ABC6 /* HeroLogoView.swift */; };
 		331E9430747CFF4456798229 /* CallerLabelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D564C26BAEEF26A1D77ABA /* CallerLabelStore.swift */; };
 		341773BE1B166A79B044AC49 /* PerformHowItWorks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A47F6CA835B6E782CEAD62 /* PerformHowItWorks.swift */; };
 		341A95B0EDC930CAD60D55A2 /* PerformBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A984AAEBBF8F40F180BC188 /* PerformBottomBar.swift */; };
 		366F6FD0B991972DAC7235D1 /* PerformUserLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B07C8F1B15CD02BBB997F7E /* PerformUserLog.swift */; };
 		3990F1E3960F46E9739453B2 /* AppModel+Voice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB5BDB6A1DCECFBD46E5FC1 /* AppModel+Voice.swift */; };
+		3BCE337D4E4DDFFA5142F61D /* NotesContactWordSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E263FE4707E78890CA7FB0F2 /* NotesContactWordSettings.swift */; };
 		424BC87CA51E4E2654D834A4 /* UnifiedPerformanceModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */; };
 		45B9F626BAE2A5701A001DC2 /* LiveTranscribers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA2CF6BD397B91ACAF84FAD /* LiveTranscribers.swift */; };
 		45BCB91576B14E5B65D453E0 /* PerformUserLogCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270DC6372BA38BD591C5EEC2 /* PerformUserLogCard.swift */; };
@@ -45,6 +48,7 @@
 		567203094B7B7CBAD29085F7 /* SongLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F714394D355E859CF8CEAB /* SongLibraryStore.swift */; };
 		5F744D7B2556CEE6C1CC4C40 /* LiveCallerLookupExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189566531AAF0DCDD2A3573A /* LiveCallerLookupExtension.swift */; };
 		60358E4481DA131134CE881A /* ApiSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B91AE661642AE376E1DD474 /* ApiSettings.swift */; };
+		6596E020FE59EF9229BBD51F /* NotesContactWordSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECBAC1F2474CCF158CF15B87 /* NotesContactWordSession.swift */; };
 		66615CC09AC450AAA511552A /* ImportedAudioStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D220719203424E371638A6F3 /* ImportedAudioStore.swift */; };
 		68D2DE031EF71CE179683150 /* MagicCallCallDirectory.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 060AED873F0873D463D46F14 /* MagicCallCallDirectory.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		69DA22C1783D98829F2DCE7B /* LoadedSongReadyRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 088157D88358BCAC626D0D35 /* LoadedSongReadyRow.swift */; };
@@ -196,6 +200,7 @@
 		7A21CCF1F7089541B6DC60FF /* HomeCollapsibleSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeCollapsibleSection.swift; sourceTree = "<group>"; };
 		7BDF1EA0492BCF11335526EC /* WordApiSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSession.swift; sourceTree = "<group>"; };
 		7CB5BDB6A1DCECFBD46E5FC1 /* AppModel+Voice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Voice.swift"; sourceTree = "<group>"; };
+		7D8577CB607F1A6119083309 /* NotesContactWordInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactWordInputPanel.swift; sourceTree = "<group>"; };
 		81ED684AAD9C91EABD24A1D3 /* SystemVolume.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemVolume.swift; sourceTree = "<group>"; };
 		84A47F6CA835B6E782CEAD62 /* PerformHowItWorks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformHowItWorks.swift; sourceTree = "<group>"; };
 		876D35E2C35E579667BE51D4 /* VoiceSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSongSession.swift; sourceTree = "<group>"; };
@@ -234,11 +239,14 @@
 		CDBF167EB2FC9F9FEC46A0C9 /* CardSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSongSession.swift; sourceTree = "<group>"; };
 		D220719203424E371638A6F3 /* ImportedAudioStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportedAudioStore.swift; sourceTree = "<group>"; };
 		DEA922A0D263D3309553D389 /* Prefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prefs.swift; sourceTree = "<group>"; };
+		E263FE4707E78890CA7FB0F2 /* NotesContactWordSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactWordSettings.swift; sourceTree = "<group>"; };
 		E3138D1D5022FAD8B230768B /* PrivateProbes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateProbes.swift; sourceTree = "<group>"; };
 		E48131BF78F88DFF0CB3E192 /* MagicIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicIntents.swift; sourceTree = "<group>"; };
 		E67C120E02A9B4EB6176A78B /* CallDirectorySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallDirectorySync.swift; sourceTree = "<group>"; };
 		EC77119D4608465FEFC34B61 /* CardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSettings.swift; sourceTree = "<group>"; };
+		ECBAC1F2474CCF158CF15B87 /* NotesContactWordSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactWordSession.swift; sourceTree = "<group>"; };
 		EE811A2D141570F6DE6CD107 /* NotesContactHomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactHomeCard.swift; sourceTree = "<group>"; };
+		F1E1FD9BD793A8EA7B167E69 /* NotesContactConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactConnectionView.swift; sourceTree = "<group>"; };
 		F235D4C3F14AB89CF4409734 /* VoiceLockingControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLockingControls.swift; sourceTree = "<group>"; };
 		F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorWordContactService.swift; sourceTree = "<group>"; };
@@ -313,7 +321,11 @@
 		4BD55508B51C6858FEC11095 /* Notes */ = {
 			isa = PBXGroup;
 			children = (
+				F1E1FD9BD793A8EA7B167E69 /* NotesContactConnectionView.swift */,
 				B22312604EAA954600AED69E /* NotesContactSettings.swift */,
+				7D8577CB607F1A6119083309 /* NotesContactWordInputPanel.swift */,
+				ECBAC1F2474CCF158CF15B87 /* NotesContactWordSession.swift */,
+				E263FE4707E78890CA7FB0F2 /* NotesContactWordSettings.swift */,
 				A5E5E3E1B9AA9AAC9611103D /* NotesInputControls.swift */,
 				B5C269D939BB5F7D004EF20F /* NotesPerformView.swift */,
 				8CC0BDAA31FC35FD10BE1DC7 /* NotesSettings.swift */,
@@ -706,8 +718,12 @@
 				9BC788D2F180C967FBFF14AB /* MagicIntents.swift in Sources */,
 				F80AF9FD212EA30200E041F5 /* MainShellView.swift in Sources */,
 				232F0E4CF4F90CFD03D0F2CB /* MicCapture.swift in Sources */,
+				290C81AF65DA4D457A2ED9D6 /* NotesContactConnectionView.swift in Sources */,
 				242C6F29DEE6403FB8F2C94D /* NotesContactHomeCard.swift in Sources */,
 				E88465E0B481CA795AB50C86 /* NotesContactSettings.swift in Sources */,
+				30E24F3095BA52459B3334A9 /* NotesContactWordInputPanel.swift in Sources */,
+				6596E020FE59EF9229BBD51F /* NotesContactWordSession.swift in Sources */,
+				3BCE337D4E4DDFFA5142F61D /* NotesContactWordSettings.swift in Sources */,
 				9990A04F2EB44210E992A302 /* NotesInputControls.swift in Sources */,
 				A1527BE9FA2E86C4B75BAB86 /* NotesPerformView.swift in Sources */,
 				BC3768587DC85F9AA9C3209B /* NotesSettings.swift in Sources */,

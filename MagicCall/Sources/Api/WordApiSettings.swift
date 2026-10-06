@@ -479,7 +479,12 @@ enum WordApiClient {
         return reading
     }
 
-    static func parse(_ object: [String: Any], provider: WordApiSettings.Provider, raw: String) throws -> WordReading {
+    static func parse(
+        _ object: [String: Any],
+        provider: WordApiSettings.Provider,
+        raw: String,
+        customField: String? = nil
+    ) throws -> WordReading {
         switch provider {
         case .card:
             throw ClientError.notConfigured
@@ -498,7 +503,7 @@ enum WordApiClient {
                                ]),
                                raw: raw)
         case .custom:
-            let field = WordApiSettings.customField
+            let field = customField ?? WordApiSettings.customField
             guard let value = ApiJSON.value(in: object, path: field) else { throw ClientError.missingField(field) }
             return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),
                                receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),

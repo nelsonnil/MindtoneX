@@ -61,6 +61,7 @@ extension AppModel {
             ApiSongSession.shared.reset(reason: "new Perform")
             CardSongSession.shared.reset(reason: "new Perform")
             WordApiSession.shared.reset(reason: "new Perform")
+            NotesContactWordSession.shared.reset(reason: "new Perform")
             clearSongForNextPerformance()
         }
         guard StageImageStore.hasScreenshot else {
@@ -199,12 +200,18 @@ extension AppModel {
         ApiSongSession.shared.reset(reason: "left Perform")
         CardSongSession.shared.reset(reason: "left Perform")
         WordApiSession.shared.reset(reason: "left Perform")
+        NotesContactWordSession.shared.reset(reason: "left Perform")
         clearSongForNextPerformance()
     }
 
     func startWordApiIfNeeded(context: WordApiSession.Context) {
         guard WordApiSettings.callerLabelEnabled, WordApiSettings.hasWordEndpoint else { return }
         WordApiSession.shared.start(context: context)
+    }
+
+    func startNotesContactWordIfNeeded(context: NotesContactWordSession.Context) {
+        guard NotesContactWordSettings.isConfigured else { return }
+        NotesContactWordSession.shared.start(context: context)
     }
 
     /// Home screen: switching song input must not leave a preview loaded from AI Voice / Notes / API Test.
@@ -215,6 +222,7 @@ extension AppModel {
         ApiSongSession.shared.reset(reason: "input mode")
         CardSongSession.shared.reset(reason: "input mode")
         WordApiSession.shared.stopTest()
+        NotesContactWordSession.shared.stopTest()
         if previous != .manual || next != .manual {
             clearSongForNextPerformance()
         }

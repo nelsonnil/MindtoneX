@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// Notes-style preview: editable note text + chip that shows the spectator word when Caller name locks it.
+/// Notes-style preview + independent word input for the contact chip.
 struct NotesContactHomeCard: View {
-    @ObservedObject private var wordSession = WordApiSession.shared
+    @ObservedObject private var wordSession = NotesContactWordSession.shared
     @AppStorage(NotesContactSettings.Key.noteBody) private var noteBody = ""
     @AppStorage(NotesContactSettings.Key.buttonPlaceholder) private var buttonPlaceholder = NotesContactSettings.defaultButtonPlaceholder
-    @AppStorage(WordApiSettings.Key.callerLabelEnabled) private var callerLabelEnabled = false
+    @AppStorage(NotesContactWordSettings.Key.wordInputEnabled) private var wordInputEnabled = true
 
     private var spectatorWord: String? {
+        guard wordInputEnabled else { return nil }
         if let locked = wordSession.lockedReading?.label.trimmingCharacters(in: .whitespacesAndNewlines),
            !locked.isEmpty {
             return locked
@@ -34,12 +35,13 @@ struct NotesContactHomeCard: View {
 
     private var collapsedSummary: String {
         if let word = spectatorWord {
-            return "Word: «\(WordApiInputPanel.truncated(word, max: 28))»"
+            return "Word: «\(WordApiInputPanel.truncated(word, max: 28))» · \(NotesContactWordSettings.provider.gridTitle)"
         }
-        if noteBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "Note text · chip shows Caller name word"
+        if !wordInputEnabled { return "Word input off" }
+        if NotesContactWordSettings.hasWordEndpoint {
+            return "\(NotesContactWordSettings.provider.gridTitle) · chip placeholder"
         }
-        return WordApiInputPanel.truncated(noteBody, max: 40)
+        return "Set word source (Inject, API, Card…)"
     }
 
     var body: some View {
@@ -51,16 +53,12 @@ struct NotesContactHomeCard: View {
             summary: collapsedSummary
         ) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Write the note copy you use on stage. The chip starts as your placeholder and switches to the spectator word when **Caller name** locks it (Card OCR or API).")
+                Text("Your note copy and a contact chip. The chip shows your placeholder until the **Notes word** source locks a spectator word during Perform.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                if !callerLabelEnabled {
-                    Label("Turn on Show word on incoming call in Caller name to receive the word here.", systemImage: "info.circle")
-                        .font(.caption2)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
+                NotesContactWordInputPanel()
 
                 notesPreview
 
@@ -132,30 +130,20 @@ struct NotesContactHomeCard: View {
     }
 
     private var contactChip: some View {
-        Button {
-            // Preview-only on home; word is driven by Caller name session.
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: hasLiveWord ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
-                    .font(.caption.weight(.semibold))
-                Text(chipTitle)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .foregroundStyle(hasLiveWord ? Color.white : Color.black.opacity(0.72))
-            .background {
-                Capsule()
-                    .fill(hasLiveWord ? OracleTheme.sectionTeal : Color(white: 0.92))
-            }
-            .overlay {
-                Capsule()
-                    .strokeBorder(hasLiveWord ? OracleTheme.sectionTeal.opacity(0.5) : Color.black.opacity(0.06), lineWidth: 1)
-            }
+        HStack(spacing: 6) {
+            Image(systemName: hasLiveWord ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
+                .font(.caption.weight(.semibold))
+            Text(chipTitle)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
         }
-        .buttonStyle(.plain)
-        .disabled(true)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .foregroundStyle(hasLiveWord ? Color.white : Color.black.opacity(0.72))
+        .background {
+            Capsule()
+                .fill(hasLiveWord ? OracleTheme.sectionTeal : Color(white: 0.92))
+        }
         .accessibilityLabel(hasLiveWord ? "Contact suggestion \(chipTitle)" : "Placeholder \(chipTitle)")
     }
 }

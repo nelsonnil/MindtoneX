@@ -321,15 +321,18 @@ final class CardSongSession: ObservableObject {
     }
 
     private func applyCardWordIfNeeded(_ cardWord: String?) {
-        guard WordApiSettings.callerLabelEnabled, WordApiSettings.provider == .card else { return }
         guard let word = cardWord, !word.isEmpty else {
             if context == .perform {
                 dlog("[CARD] no word line — ask for line 2 or WORD:/PALABRA: label")
-                PerformUserLog.shared.log("Word API (card) · no word line — use line 2 or WORD:")
             }
             return
         }
-        WordApiSession.shared.ingestCardScanWord(word)
+        if WordApiSettings.callerLabelEnabled, WordApiSettings.provider == .card {
+            WordApiSession.shared.ingestCardScanWord(word)
+        }
+        if NotesContactWordSettings.wordInputEnabled, NotesContactWordSettings.provider == .card {
+            NotesContactWordSession.shared.ingestCardScanWord(word)
+        }
     }
 
     private func lock(reason: String, auto: Bool, playLockHaptic: Bool = true) {

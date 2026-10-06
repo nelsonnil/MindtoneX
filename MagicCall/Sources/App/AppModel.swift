@@ -393,6 +393,7 @@ final class AppModel: ObservableObject {
         Self.setScreenAwakeWhileInForeground(true)
         CallDirectorySync.syncPerformArmed(true, reason: "arm")
         startWordApiIfNeeded(context: .perform)
+        startNotesContactWordIfNeeded(context: .perform)
         PerformUserLog.shared.beginSession(inputLabel: VoiceSettings.inputMode.title)
         CallDirectorySync.reportPerformReadiness()
         dlog("══ ARMADO ══ \(selected.map { "\($0.title) — \($0.artist)" } ?? "?") · \(Prefs.summary())")
