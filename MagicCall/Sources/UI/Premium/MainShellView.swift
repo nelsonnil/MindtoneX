@@ -23,9 +23,7 @@ struct MainShellView: View {
                     stageScreenshotGeneration: stageScreenshotGeneration
                 )
 
-                HomePanel(accent: OracleTheme.indigo) {
-                    SongInputStrip(inputModeRaw: $inputModeRaw)
-                }
+                SongInputStrip(inputModeRaw: $inputModeRaw)
 
                 WordApiHomeCard()
 

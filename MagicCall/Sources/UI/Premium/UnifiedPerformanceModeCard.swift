@@ -12,6 +12,12 @@ struct PerformanceCard: View {
 
     private var hasScreenshot: Bool { StageImageStore.hasScreenshot }
 
+    private var performanceSummary: String {
+        let shot = hasScreenshot ? "Screenshot set" : "Screenshot required"
+        let share = autoShareOnSongLock ? "Auto-share on" : "Auto-share off"
+        return "\(shot) · Vol \(Int(fakePlaybackVolume * 100))% · \(share)"
+    }
+
     private var statusBarContentSelection: Binding<StageStatusBarContent> {
         Binding(
             get: { StageStatusBarContent(rawValue: stageStatusBarContentRaw) ?? .automatic },
@@ -20,14 +26,14 @@ struct PerformanceCard: View {
     }
 
     var body: some View {
-        HomePanel(accent: OracleTheme.gold) {
+        CollapsibleHomeSection(
+            expandedKey: HomeSectionExpandKey.performance,
+            accent: OracleTheme.gold,
+            icon: "photo.on.rectangle.angled",
+            title: "Performance settings",
+            summary: performanceSummary
+        ) {
             VStack(alignment: .leading, spacing: 18) {
-                HomeSectionTitle(
-                    title: "Performance settings",
-                    subtitle: "Stage screenshot, volume, and ringtone share during Perform",
-                    eyebrow: "Before you perform"
-                )
-
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("Playback volume")
@@ -60,8 +66,6 @@ struct PerformanceCard: View {
                 .tint(OracleTheme.gold)
             }
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Performance settings")
     }
 
     private var stageScreenshotSection: some View {

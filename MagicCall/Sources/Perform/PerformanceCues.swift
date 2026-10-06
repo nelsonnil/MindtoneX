@@ -245,8 +245,6 @@ struct FeedbackCard: View {
     @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var dotSize = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
-    @AppStorage("ui.feedbackExpanded") private var expanded = false
-
     private var dotColor: Binding<Color> {
         Binding(get: { Color(hex: colorHex) ?? .green },
                 set: { colorHex = $0.hexString })
@@ -259,58 +257,29 @@ struct FeedbackCard: View {
     }
 
     var body: some View {
-        HomePanel(accent: OracleHomeSection.feedback.accent) {
-            VStack(alignment: .leading, spacing: 0) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.22)) { expanded.toggle() }
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "hand.tap.fill")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(OracleHomeSection.feedback.accent)
-                            .frame(width: 40, height: 40)
-                            .background(OracleHomeSection.feedback.accent.opacity(0.14))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Feedback")
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(OracleTheme.textPrimary)
-                            Text(summary)
-                                .font(.caption)
-                                .foregroundStyle(OracleTheme.textSecondary)
-                                .lineLimit(1)
-                        }
-                        Spacer(minLength: 8)
-                        Image(systemName: "chevron.down")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(OracleTheme.textSecondary)
-                            .rotationEffect(.degrees(expanded ? 180 : 0))
-                    }
+        CollapsibleHomeSection(
+            expandedKey: HomeSectionExpandKey.feedback,
+            accent: OracleHomeSection.feedback.accent,
+            icon: "hand.tap.fill",
+            title: "Feedback",
+            summary: summary
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                feedbackInset {
+                    vibrationRow
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(expanded ? "Collapse Feedback" : "Expand Feedback")
 
-                if expanded {
-                    VStack(alignment: .leading, spacing: 12) {
-                        feedbackInset {
-                            vibrationRow
+                feedbackInset {
+                    VStack(spacing: 0) {
+                        statusDotRow
+                        if dotEnabled {
+                            CueDivider()
+                            dotCustomizeRow(color: dotColor, size: $dotSize, colorHex: $colorHex)
                         }
-
-                        feedbackInset {
-                            VStack(spacing: 0) {
-                                statusDotRow
-                                if dotEnabled {
-                                    CueDivider()
-                                    dotCustomizeRow(color: dotColor, size: $dotSize, colorHex: $colorHex)
-                                }
-                            }
-                        }
-
                     }
-                    .padding(.top, 16)
-                    .animation(.easeInOut(duration: 0.2), value: dotEnabled)
                 }
             }
+            .animation(.easeInOut(duration: 0.2), value: dotEnabled)
         }
     }
 

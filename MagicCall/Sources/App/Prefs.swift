@@ -47,6 +47,18 @@ enum Prefs {
         static let performanceModeMigratedToSingle = "ui.performanceModeMigratedToSingle"
     }
 
+    /// Home sections start collapsed on first install.
+    static func registerHomeSectionDefaults() {
+        d.register(defaults: [
+            HomeSectionExpandKey.performance: false,
+            HomeSectionExpandKey.songInput: false,
+            HomeSectionExpandKey.wordApi: false,
+            HomeSectionExpandKey.feedback: false,
+            HomeSectionExpandKey.library: false,
+            HomeSectionExpandKey.performLog: false,
+        ])
+    }
+
     enum PerformanceMode: String, CaseIterable, Identifiable {
         case fakeRingtone
         case shareRingtone
@@ -113,6 +125,7 @@ enum Prefs {
             Key.performanceMode: PerformanceMode.fakeRingtone.rawValue,
             Key.autoShareOnSongLock: false,
         ])
+        registerHomeSectionDefaults()
         migrateClipSecondsIfNeeded()
         migratePerformanceModeToSingleIfNeeded()
     }

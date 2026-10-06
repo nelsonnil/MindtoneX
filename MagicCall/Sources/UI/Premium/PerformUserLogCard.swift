@@ -3,8 +3,6 @@ import SwiftUI
 /// Home card: recent Perform sessions with plain English event lines.
 struct PerformUserLogCard: View {
     @ObservedObject private var log = PerformUserLog.shared
-    @AppStorage("ui.performLogExpanded") private var expanded = false
-
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
@@ -31,64 +29,35 @@ struct PerformUserLogCard: View {
     }
 
     var body: some View {
-        HomePanel(accent: OracleHomeSection.advanced.accent) {
-            VStack(alignment: .leading, spacing: 0) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.22)) { expanded.toggle() }
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "list.bullet.rectangle")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(OracleHomeSection.advanced.accent)
-                            .frame(width: 40, height: 40)
-                            .background(OracleHomeSection.advanced.accent.opacity(0.14))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Perform log")
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(OracleTheme.textPrimary)
-                            Text(summary)
-                                .font(.caption)
-                                .foregroundStyle(OracleTheme.textSecondary)
-                                .lineLimit(1)
-                        }
-                        Spacer(minLength: 8)
-                        Image(systemName: "chevron.down")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(OracleTheme.textSecondary)
-                            .rotationEffect(.degrees(expanded ? 180 : 0))
+        CollapsibleHomeSection(
+            expandedKey: HomeSectionExpandKey.performLog,
+            accent: OracleHomeSection.advanced.accent,
+            icon: "list.bullet.rectangle",
+            title: "Perform log",
+            summary: summary
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                if log.sessions.isEmpty {
+                    Text("Song locks, spectator words, incoming calls, and setup warnings appear here after each perform.")
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                } else {
+                    ForEach(log.sessions.prefix(5)) { session in
+                        sessionBlock(session)
                     }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(expanded ? "Collapse perform log" : "Expand perform log")
 
-                if expanded {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if log.sessions.isEmpty {
-                            Text("Song locks, spectator words, incoming calls, and setup warnings appear here after each perform.")
-                                .font(.caption)
-                                .foregroundStyle(OracleTheme.textSecondary)
-                                .padding(.top, 16)
-                        } else {
-                            ForEach(log.sessions.prefix(5)) { session in
-                                sessionBlock(session)
-                            }
-                        }
-
-                        if !log.sessions.isEmpty {
-                            Button(role: .destructive) {
-                                log.clearAll()
-                            } label: {
-                                Text("Clear history")
-                                    .font(.caption.weight(.semibold))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(OracleTheme.coral.opacity(0.9))
-                        }
+                if !log.sessions.isEmpty {
+                    Button(role: .destructive) {
+                        log.clearAll()
+                    } label: {
+                        Text("Clear history")
+                            .font(.caption.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
                     }
-                    .padding(.top, 16)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(OracleTheme.coral.opacity(0.9))
                 }
             }
         }

@@ -18,7 +18,6 @@ struct SongLibrarySection: View {
         }
     }
 
-    @AppStorage("ui.libraryExpanded") private var expanded = false
     @State private var selectedTab: LibraryTab = .recent
     @State private var showClearRecentAlert = false
     @State private var showImportPicker = false
@@ -45,42 +44,14 @@ struct SongLibrarySection: View {
     }
 
     var body: some View {
-        HomePanel(accent: OracleTheme.gold) {
-            VStack(alignment: .leading, spacing: 0) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.22)) { expanded.toggle() }
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "music.note.list")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(OracleTheme.gold)
-                            .frame(width: 40, height: 40)
-                            .background(OracleTheme.gold.opacity(0.14))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Library")
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(OracleTheme.textPrimary)
-                            Text(collapsedSummary)
-                                .font(.caption)
-                                .foregroundStyle(OracleTheme.textSecondary)
-                                .lineLimit(1)
-                        }
-                        Spacer(minLength: 8)
-                        Image(systemName: "chevron.down")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(OracleTheme.textSecondary)
-                            .rotationEffect(.degrees(expanded ? 180 : 0))
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(expanded ? "Collapse Library" : "Expand Library")
-
-                if expanded {
-                    libraryExpandedContent
-                        .padding(.top, 16)
-                }
-            }
+        CollapsibleHomeSection(
+            expandedKey: HomeSectionExpandKey.library,
+            accent: OracleTheme.gold,
+            icon: "music.note.list",
+            title: "Library",
+            summary: collapsedSummary
+        ) {
+            libraryExpandedContent
         }
         .onAppear {
             library.reloadFromDisk()

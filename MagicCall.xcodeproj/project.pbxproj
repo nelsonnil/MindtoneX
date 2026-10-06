@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0252A189382C473B6FAD70AB /* DebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6CC08F1371815B8ECC08D6 /* DebugLog.swift */; };
 		04589F2E27E1B78CBA422EB1 /* WordReadingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A539EED2B566EDCDB04C0CCE /* WordReadingTests.swift */; };
+		086460104B68BB3C819E3FED /* HomeCollapsibleSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A21CCF1F7089541B6DC60FF /* HomeCollapsibleSection.swift */; };
 		09E0EF3810160A5F1BD81E81 /* MagicCallLiveCallerLookup.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A5742EFB2E2186ABC66755D3 /* MagicCallLiveCallerLookup.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B7939F9A17DDF66D8FA6ED4 /* CardInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10F1FAFEC4327EF1C05B2D5 /* CardInputPanel.swift */; };
 		0C13519901D4C9A57CFA2E01 /* SpectatorWordContactService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */; };
@@ -188,6 +189,7 @@
 		6CD42726122139D6130AD4F8 /* SilentShortcutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentShortcutCard.swift; sourceTree = "<group>"; };
 		72AC74524CAF7C0D6B683FE2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		778066FED077319EC23EDCEE /* MCObjC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MCObjC.m; sourceTree = "<group>"; };
+		7A21CCF1F7089541B6DC60FF /* HomeCollapsibleSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeCollapsibleSection.swift; sourceTree = "<group>"; };
 		7BDF1EA0492BCF11335526EC /* WordApiSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSession.swift; sourceTree = "<group>"; };
 		7CB5BDB6A1DCECFBD46E5FC1 /* AppModel+Voice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Voice.swift"; sourceTree = "<group>"; };
 		81ED684AAD9C91EABD24A1D3 /* SystemVolume.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemVolume.swift; sourceTree = "<group>"; };
@@ -490,6 +492,7 @@
 			isa = PBXGroup;
 			children = (
 				A2A7D6817DA44304F1D5ABC6 /* HeroLogoView.swift */,
+				7A21CCF1F7089541B6DC60FF /* HomeCollapsibleSection.swift */,
 				088157D88358BCAC626D0D35 /* LoadedSongReadyRow.swift */,
 				1281B461D25A6CC77A54696F /* MainShellView.swift */,
 				44F8F3AAB4CE4D47C84E6771 /* OracleSheets.swift */,
@@ -684,6 +687,7 @@
 				C4A84B05EE00F8A14BB48FC6 /* DebugLogView.swift in Sources */,
 				6BBF2CA1A5DFE664162ECDBC /* FakePostCallVolumeGate.swift in Sources */,
 				31BFA5A3B42AD87279A73D6D /* HeroLogoView.swift in Sources */,
+				086460104B68BB3C819E3FED /* HomeCollapsibleSection.swift in Sources */,
 				66615CC09AC450AAA511552A /* ImportedAudioStore.swift in Sources */,
 				45B9F626BAE2A5701A001DC2 /* LiveTranscribers.swift in Sources */,
 				69DA22C1783D98829F2DCE7B /* LoadedSongReadyRow.swift in Sources */,

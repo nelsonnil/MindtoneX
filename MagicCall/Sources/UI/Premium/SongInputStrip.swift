@@ -14,14 +14,19 @@ struct SongInputStrip: View {
         return mode == .manual ? .card : mode
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HomeSectionTitle(
-                title: "Song input",
-                subtitle: "How the track is chosen before Perform",
-                eyebrow: "Step 2"
-            )
+    private var songInputSummary: String {
+        "\(inputMode.title) · how the track is chosen on Perform"
+    }
 
+    var body: some View {
+        CollapsibleHomeSection(
+            expandedKey: HomeSectionExpandKey.songInput,
+            accent: OracleTheme.indigo,
+            icon: "music.note.list",
+            title: "Song input",
+            summary: songInputSummary
+        ) {
+            VStack(alignment: .leading, spacing: 16) {
             LazyVGrid(columns: inputColumns, spacing: 10) {
                 inputChip("Card", icon: "doc.viewfinder", mode: .card)
                 inputChip("Voice", icon: "mic.fill", mode: .aiVoice)
@@ -42,6 +47,7 @@ struct SongInputStrip: View {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: inputModeRaw)
+            }
         }
         .onAppear(perform: migrateLegacyManualMode)
     }

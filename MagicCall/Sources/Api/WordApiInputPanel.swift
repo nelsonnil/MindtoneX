@@ -419,15 +419,14 @@ struct WordApiHomeCard: View {
     }
 
     var body: some View {
-        HomePanel(accent: OracleHomeSection.wordApi.accent) {
-            VStack(alignment: .leading, spacing: 16) {
-                HomeSectionTitle(
-                    title: "Word API (caller label)",
-                    subtitle: subtitle,
-                    eyebrow: "Incoming call banner"
-                )
-                WordApiInputPanel()
-            }
+        CollapsibleHomeSection(
+            expandedKey: HomeSectionExpandKey.wordApi,
+            accent: OracleHomeSection.wordApi.accent,
+            icon: "phone.arrow.down.left.fill",
+            title: "Word API (caller label)",
+            summary: subtitle
+        ) {
+            WordApiInputPanel()
         }
     }
 }
