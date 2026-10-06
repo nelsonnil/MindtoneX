@@ -6,7 +6,7 @@ enum WordApiSettings {
         /// Master toggle: caller label during Perform (UserDefaults `wordApi.callerLabelEnabled`).
         static let callerLabelEnabled = "wordApi.callerLabelEnabled"
         /// Legacy key from build 102 — migrated once on read.
-        private static let legacyEnabled = "wordApi.enabled"
+        static let legacyEnabled = "wordApi.enabled"
         static let provider = "wordApi.provider"
         static let injectID = "wordApi.inject.id"
         static let elipsURL = "wordApi.elips.url"
@@ -147,18 +147,42 @@ enum WordApiSettings {
 }
 
 struct WordReading: Equatable {
+    /// Inject / Elips submission counter (may stay flat on `/selection` while the word changes).
     var count: Int?
+    /// Inject bumps this on each new spectator submission even when `count` is unchanged.
+    var receiveCount: Int?
     var word: String
     var raw: String
 
     var hasWord: Bool { !word.isEmpty }
     var label: String { word }
 
+    /// True when this poll is a new spectator word compared with baseline `old`.
     func isNewWord(comparedTo old: WordReading) -> Bool {
         guard hasWord else { return false }
-        if let count, let oldCount = old.count, count != oldCount { return true }
+        if let count, let oldCount = old.count, count > oldCount { return true }
+        if let receiveCount, let oldReceive = old.receiveCount, receiveCount > oldReceive { return true }
         return !ApiJSON.sameText(word, old.word)
     }
+
+    func unchangedVsBaselineReason(comparedTo old: WordReading) -> String {
+        if !hasWord { return "empty word in response (ignored)" }
+        let sameCount = count == old.count
+        let sameReceive = receiveCount == old.receiveCount
+        let sameWord = ApiJSON.sameText(word, old.word)
+        if sameCount && sameReceive && sameWord { return "API returned same as baseline" }
+        if sameCount && sameReceive, word != old.word {
+            return "word differs only by case/accents (treated as unchanged)"
+        }
+        if count != old.count || receiveCount != old.receiveCount {
+            return "count/receive flat but text unchanged — Inject may not have bumped JSON yet"
+        }
+        return "unchanged by isNewWord rules"
+    }
+}
+
+struct WordFetchDiagnostics: Sendable {
+    let pollNumber: Int
 }
 
 enum WordApiClient {
@@ -186,11 +210,26 @@ enum WordApiClient {
         return URLSession(configuration: config)
     }()
 
-    static func fetch(_ provider: WordApiSettings.Provider = WordApiSettings.provider) async throws -> WordReading {
-        guard let url = WordApiSettings.endpoint(for: provider) else { throw ClientError.notConfigured }
+    private static var lastPerformFetchSnapshot: (count: Int?, receive: Int?, word: String)?
+
+    static func resetPerformFetchDiagnostics() {
+        lastPerformFetchSnapshot = nil
+    }
+
+    static func fetch(
+        _ provider: WordApiSettings.Provider = WordApiSettings.provider,
+        performDiagnostics: WordFetchDiagnostics? = nil
+    ) async throws -> WordReading {
+        guard var url = WordApiSettings.endpoint(for: provider) else { throw ClientError.notConfigured }
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        var query = components?.queryItems ?? []
+        query.append(URLQueryItem(name: "mx", value: String(Int(Date().timeIntervalSince1970 * 1000))))
+        components?.queryItems = query
+        if let busted = components?.url { url = busted }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData,
                                  timeoutInterval: WordApiSettings.requestTimeout)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
         if provider == .custom, !WordApiSettings.customHeaderName.isEmpty, let value = WordApiSettings.customHeaderValue {
             request.setValue(value, forHTTPHeaderField: WordApiSettings.customHeaderName)
         }
@@ -200,23 +239,38 @@ enum WordApiClient {
         }
         guard let object = ApiJSON.object(from: data) else { throw ClientError.notJSON }
         let raw = String(data: data.prefix(600), encoding: .utf8) ?? ""
-        return try parse(object, provider: provider, raw: raw)
+        let reading = try parse(object, provider: provider, raw: raw)
+        if let diag = performDiagnostics {
+            let countStr = reading.count.map(String.init) ?? "–"
+            let receiveStr = reading.receiveCount.map(String.init) ?? "–"
+            let snapshot = (reading.count, reading.receiveCount, reading.word)
+            let changed = lastPerformFetchSnapshot.map {
+                $0.count != snapshot.0 || $0.receive != snapshot.1 || $0.word != snapshot.2
+            } ?? true
+            if diag.pollNumber <= 3 || changed {
+                dlog("[WORD] fetch poll #\(diag.pollNumber) parsed count=\(countStr) receive=\(receiveStr) word=«\(reading.label)»")
+                lastPerformFetchSnapshot = snapshot
+            }
+        }
+        return reading
     }
 
     static func parse(_ object: [String: Any], provider: WordApiSettings.Provider, raw: String) throws -> WordReading {
         switch provider {
         case .inject:
             return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),
-                               word: ApiJSON.string(in: object, keys: ["word", "label", "value"]),
+                               receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
+                               word: ApiJSON.string(in: object, keys: ["word", "label", "value", "selection"]),
                                raw: raw)
         case .elips:
             return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),
-                               word: ApiJSON.string(in: object, keys: ["word", "label", "outputWords", "value"]),
+                               receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
+                               word: ApiJSON.string(in: object, keys: ["word", "label", "outputWords", "value", "selection"]),
                                raw: raw)
         case .custom:
             let field = WordApiSettings.customField
             guard let value = ApiJSON.value(in: object, path: field) else { throw ClientError.missingField(field) }
-            return WordReading(count: nil, word: ApiJSON.text(value), raw: raw)
+            return WordReading(count: nil, receiveCount: nil, word: ApiJSON.text(value), raw: raw)
         }
     }
 }

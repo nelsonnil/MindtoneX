@@ -38,6 +38,9 @@ final class WordApiSession: ObservableObject {
     private var timer: Timer?
     private var isRefreshing = false
     private var generation = 0
+    private var unchangedCountPolls = 0
+    private var loggedStaleInjectCount = false
+    private var lastUnchangedPerformUserLogAt: Date?
 
     private init() {}
 
@@ -130,7 +133,9 @@ final class WordApiSession: ObservableObject {
             guard let base = baseline else {
                 baseline = reading
                 state = .watching
-                dlog("[WORD] baseline (\(ms) ms): count=\(reading.count.map(String.init) ?? "–") “\(reading.label)” — waiting for change")
+                unchangedCountPolls = 0
+                loggedStaleInjectCount = false
+                dlog("[WORD] baseline (\(ms) ms): count=\(reading.count.map(String.init) ?? "–") receive=\(reading.receiveCount.map(String.init) ?? "–") “\(reading.label)” — waiting for change")
                 if context == .perform {
                     let integration = WordApiSettings.provider.title
                     PerformUserLog.shared.log(
@@ -139,18 +144,61 @@ final class WordApiSession: ObservableObject {
                 }
                 return
             }
-            guard reading.isNewWord(comparedTo: base) else { return }
-            dlog("[WORD] ★ new word (\(ms) ms): “\(base.label)” → “\(reading.label)”")
+            let snapshotUnchanged = reading.count == base.count
+                && reading.receiveCount == base.receiveCount
+                && ApiJSON.sameText(reading.word, base.word)
+            if snapshotUnchanged {
+                unchangedCountPolls += 1
+            } else {
+                unchangedCountPolls = 0
+                loggedStaleInjectCount = false
+            }
+            if context == .perform, provider == .inject, unchangedCountPolls >= 6, !loggedStaleInjectCount {
+                let c = base.count.map(String.init) ?? "–"
+                let r = base.receiveCount.map(String.init) ?? "–"
+                PerformUserLog.shared.log("Inject still count \(c) receive \(r) — submit new word on 11z.co")
+                loggedStaleInjectCount = true
+            }
+            guard reading.isNewWord(comparedTo: base) else {
+                logUnchangedPoll(reading, baseline: base, ms: ms)
+                return
+            }
+            let oldCount = base.count.map(String.init) ?? "–"
+            let newCount = reading.count.map(String.init) ?? "–"
+            let oldReceive = base.receiveCount.map(String.init) ?? "–"
+            let newReceive = reading.receiveCount.map(String.init) ?? "–"
+            dlog("[WORD] ★ isNewWord poll #\(pollCount) (\(ms) ms): count \(oldCount)→\(newCount) receive \(oldReceive)→\(newReceive) “\(base.label)”→“\(reading.label)”")
             baseline = reading
             lock(reading)
         }
+    }
+
+    private func logUnchangedPoll(_ reading: WordReading, baseline base: WordReading, ms: Int) {
+        let baseCount = base.count.map(String.init) ?? "–"
+        let nowCount = reading.count.map(String.init) ?? "–"
+        let slightlyDifferent = reading.count != base.count
+            || reading.receiveCount != base.receiveCount
+            || reading.word != base.word
+        let periodic = pollCount % 5 == 0
+        guard periodic || slightlyDifferent else { return }
+        let reason = reading.unchangedVsBaselineReason(comparedTo: base)
+        dlog("[WORD] poll #\(pollCount) unchanged vs baseline count=\(baseCount) word=«\(base.label)» (\(ms) ms; now count=\(nowCount) word=«\(reading.label)» · \(reason))")
+        guard context == .perform else { return }
+        let now = Date()
+        if let last = lastUnchangedPerformUserLogAt, now.timeIntervalSince(last) < 10 { return }
+        lastUnchangedPerformUserLogAt = now
+        PerformUserLog.shared.log("Word API: sin cambio · «\(reading.label)» (\(reason))")
     }
 
     private func lock(_ reading: WordReading) {
         stopPolling()
         lockedReading = reading
         state = .locked
-        dlog("[WORD] 🔒 locked “\(reading.label)” after \(pollCount) polls")
+        let wordDotEnabled = UserDefaults.standard.bool(forKey: PerformanceCues.Key.wordDotEnabled)
+        let dotShouldShow = wordDotEnabled
+            && WordApiSettings.callerLabelEnabled
+            && context == .perform
+        dlog("[WORD] 🔒 lock “\(reading.label)” after \(pollCount) polls · callerLabelEnabled=\(WordApiSettings.callerLabelEnabled) wordDotEnabled=\(wordDotEnabled) state=locked dotShouldShow=\(dotShouldShow)")
         if context == .perform {
             PerformanceCues.wordLocked(source: "Word API", label: reading.label)
         }
@@ -174,6 +222,10 @@ final class WordApiSession: ObservableObject {
         lastError = nil
         consecutiveErrors = 0
         pollCount = 0
+        unchangedCountPolls = 0
+        loggedStaleInjectCount = false
+        lastUnchangedPerformUserLogAt = nil
+        WordApiClient.resetPerformFetchDiagnostics()
     }
 
     private func fail(_ message: String) {

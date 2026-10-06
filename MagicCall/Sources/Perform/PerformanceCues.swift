@@ -242,6 +242,9 @@ struct PerformWordStatusDot: View {
 
     var body: some View {
         StageCueDot(visible: visible, size: size, colorHex: colorHex)
+            .onChange(of: visible) { _, show in
+                dlog("[WORD] dot visible=\(show) wordDotEnabled=\(enabled) callerLabelEnabled=\(WordApiSettings.callerLabelEnabled) state=\(word.state) perform=\(word.context == .perform) armed=\(model.isArmed)")
+            }
     }
 }
 
