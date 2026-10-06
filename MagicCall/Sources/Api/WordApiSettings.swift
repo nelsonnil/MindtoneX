@@ -40,10 +40,26 @@ enum WordApiSettings {
             }
         }
 
-        var shortTitleES: String {
+        var pickerSymbol: String {
             switch self {
-            case .unknown: return "Desconocido"
-            case .known: return "Conocido"
+            case .unknown: return "phone.badge.plus"
+            case .known: return "person.crop.circle.fill"
+            }
+        }
+
+        var pickerHint: String {
+            switch self {
+            case .unknown: return "New number"
+            case .known: return "Pick contact"
+            }
+        }
+
+        var detailLine: String {
+            switch self {
+            case .unknown:
+                return "Dial the spectator on Perform; we create or update a contact so the incoming call shows the API word instead of the number."
+            case .known:
+                return "Choose an existing contact; when the word locks we replace their first name with the API word for the incoming-call name."
             }
         }
     }

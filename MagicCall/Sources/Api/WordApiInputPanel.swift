@@ -89,16 +89,31 @@ struct WordApiInputPanel: View {
         WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
     }
 
+    private var contactModeBinding: Binding<WordApiSettings.ContactMode> {
+        Binding(
+            get: { WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown },
+            set: { mode in
+                contactModeRaw = mode.rawValue
+                WordApiSettings.setContactMode(mode)
+            }
+        )
+    }
+
     private var wordContactCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             OracleEyebrow(text: "Contact name (caller ID)")
+
+            Text("When the spectator word locks, iOS can show that word on the incoming call screen instead of the phone number. MindtoneX writes it to Contacts (Call Directory is backup if Contacts is denied).")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Toggle(isOn: $saveWordAsContact) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Save locked word as contact name")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Background save — no Contacts app UI at lock time.")
+                    Text("Silent save at lock — no Contacts app popup during the show.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                 }
@@ -109,17 +124,18 @@ struct WordApiInputPanel: View {
             }
 
             if saveWordAsContact {
-                Picker("Mode", selection: $contactModeRaw) {
-                    ForEach(WordApiSettings.ContactMode.allCases) { mode in
-                        Text("\(mode.title) · \(mode.shortTitleES)").tag(mode.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: contactModeRaw) { _, raw in
-                    if let mode = WordApiSettings.ContactMode(rawValue: raw) {
-                        WordApiSettings.setContactMode(mode)
-                    }
-                }
+                Text("How to link the number")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textPrimary)
+                    .padding(.top, 2)
+
+                WordContactModePicker(selection: contactModeBinding)
+
+                Text(contactMode.detailLine)
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .animation(.easeInOut(duration: 0.2), value: contactModeRaw)
 
                 if contactMode == .known {
                     knownContactBlock
@@ -454,7 +470,7 @@ struct WordApiInputPanel: View {
         let count = reading.count.map(String.init) ?? "–"
         let rc = reading.receiveCount.map(String.init) ?? "–"
         let word = WordApiInputPanel.truncated(reading.label, max: 28)
-        return "Último poll · count \(count) · rc \(rc) · «\(word)»"
+        return "Last poll · count \(count) · rc \(rc) · «\(word)»"
     }
 
     private var statusLine: (text: String, icon: String, warning: Bool)? {
@@ -528,6 +544,58 @@ struct WordApiHomeCard: View {
                 )
                 WordApiInputPanel()
             }
+        }
+    }
+}
+
+// MARK: - Contact mode picker
+
+private struct WordContactModePicker: View {
+    @Binding var selection: WordApiSettings.ContactMode
+    @Namespace private var selectionNS
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(WordApiSettings.ContactMode.allCases) { mode in
+                let selected = selection == mode
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                        selection = mode
+                    }
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: mode.pickerSymbol)
+                            .font(.system(size: 20, weight: .semibold))
+                            .symbolRenderingMode(.hierarchical)
+                        Text(mode.title)
+                            .font(.subheadline.weight(.bold))
+                        Text(mode.pickerHint)
+                            .font(.caption2.weight(.medium))
+                            .opacity(selected ? 0.9 : 0.55)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .foregroundStyle(selected ? OracleTheme.ink : OracleTheme.textSecondary)
+                    .background {
+                        if selected {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(OracleTheme.goldGradient)
+                                .matchedGeometryEffect(id: "wordContactModeFill", in: selectionNS)
+                                .shadow(color: OracleTheme.gold.opacity(0.32), radius: 8, y: 3)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(mode.title)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(5)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
     }
 }
