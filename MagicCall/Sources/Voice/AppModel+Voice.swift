@@ -8,6 +8,14 @@ extension AppModel {
     /// AI Voice, Notes and API find the song during Perform, so each Perform starts with no song.
     var findsSongDuringPerform: Bool { usesVoiceInput || usesNotesInput || usesApiInput }
 
+    /// Auto-share on song lock applies only to inputs that lock during Perform (not Manual on Home).
+    var inputSupportsAutoShareOnSongLock: Bool {
+        switch VoiceSettings.inputMode {
+        case .manual: return false
+        case .aiVoice, .notes, .api: return true
+        }
+    }
+
     /// True when this Perform may play audio (locked or manual track loaded after reset).
     func hasSongLockedForCurrentPerform() -> Bool {
         switch VoiceSettings.inputMode {

@@ -57,7 +57,8 @@ struct PerformanceGuideContent: View {
                 icon: "square.and.arrow.up.fill",
                 tint: OracleTheme.indigo,
                 lines: [
-                    "Turn on **Auto-open Share when song locks** on the Performance card if you want **Use as Ringtone** as soon as Voice, Notes, or API locks a song during Perform.",
+                    "Turn on **Auto-open Share when song locks** on the Performance card if you want **Use as Ringtone** as soon as Voice, Notes, or API locks a song **during Perform**.",
+                    "Does **not** apply to **Manual** song search on Home — only live lock during Perform.",
                     autoShareOnSongLock
                         ? "Toggle is **ON** on this device."
                         : "Toggle is **OFF** — you can still long-press the stage after hang-up.",
