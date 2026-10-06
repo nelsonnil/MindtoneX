@@ -1,42 +1,96 @@
 import SwiftUI
 
-/// Performance instructions — single flow (stage + optional auto-share).
+/// Instructions — organized like Home (Performance → Song input → Caller → Notes → Feedback → Library).
 struct PerformanceGuideSheet: View {
     @Environment(\.dismiss) private var dismiss
     var onOpenFavorites: () -> Void
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                PerformanceGuideContent(onOpenFavorites: onOpenFavorites)
+            VStack(alignment: .leading, spacing: 22) {
+                guideHero
 
-                TipCard(
-                    title: "Camera & Voice input",
-                    icon: "doc.viewfinder",
+                InstructionSection(
+                    title: "How the trick works",
+                    icon: "sparkles",
                     tint: OracleTheme.gold,
-                    lines: PerformCopy.cardAndVoiceInputLines
+                    lines: PerformInstructionsCopy.howTheTrickWorks
                 )
 
+                InstructionSection(
+                    title: "Performance settings",
+                    icon: "photo.on.rectangle.angled",
+                    tint: OracleTheme.gold,
+                    lines: PerformInstructionsCopy.performanceSettings
+                )
+
+                InstructionSection(
+                    title: "During Perform",
+                    icon: "play.circle.fill",
+                    tint: OracleTheme.indigo,
+                    lines: PerformInstructionsCopy.duringPerform
+                )
+
+                PerformanceGuideOptionalShare(onOpenFavorites: onOpenFavorites)
+
+                InstructionSection(
+                    title: "Song input",
+                    icon: "music.note.list",
+                    tint: OracleTheme.indigo,
+                    lines: PerformInstructionsCopy.songInputOverview
+                )
+
+                InstructionSubsection(title: "Camera (handwriting OCR)", lines: PerformInstructionsCopy.songInputCamera)
+                InstructionSubsection(title: "Voice (AI)", lines: PerformInstructionsCopy.songInputVoice(lockSeconds: Int(VoiceSettings.lockDelay)))
+                InstructionSubsection(title: "Notes", lines: PerformInstructionsCopy.songInputNotes)
+                InstructionSubsection(title: "API", lines: PerformInstructionsCopy.songInputAPI)
+
                 TipCard(
-                    title: "Caller name",
-                    icon: "phone.badge.checkmark",
+                    title: "Mix song + caller + Notes",
+                    icon: "square.stack.3d.up.fill",
                     tint: OracleTheme.sectionTeal,
-                    lines: PerformCopy.wordApiSteps
+                    lines: PerformInstructionsCopy.songInputCombinations
                 )
 
-                TipCard(
-                    title: "Contact name prediction",
-                    icon: "person.crop.circle.badge.checkmark",
-                    tint: OracleTheme.gold,
-                    lines: PerformCopy.wordApiContactPrediction
+                InstructionSection(
+                    title: "Caller name",
+                    icon: "phone.arrow.down.left.fill",
+                    tint: OracleTheme.sectionTeal,
+                    lines: PerformInstructionsCopy.callerName
                 )
 
-                TipCard(
-                    title: "Missed call & voicemail",
-                    icon: "recordingtape",
+                InstructionSection(
+                    title: "Notes contact",
+                    icon: "note.text",
+                    tint: OracleTheme.sectionTeal,
+                    lines: PerformInstructionsCopy.notesContact
+                )
+
+                InstructionSection(
+                    title: "Feedback",
+                    icon: "hand.tap.fill",
+                    tint: OracleHomeSection.feedback.accent,
+                    lines: PerformInstructionsCopy.feedback
+                )
+
+                InstructionSection(
+                    title: "Library",
+                    icon: "books.vertical.fill",
                     tint: OracleTheme.textSecondary,
-                    lines: PerformCopy.voicemailAndMissedCall
+                    lines: PerformInstructionsCopy.library
                 )
+
+                InstructionSection(
+                    title: "Perform log",
+                    icon: "list.bullet.rectangle",
+                    tint: OracleTheme.textSecondary,
+                    lines: PerformInstructionsCopy.performLog
+                )
+
+                Text("Exit Perform anytime: **two-finger swipe down** on the stage.")
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .padding(.top, 4)
             }
             .padding(20)
         }
@@ -50,107 +104,41 @@ struct PerformanceGuideSheet: View {
             }
         }
     }
+
+    private var guideHero: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Start here")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(OracleTheme.gold)
+            Text("Everything below matches the **Home** cards: set up once, then tap **Perform**.")
+                .font(.subheadline)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Color.white.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
 }
 
-struct PerformanceGuideContent: View {
+/// Optional Share / real ringtone — reads current toggle.
+private struct PerformanceGuideOptionalShare: View {
     @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
     var onOpenFavorites: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            guideIntro(
-                title: "Performance",
-                icon: "theatermasks.fill",
-                tint: OracleTheme.gold,
-                text: """
-                Choose a **stage screenshot** (Home or Lock screen) so Perform looks like your iPhone. When a real call arrives, MindtoneX plays your song through the speaker when iOS allows. When the caller hangs up, playback stops.
-                """
-            )
-
-            OracleGuideSection(title: "Before you perform", items: [
-                "Performance card → **Choose screenshot** (required)",
-                "Settings → Apps → Phone → Incoming Calls: Banner",
-                "Stay in MindtoneX (screen stays awake while performing)",
-            ])
-
-            TipCard(
-                title: "Auto-open Share (optional)",
+        VStack(alignment: .leading, spacing: 12) {
+            InstructionSection(
+                title: "Optional: real ringtone",
                 icon: "square.and.arrow.up.fill",
                 tint: OracleTheme.indigo,
-                lines: [
-                    "Turn on **Auto-open Share when song locks** on the Performance card if you want **Use as Ringtone** as soon as Voice, Notes, API, or Card locks a song **during Perform**.",
-                    "Only applies when a song **locks live during Perform** — not when you pick a track from Library on Home.",
-                    autoShareOnSongLock
-                        ? "Toggle is **ON** on this device."
-                        : "Toggle is **OFF** — you can still long-press the stage after hang-up.",
-                ]
+                lines: PerformInstructionsCopy.optionalRealRingtone(autoShareOn: autoShareOnSongLock)
             )
 
-            TipCard(
-                title: "Long-press the stage → Share",
-                icon: "hand.tap.fill",
-                tint: OracleTheme.gold,
-                lines: [
-                    "Set **Playback volume** on the home card, or use the side volume buttons during Perform.",
-                    "After the call **ends**, **press and hold** the stage about **half a second** — the Share sheet opens.",
-                    "Tap **Use as Ringtone** (pin it to Favorites once — see below — then it is always one tap).",
-                    "Only works **after hang-up** — not while the phone is ringing or while the song is still playing.",
-                ]
-            )
-
-            FavoritesQuickAccessSection(onOpenFavorites: onOpenFavorites)
-
-            TipCard(title: "Timing", icon: "clock", tint: OracleTheme.indigo, lines: PerformCopy.fakeTiming)
-
-            Text("Exit Perform: two-finger swipe down from mid-screen.")
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-        }
-    }
-}
-
-private func guideIntro(title: String, icon: String, tint: Color, text: String) -> some View {
-    VStack(alignment: .leading, spacing: 12) {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(tint)
-                .frame(width: 44, height: 44)
-                .background(tint.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            Text(title)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(OracleTheme.textPrimary)
-        }
-        Text(.init(text))
-            .font(.subheadline)
-            .foregroundStyle(OracleTheme.textSecondary)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-    .padding(16)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Color.white.opacity(0.06))
-    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-}
-
-private struct FavoritesQuickAccessSection: View {
-    var onOpenFavorites: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            TipCard(
-                title: "First time: add to Favorites",
-                icon: "star.circle.fill",
-                tint: OracleTheme.gold,
-                lines: [
-                    "Do this **once** the first time you see the Share sheet (auto-share or long-press after hang-up).",
-                    "Tap **More** (•••) → **Edit Actions** → tap **+** next to **Use as Ringtone** → **Favorites**.",
-                    "From then on, **Use as Ringtone** appears on the **top row** — fast access every performance.",
-                ]
-            )
             ShareRingtoneFavoritesIllustration()
             Button(action: onOpenFavorites) {
-                Label("Open step-by-step Favorites guide", systemImage: "book.pages.fill")
+                Label("Favorites setup (Use as Ringtone)", systemImage: "star.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -160,30 +148,69 @@ private struct FavoritesQuickAccessSection: View {
     }
 }
 
-struct OracleGuideSection: View {
+/// Reusable block for Instructions (same cards as Home sections).
+struct InstructionSection: View {
     let title: String
-    let items: [String]
+    let icon: String
+    let tint: Color
+    let lines: [String]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        TipCard(title: title, icon: icon, tint: tint, lines: lines)
+    }
+}
+
+struct InstructionSubsection: View {
+    let title: String
+    let lines: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .font(.caption.weight(.bold))
                 .foregroundStyle(OracleTheme.textPrimary)
-            ForEach(items, id: \.self) { item in
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(OracleTheme.gold)
-                        .font(.subheadline)
-                        .padding(.top, 1)
-                    Text(.init(item))
+            ForEach(lines, id: \.self) { line in
+                HStack(alignment: .top, spacing: 8) {
+                    Text("•")
+                        .foregroundStyle(OracleTheme.textSecondary)
+                    Text(.init(line))
                         .font(.footnote)
                         .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
-        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+    }
+}
+
+/// Legacy embed (e.g. if referenced elsewhere) — slim perform intro only.
+struct PerformanceGuideContent: View {
+    @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
+    var onOpenFavorites: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            InstructionSection(
+                title: "How the trick works",
+                icon: "sparkles",
+                tint: OracleTheme.gold,
+                lines: PerformInstructionsCopy.howTheTrickWorks
+            )
+            InstructionSection(
+                title: "Performance settings",
+                icon: "photo.on.rectangle.angled",
+                tint: OracleTheme.gold,
+                lines: PerformInstructionsCopy.performanceSettings
+            )
+            PerformanceGuideOptionalShare(onOpenFavorites: onOpenFavorites)
+        }
     }
 }

@@ -86,6 +86,7 @@
 		B4ED244091544ED3F9E5F476 /* RingtoneExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CA62E6FADC4DE40154C670 /* RingtoneExporter.swift */; };
 		BAE78790890F3890D985AE32 /* VoiceSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 876D35E2C35E579667BE51D4 /* VoiceSongSession.swift */; };
 		BBFF503A2A2C25749054043F /* SongLibrarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EDC64AB7D42A6E6DCF202B /* SongLibrarySection.swift */; };
+		BC0954735758C2B6B3F42715 /* PerformInstructionsCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0F7B9E94667A4865BD298C1 /* PerformInstructionsCopy.swift */; };
 		BC3768587DC85F9AA9C3209B /* NotesSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CC0BDAA31FC35FD10BE1DC7 /* NotesSettings.swift */; };
 		BEC014E4012EE7481D2D4B24 /* PreviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94C29E2CCBFC1086588445F6 /* PreviewService.swift */; };
 		C04371F3C53F5F34E65FDDEE /* WordApiCallerBannerPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0837021B0DCC752CFA645B40 /* WordApiCallerBannerPreview.swift */; };
@@ -229,6 +230,7 @@
 		A8A0F19A8FF481F9116B87B9 /* NotesSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSongSession.swift; sourceTree = "<group>"; };
 		AB6238274795CDF8F6168324 /* VoiceListenPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceListenPlan.swift; sourceTree = "<group>"; };
 		AF4C2F9A27E5FA837BB7116B /* VoiceOpenAIPreflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceOpenAIPreflight.swift; sourceTree = "<group>"; };
+		B0F7B9E94667A4865BD298C1 /* PerformInstructionsCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformInstructionsCopy.swift; sourceTree = "<group>"; };
 		B22312604EAA954600AED69E /* NotesContactSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactSettings.swift; sourceTree = "<group>"; };
 		B2F05FB0012259530FD41441 /* MagicCallLiveCallerLookup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicCallLiveCallerLookup.entitlements; sourceTree = "<group>"; };
 		B521B3A9CDF1292800B9E81D /* AiVoiceInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiVoiceInputPanel.swift; sourceTree = "<group>"; };
@@ -461,6 +463,7 @@
 				629C718913AEAE450BD6796A /* FakePostCallVolumeGate.swift */,
 				3B11F0512B02E2D4ABFE71B4 /* PerformanceCues.swift */,
 				84A47F6CA835B6E782CEAD62 /* PerformHowItWorks.swift */,
+				B0F7B9E94667A4865BD298C1 /* PerformInstructionsCopy.swift */,
 				1632E6A6608418A102AFC4CF /* PerformLogReporter.swift */,
 				2B07C8F1B15CD02BBB997F7E /* PerformUserLog.swift */,
 				1DFC03C27AB6139290A4DA80 /* SharePerformFlow.swift */,
@@ -745,6 +748,7 @@
 				15BFEC09D92D308DEF7D9A54 /* OracleTheme.swift in Sources */,
 				341A95B0EDC930CAD60D55A2 /* PerformBottomBar.swift in Sources */,
 				341773BE1B166A79B044AC49 /* PerformHowItWorks.swift in Sources */,
+				BC0954735758C2B6B3F42715 /* PerformInstructionsCopy.swift in Sources */,
 				28EF8E3DABC00662B6E354FE /* PerformLogReporter.swift in Sources */,
 				366F6FD0B991972DAC7235D1 /* PerformUserLog.swift in Sources */,
 				45BCB91576B14E5B65D453E0 /* PerformUserLogCard.swift in Sources */,

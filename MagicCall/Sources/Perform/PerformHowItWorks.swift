@@ -144,23 +144,4 @@ enum PerformCopy {
         "**Routine timing:** run song input and word API together — e.g. spectator searches the song in Elips while you submit their lyric word on the word endpoint; both lock during the same Perform. Then the callback shows **song on stage** + **word on caller ID**.",
     ]
 
-    /// Testers often ask for “voicemail says the prediction” — iOS/carrier limits (shown in Instructions).
-    /// Card OCR line layout + Voice AI context (Instructions → Card & Voice input).
-    static var cardAndVoiceInputLines: [String] {
-        CardOCRLayout.instructionLines + voiceAIContextLines
-    }
-
-    static let voiceAIContextLines: [String] = [
-        "**Song input = Voice (AI):** one microphone listens to the whole conversation.",
-        "Separate AI prompts pick the **song title**, the **caller name word**, and the **Notes chip word** from what the spectator says — not from the card.",
-        "Ask clear questions: any song · what word they think you saved as their contact · what word appears on the Notes contact button (see script hints on **Caller name** and **Notes contact** when Voice is selected).",
-        "You can mix methods: e.g. **Card** for the song (line 1) and **Voice** or **Inject** for words — each feature uses its own source.",
-    ]
-
-    static let voicemailAndMissedCall = [
-        "**Voicemail with the song name?** No app (including MindtoneX) can speak a **new prediction** on your **carrier voicemail** when you don’t answer. After the ring, callers hear **your carrier’s voicemail** and a **fixed greeting** you set in **Settings → Phone**, not text generated per show.",
-        "**Stage Ringtone:** if you don’t pick up, the caller hears normal ringing; **your song plays on your iPhone** during the ring — not as their voicemail message.",
-        "**Phone Ringtone:** callers may hear your **custom ringtone** while it rings; when it goes to voicemail, the greeting is still **static**, not the app’s guess.",
-        "**What works instead:** answer for the full effect; or use a **pre-recorded** generic greeting; or a **separate** phone/service (e.g. Twilio) — outside this app.",
-    ]
 }
