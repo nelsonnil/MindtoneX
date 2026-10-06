@@ -56,7 +56,7 @@ final class PerformUserLog: ObservableObject {
         lastConnectionWarningAt = nil
         if activeSessionID != nil { endSession(reason: "New perform") }
         var session = Session(title: inputLabel)
-        session.entries.append(Entry(message: "Perform started · \(inputLabel)"))
+        session.entries.append(Entry(message: "Perform started · \(inputLabel) · log shows inputs + recognized values"))
         sessions.insert(session, at: 0)
         activeSessionID = session.id
         trimAndPersist()

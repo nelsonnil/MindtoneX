@@ -30,6 +30,7 @@
 		256D9EDE07BBB6F76804461F /* NotesSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0F19A8FF481F9116B87B9 /* NotesSongSession.swift */; };
 		2759F7EDE468921282C2E330 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F8C86B2AFD6FC77DA467D2 /* AppModel.swift */; };
 		2826965C4287D1C90DFB1C1C /* SilentShortcutStatusRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 038495DF0F13C324D46A2120 /* SilentShortcutStatusRow.swift */; };
+		28EF8E3DABC00662B6E354FE /* PerformLogReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1632E6A6608418A102AFC4CF /* PerformLogReporter.swift */; };
 		290C81AF65DA4D457A2ED9D6 /* NotesContactConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E1FD9BD793A8EA7B167E69 /* NotesContactConnectionView.swift */; };
 		2CFC38C7A63678D43141D4BC /* CardSongSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBF167EB2FC9F9FEC46A0C9 /* CardSongSession.swift */; };
 		2E7126CCE44C14489C54AA8E /* MagicCallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5F46051981A4C204711045 /* MagicCallApp.swift */; };
@@ -159,6 +160,7 @@
 		13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiInputPanel.swift; sourceTree = "<group>"; };
 		15278D9105D3F5FF00D1BAD5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		157F18B545F0BC6C204DB511 /* ApiSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSongSession.swift; sourceTree = "<group>"; };
+		1632E6A6608418A102AFC4CF /* PerformLogReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformLogReporter.swift; sourceTree = "<group>"; };
 		16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactPerformGate.swift; sourceTree = "<group>"; };
 		189566531AAF0DCDD2A3573A /* LiveCallerLookupExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCallerLookupExtension.swift; sourceTree = "<group>"; };
 		1B91AE661642AE376E1DD474 /* ApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettings.swift; sourceTree = "<group>"; };
@@ -459,6 +461,7 @@
 				629C718913AEAE450BD6796A /* FakePostCallVolumeGate.swift */,
 				3B11F0512B02E2D4ABFE71B4 /* PerformanceCues.swift */,
 				84A47F6CA835B6E782CEAD62 /* PerformHowItWorks.swift */,
+				1632E6A6608418A102AFC4CF /* PerformLogReporter.swift */,
 				2B07C8F1B15CD02BBB997F7E /* PerformUserLog.swift */,
 				1DFC03C27AB6139290A4DA80 /* SharePerformFlow.swift */,
 				266C454CF85DCC717E5765F6 /* SilentShortcut.swift */,
@@ -742,6 +745,7 @@
 				15BFEC09D92D308DEF7D9A54 /* OracleTheme.swift in Sources */,
 				341A95B0EDC930CAD60D55A2 /* PerformBottomBar.swift in Sources */,
 				341773BE1B166A79B044AC49 /* PerformHowItWorks.swift in Sources */,
+				28EF8E3DABC00662B6E354FE /* PerformLogReporter.swift in Sources */,
 				366F6FD0B991972DAC7235D1 /* PerformUserLog.swift in Sources */,
 				45BCB91576B14E5B65D453E0 /* PerformUserLogCard.swift in Sources */,
 				0FE67C1D8EAF1D7628E95531 /* PerformanceCues.swift in Sources */,

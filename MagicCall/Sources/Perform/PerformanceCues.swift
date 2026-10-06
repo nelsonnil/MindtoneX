@@ -46,9 +46,9 @@ enum PerformanceCues {
         if AppModel.shared.isArmed {
             let track = AppModel.shared.selected ?? AppModel.shared.lastReadyTrack
             if let track {
-                PerformUserLog.shared.log("Song ready · “\(track.title) — \(track.artist)”")
+                PerformLogReporter.logRecognition(.song, value: "\(track.title) — \(track.artist)", via: source)
             } else {
-                PerformUserLog.shared.log("Song ready · \(source)")
+                PerformLogReporter.logRecognition(.song, value: source, via: "lock")
             }
         }
         guard vibrateOnLock else { return }
@@ -58,10 +58,14 @@ enum PerformanceCues {
 
     /// Word API locked — three short taps (distinct from song lock).
     @MainActor
-    static func wordLocked(source: String, label: String? = nil) {
+    static func wordLocked(
+        source: String,
+        label: String? = nil,
+        role: PerformLogReporter.Recognition = .callerName
+    ) {
         if AppModel.shared.isArmed {
             if let label, !label.isEmpty {
-                PerformUserLog.shared.log("Spectator word · “\(label)”")
+                PerformLogReporter.logRecognition(role, value: label, via: source)
             } else {
                 PerformUserLog.shared.log("Word locked · \(source)")
             }

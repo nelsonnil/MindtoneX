@@ -114,7 +114,7 @@ final class NotesContactWordSession: ObservableObject {
         state = .locked
         dlog("[NOTES-WORD] 🔒 \(source) · «\(label)»")
         if context == .perform {
-            PerformUserLog.shared.log("Notes contact · «\(WordApiInputPanel.truncated(label, max: 36))»")
+            PerformLogReporter.logRecognition(.notesContact, value: label, via: Self.recognitionVia(source: source))
         }
     }
 
@@ -185,7 +185,7 @@ final class NotesContactWordSession: ObservableObject {
         lockedReading = reading
         state = .locked
         dlog("[NOTES-WORD] 🔒 «\(label)» poll #\(pollCount)")
-        PerformUserLog.shared.log("Notes contact · word «\(WordApiInputPanel.truncated(label, max: 36))»")
+        PerformLogReporter.logRecognition(.notesContact, value: label, via: NotesContactWordSettings.provider.title)
         _ = priorPoll
     }
 
@@ -219,6 +219,14 @@ final class NotesContactWordSession: ObservableObject {
         pollCount = 0
         previousPollReading = nil
         lastAppliedLabel = nil
+    }
+
+    private static func recognitionVia(source: String) -> String {
+        switch source {
+        case "voice": return "Voice AI"
+        case "card": return "Camera OCR · line 3"
+        default: return NotesContactWordSettings.provider.title
+        }
     }
 
     private func fail(_ message: String) {

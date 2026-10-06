@@ -123,13 +123,11 @@ final class WordApiSession: ObservableObject {
         state = .locked
 
         dlog("[WORD] 🔒 \(source) · «\(label)»")
-        if context == .perform {
-            PerformUserLog.shared.log("Caller name · «\(WordApiInputPanel.truncated(label, max: 36))»")
-        }
         guard WordApiSettings.callerLabelEnabled else { return }
         pushCallerLabel(label, reason: source)
         if context == .perform {
-            PerformanceCues.wordLocked(source: "Caller name (\(source))", label: label)
+            let via = Self.recognitionVia(forIngestSource: source)
+            PerformanceCues.wordLocked(source: via, label: label, role: .callerName)
         }
     }
 
@@ -250,7 +248,7 @@ final class WordApiSession: ObservableObject {
         state = .locked
         let buzzOn = PerformanceCues.vibrateOnLock
         dlog("[WORD] 🔒 «\(label)» poll #\(pollCount) · label updated · buzz=\(buzzOn)")
-        PerformanceCues.wordLocked(source: "Word API", label: label)
+        PerformanceCues.wordLocked(source: WordApiSettings.provider.title, label: label, role: .callerName)
     }
 
     private func handleTestPoll(_ reading: WordReading, ms: Int) {
@@ -298,7 +296,7 @@ final class WordApiSession: ObservableObject {
         let buzzOn = PerformanceCues.vibrateOnLock
         dlog("[WORD] 🔒 lock “\(reading.label)” after \(pollCount) polls · callerLabelEnabled=\(WordApiSettings.callerLabelEnabled) buzzOn=\(buzzOn) · polling continues")
         if context == .perform {
-            PerformanceCues.wordLocked(source: "Word API", label: reading.label)
+            PerformanceCues.wordLocked(source: WordApiSettings.provider.title, label: reading.label, role: .callerName)
         }
         guard WordApiSettings.callerLabelEnabled else { return }
         CallerLabelStore.applyLockedLabel(reading.label)
@@ -346,6 +344,14 @@ final class WordApiSession: ObservableObject {
             return "Card unchanged «\(word)»"
         case .voice:
             return "Voice unchanged «\(word)»"
+        }
+    }
+
+    private static func recognitionVia(forIngestSource source: String) -> String {
+        switch source {
+        case "voice": return "Voice AI"
+        case "card-scan": return "Camera OCR · line 2"
+        default: return WordApiSettings.provider.title
         }
     }
 

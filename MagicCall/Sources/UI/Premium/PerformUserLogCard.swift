@@ -38,7 +38,7 @@ struct PerformUserLogCard: View {
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 if log.sessions.isEmpty {
-                    Text("Song locks, spectator words, incoming calls, and setup warnings appear here after each perform.")
+                    Text("Shows **inputs armed**, **Recognized** lines (song, caller, Notes chip), camera OCR detail, and call events.")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
                 } else {

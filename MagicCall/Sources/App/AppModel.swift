@@ -397,7 +397,8 @@ final class AppModel: ObservableObject {
         CallDirectorySync.syncPerformArmed(true, reason: "arm")
         startWordApiIfNeeded(context: .perform)
         startNotesContactWordIfNeeded(context: .perform)
-        PerformUserLog.shared.beginSession(inputLabel: VoiceSettings.inputMode.title)
+        PerformUserLog.shared.beginSession(inputLabel: PerformLogReporter.sessionTitle())
+        PerformLogReporter.logConfiguredInputs()
         CallDirectorySync.reportPerformReadiness()
         dlog("══ ARMADO ══ \(selected.map { "\($0.title) — \($0.artist)" } ?? "?") · \(Prefs.summary())")
     }
@@ -426,6 +427,7 @@ final class AppModel: ObservableObject {
         clearPerformSessionDisplayTrack()
         SongLibraryStore.shared.reloadFromDisk()
         SongLibraryStore.shared.logRecentDisplayMerge(context: "disarm")
+        PerformLogReporter.logRecapOnDisarm()
         PerformUserLog.shared.endSession()
         dlog("══ DESARMADO ══")
     }
