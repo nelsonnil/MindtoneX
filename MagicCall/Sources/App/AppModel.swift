@@ -172,6 +172,9 @@ final class AppModel: ObservableObject {
             exportedRingtone = nil
             ringtoneStaged = false
             loadState = .failed(error.localizedDescription)
+            if isArmed {
+                PerformUserLog.shared.log("No pude cargar el audio · \(error.localizedDescription)")
+            }
             dlog("✗ Cargar audio: \(error.localizedDescription)")
         }
     }
@@ -355,6 +358,7 @@ final class AppModel: ObservableObject {
         Self.setScreenAwakeWhileInForeground(true)
         CallDirectorySync.syncPerformArmed(true, reason: "arm")
         startWordApiIfNeeded(context: .perform)
+        PerformUserLog.shared.beginSession(inputLabel: VoiceSettings.inputMode.title)
         dlog("══ ARMADO ══ \(selected.map { "\($0.title) — \($0.artist)" } ?? "?") · \(Prefs.summary())")
     }
 
@@ -382,6 +386,7 @@ final class AppModel: ObservableObject {
         clearPerformSessionDisplayTrack()
         SongLibraryStore.shared.reloadFromDisk()
         SongLibraryStore.shared.logRecentDisplayMerge(context: "disarm")
+        PerformUserLog.shared.endSession()
         dlog("══ DESARMADO ══")
     }
 
@@ -597,6 +602,7 @@ final class AppModel: ObservableObject {
             incomingDetectedAt = CACurrentMediaTime()
             callSignalActive = true
             hadCallWhileArmed = true
+            PerformUserLog.shared.log("Llamada entrante detectada")
             VoiceSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             NotesSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             ApiSongSession.shared.callArrived(source: "CXCallObserver.incoming")

@@ -116,6 +116,9 @@ final class WordApiSession: ObservableObject {
         case .failure(let error):
             consecutiveErrors += 1
             lastError = error.localizedDescription
+            if context == .perform, consecutiveErrors == 3 {
+                PerformUserLog.shared.logConnectionIssue("Word API sin conexión · reintentando")
+            }
             if consecutiveErrors == 1 || consecutiveErrors % 10 == 0 {
                 dlog("✗ [WORD] poll #\(pollCount) failed ×\(consecutiveErrors) (\(ms) ms): \(error.localizedDescription)")
             }
@@ -142,8 +145,10 @@ final class WordApiSession: ObservableObject {
         lockedReading = reading
         state = .locked
         dlog("[WORD] 🔒 locked “\(reading.label)” after \(pollCount) polls")
+        if context == .perform {
+            PerformanceCues.wordLocked(source: "Word API", label: reading.label)
+        }
         guard WordApiSettings.callerLabelEnabled else { return }
-        if context == .perform { PerformanceCues.wordLocked(source: "Word API") }
         CallerLabelStore.applyLockedLabel(reading.label)
         CallDirectorySync.refreshIdentificationNumbers()
         CallDirectorySync.reloadExtensions(reason: "word locked")
@@ -168,6 +173,9 @@ final class WordApiSession: ObservableObject {
     private func fail(_ message: String) {
         stopPolling()
         state = .failed(message)
+        if context == .perform {
+            PerformUserLog.shared.log("Word API · \(message)")
+        }
         dlog("✗ [WORD] \(message)")
     }
 }

@@ -1,3 +1,5 @@
+import AVFoundation
+import AVFoundation
 import Foundation
 import QuartzCore
 import UIKit
@@ -251,12 +253,19 @@ final class CardSongSession: ObservableObject {
     private func fail(_ message: String) {
         stopCamera()
         state = .failed(message)
+        if context == .perform {
+            PerformUserLog.shared.log("Tarjeta · \(message)")
+        }
         dlog("✗ [CARD] \(message)")
     }
 
     private func failScanMaxRetries() {
         stopCamera()
-        state = .failed("Could not read the card — try Notes or switch input.")
+        let message = "No pude leer la tarjeta — prueba Notas u otro método"
+        state = .failed(message)
+        if context == .perform {
+            PerformUserLog.shared.log("Tarjeta · \(message)")
+        }
         PerformanceCues.cardScanFailed()
         dlog("[CARD] max scan retries reached")
     }

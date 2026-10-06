@@ -126,6 +126,9 @@ final class ApiSongSession: ObservableObject {
         case .failure(let error):
             consecutiveErrors += 1
             lastError = error.localizedDescription
+            if context == .perform, consecutiveErrors == 3 {
+                PerformUserLog.shared.logConnectionIssue("Song API sin conexión · reintentando")
+            }
             if consecutiveErrors == 1 || consecutiveErrors % 10 == 0 {
                 dlog("✗ [API] poll #\(pollCount) failed ×\(consecutiveErrors) (\(ms) ms): \(error.localizedDescription)")
             }
@@ -165,6 +168,9 @@ final class ApiSongSession: ObservableObject {
         } else {
             notFound = reading.label
             state = .watching
+            if context == .perform {
+                PerformUserLog.shared.log("No encontré canción para “\(reading.label)”")
+            }
         }
     }
 
@@ -199,6 +205,9 @@ final class ApiSongSession: ObservableObject {
     private func fail(_ message: String) {
         stopPolling()
         state = .failed(message)
+        if context == .perform {
+            PerformUserLog.shared.log("Song API · \(message)")
+        }
         dlog("✗ [API] \(message)")
     }
 }

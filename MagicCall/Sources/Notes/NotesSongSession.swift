@@ -142,7 +142,12 @@ final class NotesSongSession: ObservableObject {
                 guard gen == self.generation else { break }
                 guard let query, !query.isEmpty else {
                     dlog("[NOTES] no song in note (\(PreviewService.ms(since: t0)) ms)")
-                    if !self.isLocked { self.state = .notFound }
+                    if !self.isLocked {
+                        self.state = .notFound
+                        if self.context == .perform {
+                            PerformUserLog.shared.log("Notas · no vi una canción en la nota")
+                        }
+                    }
                     continue
                 }
                 self.lastQuery = query
@@ -156,6 +161,9 @@ final class NotesSongSession: ObservableObject {
                     self.songReady()
                 } else if !self.isLocked {
                     self.state = .notFound
+                    if self.context == .perform {
+                        PerformUserLog.shared.log("Notas · no encontré “\(query)”")
+                    }
                 }
             }
             if let self, gen == self.generation { self.searchTask = nil }

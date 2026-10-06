@@ -11,15 +11,20 @@ enum PerformanceCues {
         static let dotEnabled = "cues.statusDot.enabled"
         static let dotSize = "cues.statusDot.size"
         static let dotColor = "cues.statusDot.color"
+        static let wordDotEnabled = "cues.wordStatusDot.enabled"
+        static let wordDotSize = "cues.wordStatusDot.size"
+        static let wordDotColor = "cues.wordStatusDot.color"
     }
 
     /// Gap between the two long buzzes when a song locks (performer cue).
     private static let songLockBuzzGap: TimeInterval = 0.55
     private static let songLockBuzzDuration: TimeInterval = 0.38
 
-    static let defaultDotSize = 8.0
+    static let defaultDotSize = 10.0
     static let dotSizeRange: ClosedRange<Double> = 4...24
     static let defaultDotColor = "#34C759FF"
+    static let defaultWordDotSize = 10.0
+    static let defaultWordDotColor = "#FF9500FF"
 
     struct ColorPreset: Identifiable {
         let name: String
@@ -43,6 +48,14 @@ enum PerformanceCues {
     /// The performer's song is locked (AI Voice, API) or loaded from the note (Notes).
     @MainActor
     static func songLocked(source: String) {
+        if AppModel.shared.isArmed {
+            let track = AppModel.shared.selected ?? AppModel.shared.lastReadyTrack
+            if let track {
+                PerformUserLog.shared.log("Canción lista · “\(track.title) — \(track.artist)”")
+            } else {
+                PerformUserLog.shared.log("Canción lista · \(source)")
+            }
+        }
         guard vibrateOnLock else { return }
         playSongLockVibration()
         dlog("[CUE] vibration (2× long buzz) · \(source)")
@@ -50,7 +63,14 @@ enum PerformanceCues {
 
     /// Word API locked — three short taps (distinct from song lock).
     @MainActor
-    static func wordLocked(source: String) {
+    static func wordLocked(source: String, label: String? = nil) {
+        if AppModel.shared.isArmed {
+            if let label, !label.isEmpty {
+                PerformUserLog.shared.log("Palabra del espectador · “\(label)”")
+            } else {
+                PerformUserLog.shared.log("Palabra bloqueada · \(source)")
+            }
+        }
         guard vibrateOnLock else { return }
         playWordLockVibration()
         dlog("[CUE] vibration (3× short tap) · \(source)")
@@ -154,21 +174,27 @@ enum PerformanceCues {
     }
 }
 
-// MARK: Dot
+// MARK: Stage dots
 
-/// Small dot in the top-right corner of the stage (black stage or Notes) for the performer.
-struct PerformStatusDot: View {
+/// Song + word status dots stacked top-trailing on the stage overlay.
+struct PerformStageStatusDots: View {
+    static let stackSpacing: CGFloat = 6
+
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
     @ObservedObject private var api = ApiSongSession.shared
     @ObservedObject private var card = CardSongSession.shared
-    @AppStorage(PerformanceCues.Key.dotEnabled) private var enabled = false
-    @AppStorage(PerformanceCues.Key.dotSize) private var size = PerformanceCues.defaultDotSize
-    @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
+    @ObservedObject private var word = WordApiSession.shared
+    @AppStorage(PerformanceCues.Key.dotEnabled) private var songDotEnabled = false
+    @AppStorage(PerformanceCues.Key.dotSize) private var songDotSize = PerformanceCues.defaultDotSize
+    @AppStorage(PerformanceCues.Key.dotColor) private var songColorHex = PerformanceCues.defaultDotColor
+    @AppStorage(PerformanceCues.Key.wordDotEnabled) private var wordDotEnabled = false
+    @AppStorage(PerformanceCues.Key.wordDotSize) private var wordDotSize = PerformanceCues.defaultWordDotSize
+    @AppStorage(PerformanceCues.Key.wordDotColor) private var wordColorHex = PerformanceCues.defaultWordDotColor
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     private var songReady: Bool {
-        guard model.loadState == .ready, model.selected != nil else { return false }
+        guard model.isArmed, model.loadState == .ready, model.selected != nil else { return false }
         switch VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual {
         case .aiVoice: return voice.state == .locked
         case .api: return api.state == .locked
@@ -177,19 +203,40 @@ struct PerformStatusDot: View {
         }
     }
 
-    private var visible: Bool {
-        enabled && songReady
+    private var wordLocked: Bool {
+        model.isArmed
+            && WordApiSettings.callerLabelEnabled
+            && word.context == .perform
+            && word.state == .locked
     }
+
+    var body: some View {
+        VStack(spacing: Self.stackSpacing) {
+            StageCueDot(visible: songDotEnabled && songReady, size: songDotSize, colorHex: songColorHex)
+            StageCueDot(visible: wordDotEnabled && wordLocked, size: wordDotSize, colorHex: wordColorHex)
+        }
+        .padding(.top, 8)
+        .padding(.trailing, 12)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .zIndex(999)
+    }
+}
+
+/// Back-compat name used by `StageView`.
+typealias PerformStatusDot = PerformStageStatusDots
+
+private struct StageCueDot: View {
+    let visible: Bool
+    let size: Double
+    let colorHex: String
 
     var body: some View {
         Circle()
             .fill(Color(hex: colorHex) ?? .green)
             .frame(width: size, height: size)
+            .shadow(color: .black.opacity(0.55), radius: 2, x: 0, y: 1)
             .opacity(visible ? 1 : 0)
-            .padding(.top, 4)
-            .padding(.trailing, 10)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
             .animation(.easeInOut(duration: 0.25), value: visible)
     }
 }
@@ -203,6 +250,9 @@ struct FeedbackCard: View {
     @AppStorage(PerformanceCues.Key.dotEnabled) private var dotEnabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var dotSize = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var colorHex = PerformanceCues.defaultDotColor
+    @AppStorage(PerformanceCues.Key.wordDotEnabled) private var wordDotEnabled = false
+    @AppStorage(PerformanceCues.Key.wordDotSize) private var wordDotSize = PerformanceCues.defaultWordDotSize
+    @AppStorage(PerformanceCues.Key.wordDotColor) private var wordColorHex = PerformanceCues.defaultWordDotColor
     @AppStorage("ui.feedbackExpanded") private var expanded = false
 
     private var dotColor: Binding<Color> {
@@ -210,10 +260,16 @@ struct FeedbackCard: View {
                 set: { colorHex = $0.hexString })
     }
 
+    private var wordDotColor: Binding<Color> {
+        Binding(get: { Color(hex: wordColorHex) ?? .orange },
+                set: { wordColorHex = $0.hexString })
+    }
+
     private var summary: String {
         let vib = vibrateOnLock ? "Vibration on" : "Vibration off"
-        let dot = dotEnabled ? "Status dot on" : "Status dot off"
-        return "\(vib) · \(dot)"
+        let song = dotEnabled ? "Song dot on" : "Song dot off"
+        let word = wordDotEnabled ? "Word dot on" : "Word dot off"
+        return "\(vib) · \(song) · \(word)"
     }
 
     var body: some View {
@@ -259,13 +315,24 @@ struct FeedbackCard: View {
                                 statusDotRow
                                 if dotEnabled {
                                     CueDivider()
-                                    dotCustomizeRow
+                                    dotCustomizeRow(color: dotColor, size: $dotSize, colorHex: $colorHex)
+                                }
+                            }
+                        }
+
+                        feedbackInset {
+                            VStack(spacing: 0) {
+                                wordStatusDotRow
+                                if wordDotEnabled {
+                                    CueDivider()
+                                    dotCustomizeRow(color: wordDotColor, size: $wordDotSize, colorHex: $wordColorHex)
                                 }
                             }
                         }
                     }
                     .padding(.top, 16)
                     .animation(.easeInOut(duration: 0.2), value: dotEnabled)
+                    .animation(.easeInOut(duration: 0.2), value: wordDotEnabled)
                 }
             }
         }
@@ -313,7 +380,7 @@ struct FeedbackCard: View {
                 Text("Status dot when song ready")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(OracleTheme.textPrimary)
-                Text("Top-right on stage · only when loaded")
+                Text("Top on stage · above word dot")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
             }
@@ -327,26 +394,47 @@ struct FeedbackCard: View {
         .padding(.vertical, 12)
     }
 
-    private var dotCustomizeRow: some View {
+    private var wordStatusDotRow: some View {
+        HStack(spacing: 12) {
+            feedbackIcon("character.textbox")
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Status dot when word locks")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Text("Below song dot · Word API caller label")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
+            Spacer(minLength: 4)
+            Toggle("", isOn: $wordDotEnabled)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(OracleTheme.gold)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
+    private func dotCustomizeRow(color: Binding<Color>, size: Binding<Double>, colorHex: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Size \(Int(dotSize)) pt")
+                Text("Size \(Int(size.wrappedValue)) pt")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
                 Spacer()
                 Circle()
-                    .fill(dotColor.wrappedValue)
-                    .frame(width: min(dotSize, 14), height: min(dotSize, 14))
-                Stepper("", value: $dotSize, in: PerformanceCues.dotSizeRange, step: 1)
+                    .fill(color.wrappedValue)
+                    .frame(width: min(size.wrappedValue, 14), height: min(size.wrappedValue, 14))
+                Stepper("", value: size, in: PerformanceCues.dotSizeRange, step: 1)
                     .labelsHidden()
                     .tint(OracleTheme.gold)
             }
             HStack(spacing: 8) {
-                ColorPicker("", selection: dotColor, supportsOpacity: true)
+                ColorPicker("", selection: color, supportsOpacity: true)
                     .labelsHidden()
                     .frame(width: 28, height: 28)
                 ForEach(PerformanceCues.colorPresets) { preset in
-                    presetSwatch(preset)
+                    presetSwatch(preset, selectedHex: colorHex.wrappedValue) { colorHex.wrappedValue = $0 }
                 }
             }
         }
@@ -373,10 +461,10 @@ struct FeedbackCard: View {
             }
     }
 
-    private func presetSwatch(_ preset: PerformanceCues.ColorPreset) -> some View {
-        let selected = colorHex.uppercased() == preset.hex
+    private func presetSwatch(_ preset: PerformanceCues.ColorPreset, selectedHex: String, onSelect: @escaping (String) -> Void) -> some View {
+        let selected = selectedHex.uppercased() == preset.hex
         return Button {
-            colorHex = preset.hex
+            onSelect(preset.hex)
         } label: {
             Circle()
                 .fill(Color(hex: preset.hex) ?? .clear)

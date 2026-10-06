@@ -35,6 +35,8 @@ struct MainShellView: View {
                 WordApiHomeCard()
 
                 FeedbackCard()
+
+                PerformUserLogCard()
             }
             .padding(.horizontal, 16)
             .padding(.top, 4)

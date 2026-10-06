@@ -265,6 +265,9 @@ final class VoiceSongSession: ObservableObject {
                 dlog("[VOICE] prefetch “\(next.searchQuery)” → \(ok ? "ready: \(track)" : "not found") (\(PreviewService.ms(since: t0)) ms)")
                 if self.candidate?.key == next.key {
                     self.prep = ok ? .ready : .notFound
+                    if !ok, self.context == .perform {
+                        PerformUserLog.shared.log("Voz · no encontré “\(next.label)”")
+                    }
                     if ok {
                         await MainActor.run {
                             AppModel.shared.recordRecentLoadedSongIfReady(reason: "voicePrefetch")
@@ -364,6 +367,9 @@ final class VoiceSongSession: ObservableObject {
     private func fail(_ message: String) {
         stopListening()
         state = .failed(message)
+        if context == .perform {
+            PerformUserLog.shared.log("Voz · \(message)")
+        }
         VoiceAudioSession.recordCategoryActive = false
         VoiceAudioSession.deactivateIfIdle()
         dlog("✗ [VOICE] \(message)")

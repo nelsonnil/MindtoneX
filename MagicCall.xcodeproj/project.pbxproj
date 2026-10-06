@@ -89,6 +89,8 @@
 				EE00000C000000000000000C /* CardVolumeScanHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000B000000000000000B /* CardVolumeScanHost.swift */; };
 				EE00000E000000000000000E /* CardInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000D000000000000000D /* CardInputPanel.swift */; };
 				EE0000100000000000000010 /* CardPracticeScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000F000000000000000F /* CardPracticeScanView.swift */; };
+		FF0000020000000000000002 /* PerformUserLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF0000010000000000000001 /* PerformUserLog.swift */; };
+		FF0000040000000000000004 /* PerformUserLogCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF0000030000000000000003 /* PerformUserLogCard.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -157,6 +159,8 @@
 		BB0000050000000000000005 /* ApiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettingsView.swift; sourceTree = "<group>"; };
 		BB0000070000000000000007 /* ApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiInputPanel.swift; sourceTree = "<group>"; };
 		AA0000400000000000000040 /* PerformanceCues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceCues.swift; sourceTree = "<group>"; };
+		FF0000010000000000000001 /* PerformUserLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformUserLog.swift; sourceTree = "<group>"; };
+		FF0000030000000000000003 /* PerformUserLogCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformUserLogCard.swift; sourceTree = "<group>"; };
 
 		DD0000010000000000000001 /* WordApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSettings.swift; sourceTree = "<group>"; };
 		DD0000030000000000000003 /* WordApiSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSession.swift; sourceTree = "<group>"; };
@@ -352,6 +356,7 @@
 				AA0000110000000000000011 /* SilentShortcutStatusRow.swift */,
 				AA0000130000000000000013 /* PerformBottomBar.swift */,
 				AA0000480000000000000048 /* PerformanceGuideSheet.swift */,
+				FF0000030000000000000003 /* PerformUserLogCard.swift */,
 			);
 			path = Premium;
 			sourceTree = "<group>";
@@ -365,6 +370,7 @@
 				E7D59D5299CAA7B77CB2C3AA /* PerformHowItWorks.swift */,
 				C064E79F67C658F38085349B /* SharePerformFlow.swift */,
 				AA0000420000000000000042 /* FakePostCallVolumeGate.swift */,
+				FF0000010000000000000001 /* PerformUserLog.swift */,
 			);
 			path = Perform;
 			sourceTree = "<group>";
@@ -613,6 +619,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000410000000000000041 /* PerformanceCues.swift in Sources */,
+				FF0000020000000000000002 /* PerformUserLog.swift in Sources */,
+				FF0000040000000000000004 /* PerformUserLogCard.swift in Sources */,
 				728EECDB8B001133FF4F0696 /* SilentShortcutCard.swift in Sources */,
 				B7991EA68474061E01D04616 /* SilentShortcut.swift in Sources */,
 				30F3F5FD1AB46F5425A32DAC /* PerformHowItWorks.swift in Sources */,
