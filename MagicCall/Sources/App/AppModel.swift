@@ -127,6 +127,32 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Library / picker UI — list candidates without auto-loading the first hit.
+    func searchForPicker() async {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return }
+        dropPreviewForNewLookup()
+        query = q
+        results = []
+        loadState = .searching
+        let t0 = CACurrentMediaTime()
+        do {
+            let found = try await previews.search(q)
+            results = found
+            let searchMs = PreviewService.ms(since: t0)
+            dlog("[LIBRARY] search “\(q)” → \(found.count) in \(searchMs) ms")
+            if found.isEmpty {
+                loadState = .failed("No songs found — try different words")
+            } else {
+                loadState = .idle
+            }
+        } catch {
+            results = []
+            loadState = .failed(error.localizedDescription)
+            dlog("[LIBRARY] ✗ search “\(q)”: \(error.localizedDescription)")
+        }
+    }
+
     /// Drops loaded preview bytes while a new lookup is in flight (AI / Notes / API). Keeps `query`.
     func dropPreviewForNewLookup() {
         audio.unload()

@@ -4,6 +4,13 @@ struct SongLibrarySection: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var library = SongLibraryStore.shared
 
+    private enum LibraryAddMode: String, CaseIterable, Identifiable {
+        case search = "Search song"
+        case importAudio = "Import audio"
+
+        var id: String { rawValue }
+    }
+
     private enum LibraryTab: String, CaseIterable, Identifiable {
         case recent = "Recently used"
         case favorites = "My favorites"
@@ -19,6 +26,7 @@ struct SongLibrarySection: View {
     }
 
     @State private var selectedTab: LibraryTab = .recent
+    @State private var addMode: LibraryAddMode = .search
     @State private var showClearRecentAlert = false
     @State private var showImportPicker = false
     @State private var importErrorMessage: String?
@@ -39,7 +47,7 @@ struct SongLibrarySection: View {
     private var collapsedSummary: String {
         let recent = library.recentForUI.count
         let fav = library.favorites.count
-        if recent == 0, fav == 0 { return "Recently used · favorites · import audio" }
+        if recent == 0, fav == 0 { return "Search · recently used · favorites" }
         return "\(recent) recent · \(fav) favorites"
     }
 
@@ -87,12 +95,25 @@ struct SongLibrarySection: View {
 
     private var libraryExpandedContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Songs from Perform appear here. Star a row for My favorites. Remove one with the minus button or swipe left; Clear empties Recently used.")
+            Text("Search a song to preview and star it for My favorites, or import your own audio. Perform songs also land in Recently used.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            importAudioBlock
+            HStack(spacing: 10) {
+                ForEach(LibraryAddMode.allCases) { mode in
+                    libraryAddModeChip(mode)
+                }
+            }
+
+            Group {
+                switch addMode {
+                case .search:
+                    LibrarySongSearchBlock()
+                case .importAudio:
+                    importAudioBlock
+                }
+            }
 
             HStack(spacing: 10) {
                 ForEach(LibraryTab.allCases) { tab in
@@ -119,12 +140,58 @@ struct SongLibrarySection: View {
         }
     }
 
+    private func libraryAddModeChip(_ mode: LibraryAddMode) -> some View {
+        let selected = addMode == mode
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { addMode = mode }
+        } label: {
+            Text(mode.rawValue)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(selected ? OracleTheme.textPrimary : OracleTheme.textSecondary)
+                .background {
+                    if selected {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [OracleTheme.gold.opacity(0.28), OracleTheme.indigo.opacity(0.18)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.white.opacity(0.05))
+                    }
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(
+                            selected
+                                ? LinearGradient(
+                                    colors: [OracleTheme.gold.opacity(0.85), OracleTheme.indigo.opacity(0.5)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                : LinearGradient(colors: [OracleTheme.cardBorder], startPoint: .top, endPoint: .bottom),
+                            lineWidth: selected ? 1.5 : 1
+                        )
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
     private var importAudioBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
             Button {
                 showImportPicker = true
             } label: {
-                Label("Import audio", systemImage: "square.and.arrow.down")
+                Label("Choose file", systemImage: "square.and.arrow.down")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
