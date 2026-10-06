@@ -111,16 +111,9 @@ final class CardSongSession: ObservableObject {
 
     // MARK: Volume scan
 
-    /// Fired by `AVCaptureEventInteraction` (iOS 17.2+) on volume press during Perform.
+    /// Side volume (KVO) or Camera Control — gating happens in `AppModel` before this runs.
     func volumeScanTriggered() {
         guard context == .perform, isActive, !isLocked else { return }
-        guard AppModel.shared.acceptsCardVolumeScanTrigger() else {
-            dlog("[CARD] volume scan ignored (session settling — retry in a moment)")
-            if context == .perform {
-                PerformUserLog.shared.log("Camera · hold on — press volume again in a second")
-            }
-            return
-        }
         guard scanTask == nil else {
             dlog("[CARD] scan already in progress")
             return

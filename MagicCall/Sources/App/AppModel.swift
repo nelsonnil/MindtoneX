@@ -921,9 +921,11 @@ final class AppModel: ObservableObject {
                         dlog("[CARD] volume KVO ignored (session settling)")
                         return
                     }
-                    self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.55
+                    // Block echo from reverting volume; do not re-check this inside volumeScanTriggered().
+                    self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.35
                     SystemVolume.shared.set(old, label: "card scan revert")
                     CardSongSession.shared.volumeScanTriggered()
+                    dlog("[CARD] volume → scan triggered")
                     return
                 }
                 guard CACurrentMediaTime() > self.ignoreVolumeChangesUntil else { return }
@@ -974,12 +976,16 @@ final class AppModel: ObservableObject {
         #endif
     }
 
-    /// Camera OCR: side-button volume after stage + session are ready (not programmatic headroom).
+    /// Camera OCR: hardware volume may start a scan (KVO / Camera Control gate only).
     func acceptsCardVolumeScanTrigger() -> Bool {
         guard usesCardInput, isArmed else { return false }
         guard CardSongSession.shared.capturesVolumeButtons else { return false }
         guard CACurrentMediaTime() >= cameraVolumeScanReadyAt else { return false }
-        return CACurrentMediaTime() > ignoreVolumeChangesUntil
+        guard CACurrentMediaTime() > ignoreVolumeChangesUntil else {
+            dlog("[CARD] volume blocked · ignoreUntil=\(String(format: "%.2f", ignoreVolumeChangesUntil - CACurrentMediaTime()))s")
+            return false
+        }
+        return true
     }
 
     /// Fake Ringtone: best-effort max media volume via hidden `MPVolumeView` (public API; slider hook undocumented).
