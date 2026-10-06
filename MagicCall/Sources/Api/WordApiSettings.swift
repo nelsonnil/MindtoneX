@@ -111,7 +111,7 @@ enum WordApiSettings {
         var detail: String {
             switch self {
             case .inject:
-                return "Enter your Inject ID for the **word** endpoint. The app reads the JSON; a new submission changes count/value and that text becomes the caller label."
+                return "Enter your Inject ID for the **word** endpoint. The app reads the JSON; a new submission changes count/value and that text becomes the incoming caller name."
             case .elips:
                 return "Paste the full **word** API URL from Elips (https://pag.gg/…). During Perform the app polls every 2 s; if the word changes it updates the banner, otherwise it stays as is."
             case .custom:

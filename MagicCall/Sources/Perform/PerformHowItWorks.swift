@@ -90,7 +90,7 @@ enum PerformCopy {
         case .notes:
             steps.append("A white note opens instead. The song written in it is searched and loaded in the background.")
         case .card:
-            steps.append("The back camera reads the card on **volume** (no screen touch). **Line 1** = song · **line 2** = word when Word API is **Card (OCR)**. ALL CAPS on white card works best.")
+            steps.append("The back camera reads the card on **volume** (no screen touch). **Line 1** = song · **line 2** = word when **Caller name** is **Card (OCR)**. ALL CAPS on white card works best.")
         case .manual:
             steps.append("The app uses the song you typed above.")
         }
@@ -129,8 +129,8 @@ enum PerformCopy {
     ]
 
     static let wordApiSteps: [String] = [
-        "On home, open **Word API (caller label)** (below Song input). Turn **Caller label** **ON** and pick **Inject**, **Elips**, **Custom API**, or **Card (OCR)** — separate from the song API unless you choose Card for both.",
-        "During **Perform**, networked providers poll the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with song input (**AI Voice**, **API**, **Notes**, **Card**, manual). **Card (OCR)** skips polling: **line 2** of the handwritten card on the **volume scan** locks the caller label while **line 1** loads the song.",
+        "On home, open **Caller name** (below Song input). Turn **Show word on incoming call** **ON** and pick **Inject**, **Elips**, **Custom API**, or **Card (OCR)** — separate from the song API unless you choose Card for both.",
+        "During **Perform**, networked providers poll the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with song input (**AI Voice**, **API**, **Notes**, **Card**, manual). **Card (OCR)** skips polling: **line 2** of the handwritten card on the **volume scan** locks the caller name while **line 1** loads the song.",
         "**Elips example:** enable **API** for the song (spectator searches a title in Elips) and **Elips** for the word (spectator submits a word — often one they chose from the lyrics). When the word **locks**, that text can appear as the **incoming caller name** while your stage plays the locked song.",
         "The **first poll** is the old value on the server (baseline). The **next change** is the spectator’s new word → **lock** (three short taps). Then have them call you — the banner should show the word, not only the digits.",
         "Turn on **Settings → Phone → Call Blocking & Identification → MindtoneX**. Optional: **Save locked word as contact name** (below) so iOS shows the prediction even more reliably than Call Directory alone.",
@@ -139,7 +139,7 @@ enum PerformCopy {
     /// Known vs Unknown contact — prediction on the incoming-call name.
     static let wordApiContactPrediction: [String] = [
         "**The idea:** the spectator’s word from the API becomes the **name** on the incoming call — a contact “prediction” instead of an anonymous number.",
-        "**Known** (friend, family, repeat volunteer): turn **Save locked word as contact name** **ON** → **Known** → **Choose contact**. When the word locks, MindtoneX **replaces that contact’s first name** with the API word. After the show, close **Word API connection details** with **Restore original name when leaving Word API settings** **ON** — the app puts their real name back.",
+        "**Known** (friend, family, repeat volunteer): turn **Save locked word as contact name** **ON** → **Known** → **Choose contact**. When the word locks, MindtoneX **replaces that contact’s first name** with the API word. After the show, close **Caller name connection** with **Restore original name when leaving Caller name connection** **ON** — the app puts their real name back.",
         "**Unknown** (stranger, one-off): same save toggle **ON** → **Unknown**. Press **Perform** — a **dial sheet** appears. Tell the spectator you need their number for a **missed-call** bit and that they should keep your number. Place the outgoing call; when it ends, MindtoneX arms. You are **not** saving their real name — when the word locks, the app **creates or updates** a contact for that number with the **prediction word** as the display name.",
         "**Routine timing:** run song input and word API together — e.g. spectator searches the song in Elips while you submit their lyric word on the word endpoint; both lock during the same Perform. Then the callback shows **song on stage** + **word on caller ID**.",
     ]

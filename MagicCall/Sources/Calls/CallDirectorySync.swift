@@ -108,15 +108,15 @@ enum CallDirectorySync {
         let appGroup = CallerLabelStore.isAppGroupAvailable
         dlog("[CALL-ID] readiness · appGroup=\(appGroup) numbers=\(snapshot.identificationPhoneNumbers) armed=\(snapshot.performArmed)")
         if !appGroup {
-            PerformUserLog.shared.log("Caller label: App Group not signed — rebuild with \(CallerLabelStore.appGroupID).")
+            PerformUserLog.shared.log("Caller name: App Group not signed — rebuild with \(CallerLabelStore.appGroupID).")
         }
         if snapshot.identificationPhoneNumbers.isEmpty {
             if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .unknown {
-                PerformUserLog.shared.log("Caller label: dial the spectator on Perform (Unknown mode) or add a fallback number in Word API settings.")
+                PerformUserLog.shared.log("Caller name: dial the spectator on Perform (Unknown mode) or add a fallback number in Caller name settings.")
             } else if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .known {
-                PerformUserLog.shared.log("Caller label: choose a Known contact on the Word API card.")
+                PerformUserLog.shared.log("Caller name: choose a Known contact on the Caller name card.")
             } else {
-                PerformUserLog.shared.log("Caller label: add the incoming number in Word API → Call Identification.")
+                PerformUserLog.shared.log("Caller name: add the incoming number in Caller name → connection details → Call Identification.")
             }
         }
         if WordApiSettings.saveWordAsContactEnabled {

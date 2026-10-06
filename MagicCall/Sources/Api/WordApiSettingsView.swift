@@ -45,7 +45,7 @@ struct WordApiSettingsView: View {
                         OracleEyebrow(text: "Call Identification (caller number)")
                         oracleField("34612345678 (country code + number)", text: $fallbackPhoneDigits)
                             .keyboardType(.phonePad)
-                        Text("Used when **Save locked word as contact name** is off, or as backup digits. With contact modes on the Word API home card, Known uses the picked contact; Unknown uses the number from the Perform dial sheet.")
+                        Text("Used when **Save locked word as contact name** is off, or as backup digits. With contact modes on the **Caller name** card, Known uses the picked contact; Unknown uses the number from the Perform dial sheet.")
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
 
@@ -85,7 +85,7 @@ struct WordApiSettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.textSecondary)
                         } else {
-                            Text("Reads the Word API once and shows the current label text.")
+                            Text("Reads your word source once and shows the current text.")
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.textSecondary)
                         }
@@ -96,8 +96,8 @@ struct WordApiSettingsView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         OracleEyebrow(text: "On Perform")
                         Text(provider == .card
-                            ? "Turn **Caller label** on. Set **Song input** to **Card** and write **line 1** = song, **line 2** = word. One **volume** scan during Perform locks both."
-                            : "Turn **Caller label** on the home card first. Then polls every \(Int(WordApiSettings.pollInterval)) seconds in parallel with your song input. First reading = old word; **next change** = spectator word → locked → incoming call banner.")
+                            ? "Turn **Show word on incoming call** on. Set **Song input** to **Card** and write **line 1** = song, **line 2** = word. One **volume** scan during Perform locks both."
+                            : "Turn **Show word on incoming call** on the **Caller name** card first. Then polls every \(Int(WordApiSettings.pollInterval)) seconds alongside song input. First reading = old word; **next change** = spectator word → locked → name on incoming call.")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -110,7 +110,7 @@ struct WordApiSettingsView: View {
             .padding(20)
         }
         .background(OracleTheme.bgTop)
-        .navigationTitle("Word API connection")
+        .navigationTitle("Caller name connection")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
         .onAppear(perform: refreshHeader)
@@ -126,7 +126,7 @@ struct WordApiSettingsView: View {
             Text("Connect the spectator’s word")
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(OracleTheme.textPrimary)
-            Text("Separate from the song API — own URL, Inject ID, and JSON field. Used only for the incoming-call label.")
+            Text("Where the spectator’s word comes from (Inject, Elips, your API, or Card). Separate from song input.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
         }

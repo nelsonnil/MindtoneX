@@ -64,7 +64,7 @@ final class WordApiSession: ObservableObject {
             return
         }
         if context == .test, !WordApiSettings.callerLabelEnabled {
-            fail("Turn on caller label on the Word API card first")
+            fail("Turn on Show word on incoming call on the Caller name card first")
             return
         }
         if provider == .card {

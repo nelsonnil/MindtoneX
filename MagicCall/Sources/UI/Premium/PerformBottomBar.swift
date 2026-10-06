@@ -179,17 +179,17 @@ struct ReadinessStatusBar: View {
                 return Status(
                     tone: .working,
                     icon: "doc.viewfinder",
-                    text: "Word API · scan card line 2 · press volume"
+                    text: "Caller name · scan card line 2 · press volume"
                 )
             case .locked:
                 let locked = wordSession.lockedReading?.label ?? "…"
                 return Status(
                     tone: .ready,
                     icon: "lock.fill",
-                    text: "Word API · «\(WordApiInputPanel.truncated(locked, max: 24))»"
+                    text: "Caller name · «\(WordApiInputPanel.truncated(locked, max: 24))»"
                 )
             case .failed(let message):
-                return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: "Word API · \(message)")
+                return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: "Caller name · \(message)")
             case .idle, .connecting:
                 return nil
             }
@@ -198,7 +198,7 @@ struct ReadinessStatusBar: View {
             return Status(
                 tone: .warning,
                 icon: "wifi.exclamationmark",
-                text: "Word API · offline · retrying"
+                text: "Caller name · offline · retrying"
             )
         }
         let reading = wordSession.lastReading ?? wordSession.baseline
@@ -207,23 +207,23 @@ struct ReadinessStatusBar: View {
         let rc = reading?.receiveCount.map(String.init) ?? "–"
         switch wordSession.state {
         case .connecting:
-            return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Word API · conectando…")
+            return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Caller name · connecting…")
         case .watching:
             let base = wordSession.baseline.map { WordApiInputPanel.truncated($0.label, max: 18) } ?? "…"
             return Status(
                 tone: .working,
                 icon: "phone.arrow.down.left",
-                text: "Word API · base «\(base)» · word=\(word) · \(count)/\(rc)"
+                text: "Caller name · base «\(base)» · word=\(word) · \(count)/\(rc)"
             )
         case .locked:
             let locked = wordSession.lockedReading?.label ?? word
             return Status(
                 tone: .ready,
                 icon: "lock.fill",
-                text: "Word API · bloqueada · word=\(WordApiInputPanel.truncated(locked, max: 24))"
+                text: "Caller name · locked · «\(WordApiInputPanel.truncated(locked, max: 24))»"
             )
         case .failed(let message):
-            return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: "Word API · \(message)")
+            return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: "Caller name · \(message)")
         case .idle:
             return nil
         }

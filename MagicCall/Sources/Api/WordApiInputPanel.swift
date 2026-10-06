@@ -24,10 +24,10 @@ struct WordApiInputPanel: View {
         VStack(alignment: .leading, spacing: 14) {
             Toggle(isOn: $callerLabelEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Caller label (incoming call banner)")
+                    Text("Show word on incoming call")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Requires MindtoneX in iPhone Settings → Phone → Call Blocking & Identification")
+                    Text("One-time: turn on MindtoneX in Settings → Phone → Call Blocking & Identification")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                 }
@@ -104,7 +104,7 @@ struct WordApiInputPanel: View {
 
     private var wordContactCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            OracleEyebrow(text: "Contact name (caller ID)")
+            OracleEyebrow(text: "Preview")
 
             WordApiIncomingCallBannerPreview(
                 phoneDigits: callerPreviewPhoneDigits,
@@ -191,7 +191,7 @@ struct WordApiInputPanel: View {
 
             Toggle(isOn: $restoreKnownNameOnSettingsExit) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Restore original name when leaving Word API settings")
+                    Text("Restore original name when leaving Caller name connection")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
                     Text("After lock, revert this contact’s given name when you close connection details (Known only).")
@@ -287,7 +287,7 @@ struct WordApiInputPanel: View {
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                 } else {
-                    Text("On Perform, press **volume** once — same scan loads the song (line 1) and locks the caller label from **line 2**. No network poll.")
+                    Text("On Perform, press **volume** once — same scan loads the song (line 1) and locks the caller name from **line 2**. No network poll.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -310,7 +310,7 @@ struct WordApiInputPanel: View {
                 Image(systemName: "lock.fill")
                     .foregroundStyle(OracleTheme.gold)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Caller label locked")
+                    Text("Caller name locked")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(OracleTheme.textSecondary)
                     Text(word)
@@ -355,7 +355,7 @@ struct WordApiInputPanel: View {
                     : nil
             }
             return configured
-                ? ("Polls every \(Int(WordApiSettings.pollInterval)) s during Perform — change the word in \(provider.title) to lock the caller label.", "info.circle", false)
+                ? ("Polls every \(Int(WordApiSettings.pollInterval)) s during Perform — change the word in \(provider.title) to lock the caller name.", "info.circle", false)
                 : nil
         case .connecting:
             return ("Connecting to \(provider.title)…", "antenna.radiowaves.left.and.right", false)
@@ -370,7 +370,7 @@ struct WordApiInputPanel: View {
             if session.context == .perform {
                 let baselineLabel = session.baseline?.label ?? "…"
                 return (
-                    "Waiting for word change — baseline «\(baselineLabel)» · change in \(provider.title) to lock caller label",
+                    "Waiting for word change — baseline «\(baselineLabel)» · change in \(provider.title) to lock caller name",
                     "dot.radiowaves.left.and.right",
                     false
                 )
@@ -409,7 +409,7 @@ struct WordApiHomeCard: View {
             return "count \(count) · rc \(rc) · «\(word)» · \(provider.title)"
         }
         if !WordApiSettings.callerLabelEnabled {
-            return "Off — Perform unchanged (no call banner)"
+            return "Off — incoming call shows the number only"
         }
         if WordApiSettings.hasWordEndpoint {
             if provider == .card { return "Card (OCR) · line 2 on volume scan" }
@@ -423,7 +423,7 @@ struct WordApiHomeCard: View {
             expandedKey: HomeSectionExpandKey.wordApi,
             accent: OracleHomeSection.wordApi.accent,
             icon: "phone.arrow.down.left.fill",
-            title: "Word API (caller label)",
+            title: "Caller name",
             summary: subtitle
         ) {
             WordApiInputPanel()
