@@ -18,6 +18,7 @@ struct SongLibrarySection: View {
         }
     }
 
+    @AppStorage("ui.libraryExpanded") private var expanded = false
     @State private var selectedTab: LibraryTab = .recent
     @State private var showClearRecentAlert = false
     @State private var showImportPicker = false
@@ -36,42 +37,49 @@ struct SongLibrarySection: View {
         return false
     }
 
+    private var collapsedSummary: String {
+        let recent = library.recentForUI.count
+        let fav = library.favorites.count
+        if recent == 0, fav == 0 { return "Recently used · favorites · import audio" }
+        return "\(recent) recent · \(fav) favorites"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HomeSectionTitle(
-                title: "Library",
-                subtitle: "Recently used songs and favorites",
-                eyebrow: "Step 2b"
-            )
-
-            Text("Songs from Perform appear here. Star a row for My favorites. Remove one with the minus button or swipe left; Clear empties Recently used.")
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            importAudioBlock
-
-            HStack(spacing: 10) {
-                ForEach(LibraryTab.allCases) { tab in
-                    libraryTabChip(tab)
-                }
-            }
-
-            libraryToolbar
-
-            if activeTracks.isEmpty {
-                Text(selectedTab.emptyMessage)
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(activeTracks) { track in
-                        libraryRow(track)
+        HomePanel(accent: OracleTheme.gold) {
+            VStack(alignment: .leading, spacing: 0) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.22)) { expanded.toggle() }
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "music.note.list")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(OracleTheme.gold)
+                            .frame(width: 40, height: 40)
+                            .background(OracleTheme.gold.opacity(0.14))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Library")
+                                .font(.headline.weight(.semibold))
+                                .foregroundStyle(OracleTheme.textPrimary)
+                            Text(collapsedSummary)
+                                .font(.caption)
+                                .foregroundStyle(OracleTheme.textSecondary)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .rotationEffect(.degrees(expanded ? 180 : 0))
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .buttonStyle(.plain)
+                .accessibilityLabel(expanded ? "Collapse Library" : "Expand Library")
+
+                if expanded {
+                    libraryExpandedContent
+                        .padding(.top, 16)
+                }
             }
         }
         .onAppear {
@@ -103,6 +111,40 @@ struct SongLibrarySection: View {
             Button("OK", role: .cancel) { importErrorMessage = nil }
         } message: {
             Text(importErrorMessage ?? "")
+        }
+    }
+
+    private var libraryExpandedContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Songs from Perform appear here. Star a row for My favorites. Remove one with the minus button or swipe left; Clear empties Recently used.")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            importAudioBlock
+
+            HStack(spacing: 10) {
+                ForEach(LibraryTab.allCases) { tab in
+                    libraryTabChip(tab)
+                }
+            }
+
+            libraryToolbar
+
+            if activeTracks.isEmpty {
+                Text(selectedTab.emptyMessage)
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(activeTracks) { track in
+                        libraryRow(track)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 

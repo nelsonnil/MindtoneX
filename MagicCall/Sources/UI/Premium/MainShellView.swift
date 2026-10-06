@@ -31,9 +31,7 @@ struct MainShellView: View {
 
                 FeedbackCard()
 
-                HomePanel(accent: OracleTheme.gold) {
-                    SongLibrarySection()
-                }
+                SongLibrarySection()
 
                 PerformUserLogCard()
             }
