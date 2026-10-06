@@ -5,6 +5,7 @@ enum HomeSectionExpandKey {
     static let performance = "ui.performanceExpanded"
     static let songInput = "ui.songInputExpanded"
     static let wordApi = "ui.wordApiExpanded"
+    static let notesContact = "ui.notesContactExpanded"
     static let feedback = "ui.feedbackExpanded"
     static let library = "ui.libraryExpanded"
     static let performLog = "ui.performLogExpanded"

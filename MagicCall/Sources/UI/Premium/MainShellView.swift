@@ -27,6 +27,8 @@ struct MainShellView: View {
 
                 WordApiHomeCard()
 
+                NotesContactHomeCard()
+
                 FeedbackCard()
 
                 SongLibrarySection()

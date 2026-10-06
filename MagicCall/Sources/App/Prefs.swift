@@ -53,6 +53,7 @@ enum Prefs {
             HomeSectionExpandKey.performance: false,
             HomeSectionExpandKey.songInput: false,
             HomeSectionExpandKey.wordApi: false,
+            HomeSectionExpandKey.notesContact: false,
             HomeSectionExpandKey.feedback: false,
             HomeSectionExpandKey.library: false,
             HomeSectionExpandKey.performLog: false,
@@ -126,6 +127,7 @@ enum Prefs {
             Key.autoShareOnSongLock: false,
         ])
         registerHomeSectionDefaults()
+        NotesContactSettings.registerDefaults()
         migrateClipSecondsIfNeeded()
         migratePerformanceModeToSingleIfNeeded()
     }
