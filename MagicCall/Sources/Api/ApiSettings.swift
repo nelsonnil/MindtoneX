@@ -226,6 +226,10 @@ enum ApiJSON {
     static func string(in object: [String: Any], keys: [String]) -> String {
         for key in keys {
             if let v = lookup(object, key: key) {
+                if let nested = v as? [String: Any] {
+                    let inner = string(in: nested, keys: ["value", "word", "label", "text", "selection"])
+                    if !inner.isEmpty { return inner }
+                }
                 let s = text(v)
                 if !s.isEmpty { return s }
             }

@@ -254,12 +254,14 @@ enum WordApiClient {
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         var query = components?.queryItems ?? []
         query.append(URLQueryItem(name: "mx", value: String(Int(Date().timeIntervalSince1970 * 1000))))
+        query.append(URLQueryItem(name: "_", value: UUID().uuidString))
         components?.queryItems = query
         if let busted = components?.url { url = busted }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData,
                                  timeoutInterval: WordApiSettings.requestTimeout)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
         if provider == .custom, !WordApiSettings.customHeaderName.isEmpty, let value = WordApiSettings.customHeaderValue {
             request.setValue(value, forHTTPHeaderField: WordApiSettings.customHeaderName)
         }
@@ -277,10 +279,8 @@ enum WordApiClient {
             let changed = lastPerformFetchSnapshot.map {
                 $0.count != snapshot.0 || $0.receive != snapshot.1 || $0.word != snapshot.2
             } ?? true
-            if diag.pollNumber <= 3 || changed {
-                dlog("[WORD] fetch poll #\(diag.pollNumber) · \(provider.title) count=\(countStr) receive=\(receiveStr) word=«\(reading.label)»")
-                lastPerformFetchSnapshot = snapshot
-            }
+            dlog("[WORD] fetch poll #\(diag.pollNumber) · \(provider.title) count=\(countStr) receive=\(receiveStr) word=«\(reading.label)»\(changed ? "" : " (same as last fetch)")")
+            if changed { lastPerformFetchSnapshot = snapshot }
         }
         return reading
     }
@@ -290,12 +290,16 @@ enum WordApiClient {
         case .inject:
             return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),
                                receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
-                               word: ApiJSON.string(in: object, keys: ["value", "word", "label", "selection"]),
+                               word: ApiJSON.string(in: object, keys: [
+                                   "value", "word", "label", "selection", "text", "message", "ai", "input", "output"
+                               ]),
                                raw: raw)
         case .elips:
             return WordReading(count: ApiJSON.int(in: object, keys: ["count"]),
                                receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
-                               word: ApiJSON.string(in: object, keys: ["word", "label", "outputWords", "value", "selection"]),
+                               word: ApiJSON.string(in: object, keys: [
+                                   "word", "label", "outputWords", "value", "selection", "text", "message", "ai", "output"
+                               ]),
                                raw: raw)
         case .custom:
             let field = WordApiSettings.customField
