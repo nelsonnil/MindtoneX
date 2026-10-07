@@ -17,9 +17,22 @@ struct WordApiSpectatorDialSheet: View {
             dialSheetBackground.ignoresSafeArea()
             WordApiCarphoneDialHost(
                 phoneDigits: $phoneDraft,
-                onCall: startCall
+                onCall: startCall,
+                onTwoFingerSwipeDown: cancelDialWithoutCall
             )
             .ignoresSafeArea()
+
+            if !WordApiContactPerformGate.awaitingOutgoingEnd {
+                Text("Swipe down with two fingers to cancel")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 10)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .allowsHitTesting(false)
+                    .accessibilityLabel("Swipe down with two fingers to cancel")
+            }
         }
         /// Phone dial follows **device** light/dark, not MindtoneX home chrome (`.preferredColorScheme(.dark)`).
         .preferredColorScheme(CarphoneDialSystemAppearance.preferredColorScheme)
@@ -39,6 +52,12 @@ struct WordApiSpectatorDialSheet: View {
         model.wordSpectatorDialSheet = false
         model.showStageShellForOutgoingSpectatorCall()
         UIApplication.shared.open(url)
+    }
+
+    private func cancelDialWithoutCall() {
+        guard !WordApiContactPerformGate.awaitingOutgoingEnd else { return }
+        WordApiContactPerformGate.cancelPendingPerform()
+        model.wordSpectatorDialSheet = false
     }
 }
 

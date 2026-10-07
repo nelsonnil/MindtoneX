@@ -5,12 +5,14 @@ import UIKit
 struct WordApiCarphoneDialHost: UIViewControllerRepresentable {
     @Binding var phoneDigits: String
     var onCall: () -> Void
+    var onTwoFingerSwipeDown: (() -> Void)?
 
     func makeUIViewController(context: Context) -> CarphoneDialViewController {
         let controller = CarphoneDialViewController()
         CarphoneDialSystemAppearance.apply(to: controller)
         controller.initialDigits = phoneDigits
         controller.onCall = onCall
+        controller.onTwoFingerSwipeDown = onTwoFingerSwipeDown
         controller.onDigitsChange = { phoneDigits = $0 }
         return controller
     }
@@ -19,12 +21,14 @@ struct WordApiCarphoneDialHost: UIViewControllerRepresentable {
         if controller.phoneView.telephone != phoneDigits, !controller.isEditingLocally {
             controller.setTelephone(phoneDigits)
         }
+        controller.onTwoFingerSwipeDown = onTwoFingerSwipeDown
     }
 }
 
-final class CarphoneDialViewController: UIViewController {
+final class CarphoneDialViewController: UIViewController, UIGestureRecognizerDelegate {
     var initialDigits = ""
     var onCall: (() -> Void)?
+    var onTwoFingerSwipeDown: (() -> Void)?
     var onDigitsChange: ((String) -> Void)?
     private(set) var isEditingLocally = false
 
@@ -85,6 +89,24 @@ final class CarphoneDialViewController: UIViewController {
         }
 
         applySystemPhoneAppearance()
+
+        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleTwoFingerSwipeDown(_:)))
+        swipe.numberOfTouchesRequired = 2
+        swipe.direction = .down
+        swipe.cancelsTouchesInView = false
+        swipe.delegate = self
+        view.addGestureRecognizer(swipe)
+    }
+
+    @objc private func handleTwoFingerSwipeDown(_ recognizer: UISwipeGestureRecognizer) {
+        guard recognizer.state == .ended else { return }
+        dlog("[DIAL] two-finger swipe down → cancel spectator dial")
+        onTwoFingerSwipeDown?()
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        true
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
