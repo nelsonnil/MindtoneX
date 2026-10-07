@@ -61,8 +61,6 @@ targets:
     dependencies:
       - target: MagicCallCallDirectory
         embed: true
-      - target: MagicCallLiveCallerLookup
-        embed: true
 
   MagicCallCallDirectory:
     type: app-extension
@@ -75,23 +73,6 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono.CallDirectory
         INFOPLIST_FILE: MagicCallCallDirectory/Info.plist
-        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
-        SKIP_INSTALL: YES
-
-  MagicCallLiveCallerLookup:
-    type: app-extension
-    platform: iOS
-    deploymentTarget:
-      iOS: "18.0"
-    sources:
-      - path: MagicCallLiveCallerLookup
-    entitlements:
-      path: MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements
-    settings:
-      base:
-        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono.LiveCallerLookup
-        INFOPLIST_FILE: MagicCallLiveCallerLookup/Info.plist
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
         SKIP_INSTALL: YES
 
@@ -115,7 +96,6 @@ schemes:
       targets:
         MagicCall: all
         MagicCallCallDirectory: all
-        MagicCallLiveCallerLookup: all
         MagicCallTests: [test]
     test:
       targets:
@@ -133,7 +113,6 @@ schemes:
       targets:
         MagicCall: all
         MagicCallCallDirectory: all
-        MagicCallLiveCallerLookup: all
     run:
       config: Release
     archive:
@@ -143,7 +122,6 @@ schemes:
       targets:
         MagicCall: all
         MagicCallCallDirectory: all
-        MagicCallLiveCallerLookup: all
     run:
       config: TestFlight
     archive:

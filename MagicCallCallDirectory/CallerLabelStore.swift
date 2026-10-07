@@ -4,8 +4,6 @@ import Foundation
 enum CallerLabelStore {
     static let appGroupID = "group.com.nelson.tono"
     static let extensionBundleID = "com.nelson.tono.CallDirectory"
-    static let liveLookupExtensionBundleID = "com.nelson.tono.LiveCallerLookup"
-
     enum SharedKey {
         static let performArmed = "performArmed"
         static let lockedLabel = "lockedLabel"

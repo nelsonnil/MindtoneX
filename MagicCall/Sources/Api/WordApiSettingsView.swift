@@ -50,11 +50,7 @@ struct WordApiSettingsView: View {
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Used when **Save locked word as contact name** is off, or as backup digits. With contact modes on the **Caller name** card, Known uses the picked contact; Unknown uses the number from the Perform dial sheet.")
-                            .font(.caption2)
-                            .foregroundStyle(OracleTheme.textSecondary)
-
-                        Text("Call Directory still runs if Contacts access is denied.")
+                        Text("Optional backup for **Call Directory** when you are not using contact rename, or when Contacts access is denied. With **Save locked word as contact name** on, Known/Unknown on the **Caller name** card picks the number — you usually do not need to type it here.")
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
                     }
@@ -108,7 +104,7 @@ struct WordApiSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Enable the MindtoneX extension under **Settings → Phone → Call Blocking & Identification**.")
+                        Text("Primary: **Contacts** shows the locked word on the incoming call (turn on **Save locked word as contact name**). Optional: enable **MindtoneX Caller Label** under **Settings → Phone → Call Blocking & Identification** so Call Directory labels that one number if Contacts is off or as backup.")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                     }

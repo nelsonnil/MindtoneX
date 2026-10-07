@@ -1,10 +1,9 @@
 import Foundation
 
-/// App Group state shared with Call Directory / Live Caller ID extensions.
+/// App Group state shared with the Call Directory extension.
 enum CallerLabelStore {
     static let appGroupID = "group.com.nelson.tono"
     static let extensionBundleID = "com.nelson.tono.CallDirectory"
-    static let liveLookupExtensionBundleID = "com.nelson.tono.LiveCallerLookup"
 
     enum SharedKey {
         static let performArmed = "performArmed"

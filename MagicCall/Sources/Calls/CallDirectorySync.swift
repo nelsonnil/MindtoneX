@@ -15,7 +15,6 @@ enum CallDirectorySync {
 
     static let disabledHint = "Enable MindtoneX under Settings → Phone → Call Blocking & Identification."
 
-    /// Only the Call Directory extension: Live Caller ID Lookup is not managed by `CXCallDirectoryManager` (always error 1).
     static func reloadExtensions(reason: String) {
         guard active else { return }
         guard !reloadInFlight else {

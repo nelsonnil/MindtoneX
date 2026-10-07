@@ -6,9 +6,7 @@
 
  While Perform is armed and a word is locked, this extension publishes the locked label
  for the caller number set in Word API settings (E.164 digits). Without it no call is labeled.
-
- For **any incoming number** without a known E.164, iOS 18+ Live Caller ID Lookup (PIR server)
- is required — see MagicCallLiveCallerLookup/README.md in the repo.
+ The main app may also rename a Contacts entry for the same number when that mode is enabled.
  */
 
 import CallKit

@@ -10,7 +10,6 @@
 		0252A189382C473B6FAD70AB /* DebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6CC08F1371815B8ECC08D6 /* DebugLog.swift */; };
 		04589F2E27E1B78CBA422EB1 /* WordReadingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A539EED2B566EDCDB04C0CCE /* WordReadingTests.swift */; };
 		086460104B68BB3C819E3FED /* HomeCollapsibleSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A21CCF1F7089541B6DC60FF /* HomeCollapsibleSection.swift */; };
-		09E0EF3810160A5F1BD81E81 /* MagicCallLiveCallerLookup.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A5742EFB2E2186ABC66755D3 /* MagicCallLiveCallerLookup.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0B7939F9A17DDF66D8FA6ED4 /* CardInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10F1FAFEC4327EF1C05B2D5 /* CardInputPanel.swift */; };
 		0C13519901D4C9A57CFA2E01 /* SpectatorWordContactService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */; };
 		0C6F790CE285DD96B133D85F /* CarphoneDialKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CD430AFE3E41075075858AB /* CarphoneDialKeys.swift */; };
@@ -58,7 +57,6 @@
 		567203094B7B7CBAD29085F7 /* SongLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F714394D355E859CF8CEAB /* SongLibraryStore.swift */; };
 		5AECCF1D9AC7A8C016CB4A8D /* Themes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42DEB69DD6FA91C80F7167E8 /* Themes.swift */; };
 		5D207B92DD8E3818155873F5 /* NotesContactCallDetailPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37028B4E4611FABCF489AA86 /* NotesContactCallDetailPreview.swift */; };
-		5F744D7B2556CEE6C1CC4C40 /* LiveCallerLookupExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189566531AAF0DCDD2A3573A /* LiveCallerLookupExtension.swift */; };
 		60358E4481DA131134CE881A /* ApiSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B91AE661642AE376E1DD474 /* ApiSettings.swift */; };
 		6596E020FE59EF9229BBD51F /* NotesContactWordSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECBAC1F2474CCF158CF15B87 /* NotesContactWordSession.swift */; };
 		66615CC09AC450AAA511552A /* ImportedAudioStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D220719203424E371638A6F3 /* ImportedAudioStore.swift */; };
@@ -132,13 +130,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		22668C6A8ED151B1AA38EFAC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 15D6056134C49597EE1EDAA0 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F4C7E9F38150AFC8D5BBD590;
-			remoteInfo = MagicCallLiveCallerLookup;
-		};
 		6D73A73BF899D3C37A089FA4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 15D6056134C49597EE1EDAA0 /* Project object */;
@@ -163,7 +154,6 @@
 			dstSubfolderSpec = 13;
 			files = (
 				68D2DE031EF71CE179683150 /* MagicCallCallDirectory.appex in Embed Foundation Extensions */,
-				09E0EF3810160A5F1BD81E81 /* MagicCallLiveCallerLookup.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -186,7 +176,6 @@
 		157F18B545F0BC6C204DB511 /* ApiSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSongSession.swift; sourceTree = "<group>"; };
 		1632E6A6608418A102AFC4CF /* PerformLogReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformLogReporter.swift; sourceTree = "<group>"; };
 		16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactPerformGate.swift; sourceTree = "<group>"; };
-		189566531AAF0DCDD2A3573A /* LiveCallerLookupExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCallerLookupExtension.swift; sourceTree = "<group>"; };
 		1B91AE661642AE376E1DD474 /* ApiSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSettings.swift; sourceTree = "<group>"; };
 		1DFC03C27AB6139290A4DA80 /* SharePerformFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharePerformFlow.swift; sourceTree = "<group>"; };
 		218281B22EB24031B59074EA /* VoiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettings.swift; sourceTree = "<group>"; };
@@ -226,7 +215,6 @@
 		5A5F46051981A4C204711045 /* MagicCallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicCallApp.swift; sourceTree = "<group>"; };
 		5CD430AFE3E41075075858AB /* CarphoneDialKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarphoneDialKeys.swift; sourceTree = "<group>"; };
 		603B897BEED3E7EC78C3E9C6 /* MagicCallCallDirectory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicCallCallDirectory.entitlements; sourceTree = "<group>"; };
-		60E2083CA4BDC4330740AAF7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		629C718913AEAE450BD6796A /* FakePostCallVolumeGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakePostCallVolumeGate.swift; sourceTree = "<group>"; };
 		63692B7B6C9E86B8C5F94B05 /* CallDirectoryHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallDirectoryHandler.swift; sourceTree = "<group>"; };
 		65135BD5A45CABC55A754846 /* PhoneTabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneTabBarView.swift; sourceTree = "<group>"; };
@@ -259,7 +247,6 @@
 		A292077410CF73096E5CD7B8 /* CallerLabelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerLabelStore.swift; sourceTree = "<group>"; };
 		A2A7D6817DA44304F1D5ABC6 /* HeroLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroLogoView.swift; sourceTree = "<group>"; };
 		A539EED2B566EDCDB04C0CCE /* WordReadingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordReadingTests.swift; sourceTree = "<group>"; };
-		A5742EFB2E2186ABC66755D3 /* MagicCallLiveCallerLookup.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MagicCallLiveCallerLookup.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5E5E3E1B9AA9AAC9611103D /* NotesInputControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesInputControls.swift; sourceTree = "<group>"; };
 		A744DA01C5B2EA22A5B55906 /* UIIllustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIIllustrations.swift; sourceTree = "<group>"; };
 		A8A0F19A8FF481F9116B87B9 /* NotesSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesSongSession.swift; sourceTree = "<group>"; };
@@ -268,7 +255,6 @@
 		B0F7B9E94667A4865BD298C1 /* PerformInstructionsCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformInstructionsCopy.swift; sourceTree = "<group>"; };
 		B1EB87806965D886C6FE1446 /* DialNumberFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DialNumberFormatting.swift; sourceTree = "<group>"; };
 		B22312604EAA954600AED69E /* NotesContactSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactSettings.swift; sourceTree = "<group>"; };
-		B2F05FB0012259530FD41441 /* MagicCallLiveCallerLookup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MagicCallLiveCallerLookup.entitlements; sourceTree = "<group>"; };
 		B521B3A9CDF1292800B9E81D /* AiVoiceInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiVoiceInputPanel.swift; sourceTree = "<group>"; };
 		B5C269D939BB5F7D004EF20F /* NotesPerformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesPerformView.swift; sourceTree = "<group>"; };
 		B61D2102F758F8505B68544E /* RingtoneDisguiseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneDisguiseView.swift; sourceTree = "<group>"; };
@@ -328,7 +314,6 @@
 			children = (
 				5693E6CE804C14C3ECFA3469 /* MagicCall */,
 				7C327F7400BCB1CFFA37C35B /* MagicCallCallDirectory */,
-				758DC70B7F773EB9EE133A86 /* MagicCallLiveCallerLookup */,
 				6C2BFFED557B65DB07EDBF19 /* MagicCallTests */,
 				97903A5057FC6639C99E702B /* Products */,
 			);
@@ -437,16 +422,6 @@
 			path = MagicCallTests;
 			sourceTree = "<group>";
 		};
-		758DC70B7F773EB9EE133A86 /* MagicCallLiveCallerLookup */ = {
-			isa = PBXGroup;
-			children = (
-				60E2083CA4BDC4330740AAF7 /* Info.plist */,
-				189566531AAF0DCDD2A3573A /* LiveCallerLookupExtension.swift */,
-				B2F05FB0012259530FD41441 /* MagicCallLiveCallerLookup.entitlements */,
-			);
-			path = MagicCallLiveCallerLookup;
-			sourceTree = "<group>";
-		};
 		7C327F7400BCB1CFFA37C35B /* MagicCallCallDirectory */ = {
 			isa = PBXGroup;
 			children = (
@@ -473,7 +448,6 @@
 			children = (
 				3FB1C9E9F6808800CBC3E5E4 /* MagicCall.app */,
 				060AED873F0873D463D46F14 /* MagicCallCallDirectory.appex */,
-				A5742EFB2E2186ABC66755D3 /* MagicCallLiveCallerLookup.appex */,
 				4E39D1897218014744DABDCC /* MagicCallTests.xctest */,
 			);
 			name = Products;
@@ -659,7 +633,6 @@
 			);
 			dependencies = (
 				9DC551D9BCC98778E3A68A23 /* PBXTargetDependency */,
-				C81FCD1EAA02D25E33BE72D2 /* PBXTargetDependency */,
 			);
 			name = MagicCall;
 			packageProductDependencies = (
@@ -685,23 +658,6 @@
 			productReference = 060AED873F0873D463D46F14 /* MagicCallCallDirectory.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		F4C7E9F38150AFC8D5BBD590 /* MagicCallLiveCallerLookup */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 52DFC4578C04F32330F6F2FF /* Build configuration list for PBXNativeTarget "MagicCallLiveCallerLookup" */;
-			buildPhases = (
-				AE677C4B0B88B7F6675EFC00 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = MagicCallLiveCallerLookup;
-			packageProductDependencies = (
-			);
-			productName = MagicCallLiveCallerLookup;
-			productReference = A5742EFB2E2186ABC66755D3 /* MagicCallLiveCallerLookup.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -720,10 +676,6 @@
 						ProvisioningStyle = Automatic;
 					};
 					82F6CE481CE82E38A1293AAC = {
-						DevelopmentTeam = 6XSHKM2M34;
-						ProvisioningStyle = Automatic;
-					};
-					F4C7E9F38150AFC8D5BBD590 = {
 						DevelopmentTeam = 6XSHKM2M34;
 						ProvisioningStyle = Automatic;
 					};
@@ -746,7 +698,6 @@
 			targets = (
 				505AFC5C4964632A09807C63 /* MagicCall */,
 				82F6CE481CE82E38A1293AAC /* MagicCallCallDirectory */,
-				F4C7E9F38150AFC8D5BBD590 /* MagicCallLiveCallerLookup */,
 				33868C6DE8298B832877BC0F /* MagicCallTests */,
 			);
 		};
@@ -894,14 +845,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		AE677C4B0B88B7F6675EFC00 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5F744D7B2556CEE6C1CC4C40 /* LiveCallerLookupExtension.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F10A0085EC29F9D99B799EF2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -923,11 +866,6 @@
 			isa = PBXTargetDependency;
 			target = 82F6CE481CE82E38A1293AAC /* MagicCallCallDirectory */;
 			targetProxy = 9B1E1AB0EE2626E2FCD99D85 /* PBXContainerItemProxy */;
-		};
-		C81FCD1EAA02D25E33BE72D2 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F4C7E9F38150AFC8D5BBD590 /* MagicCallLiveCallerLookup */;
-			targetProxy = 22668C6A8ED151B1AA38EFAC /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1103,20 +1041,6 @@
 			};
 			name = AppStore;
 		};
-		3E57761124FADD870CD85A36 /* TestFlight */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements;
-				INFOPLIST_FILE = MagicCallLiveCallerLookup/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.LiveCallerLookup;
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = TestFlight;
-		};
 		483458F68ECB6A459965BDF9 /* AppStore */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1144,20 +1068,6 @@
 			};
 			name = AppStore;
 		};
-		4F0C4B681B88A5B31A80C6E9 /* AppStore */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements;
-				INFOPLIST_FILE = MagicCallLiveCallerLookup/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.LiveCallerLookup;
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = AppStore;
-		};
 		527CC9F22CDF9C7D1BE3ADD9 /* TestFlight */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1170,20 +1080,6 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = TestFlight;
-		};
-		547F9BB21F6A8671E2A11B34 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements;
-				INFOPLIST_FILE = MagicCallLiveCallerLookup/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.LiveCallerLookup;
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
 		};
 		54DC5EFBD31BC7243038A165 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -1251,20 +1147,6 @@
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		55E4037DD185E38250CF68F2 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = MagicCallLiveCallerLookup/MagicCallLiveCallerLookup.entitlements;
-				INFOPLIST_FILE = MagicCallLiveCallerLookup/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.nelson.tono.LiveCallerLookup;
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -1482,17 +1364,6 @@
 				809D87E9AF36B11CD2DDC9C9 /* Debug */,
 				F9C97C154FD3B6A107C9C6AB /* Release */,
 				527CC9F22CDF9C7D1BE3ADD9 /* TestFlight */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = AppStore;
-		};
-		52DFC4578C04F32330F6F2FF /* Build configuration list for PBXNativeTarget "MagicCallLiveCallerLookup" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				4F0C4B681B88A5B31A80C6E9 /* AppStore */,
-				55E4037DD185E38250CF68F2 /* Debug */,
-				547F9BB21F6A8671E2A11B34 /* Release */,
-				3E57761124FADD870CD85A36 /* TestFlight */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = AppStore;
