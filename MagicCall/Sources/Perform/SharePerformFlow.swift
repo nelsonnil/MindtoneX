@@ -41,7 +41,8 @@ final class SharePerformFlow: ObservableObject {
         case .aiVoice:
             Task { await VoiceSongSession.shared.start(context: .perform) }
         case .api:
-            ApiSongSession.shared.start(context: .perform)
+            ApiSongSession.shared.start(context: .perform, liveWatchHandoff: AppModel.shared.pendingApiLiveWatchHandoff)
+            AppModel.shared.pendingApiLiveWatchHandoff = nil
         case .notes:
             NotesSongSession.shared.start(context: .perform)
         case .card:

@@ -116,6 +116,8 @@ enum ApiSettings {
 struct ApiReading: Equatable {
     /// Inject / Elips `count` — bumps on every new submission, even when the text repeats.
     var count: Int?
+    /// Inject bumps this on each new spectator submission even when `count` is unchanged.
+    var receiveCount: Int?
     var title: String
     var artist: String
     var raw: String
@@ -124,12 +126,43 @@ struct ApiReading: Equatable {
     var searchQuery: String { [title, artist].filter { !$0.isEmpty }.joined(separator: " ") }
     var label: String { artist.isEmpty ? title : "\(title) — \(artist)" }
 
+    /// Any movement since the previous poll (counters, title/artist, or raw JSON).
+    func pollDelta(comparedTo previous: ApiReading) -> Bool {
+        if raw != previous.raw { return true }
+        if count != previous.count { return true }
+        if receiveCount != previous.receiveCount { return true }
+        return !ApiJSON.sameText(title, previous.title) || !ApiJSON.sameText(artist, previous.artist)
+    }
+
+    func matchesSnapshot(of baseline: ApiReading) -> Bool {
+        count == baseline.count
+            && receiveCount == baseline.receiveCount
+            && ApiJSON.sameText(title, baseline.title)
+            && ApiJSON.sameText(artist, baseline.artist)
+            && raw == baseline.raw
+    }
+
     /// True when this reading is a new spectator search compared with `old`.
     func isNewSearch(comparedTo old: ApiReading) -> Bool {
+        if let count, let oldCount = old.count, count > oldCount { return true }
+        if let receiveCount, let oldReceive = old.receiveCount, receiveCount > oldReceive { return true }
+        if raw != old.raw, hasSong { return true }
         guard hasSong else { return false }
-        if let count, let oldCount = old.count, count != oldCount { return true }
         return !ApiJSON.sameText(title, old.title) || !ApiJSON.sameText(artist, old.artist)
     }
+
+    /// Perform lock: change vs baseline, or any poll-to-poll delta once baseline exists (Inject `receiveCount`, etc.).
+    func shouldLockPerformSong(comparedTo baseline: ApiReading, previousPoll: ApiReading?) -> Bool {
+        if isNewSearch(comparedTo: baseline) { return true }
+        guard let previousPoll else { return false }
+        guard pollDelta(comparedTo: previousPoll) else { return false }
+        return !matchesSnapshot(of: baseline)
+    }
+}
+
+struct ApiFetchDiagnostics: Sendable {
+    let pollNumber: Int
+    let context: ApiSongSession.Context
 }
 
 enum ApiSongClient {
@@ -157,11 +190,28 @@ enum ApiSongClient {
         return URLSession(configuration: config)
     }()
 
-    static func fetch(_ provider: Provider = ApiSettings.provider) async throws -> ApiReading {
-        guard let url = ApiSettings.endpoint(for: provider) else { throw ClientError.notConfigured }
+    private static var lastPerformFetchSnapshot: (count: Int?, receive: Int?, label: String)?
+
+    static func resetPerformFetchDiagnostics() {
+        lastPerformFetchSnapshot = nil
+    }
+
+    static func fetch(
+        _ provider: Provider = ApiSettings.provider,
+        diagnostics: ApiFetchDiagnostics? = nil
+    ) async throws -> ApiReading {
+        guard var url = ApiSettings.endpoint(for: provider) else { throw ClientError.notConfigured }
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        var query = components?.queryItems ?? []
+        query.append(URLQueryItem(name: "mx", value: String(Int(Date().timeIntervalSince1970 * 1000))))
+        query.append(URLQueryItem(name: "_", value: UUID().uuidString))
+        components?.queryItems = query
+        if let busted = components?.url { url = busted }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData,
                                  timeoutInterval: ApiSettings.requestTimeout)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
         if provider == .custom, !ApiSettings.customHeaderName.isEmpty, let value = ApiSettings.customHeaderValue {
             request.setValue(value, forHTTPHeaderField: ApiSettings.customHeaderName)
         }
@@ -171,7 +221,18 @@ enum ApiSongClient {
         }
         guard let object = ApiJSON.object(from: data) else { throw ClientError.notJSON }
         let raw = String(data: data.prefix(600), encoding: .utf8) ?? ""
-        return try parse(object, provider: provider, raw: raw)
+        let reading = try parse(object, provider: provider, raw: raw)
+        if let diag = diagnostics, diag.context == .perform {
+            let countStr = reading.count.map(String.init) ?? "–"
+            let receiveStr = reading.receiveCount.map(String.init) ?? "–"
+            let snapshot = (reading.count, reading.receiveCount, reading.label)
+            let changed = lastPerformFetchSnapshot.map {
+                $0.count != snapshot.0 || $0.receive != snapshot.1 || $0.label != snapshot.2
+            } ?? true
+            dlog("[API] fetch poll #\(diag.pollNumber) · \(provider.title) count=\(countStr) receive=\(receiveStr) «\(reading.label)»\(changed ? "" : " (same as last fetch)")")
+            if changed { lastPerformFetchSnapshot = snapshot }
+        }
+        return reading
     }
 
     typealias Provider = ApiSettings.Provider
@@ -180,6 +241,7 @@ enum ApiSongClient {
         switch provider {
         case .inject:
             return ApiReading(count: ApiJSON.int(in: object, keys: ["count"]),
+                              receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
                               title: ApiJSON.string(in: object, keys: ["value"]),
                               artist: "", raw: raw)
         case .elips:
@@ -187,12 +249,15 @@ enum ApiSongClient {
             let words = ApiJSON.string(in: object, keys: ["outputWords", "word"])
             let fallback = words.isEmpty ? ApiJSON.string(in: object, keys: ["wordToNumber"]) : words
             return ApiReading(count: ApiJSON.int(in: object, keys: ["count"]),
+                              receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
                               title: song.isEmpty ? fallback : song,
                               artist: ApiJSON.string(in: object, keys: ["artist"]), raw: raw)
         case .custom:
             let field = ApiSettings.customField
             guard let value = ApiJSON.value(in: object, path: field) else { throw ClientError.missingField(field) }
-            return ApiReading(count: nil, title: ApiJSON.text(value), artist: "", raw: raw)
+            return ApiReading(count: ApiJSON.int(in: object, keys: ["count"]),
+                              receiveCount: ApiJSON.int(in: object, keys: ["receiveCount", "receive_count"]),
+                              title: ApiJSON.text(value), artist: "", raw: raw)
         }
     }
 }

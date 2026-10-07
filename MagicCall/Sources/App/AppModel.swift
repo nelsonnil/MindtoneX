@@ -67,6 +67,9 @@ final class AppModel: ObservableObject {
     /// Prevents opening auto-share more than once per Perform.
     var autoSharePresentedThisPerform = false
 
+    /// Live watch baseline captured in `performNow()` before API session reset.
+    var pendingApiLiveWatchHandoff: ApiReading?
+
     @Published var wordSpectatorDialSheet = false
     @Published var wordKnownContactPicker = false
 

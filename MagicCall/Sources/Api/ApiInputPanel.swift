@@ -185,7 +185,7 @@ struct ApiInputPanel: View {
                 return ("No preview found for “\(missed)” — waiting for another search", "exclamationmark.magnifyingglass", true)
             }
             var current = ""
-            if let base = session.baseline, base.hasSong { current = " · now “\(base.label)”" }
+            if let now = session.lastReading ?? session.baseline, now.hasSong { current = " · now “\(now.label)”" }
             return ("Waiting for a new search\(current)", "dot.radiowaves.left.and.right", false)
         case .loading(let label):
             return ("Found “\(label)” — loading preview…", "arrow.down.circle", false)
