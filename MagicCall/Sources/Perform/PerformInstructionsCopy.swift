@@ -18,6 +18,7 @@ enum PerformInstructionsCopy {
         "**Stage screenshot (required):** On the **Performance settings** card, tap **Choose screenshot**. Use a **full-screen capture of your real Home Screen** (or Lock screen). During Perform, the audience only sees that image.",
         "**Status bar:** The thin strip at the top (time, signal, battery). In Performance settings, use the preview to pick **Auto**, **Dark**, or **Light** so icons match your wallpaper — it should look like a real iPhone, not a floating wallpaper.",
         "**Playback volume:** Set the slider to **100%** (or as loud as you need) so the song is audible when the call rings. You can still adjust with the side buttons during Perform.",
+        "**Song search region:** On the same card, pick the **iTunes storefront** (Automatic = iPhone region, or **CN** / **TW** / **HK** for Chinese catalogs). Optional **Deezer fallback** when Apple has no preview.",
         "**Phone → Incoming Calls:** iOS may show a **banner** or **full-screen** incoming UI — MindtoneX works with **either**. Keep **Silent mode** how you prefer; the trick is **in-app playback** when the call arrives, not changing the carrier ringtone unless you choose the optional Share step below.",
         "Do **not** lock the phone or switch apps during Perform — MindtoneX keeps the screen awake, but leaving the app stops the effect.",
     ]

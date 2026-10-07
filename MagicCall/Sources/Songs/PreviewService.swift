@@ -248,9 +248,7 @@ actor PreviewService {
     // MARK: Utilidades
 
     private static func storefront() -> String {
-        let manual = Prefs.storeCountry.trimmingCharacters(in: .whitespaces).uppercased()
-        if !manual.isEmpty { return manual }
-        return Locale.current.region?.identifier ?? "US"
+        SongStorefront.effectiveCode()
     }
 
     private static var diskDirectory: URL {

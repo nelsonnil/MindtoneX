@@ -3,10 +3,13 @@ import SwiftUI
 
 /// Single Performance setup — volume, stage screenshot, auto-share toggle.
 struct PerformanceCard: View {
+    @EnvironmentObject private var model: AppModel
     @Binding var photoItem: PhotosPickerItem?
     var stageScreenshotGeneration: Int
 
     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
+    @AppStorage(Prefs.Key.storeCountry) private var storeCountry = ""
+    @AppStorage(Prefs.Key.deezerFallback) private var deezerFallback = true
     @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
     @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
     @AppStorage(VoiceSettings.Key.inputMode) private var songInputModeRaw = VoiceSettings.InputMode.card.rawValue
@@ -58,6 +61,8 @@ struct PerformanceCard: View {
 
                 stageScreenshotSection
 
+                songSearchRegionSection
+
                 Toggle(isOn: $autoShareOnSongLock) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Auto-open Share when song locks")
@@ -88,6 +93,60 @@ struct PerformanceCard: View {
                     }
                 }
             }
+        }
+    }
+
+    private var songStorefrontSelection: Binding<SongStorefront> {
+        Binding(
+            get: { SongStorefront.from(stored: storeCountry) },
+            set: { newValue in
+                storeCountry = newValue.rawValue
+            }
+        )
+    }
+
+    private var songSearchRegionSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Song search region")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+            Picker("Song search region", selection: songStorefrontSelection) {
+                ForEach(SongStorefront.allCases) { region in
+                    Text(region.menuTitle).tag(region)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(OracleTheme.gold)
+
+            Text(
+                "iTunes preview catalog for Voice, Camera, Notes, API, and Library. "
+                + "Trying **\(SongStorefront.effectiveCode(stored: storeCountry))** first"
+                + (SongStorefront.from(stored: storeCountry) == .auto
+                    ? " (from your iPhone region)."
+                    : ".")
+                + " If empty, falls back to **US**."
+            )
+            .font(.caption)
+            .foregroundStyle(OracleTheme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            Toggle(isOn: $deezerFallback) {
+                Text("Deezer fallback when iTunes has no preview")
+                    .font(.subheadline)
+                    .foregroundStyle(OracleTheme.textPrimary)
+            }
+            .tint(OracleTheme.gold)
+
+            Text("For Chinese catalogs, try **CN**, **TW**, or **HK**. Deezer helps when Apple has no 30 s preview.")
+                .font(.caption2)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .onChange(of: storeCountry) { _, _ in
+            Task { await model.previews.clearCaches() }
+        }
+        .onChange(of: deezerFallback) { _, _ in
+            Task { await model.previews.clearCaches() }
         }
     }
 
