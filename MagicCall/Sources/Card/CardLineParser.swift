@@ -1,6 +1,6 @@
 import Foundation
 
-/// Handwritten card layout (top → bottom): line 1 = song · line 2 = caller word · line 3 = Notes chip word.
+/// Handwritten card layout depends on Home setup — see `CardOCRLayout`.
 struct CardOCRParse: Equatable {
     var songQuery: String
     /// Raw text on **line 2** (caller name when Card OCR is enabled for Caller name).
@@ -64,14 +64,32 @@ enum CardLineParser {
         var callerLine = labeledCaller.map { CardTextMapper.clean($0) }
         var notesLine = labeledNotes.map { CardTextMapper.clean($0) }
 
-        if song.isEmpty, plain.count >= 1 {
-            song = plain[0]
+        if CardOCRLayout.songOnlyOnCard {
+            if song.isEmpty {
+                song = mergeSongFromPlainLines(plain)
+            }
+            return CardOCRParse(songQuery: song, callerLine: nil, notesLine: nil)
         }
-        if callerLine == nil, plain.count >= 2 {
-            callerLine = plain[1]
-        }
-        if notesLine == nil, plain.count >= 3 {
-            notesLine = plain[2]
+
+        let reserved = (CardOCRLayout.usesCallerLine ? 1 : 0) + (CardOCRLayout.usesNotesLine ? 1 : 0)
+        if reserved > 0, plain.count > reserved {
+            if notesLine == nil, CardOCRLayout.usesNotesLine {
+                notesLine = plain.last
+            }
+            if callerLine == nil, CardOCRLayout.usesCallerLine {
+                let callerIndex = plain.count - reserved
+                if callerIndex >= 0, callerIndex < plain.count {
+                    callerLine = plain[callerIndex]
+                }
+            }
+            let songCount = max(0, plain.count - reserved)
+            if song.isEmpty, songCount > 0 {
+                song = mergeSongFromPlainLines(Array(plain.prefix(songCount)))
+            }
+        } else {
+            if song.isEmpty, plain.count >= 1 { song = plain[0] }
+            if callerLine == nil, CardOCRLayout.usesCallerLine, plain.count >= 2 { callerLine = plain[1] }
+            if notesLine == nil, CardOCRLayout.usesNotesLine, plain.count >= 3 { notesLine = plain[2] }
         }
 
         callerLine = callerLine.flatMap { line in
@@ -87,6 +105,14 @@ enum CardLineParser {
         }
 
         return CardOCRParse(songQuery: song, callerLine: callerLine, notesLine: notesLine)
+    }
+
+    /// All plain OCR lines treated as song material (song-only Camera mode).
+    static func mergeSongFromPlainLines(_ lines: [String]) -> String {
+        let cleaned = lines.map { CardTextMapper.clean($0) }.filter { $0.count >= 2 }
+        guard !cleaned.isEmpty else { return "" }
+        if cleaned.count == 1 { return cleaned[0] }
+        return cleaned.joined(separator: " ")
     }
 
     static func normalizedCallerWord(from parse: CardOCRParse) -> String? {
@@ -108,8 +134,8 @@ enum CardLineParser {
         let cleaned = CardTextMapper.clean(raw)
         guard !cleaned.isEmpty else { return nil }
         let tokens = cleaned.split(whereSeparator: { $0.isWhitespace || $0 == "|" || $0 == "/" })
-        guard let last = tokens.last else { return nil }
-        let word = String(last).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard tokens.count == 1 else { return nil }
+        let word = String(tokens[0]).trimmingCharacters(in: .whitespacesAndNewlines)
         guard word.count >= 2 else { return nil }
         return word
     }

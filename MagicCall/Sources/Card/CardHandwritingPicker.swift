@@ -25,26 +25,30 @@ struct CardHandwritingPick: Equatable, Codable {
 
     mutating func reconcile(withHintLines hintLines: [String], expectCallerLine: Bool, expectNotesLine: Bool) {
         let lines = CardLineParser.expandMergedOCRLines(hintLines)
-        if lines.count >= 2, !lines[0].contains("-") {
-            let l0 = lines[0].trimmingCharacters(in: .whitespacesAndNewlines)
-            let l1 = lines[1].trimmingCharacters(in: .whitespacesAndNewlines)
-            if l0.count >= 2, l1.count >= 3 {
-                if artist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    artist = l0
-                }
-                if title.trimmingCharacters(in: .whitespacesAndNewlines).count < 4 {
-                    title = l1
-                }
-            }
-        }
-        let songPhysicalLines = (lines.count >= 2 && !lines[0].contains("-") && lines[1].split(whereSeparator: { $0.isWhitespace }).count >= 2) ? 2 : 1
-        if expectCallerLine {
-            if lines.count > songPhysicalLines {
-                let callerCandidate = lines[songPhysicalLines].trimmingCharacters(in: .whitespacesAndNewlines)
-                let tokens = callerCandidate.split(whereSeparator: { $0.isWhitespace })
-                if tokens.count == 1, let w = CardLineParser.normalizeWord(callerCandidate) {
-                    callerWord = w
-                    hasCallerWord = true
+
+        if !expectCallerLine && !expectNotesLine {
+            hasCallerWord = false
+            callerWord = ""
+            hasNotesWord = false
+            notesWord = ""
+            Self.mergeSongFields(from: lines, into: &self)
+        } else {
+            let reserved = (expectCallerLine ? 1 : 0) + (expectNotesLine ? 1 : 0)
+            let songLineCount = max(0, lines.count - reserved)
+            let songLines = songLineCount > 0 ? Array(lines.prefix(songLineCount)) : lines
+            Self.mergeSongFields(from: songLines, into: &self)
+
+            if expectCallerLine {
+                let callerIndex = lines.count - reserved
+                if reserved > 0, callerIndex >= 0, callerIndex < lines.count {
+                    let callerCandidate = lines[callerIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let w = CardLineParser.normalizeWord(callerCandidate) {
+                        callerWord = w
+                        hasCallerWord = true
+                    } else {
+                        hasCallerWord = false
+                        callerWord = ""
+                    }
                 } else {
                     hasCallerWord = false
                     callerWord = ""
@@ -53,12 +57,15 @@ struct CardHandwritingPick: Equatable, Codable {
                 hasCallerWord = false
                 callerWord = ""
             }
-        }
-        if expectNotesLine, lines.count > songPhysicalLines + 1 {
-            let notesCandidate = lines[songPhysicalLines + 1]
-            if let w = CardLineParser.normalizeWord(notesCandidate) {
-                notesWord = w
-                hasNotesWord = true
+
+            if expectNotesLine, let last = lines.last, lines.count >= reserved, reserved > 0 {
+                if let w = CardLineParser.normalizeWord(last) {
+                    notesWord = w
+                    hasNotesWord = true
+                }
+            } else {
+                hasNotesWord = false
+                notesWord = ""
             }
         }
 
@@ -68,10 +75,33 @@ struct CardHandwritingPick: Equatable, Codable {
 
         if expectCallerLine, hasCallerWord {
             let cw = callerWord.trimmingCharacters(in: .whitespacesAndNewlines)
-            if cw.split(whereSeparator: { $0.isWhitespace }).count > 1 || Self.callerLooksLikeSongFragment(cw, title: title, artist: artist) {
+            if Self.callerLooksLikeSongFragment(cw, title: title, artist: artist) {
                 hasCallerWord = false
                 callerWord = ""
             }
+        }
+    }
+
+    private static func mergeSongFields(from lines: [String], into pick: inout CardHandwritingPick) {
+        guard !lines.isEmpty else { return }
+        if lines.count == 1 {
+            let one = lines[0].trimmingCharacters(in: .whitespacesAndNewlines)
+            if let dash = one.range(of: " - ") {
+                let a = String(one[..<dash.lowerBound]).trimmingCharacters(in: .whitespaces)
+                let t = String(one[dash.upperBound...]).trimmingCharacters(in: .whitespaces)
+                if pick.artist.isEmpty { pick.artist = a }
+                if pick.title.count < 3 { pick.title = t }
+            } else if pick.title.isEmpty, pick.artist.isEmpty {
+                pick.title = one
+            }
+            return
+        }
+        let l0 = lines[0].trimmingCharacters(in: .whitespacesAndNewlines)
+        let l1 = lines[1].trimmingCharacters(in: .whitespacesAndNewlines)
+        if pick.artist.isEmpty { pick.artist = l0 }
+        if pick.title.count < 3 { pick.title = l1 }
+        if lines.count > 2, pick.title.count < 4 {
+            pick.title = lines.dropFirst().map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.joined(separator: " ")
         }
     }
 
@@ -167,25 +197,20 @@ enum CardHandwritingPicker {
         guard let apiKey = VoiceSettings.apiKey else { throw CardHandwritingPickerError.noAPIKey }
         let model = VoiceSettings.pickerModel
         let b64 = jpeg.base64EncodedString()
-        let layout = CardOCRLayout.lineAssignmentSummary
         let lang = CardSettings.handwritingLanguage.openAIHint
 
         let instructions = """
         You read a photo of a handwritten performance card (black ink, often ALL CAPS). \
         \(lang)
-        Layout top → bottom: \(layout).
+        Setup: \(CardOCRLayout.lineAssignmentSummary)
 
-        The local OCR hint (may be wrong) is only a hint — trust the image first:
+        OCR hint (may be wrong):
         \"\"\"\(visionOCRHint)\"\"\"
 
-        Rules:
-        1. **Song lines:** Often line 1 = artist only (e.g. EMINEM) and line 2 = song title (LOSE YOURSELF). \
-        Merge into title + artist. Fix OCR (YOULSELF → Yourself). Never put artist twice in search_query.
-        2. search_query MUST be "Title Artist" (example: "Lose Yourself Eminem"). Never "Artist Artist".
-        3. \(expectCallerLine ? "**Line 2** is ONLY the song title when line 1 is artist. **Caller word** is a separate physical line below the song — one word (e.g. NERVOUS). Never use a word from the song title as caller_word." : "Ignore caller line.")
-        4. \(expectNotesLine ? "**Line 3** = single Notes chip word (separate line)." : "Ignore Notes line.")
-        5. If unreadable, has_song=false and empty fields.
-        6. confidence 0–1. reasoning: one short English sentence (max 25 words).
+        \(CardOCRLayout.openAIVisionRules)
+
+        Fix handwriting/OCR (YOULSELF → Yourself). If unreadable, has_song=false.
+        confidence 0–1. reasoning: one short English sentence (max 25 words).
         """
 
         let schema: [String: Any] = [

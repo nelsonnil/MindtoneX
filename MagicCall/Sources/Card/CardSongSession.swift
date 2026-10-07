@@ -204,6 +204,14 @@ final class CardSongSession: ObservableObject {
 
         guard gen == generation else { return }
 
+        if let buf = bestBuffer, VoiceSettings.apiKey == nil || CardImageEncoder.jpegData(from: buf) == nil {
+            stopCaptureIfNeeded()
+            if context == .perform, !snapshotCuePlayed {
+                snapshotCuePlayed = true
+                PerformanceCues.cardSnapshotSent()
+            }
+        }
+
         if VoiceSettings.apiKey != nil, let buf = bestBuffer, let jpeg = CardImageEncoder.jpegData(from: buf) {
             let hint = CardOCRProcessor.orderedLineTexts(from: bestLineReadings).joined(separator: "\n")
             stopCaptureIfNeeded()

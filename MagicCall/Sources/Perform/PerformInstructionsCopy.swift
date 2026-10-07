@@ -53,12 +53,17 @@ enum PerformInstructionsCopy {
     ]
 
     static var songInputCamera: [String] {
-        [
-            "**Camera:** Press **volume up/down** during Perform (green camera dot while reading).",
-            "**Lines on the card:** \(CardOCRLayout.lineAssignmentSummary).",
+        var lines = [
+            "**Camera:** Press **volume** when the card is in focus (short snapshot; green dot only while capturing).",
+            "**Card layout:** \(CardOCRLayout.lineAssignmentSummary).",
             "White card, thick marker, ALL CAPS helps. Labels: `SONG:`, `WORD:`/`CALLER:`, `NOTES:`/`CHIP:`.",
-            "One scan can feed **song + caller line 2 + Notes line 3** if those features use Camera OCR too.",
         ]
+        if CardOCRLayout.songOnlyOnCard {
+            lines.append("**Song only:** Title and artist can be on one line or split — the app does not require fixed line numbers.")
+        } else {
+            lines.append("One volume scan can return **song + caller word + Notes word** when those inputs use Camera OCR.")
+        }
+        return lines
     }
 
     static func songInputVoice(lockSeconds: Int) -> [String] {
@@ -91,7 +96,7 @@ enum PerformInstructionsCopy {
     static let callerName: [String] = [
         "Home → **Caller name**. Turn **Show word on incoming call** **ON** to replace the number with a **word** on the incoming-call banner (needs **Settings → Phone → Call Blocking & Identification → MindtoneX**).",
         "**Inject / Elips / Custom API:** Polls every \(Int(WordApiSettings.pollInterval)) s during Perform. First reading = old word on server; **next change** = spectator’s word → lock.",
-        "**Camera (OCR):** Word on **line 2** of the same card as the song (line 1). Requires Song input = **Camera**.",
+        "**Camera (OCR):** **One word** on the line **under the song** (song may use one or two lines above). Requires Song input = **Camera**.",
         "**Voice (AI):** Same mic as Song = Voice; ask what word they think you saved as their contact (script on the card).",
         "**Save locked word as contact name:** Optional but strong — updates Contacts so the **name** on the call matches the word. **Known** = pick their contact first; **Unknown** = dial them on Perform once so the app learns the number.",
     ]

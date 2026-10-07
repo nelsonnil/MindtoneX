@@ -10,36 +10,77 @@ enum CardOCRLayout {
         NotesContactWordSettings.wordInputEnabled && NotesContactWordSettings.provider == .card
     }
 
+    /// Song = Camera and no caller / Notes word on the card.
+    static var songOnlyOnCard: Bool {
+        !usesCallerLine && !usesNotesLine
+    }
+
     static var activeWordLineCount: Int {
         (usesCallerLine ? 1 : 0) + (usesNotesLine ? 1 : 0)
     }
 
     /// One-line summary for Card input tips.
     static var lineAssignmentSummary: String {
-        var parts = ["**line 1** = song title"]
-        if usesCallerLine { parts.append("**line 2** = caller name word") }
-        if usesNotesLine { parts.append("**line 3** = Notes chip word") }
+        if songOnlyOnCard {
+            return "detect **song title + artist** anywhere on the card (line count flexible)"
+        }
+        var parts = ["**top** = song (title and/or artist — one or two lines; OpenAI can merge if layout differs)"]
+        if usesCallerLine { parts.append("**next line down** = caller name (one word)") }
+        if usesNotesLine { parts.append("**bottom line** = Notes chip word (one word)") }
         return parts.joined(separator: " · ")
+    }
+
+    /// Rules block for OpenAI vision (matches active Home setup).
+    static var openAIVisionRules: String {
+        if songOnlyOnCard {
+            return """
+            **Song only:** Read the whole card for **title + artist**. Lines can be one row ("EMINEM - LOSE YOURSELF") or two (artist on top, title below) — order does not matter. \
+            Ignore empty space. search_query = "Title Artist". has_caller_word=false, has_notes_word=false always.
+            """
+        }
+        var rules = """
+        **Song block (top):** All lines above the word lines are the song. Artist + title may share one line or split across two — merge correctly.
+        """
+        if usesCallerLine {
+            rules += """
+
+            **Caller word:** The first **single-word** line below the song block (convention: line under the song). \
+            If the spectator wrote artist/title on two lines then the caller word on the third, use that third line. \
+            OpenAI may still infer if spacing differs — never use a word from the song title as caller_word.
+            """
+        } else {
+            rules += "\n\nCaller word: not used (has_caller_word=false)."
+        }
+        if usesNotesLine {
+            rules += """
+
+            **Notes chip word:** The **bottom** single-word line on the card (below caller when caller is enabled).
+            """
+        } else {
+            rules += "\n\nNotes word: not used (has_notes_word=false)."
+        }
+        rules += "\n\nsearch_query MUST be \"Title Artist\" (e.g. \"Lose Yourself Eminem\"). Never duplicate artist."
+        return rules
     }
 
     /// English steps for Instructions sheet.
     static var instructionLines: [String] {
         var lines = [
             "**Song input = Camera.** Write on a white card in ALL CAPS when you can.",
-            "**Line 1 (top)** is always the **song title**. Press **volume** when the card is in focus — a quick snapshot goes to **OpenAI vision** (same token as Voice) to fix handwriting errors; without a token, local OCR is used.",
+            "Press **volume** when the card is in focus — snapshot + **OpenAI vision** (Voice token) or local OCR.",
         ]
-        if usesCallerLine {
-            lines.append("**Line 2** is the **incoming caller name** word when **Caller name → Card (OCR)** is on.")
-        }
-        if usesNotesLine {
-            lines.append("**Line 3** is the **Notes contact chip** word when **Notes contact → Word for Notes chip → Card (OCR)** is on.")
-        }
-        if !usesCallerLine && !usesNotesLine {
-            lines.append("Caller name and Notes word are not on Card OCR right now — only line 1 is read.")
+        if songOnlyOnCard {
+            lines.append("**Song only:** Write **title and artist** anywhere on the card — one line (`ARTIST - TITLE`) or two lines; the app finds both.")
         } else {
-            lines.append("Optional labels: `SONG:` · `WORD:` / `CALLER:` (line 2) · `NOTES:` / `CHIP:` (line 3).")
-            lines.append("Leave a line blank if you do not use that feature — the scan still reads the lines you need.")
+            lines.append("**Lines (top → bottom):** \(lineAssignmentSummary).")
+            if usesCallerLine {
+                lines.append("**Caller name (Camera):** One word on the line **under** the song (OpenAI can adapt if artist/title use two lines).")
+            }
+            if usesNotesLine {
+                lines.append("**Notes word (Camera):** One word on the **third** line when caller is on; otherwise the line under the song.")
+            }
         }
+        lines.append("Optional labels: `SONG:` · `WORD:`/`CALLER:` · `NOTES:`/`CHIP:`.")
         return lines
     }
 }
