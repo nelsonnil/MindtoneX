@@ -221,43 +221,45 @@ final class CardSongSession: ObservableObject {
                 PerformUserLog.shared.log("Camera · photo sent · reading card…")
             }
             do {
+                let tOpenAI = CACurrentMediaTime()
                 let ai = try await CardHandwritingPicker.pick(
                     jpeg: jpeg,
                     visionOCRHint: hint,
                     expectCallerLine: CardOCRLayout.usesCallerLine,
                     expectNotesLine: CardOCRLayout.usesNotesLine
                 )
+                let openAIMs = PreviewService.ms(since: tOpenAI)
                 dlog("[CARD] OpenAI vision · \(ai.reasoning) · conf=\(String(format: "%.2f", ai.confidence)) · query=\(ai.searchQuery)")
                 if context == .perform {
-                    PerformUserLog.shared.log("Camera · OpenAI · \(WordApiInputPanel.truncated(ai.reasoning, max: 48))")
+                    PerformLogReporter.logOpenAICardAnswer(ai, ms: openAIMs)
                 }
                 let ocr = ai.asOCRParse(
                     expectCaller: CardOCRLayout.usesCallerLine,
                     expectNotes: CardOCRLayout.usesNotesLine
                 )
+                applyCardWordsIfNeeded(ocr)
                 if ai.hasSong {
-                    for query in ai.storeSearchQueries() {
-                        let ok = await AppModel.shared.prepareCardQuery(query)
-                        guard gen == generation else { return }
-                        guard ok, let track = AppModel.shared.selected else {
-                            dlog("[CARD] OpenAI try “\(query)” → no match")
-                            continue
-                        }
-                        guard trackMatchesCardPick(track, pick: ai) else {
-                            dlog("[CARD] OpenAI reject store mismatch · wanted «\(ai.title)» got «\(track.title)»")
-                            continue
-                        }
-                        let key = CardTextMapper.canonicalKey(from: track)
-                        await handleScanOutcome(
+                    var queryBatches: [[String]] = [ai.storeSearchQueries()]
+                    let retry = ai.storeSearchRetryQueries()
+                    if !retry.isEmpty { queryBatches.append(retry) }
+                    for (batchIndex, batch) in queryBatches.enumerated() {
+                        if let match = await searchCardSongWithQueries(
+                            batch,
+                            pick: ai,
                             gen: gen,
-                            vote: (key, 2),
-                            query: query,
-                            ocrSample: hint,
-                            track: track,
-                            ocrParse: ocr,
-                            skipRecognizedCue: snapshotCuePlayed
-                        )
-                        return
+                            retryPass: batchIndex > 0
+                        ) {
+                            await handleScanOutcome(
+                                gen: gen,
+                                vote: (match.key, 2),
+                                query: match.query,
+                                ocrSample: hint,
+                                track: match.track,
+                                ocrParse: ocr,
+                                skipRecognizedCue: snapshotCuePlayed
+                            )
+                            return
+                        }
                     }
                     dlog("[CARD] OpenAI song queries exhausted · no acceptable preview")
                 }
@@ -344,6 +346,41 @@ final class CardSongSession: ObservableObject {
             track: best.flatMap { trackByKey[$0.key] },
             ocrParse: ocr
         )
+    }
+
+    private func searchCardSongWithQueries(
+        _ queries: [String],
+        pick: CardHandwritingPick,
+        gen: Int,
+        retryPass: Bool
+    ) async -> (track: PreviewTrack, query: String, key: String)? {
+        for query in queries {
+            guard query.count >= 2 else { continue }
+            if context == .perform {
+                let label = WordApiInputPanel.truncated(query, max: 40)
+                if retryPass {
+                    PerformUserLog.shared.log("Song search · retry «\(label)»")
+                } else {
+                    PerformUserLog.shared.log("Song search · try «\(label)»")
+                }
+            }
+            let ok = await AppModel.shared.prepareCardQuery(query)
+            guard gen == generation else { return nil }
+            guard ok, let track = AppModel.shared.selected else {
+                dlog("[CARD] OpenAI try “\(query)” → no match")
+                continue
+            }
+            guard trackMatchesCardPick(track, pick: pick) else {
+                dlog("[CARD] OpenAI reject store mismatch · wanted «\(pick.title)» got «\(track.title)»")
+                continue
+            }
+            let key = CardTextMapper.canonicalKey(from: track)
+            if context == .perform {
+                PerformUserLog.shared.log("Song search · winner «\(query)» → \(track.title) — \(track.artist)")
+            }
+            return (track, query, key)
+        }
+        return nil
     }
 
     private func trackMatchesCardPick(_ track: PreviewTrack, pick: CardHandwritingPick) -> Bool {

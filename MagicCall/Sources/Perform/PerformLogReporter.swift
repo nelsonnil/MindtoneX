@@ -64,6 +64,31 @@ enum PerformLogReporter {
     }
 
     @MainActor
+    static func logOpenAICardAnswer(_ pick: CardHandwritingPick, ms: Int) {
+        if pick.hasSong {
+            let t = pick.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let a = pick.artist.trimmingCharacters(in: .whitespacesAndNewlines)
+            let label: String
+            if !t.isEmpty, !a.isEmpty {
+                label = WordApiInputPanel.truncated("\(t) — \(a)", max: 44)
+            } else if !t.isEmpty {
+                label = WordApiInputPanel.truncated(t, max: 44)
+            } else {
+                label = WordApiInputPanel.truncated(pick.searchQuery, max: 44)
+            }
+            let conf = Int((pick.confidence * 100).rounded())
+            let reason = WordApiInputPanel.truncated(pick.reasoning, max: 96)
+            PerformUserLog.shared.log("OpenAI · card · «\(label)» · \(conf)% · \(reason) (\(ms) ms)")
+        } else {
+            let reason = WordApiInputPanel.truncated(
+                pick.reasoning.isEmpty ? "has_song=false (unreadable card)" : pick.reasoning,
+                max: 96
+            )
+            PerformUserLog.shared.log("OpenAI · card · none · \(reason) (\(ms) ms)")
+        }
+    }
+
+    @MainActor
     static func logOpenAIWordAnswer(channel: SpectatorListenChannel, pick: WordPick?, ms: Int) {
         let scope: String
         switch channel {

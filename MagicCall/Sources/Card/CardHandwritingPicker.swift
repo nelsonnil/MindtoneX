@@ -25,43 +25,53 @@ struct CardHandwritingPick: Equatable, Codable {
 
     mutating func reconcile(withHintLines hintLines: [String], expectCallerLine: Bool, expectNotesLine: Bool) {
         let lines = CardLineParser.expandMergedOCRLines(hintLines)
+        let visionSongComplete = hasSong && title.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
 
         if !expectCallerLine && !expectNotesLine {
             hasCallerWord = false
             callerWord = ""
             hasNotesWord = false
             notesWord = ""
-            Self.mergeSongFields(from: lines, into: &self)
+            if !visionSongComplete {
+                Self.mergeSongFields(from: lines, into: &self)
+            }
         } else {
             let reserved = (expectCallerLine ? 1 : 0) + (expectNotesLine ? 1 : 0)
             let songLineCount = max(0, lines.count - reserved)
             let songLines = songLineCount > 0 ? Array(lines.prefix(songLineCount)) : lines
-            Self.mergeSongFields(from: songLines, into: &self)
+            if !visionSongComplete {
+                Self.mergeSongFields(from: songLines, into: &self)
+            }
 
             if expectCallerLine {
-                let callerIndex = lines.count - reserved
-                if reserved > 0, callerIndex >= 0, callerIndex < lines.count {
-                    let callerCandidate = lines[callerIndex].trimmingCharacters(in: .whitespacesAndNewlines)
-                    if let w = CardLineParser.normalizeWord(callerCandidate) {
-                        callerWord = w
-                        hasCallerWord = true
+                if !hasCallerWord || callerWord.trimmingCharacters(in: .whitespacesAndNewlines).count < 2 {
+                    let callerIndex = lines.count - reserved
+                    if reserved > 0, callerIndex >= 0, callerIndex < lines.count {
+                        let callerCandidate = lines[callerIndex].trimmingCharacters(in: .whitespacesAndNewlines)
+                        if let w = CardLineParser.normalizeWord(callerCandidate) {
+                            callerWord = w
+                            hasCallerWord = true
+                        } else {
+                            hasCallerWord = false
+                            callerWord = ""
+                        }
                     } else {
                         hasCallerWord = false
                         callerWord = ""
                     }
-                } else {
-                    hasCallerWord = false
-                    callerWord = ""
                 }
             } else {
                 hasCallerWord = false
                 callerWord = ""
             }
 
-            if expectNotesLine, let last = lines.last, lines.count >= reserved, reserved > 0 {
-                if let w = CardLineParser.normalizeWord(last) {
-                    notesWord = w
-                    hasNotesWord = true
+            if expectNotesLine {
+                if !hasNotesWord || notesWord.trimmingCharacters(in: .whitespacesAndNewlines).count < 2,
+                   let last = lines.last, lines.count >= reserved, reserved > 0 {
+                    if let w = CardLineParser.normalizeWord(last) {
+                        notesWord = w
+                        hasNotesWord = true
+                    }
                 }
             } else {
                 hasNotesWord = false
@@ -112,11 +122,51 @@ struct CardHandwritingPick: Equatable, Codable {
             guard q.count >= 2 else { return }
             if !out.contains(where: { ApiJSON.sameText($0, q) }) { out.append(q) }
         }
-        add(searchQuery)
-        add("\(title) \(artist)")
-        add(title)
-        if !artist.isEmpty { add("\(title) \(artist)".trimmingCharacters(in: .whitespaces)) }
-        return out
+        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let a = artist.trimmingCharacters(in: .whitespacesAndNewlines)
+        let built = Self.buildSearchQuery(title: t, artist: a, raw: searchQuery)
+        if !built.isEmpty { add(built) }
+        if !t.isEmpty, !a.isEmpty {
+            add("\(t) \(a)")
+            add("\(a) \(t)")
+        }
+        if !t.isEmpty { add(t) }
+        if t.isEmpty, !a.isEmpty { add(a) }
+        return Array(out.prefix(4))
+    }
+
+    /// Second pass when the primary queries miss (simpler title, no feat./punctuation).
+    func storeSearchRetryQueries() -> [String] {
+        var out: [String] = []
+        func add(_ s: String) {
+            let q = CardTextMapper.clean(s)
+            guard q.count >= 2 else { return }
+            if !out.contains(where: { ApiJSON.sameText($0, q) }) { out.append(q) }
+        }
+        let t = Self.simplifiedSongTitle(title)
+        let a = artist.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !t.isEmpty, !a.isEmpty {
+            add("\(t) \(a)")
+            add("\(a) \(t)")
+        }
+        if !t.isEmpty { add(t) }
+        return Array(out.prefix(3))
+    }
+
+    private static func simplifiedSongTitle(_ raw: String) -> String {
+        var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let patterns = [
+            #"(?i)\s*[\(\[]\s*(feat\.?|ft\.?|featuring)[^\)\]]*[\)\]]"#,
+            #"(?i)\s*-\s*(remix|live|acoustic|radio edit|version).*$"#,
+        ]
+        for p in patterns {
+            if let re = try? NSRegularExpression(pattern: p) {
+                let range = NSRange(s.startIndex..<s.endIndex, in: s)
+                s = re.stringByReplacingMatches(in: s, range: range, withTemplate: "")
+            }
+        }
+        s = s.replacingOccurrences(of: "  ", with: " ")
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     func asSongPick() -> SongPick? {
@@ -201,10 +251,11 @@ enum CardHandwritingPicker {
 
         let instructions = """
         You read a photo of a handwritten performance card (black ink, often ALL CAPS). \
+        Use the **whole image** as the source of truth — infer song title and artist from handwriting anywhere on the card. \
         \(lang)
-        Setup: \(CardOCRLayout.lineAssignmentSummary)
+        Typical layout (flexible): \(CardOCRLayout.lineAssignmentSummary)
 
-        OCR hint (may be wrong):
+        Optional OCR hint (often wrong — do not follow line numbers blindly):
         \"\"\"\(visionOCRHint)\"\"\"
 
         \(CardOCRLayout.openAIVisionRules)

@@ -34,7 +34,7 @@ enum CardOCRLayout {
     static var openAIVisionRules: String {
         if songOnlyOnCard {
             return """
-            **Song only:** Read the whole card for **title + artist**. Lines can be one row ("EMINEM - LOSE YOURSELF") or two (artist on top, title below) — order does not matter. \
+            **Song only:** Read the **entire card** for **title + artist** (OCR line count is irrelevant). One row ("EMINEM - LOSE YOURSELF") or two lines in any order — merge correctly. \
             Ignore empty space. search_query = "Title Artist". has_caller_word=false, has_notes_word=false always.
             """
         }

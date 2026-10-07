@@ -86,6 +86,31 @@ actor PreviewService {
             return cached
         }
 
+        let ranked = try await fetchRanked(query: query)
+        searchCache[key] = ranked
+        return ranked
+    }
+
+    /// Tries trimmed queries in order; returns the first that yields store results (Library still uses `search(_:)` only).
+    func searchWithQueryVariants(_ rawQueries: [String]) async -> (query: String, tracks: [PreviewTrack])? {
+        var seen = Set<String>()
+        for raw in rawQueries {
+            let query = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard query.count >= 2 else { continue }
+            let key = Self.normalize(query)
+            guard seen.insert(key).inserted else { continue }
+            if let cached = searchCache[key], !cached.isEmpty {
+                return (query, cached)
+            }
+            if let ranked = try? await fetchRanked(query: query), !ranked.isEmpty {
+                searchCache[key] = ranked
+                return (query, ranked)
+            }
+        }
+        return nil
+    }
+
+    private func fetchRanked(query: String) async throws -> [PreviewTrack] {
         let storefront = Self.storefront()
         var found: [PreviewTrack] = []
         do {
@@ -101,7 +126,6 @@ actor PreviewService {
         }
         let ranked = Self.rank(found, for: query)
         guard !ranked.isEmpty else { throw PreviewError.noResults(query) }
-        searchCache[key] = ranked
         return ranked
     }
 

@@ -60,7 +60,7 @@ enum PerformInstructionsCopy {
 
     static var songInputCamera: [String] {
         var lines = [
-            "**Camera:** Press **volume up** (side rocker) when the card is in focus (short snapshot; green dot only while capturing). **Volume down** does not scan — use it after the call for **Use as Ringtone** when Auto-open Share is off.",
+            "**Camera:** Press **volume up** when the card is in focus (short snapshot; green dot only while capturing). With a Voice token, **OpenAI reads the whole card** (local OCR is only a hint). **Volume down** does not scan — use it after the call for **Use as Ringtone** when Auto-open Share is off.",
             "**Card layout:** \(CardOCRLayout.lineAssignmentSummary).",
             "White card, thick marker, ALL CAPS helps. Labels: `SONG:`, `WORD:`/`CALLER:`, `NOTES:`/`CHIP:`.",
         ]
