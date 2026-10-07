@@ -60,7 +60,7 @@ enum PerformInstructionsCopy {
 
     static var songInputCamera: [String] {
         var lines = [
-            "**Camera:** Press **volume** when the card is in focus (short snapshot; green dot only while capturing).",
+            "**Camera:** Press **volume up** (side rocker) when the card is in focus (short snapshot; green dot only while capturing). **Volume down** does not scan — use it after the call for **Use as Ringtone** when Auto-open Share is off.",
             "**Card layout:** \(CardOCRLayout.lineAssignmentSummary).",
             "White card, thick marker, ALL CAPS helps. Labels: `SONG:`, `WORD:`/`CALLER:`, `NOTES:`/`CHIP:`.",
         ]

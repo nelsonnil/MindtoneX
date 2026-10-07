@@ -144,7 +144,7 @@ final class CardSongSession: ObservableObject {
             return
         }
         state = .scanning
-        SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "pre card scan")
+        AppModel.shared.primeCardVolumeScanHeadroom(reason: "pre card scan")
         if context == .perform {
             let mode = VoiceSettings.apiKey != nil ? "snapshot + OpenAI" : "snapshot + local OCR"
             PerformUserLog.shared.log("Camera · \(mode) (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)")
@@ -377,6 +377,7 @@ final class CardSongSession: ObservableObject {
                 failScanMaxRetries()
             } else {
                 state = .armed
+                AppModel.shared.primeCardVolumeScanHeadroom(reason: "scan retry armed")
                 PerformanceCues.cardScanFailed()
             }
             return
@@ -400,7 +401,7 @@ final class CardSongSession: ObservableObject {
             dlog("[CARD] ★ auto-lock (\(vote.value) votes) · \(candidateLabel ?? "?")")
             lock(reason: "OCR consensus", auto: true, playLockHaptic: false)
         } else {
-            dlog("[CARD] ? candidate (1 vote) · \(candidateLabel ?? "?") — volume again to confirm")
+            dlog("[CARD] ? candidate (1 vote) · \(candidateLabel ?? "?") — volume up again to confirm")
             state = .candidate
         }
 

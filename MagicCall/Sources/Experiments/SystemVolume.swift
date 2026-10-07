@@ -7,6 +7,12 @@ import UIKit
 /// Tenerla en la jerarquía (casi invisible) también oculta el HUD de volumen del sistema.
 final class SystemVolume {
     static let shared = SystemVolume()
+
+    /// Side buttons need room below 100 % / above 0 % so `outputVolume` KVO fires on the first press.
+    static let cardScanHeadroomLevel: Float = 0.92
+    static let volumeCeilingThreshold: Float = 0.985
+    static let volumeFloorThreshold: Float = 0.015
+
     fileprivate weak var volumeView: MPVolumeView?
 
     /// Volumen multimedia que había antes del primer “subir al máximo” de la llamada.
@@ -38,6 +44,16 @@ final class SystemVolume {
 
     var outputVolume: Float { AVAudioSession.sharedInstance().outputVolume }
 
+    var isAtMediaVolumeCeiling: Bool { outputVolume >= Self.volumeCeilingThreshold }
+    var isAtMediaVolumeFloor: Bool { outputVolume <= Self.volumeFloorThreshold }
+
+    /// After a card scan trigger, restore a level that still leaves headroom if the user was at 100 %.
+    func levelForCardScanVolumeRevert(prePress: Float) -> Float {
+        if prePress >= Self.volumeCeilingThreshold { return Self.cardScanHeadroomLevel }
+        if prePress <= Self.volumeFloorThreshold { return Self.cardScanHeadroomLevel }
+        return prePress
+    }
+
     /// Guarda el volumen actual (solo la primera vez) y lo sube al 100 %.
     func captureAndBoostToMaximum(sliderRetries: Int = 5) {
         if savedOutputVolume == nil {
@@ -55,13 +71,21 @@ final class SystemVolume {
     }
 
     /// iOS only emits `outputVolume` KVO when the level can change — nudge off 0 % / 100 % so side buttons work during Card scan.
-    func ensureHeadroomForHardwareVolumeButtons(reason: String) {
+    @discardableResult
+    func ensureHeadroomForHardwareVolumeButtons(reason: String, sliderRetries: Int = 8) -> Bool {
         let v = outputVolume
-        if v >= 0.985 {
-            set(0.92, label: "\(reason) headroom", sliderRetries: 5)
-        } else if v <= 0.015 {
-            set(0.08, label: "\(reason) headroom", sliderRetries: 5)
+        if v >= Self.volumeCeilingThreshold {
+            dlog("[CARD] headroom · media at ceiling (\(String(format: "%.2f", v))) · nudging to \(String(format: "%.2f", Self.cardScanHeadroomLevel)) (\(reason))")
+            set(Self.cardScanHeadroomLevel, label: "\(reason) headroom", sliderRetries: sliderRetries)
+            return true
         }
+        if v <= Self.volumeFloorThreshold {
+            dlog("[CARD] headroom · media at floor (\(String(format: "%.2f", v))) · nudging to 0.08 (\(reason))")
+            set(0.08, label: "\(reason) headroom", sliderRetries: sliderRetries)
+            return true
+        }
+        dlog("[CARD] headroom · ok at \(String(format: "%.2f", v)) (\(reason))")
+        return false
     }
 
     func set(_ value: Float, label: String? = nil, sliderRetries: Int = 0) {

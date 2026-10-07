@@ -11,7 +11,7 @@ struct CardInputPanel: View {
             VStack(alignment: .leading, spacing: 10) {
                 tipRow("doc.plaintext", "White matte card + thick black marker")
                 tipRow("textformat.size.larger", "ALL CAPS · \(CardOCRLayout.lineAssignmentSummary) (optional SONG:/WORD:/NOTES: labels)")
-                tipRow("camera.fill", "During Perform: press **volume up or down** — green dot ~\(Int(CardSettings.defaultBurstSeconds)) s while reading (Camera Control also works on iPhone 16+)")
+                tipRow("camera.fill", "During Perform: press **volume up** to scan — green dot ~\(Int(CardSettings.defaultBurstSeconds)) s while reading (Camera Control also works on iPhone 16+)")
                 tipRow("button.programmable", "1 buzz = song read · 2 strong buzzes = preview ready")
             }
             .padding(12)

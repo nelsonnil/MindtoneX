@@ -163,11 +163,11 @@ struct ReadinessStatusBar: View {
                 return Status(tone: .working, icon: "camera.viewfinder", text: "Reading card…")
             case .candidate:
                 let title = card.candidateLabel ?? "song"
-                return Status(tone: .working, icon: "questionmark.circle", text: "Candidate · \(title) · press volume to confirm")
+                return Status(tone: .working, icon: "questionmark.circle", text: "Candidate · \(title) · volume up to confirm")
             case .armed:
-                return Status(tone: .working, icon: "camera.fill", text: "Ready · press volume to scan card")
+                return Status(tone: .working, icon: "camera.fill", text: "Ready · volume up scans card")
             case .idle:
-                return Status(tone: .ready, icon: "camera.fill", text: "Ready · press volume to scan text")
+                return Status(tone: .ready, icon: "camera.fill", text: "Ready · volume up scans card")
             }
         }
     }
@@ -179,7 +179,7 @@ struct ReadinessStatusBar: View {
                 return Status(
                     tone: .working,
                     icon: "doc.viewfinder",
-                    text: "Caller name · card line 2 · press volume"
+                    text: "Caller name · card line 2 · volume up with song scan"
                 )
             case .locked:
                 let locked = wordSession.lockedReading?.label ?? "…"

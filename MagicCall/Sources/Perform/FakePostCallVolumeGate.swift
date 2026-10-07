@@ -31,6 +31,8 @@ enum FakePostCallVolumeGateSelfTest {
             volumeButtonTrigger: true, isArmed: true, performed: false))
         assert(!FakePostCallVolumeGate.shouldTogglePlayOnVolume(
             volumeButtonTrigger: true, isArmed: true, performed: true))
+        assert(!FakePostCallVolumeGate.shouldTogglePlayOnVolume(
+            volumeButtonTrigger: true, isArmed: true, performed: false, cardCaptureUsesVolume: true))
         assert(FakePostCallShareGate.shouldOpenSharePostCall(
             phase: .stage, performed: true, isArmed: true))
         assert(!FakePostCallShareGate.shouldOpenSharePostCall(

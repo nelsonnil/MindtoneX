@@ -42,6 +42,7 @@ final class AppModel: ObservableObject {
     private var ignoreVolumeChangesUntil: CFTimeInterval = 0
     /// Camera OCR: ignore side-volume until Perform UI + MPVolumeView are ready (separate from playback boost grace).
     private var cameraVolumeScanReadyAt: CFTimeInterval = 0
+    private var cardVolumeHeadroomTask: Task<Void, Never>?
     private var incomingCallID: UUID?
     private var incomingDetectedAt: CFTimeInterval = 0
     private var callPollTimer: Timer?
@@ -373,8 +374,6 @@ final class AppModel: ObservableObject {
         }
         if usesCardInput {
             cameraVolumeScanReadyAt = CACurrentMediaTime() + 0.55
-            SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "Camera perform arm")
-            ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 2.0)
             dlog("[CARD] perform arm · media vol=\(String(format: "%.2f", SystemVolume.shared.outputVolume)) · scan unlocks in ~0.5s")
         } else {
             applyFakePerformMediaVolumeBoost(reason: "arm")
@@ -382,6 +381,9 @@ final class AppModel: ObservableObject {
         if Prefs.forceMediaVolume {
             ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 1.2)
             SystemVolume.shared.set(Float(Prefs.mediaVolumeTarget), label: "stage target", sliderRetries: 5)
+        }
+        if usesCardInput {
+            primeCardVolumeScanHeadroom(reason: "Camera perform arm")
         }
         if Prefs.hotStandby { audio.startStandby() }
         calls.reassertDelegate()
@@ -408,6 +410,8 @@ final class AppModel: ObservableObject {
         stopCallPolling()
         callSignalActive = false
         SystemVolume.shared.restoreSavedIfNeeded()
+        cardVolumeHeadroomTask?.cancel()
+        cardVolumeHeadroomTask = nil
         volumeObservation = nil
         voicePerformTask?.cancel()
         voicePerformTask = nil
@@ -921,12 +925,39 @@ final class AppModel: ObservableObject {
                         dlog("[CARD] volume ignored (headroom / programmatic echo)")
                         return
                     }
+
+                    let volumeUp = new > old + 0.001
+                    let volumeDown = new < old - 0.001
+
+                    if volumeDown {
+                        if FakePostCallShareGate.shouldOpenSharePostCall(
+                            phase: self.phase,
+                            performed: self.performed,
+                            isArmed: self.isArmed
+                        ) {
+                            let postCallSettling = CACurrentMediaTime() <= self.ignoreVolumeChangesUntil
+                            if postCallSettling, !self.performed {
+                                dlog("[CARD] volume down ignored (post outgoing call · scan=up only)")
+                                return
+                            }
+                            self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.6
+                            SystemVolume.shared.set(old, label: "post-call share")
+                            self.openFakeShareAfterCallIfNeeded()
+                            dlog("[CARD] volume down → Share (post-call ringtone)")
+                            return
+                        }
+                        dlog("[CARD] volume down ignored (card scan is **volume up** only)")
+                        return
+                    }
+
+                    guard volumeUp else { return }
+
                     guard self.acceptsCardVolumeScanTrigger(logReason: true) else { return }
-                    // Block echo from reverting volume; do not re-check this inside volumeScanTriggered().
+                    let revert = SystemVolume.shared.levelForCardScanVolumeRevert(prePress: old)
                     self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.35
-                    SystemVolume.shared.set(old, label: "card scan revert")
+                    SystemVolume.shared.set(revert, label: revert == old ? "card scan revert" : "card scan revert (headroom)")
                     CardSongSession.shared.volumeScanTriggered()
-                    dlog("[CARD] volume → scan triggered")
+                    dlog("[CARD] volume up → scan triggered (\(String(format: "%.2f", old)) → \(String(format: "%.2f", new)), revert \(String(format: "%.2f", revert)))")
                     return
                 }
                 guard CACurrentMediaTime() > self.ignoreVolumeChangesUntil else { return }
@@ -947,7 +978,7 @@ final class AppModel: ObservableObject {
                     volumeButtonTrigger: Prefs.volumeButtonTrigger,
                     isArmed: self.isArmed,
                     performed: self.performed,
-                    cardCaptureUsesVolume: false
+                    cardCaptureUsesVolume: CardSongSession.shared.capturesVolumeButtons
                 ) else { return }
                 self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.6
                 SystemVolume.shared.set(old)
@@ -993,7 +1024,48 @@ final class AppModel: ObservableObject {
     /// Ignore side-volume KVO after spectator outgoing call ends (Phone app + headroom restore).
     func beginVolumeIgnoreAfterOutgoingSpectatorCall() {
         ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 4.0)
-        dlog("[CARD] volume ignored (outgoing call ended) · 4s gate")
+        dlog("[CARD] volume up ignored (outgoing call ended) · 4s gate · volume down still opens Share after hang-up")
+    }
+
+    /// Pre-arm media volume below 100 % / above 0 % so the first hardware press always produces KVO (volume up at max is silent).
+    func primeCardVolumeScanHeadroom(reason: String) {
+        guard usesCardInput, isArmed else { return }
+        cardVolumeHeadroomTask?.cancel()
+        cardVolumeHeadroomTask = Task { @MainActor [weak self] in
+            await self?.runCardVolumeHeadroomPrime(reason: reason)
+        }
+    }
+
+    private func runCardVolumeHeadroomPrime(reason: String) async {
+        let maxAttempts = 28
+        for attempt in 0 ..< maxAttempts {
+            if Task.isCancelled { return }
+            guard usesCardInput, isArmed else { return }
+
+            if !SystemVolume.shared.isAttached {
+                if attempt == 0 {
+                    dlog("[CARD] headroom · waiting for MPVolumeView (\(reason))")
+                }
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                continue
+            }
+
+            let applied = SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: reason)
+            if applied {
+                extendIgnoreForProgrammaticCardVolume(reason: "headroom \(reason)")
+                cameraVolumeScanReadyAt = max(cameraVolumeScanReadyAt, CACurrentMediaTime() + 0.4)
+            } else if SystemVolume.shared.isAtMediaVolumeCeiling {
+                dlog("[CARD] volume up blocked (still at ceiling — headroom pending; press **volume up** to scan)")
+            }
+            return
+        }
+        dlog("[CARD] headroom · MPVolumeView unavailable after retries (\(reason)) · press **volume up** to scan")
+    }
+
+    private func extendIgnoreForProgrammaticCardVolume(reason: String) {
+        let until = CACurrentMediaTime() + 1.05
+        ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, until)
+        dlog("[CARD] headroom ignore window · \(reason) · ~\(String(format: "%.1f", until - CACurrentMediaTime()))s")
     }
 
     /// Camera OCR: hardware volume may start a scan (KVO / Camera Control gate only).
@@ -1012,8 +1084,15 @@ final class AppModel: ObservableObject {
         }
         guard CACurrentMediaTime() > ignoreVolumeChangesUntil else {
             if logReason {
-                dlog("[CARD] volume ignored (cooldown · \(String(format: "%.2f", ignoreVolumeChangesUntil - CACurrentMediaTime()))s left)")
+                dlog("[CARD] volume up ignored (cooldown · \(String(format: "%.2f", ignoreVolumeChangesUntil - CACurrentMediaTime()))s left)")
             }
+            return false
+        }
+        if SystemVolume.shared.isAtMediaVolumeCeiling {
+            if logReason {
+                dlog("[CARD] volume up ignored (at ceiling — applying headroom; then press **volume up** once)")
+            }
+            primeCardVolumeScanHeadroom(reason: "at ceiling before scan")
             return false
         }
         return true
