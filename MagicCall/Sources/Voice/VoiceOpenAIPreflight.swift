@@ -13,7 +13,7 @@ enum VoiceOpenAIPreflight {
     /// `nil` = OK; non-nil = user-facing English message (stay on home screen).
     static func checkBeforePerform() async -> String? {
         guard let key = VoiceSettings.apiKey else {
-            return "Add your speech connection key under Speech before performing."
+            return "Add your OpenAI API key under Home → Performance settings before performing."
         }
         return await validate(apiKey: key)
     }
@@ -63,7 +63,7 @@ enum VoiceOpenAIPreflight {
         }
         switch httpStatus {
         case 401:
-            return "API key is invalid or revoked. Update it under Speech."
+            return "API key is invalid or revoked. Update it under Performance settings."
         case 403:
             return "This API key was rejected (access denied). Check the key and your project permissions."
         case 429:

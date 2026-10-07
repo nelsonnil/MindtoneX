@@ -618,7 +618,7 @@ struct VoiceMagicianScriptBlock: View {
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             } else if !voiceConfigured {
-                Label("Add your OpenAI key under **Voice → Speech**.", systemImage: "exclamationmark.triangle.fill")
+                Label("Add your OpenAI key under **Performance settings**.", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             } else if channelReady {

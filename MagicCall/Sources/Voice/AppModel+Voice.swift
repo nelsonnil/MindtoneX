@@ -30,8 +30,15 @@ extension AppModel {
 
     /// Perform for all song inputs — enters stage/call audio directly (no Silent Shortcut preamble).
     func perform() {
-        if usesVoiceInput {
-            guard !voiceOpenAIPreflightInProgress else { return }
+        guard !voiceOpenAIPreflightInProgress else { return }
+
+        if OpenAIPerformRequirements.requiresKeyBeforePerform, !VoiceSettings.isConfigured {
+            openAIMissingKeySheet = true
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            return
+        }
+
+        if OpenAIPerformRequirements.requiresKeyBeforePerform {
             setVoiceOpenAIPreflightInProgress(true)
             Task {
                 defer { setVoiceOpenAIPreflightInProgress(false) }
@@ -102,11 +109,17 @@ extension AppModel {
 
     var canPerform: Bool {
         let inputReady: Bool = switch VoiceSettings.inputMode {
-        case .aiVoice: VoiceSettings.isConfigured
-        case .notes: true
-        case .api: ApiSettings.isConfigured
-        case .card: CardSettings.cameraAuthorized
-        case .manual: loadState == .ready
+        case .aiVoice:
+            VoiceSettings.isConfigured
+        case .notes:
+            !OpenAIPerformRequirements.requiresKeyBeforePerform || VoiceSettings.isConfigured
+        case .api:
+            ApiSettings.isConfigured
+        case .card:
+            CardSettings.cameraAuthorized
+                && (!OpenAIPerformRequirements.requiresKeyBeforePerform || VoiceSettings.isConfigured)
+        case .manual:
+            loadState == .ready
         }
         return inputReady && StageImageStore.hasScreenshot
     }

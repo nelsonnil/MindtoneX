@@ -75,7 +75,7 @@ final class VoiceSongSession: ObservableObject {
         dlog("[VOICE] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(VoiceSettings.summary())")
 
         guard VoiceSettings.isConfigured else {
-            fail("Add your key under Voice → Speech.")
+            fail("Add your OpenAI API key under Performance settings.")
             return
         }
         guard await MicCapture.requestPermission() else {
@@ -85,7 +85,7 @@ final class VoiceSongSession: ObservableObject {
         guard gen == generation else { return }
 
         guard let key = VoiceSettings.apiKey else {
-            fail("Add your key under Voice → Speech.")
+            fail("Add your OpenAI API key under Performance settings.")
             return
         }
         let transcriber: LiveTranscriber = OpenAIRealtimeTranscriber(

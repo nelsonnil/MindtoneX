@@ -96,7 +96,7 @@ struct ReadinessStatusBar: View {
             }
         case .aiVoice:
             guard VoiceSettings.isConfigured else {
-                return Status(tone: .warning, icon: "link.circle", text: "Voice — add connection key in settings")
+                return Status(tone: .warning, icon: "link.circle", text: "Voice — add OpenAI key in Performance settings")
             }
             if model.voiceOpenAIPreflightInProgress {
                 return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Checking connection…")
@@ -152,6 +152,9 @@ struct ReadinessStatusBar: View {
         case .card:
             guard CardSettings.cameraAuthorized else {
                 return Status(tone: .warning, icon: "camera.fill", text: "Camera — allow access in Settings")
+            }
+            if OpenAIPerformRequirements.requiresKeyBeforePerform, !VoiceSettings.isConfigured {
+                return Status(tone: .warning, icon: "key.fill", text: "Camera — add OpenAI key in Performance settings")
             }
             switch card.state {
             case .failed(let message):

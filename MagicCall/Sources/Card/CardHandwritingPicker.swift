@@ -228,7 +228,7 @@ enum CardHandwritingPickerError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noAPIKey: return "OpenAI token missing (Voice → Connection)."
+        case .noAPIKey: return "OpenAI API key missing (Performance settings)."
         case .encodeImage: return "Could not encode camera frame."
         case .http(let c, _): return "Vision service unavailable (HTTP \(c))."
         case .badOutput: return "Could not read the card."

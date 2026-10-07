@@ -125,7 +125,7 @@ enum WordApiSettings {
             case .card:
                 return "Same **volume scan** as Card song input. **Line 1** = song · **line 2** = caller name word (this card). Notes chip uses **line 3** on the Notes contact card when that source is Card OCR. No network poll."
             case .voice:
-                return "Uses the **Song input = Voice** microphone with a **separate AI prompt** for the contact word (see script hint). Requires OpenAI key in Voice settings."
+                return "Uses the **Song input = Voice** microphone with a **separate AI prompt** for the contact word (see script hint). Requires OpenAI key in Performance settings."
             }
         }
     }

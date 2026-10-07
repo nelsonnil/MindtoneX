@@ -152,7 +152,7 @@ final class CardSongSession: ObservableObject {
                 )
             } else {
                 PerformUserLog.shared.log(
-                    "Camera · OpenAI skipped (no API key — add under Song → Voice → Test)"
+                    "Camera · OpenAI skipped (no API key — add under Performance settings)"
                 )
                 PerformUserLog.shared.log(
                     "Camera · snapshot + local OCR (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)"

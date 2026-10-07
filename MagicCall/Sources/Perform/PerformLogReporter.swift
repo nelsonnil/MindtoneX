@@ -39,6 +39,20 @@ enum PerformLogReporter {
         if VoiceSettings.inputMode == .card {
             PerformUserLog.shared.log("Camera layout · \(CardOCRLayout.lineAssignmentSummary)")
         }
+
+        logOpenAIKeyStatusForPerform()
+    }
+
+    /// One line per perform — Home log only, not stage overlay.
+    @MainActor
+    static func logOpenAIKeyStatusForPerform() {
+        if let key = VoiceSettings.apiKey {
+            PerformUserLog.shared.log("OpenAI · key configured · …\(String(key.suffix(4)))")
+        } else if OpenAIPerformRequirements.requiresKeyBeforePerform {
+            PerformUserLog.shared.log("OpenAI · key missing · required for this setup")
+        } else {
+            PerformUserLog.shared.log("OpenAI · skipped · no key on file (not required for this input mix)")
+        }
     }
 
     // MARK: - OpenAI (Voice) — always log the model answer, even when empty

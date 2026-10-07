@@ -1,25 +1,13 @@
 import SwiftUI
 
-/// Single home-screen surface for AI Voice: API key, engine/models, locking, and live listen debug.
+/// Single home-screen surface for AI Voice: language, locking, and live listen debug (API key → Performance settings).
 struct AiVoiceInputPanel: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var voice = VoiceSongSession.shared
 
     @AppStorage(VoiceSettings.Key.language) private var languageRaw = "en"
 
-    @State private var keyDraft = ""
-    @State private var savedKeyHint: String?
-    @State private var connectionTesting = false
-    @State private var connectionTestResult: (ok: Bool, text: String)?
-
     private var configured: Bool { VoiceSettings.isConfigured }
-
-    /// Key to validate: unsaved field text wins over Keychain.
-    private var effectiveAPIKeyForTest: String? {
-        let draft = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !draft.isEmpty { return draft }
-        return VoiceSettings.apiKey
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -29,7 +17,6 @@ struct AiVoiceInputPanel: View {
         }
         .onAppear {
             if languageRaw == "es-en" { languageRaw = "es" }
-            refreshKey()
         }
     }
 
@@ -41,16 +28,20 @@ struct AiVoiceInputPanel: View {
 
     private var connectionBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            OracleEyebrow(text: "OpenAI connection")
-            Text("Paste your **OpenAI API key** here. Voice recognition and Camera card vision both use this key.")
+            OracleEyebrow(text: "Voice language")
+            Text(OpenAIAPIKeyCopy.performanceSettingsHint)
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if let onFile = VoiceSettings.apiKeyOnFileLabel {
+                Label(onFile, systemImage: "key.fill")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(OracleTheme.gold.opacity(0.95))
+            }
+
             VStack(spacing: 0) {
                 languageMenuRow
-                rowDivider
-                apiKeyRow
             }
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -96,91 +87,6 @@ struct AiVoiceInputPanel: View {
         .tint(OracleTheme.textPrimary)
     }
 
-    private var apiKeyRow: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("OpenAI API key")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(OracleTheme.textPrimary)
-
-            HStack(spacing: 10) {
-                SecureField("sk-… paste key from platform.openai.com", text: $keyDraft)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .font(.subheadline)
-                    .submitLabel(.done)
-                    .onSubmit { commitKeyDraft() }
-                    .onChange(of: keyDraft) { _, _ in
-                        connectionTestResult = nil
-                    }
-
-                if !keyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Button(action: commitKeyDraft) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.title2)
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(OracleTheme.gold)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Save API key")
-                }
-
-                Button {
-                    Task { await runConnectionTest() }
-                } label: {
-                    Group {
-                        if connectionTesting {
-                            ProgressView()
-                                .controlSize(.small)
-                                .tint(OracleTheme.gold)
-                        } else {
-                            Text("Test")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                    }
-                    .frame(minWidth: 44)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(Color.white.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(OracleTheme.gold)
-                .disabled(connectionTesting || effectiveAPIKeyForTest == nil)
-                .accessibilityLabel("Test OpenAI connection")
-            }
-            .padding(10)
-            .background(Color.white.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-            if let connectionTestResult {
-                Label(connectionTestResult.text, systemImage: connectionTestResult.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(connectionTestResult.ok ? OracleTheme.gold : OracleTheme.coral)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if let hint = savedKeyHint {
-                HStack(spacing: 8) {
-                    Label("Saved · \(hint)", systemImage: "key.fill")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(OracleTheme.textSecondary)
-                    Spacer(minLength: 8)
-                    Button("Remove key") {
-                        VoiceSettings.saveAPIKey(nil)
-                        keyDraft = ""
-                        refreshKey()
-                        connectionTestResult = nil
-                        dlog("[VOICE] token removed")
-                    }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(OracleTheme.coral.opacity(0.95))
-                }
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-    }
-
     // MARK: Live listen (debug)
 
     private var liveListenBlock: some View {
@@ -197,7 +103,7 @@ struct AiVoiceInputPanel: View {
             livePreviewTestControls
 
             if !configured {
-                Label("Add your OpenAI API key above to enable voice tests.", systemImage: "link.circle")
+                Label("Add your OpenAI API key under Performance settings to enable voice tests.", systemImage: "link.circle")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             }
@@ -430,51 +336,4 @@ struct AiVoiceInputPanel: View {
         }
     }
 
-    private var rowDivider: some View {
-        Divider().overlay(OracleTheme.cardBorder).padding(.leading, 14)
-    }
-
-    private func pickerRow<C: View>(_ title: String, @ViewBuilder picker: () -> C) -> some View {
-        HStack {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(OracleTheme.textPrimary)
-            Spacer(minLength: 8)
-            picker()
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-    }
-
-    private func refreshKey() {
-        savedKeyHint = VoiceSettings.apiKey.map { "…" + String($0.suffix(4)) }
-    }
-
-    private func commitKeyDraft() {
-        let trimmed = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        VoiceSettings.saveAPIKey(trimmed)
-        keyDraft = ""
-        refreshKey()
-        dlog("[VOICE] token saved to Keychain")
-    }
-
-    private func runConnectionTest() async {
-        guard let key = effectiveAPIKeyForTest else {
-            connectionTestResult = (false, "Paste your OpenAI API key, then tap Test.")
-            return
-        }
-        connectionTesting = true
-        connectionTestResult = nil
-        defer { connectionTesting = false }
-
-        if let error = await VoiceOpenAIPreflight.validate(apiKey: key) {
-            connectionTestResult = (false, error)
-        } else {
-            connectionTestResult = (true, "Connected")
-            if keyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
-                commitKeyDraft()
-            }
-        }
-    }
 }

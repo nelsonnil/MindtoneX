@@ -85,10 +85,13 @@ struct MainShellView: View {
                 SongLibraryStore.shared.logRecentDisplayMerge(context: "MainShell.setup")
             }
         }
-        .alert("Can't start performance", isPresented: voicePreflightAlertPresented) {
+        .alert("Can't start Perform", isPresented: voicePreflightAlertPresented) {
             Button("OK", role: .cancel) { model.voiceOpenAIPreflightAlert = nil }
         } message: {
             Text(model.voiceOpenAIPreflightAlert ?? "")
+        }
+        .sheet(isPresented: $model.openAIMissingKeySheet) {
+            OpenAIMissingKeySheet()
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {

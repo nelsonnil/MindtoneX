@@ -19,6 +19,7 @@ enum PerformInstructionsCopy {
         "**Status bar:** The thin strip at the top (time, signal, battery). In Performance settings, use the preview to pick **Auto**, **Dark**, or **Light** so icons match your wallpaper — it should look like a real iPhone, not a floating wallpaper.",
         "**Playback volume:** Set the slider to **100%** (or as loud as you need) so the song is audible when the call rings. You can still adjust with the side buttons during Perform.",
         "**Song search storefront:** Same card — **Apple iTunes catalog country**, not app language. **Automatic** uses your iPhone region; tap to search all storefronts (e.g. **SA**, **AE**, **EG**) if the catalog differs. No Apple preview → **US**, then **Deezer**.",
+        "**OpenAI API key:** Same card — **one key** for **Song → Voice (AI)** and **Song → Camera** card vision (not two keys). Tap **Test** after pasting. Use the **info** icon for create-key and billing steps on platform.openai.com.",
         "**Phone → Incoming Calls:** iOS may show a **banner** or **full-screen** incoming UI — MindtoneX works with **either**. Keep **Silent mode** how you prefer; the trick is **in-app playback** when the call arrives, not changing the carrier ringtone unless you choose the optional Share step below.",
         "Do **not** lock the phone or switch apps during Perform — MindtoneX keeps the screen awake, but leaving the app stops the effect.",
     ]
@@ -60,7 +61,7 @@ enum PerformInstructionsCopy {
 
     static var songInputCamera: [String] {
         var lines = [
-            "**Camera:** Press **volume up** when the card is in focus (short snapshot; green dot only while capturing). With a Voice token, **OpenAI reads the whole card** in any language (local OCR is only a hint). **Volume down** does not scan — use it after the call for **Use as Ringtone** when Auto-open Share is off.",
+            "**Camera:** Press **volume up** when the card is in focus (short snapshot; green dot only while capturing). With your **Performance settings** OpenAI key, **vision reads the whole card** in any language (local OCR is only a fallback when the key is missing). **Volume down** does not scan — use it after the call for **Use as Ringtone** when Auto-open Share is off.",
             "**Card layout:** \(CardOCRLayout.lineAssignmentSummary).",
             "White card, thick marker, ALL CAPS helps. Labels: `SONG:`, `WORD:`/`CALLER:`, `NOTES:`/`CHIP:`.",
         ]
@@ -74,7 +75,7 @@ enum PerformInstructionsCopy {
 
     static func songInputVoice(lockSeconds: Int) -> [String] {
         [
-            "**Voice:** OpenAI key under Voice settings. The mic listens; AI picks the spectator’s **final** song (ignores your examples).",
+            "**Voice:** OpenAI key under **Performance settings** (same key as Camera). The mic listens; AI picks the spectator’s **final** song (ignores your examples).",
             "Locks after **\(lockSeconds) s** without a change (adjustable in Voice settings).",
             "Same mic can run **extra AI prompts** for Caller name and Notes if those cards use **Voice (AI)**.",
         ]

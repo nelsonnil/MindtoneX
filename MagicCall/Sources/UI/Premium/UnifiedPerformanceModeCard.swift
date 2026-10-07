@@ -57,6 +57,8 @@ struct PerformanceCard: View {
 
                 songSearchRegionSection
 
+                openAIKeySection
+
                 Toggle(isOn: $autoShareOnSongLock) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Auto-open Share when song locks")
@@ -69,6 +71,15 @@ struct PerformanceCard: View {
                 }
                 .tint(OracleTheme.gold)
             }
+        }
+    }
+
+    private var openAIKeySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("OpenAI (Voice + Camera)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+            OpenAIAPIKeySection()
         }
     }
 

@@ -63,6 +63,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var ringtoneStaged = false
     @Published private(set) var voiceOpenAIPreflightInProgress = false
     @Published var voiceOpenAIPreflightAlert: String?
+    @Published var openAIMissingKeySheet = false
 
     /// Prevents opening auto-share more than once per Perform.
     var autoSharePresentedThisPerform = false
