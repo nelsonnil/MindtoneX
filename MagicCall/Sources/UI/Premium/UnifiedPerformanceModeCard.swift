@@ -178,7 +178,7 @@ struct PerformanceCard: View {
             .frame(width: 52, height: 68)
             .overlay {
                 if let image = StageImageStore.load() {
-                    Image(uiImage: image).resizable().scaledToFill()
+                    Image(uiImage: image).resizable().scaledToFill().allowsHitTesting(false)
                 } else {
                     VStack(spacing: 4) {
                         Image(systemName: "photo.badge.plus")

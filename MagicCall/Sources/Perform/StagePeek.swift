@@ -192,6 +192,9 @@ struct StagePeekLayoutPreview: View {
                             .clipped()
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                             .opacity(0.85)
+                            // scaledToFill overflows the 168 pt box; clipping is visual only, so the
+                            // overflow would swallow taps on the Feedback switches above.
+                            .allowsHitTesting(false)
                     }
 
                     peekPreviewBlock
@@ -209,6 +212,7 @@ struct StagePeekLayoutPreview: View {
             }
             .frame(height: 168)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
