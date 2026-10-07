@@ -8,6 +8,7 @@ struct WordApiCarphoneDialHost: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> CarphoneDialViewController {
         let controller = CarphoneDialViewController()
+        CarphoneDialSystemAppearance.apply(to: controller)
         controller.initialDigits = phoneDigits
         controller.onCall = onCall
         controller.onDigitsChange = { phoneDigits = $0 }
@@ -33,7 +34,6 @@ final class CarphoneDialViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(named: "Background") ?? .systemBackground
 
         phoneView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(phoneView)
@@ -66,7 +66,9 @@ final class CarphoneDialViewController: UIViewController {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle {
+        let previous = previousTraitCollection?.userInterfaceStyle
+        let current = CarphoneDialSystemAppearance.userInterfaceStyle
+        if previous != current || traitCollection.userInterfaceStyle != previous {
             applySystemPhoneAppearance()
         }
     }
@@ -76,13 +78,14 @@ final class CarphoneDialViewController: UIViewController {
         phoneView.syncTelephoneDisplay(animated: false)
     }
 
-    /// Match the real Phone app: system light/dark, not MindtoneX forced dark shell.
+    /// Match the real Phone app: device light/dark, not MindtoneX forced dark shell.
     private func applySystemPhoneAppearance() {
-        overrideUserInterfaceStyle = .unspecified
-        view.overrideUserInterfaceStyle = .unspecified
-        phoneView.overrideUserInterfaceStyle = .unspecified
-        view.backgroundColor = UIColor(named: "Background") ?? .systemBackground
+        CarphoneDialSystemAppearance.apply(to: self)
+        phoneView.overrideUserInterfaceStyle = CarphoneDialSystemAppearance.userInterfaceStyle
+        view.backgroundColor = .systemBackground
+        phoneView.backgroundColor = .systemBackground
         phoneView.themeFromDefaults()
         phoneView.applyLocalizedAddNumberCaption()
+        phoneView.setNeedsLayout()
     }
 }

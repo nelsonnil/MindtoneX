@@ -110,10 +110,10 @@ enum Themes: String, CaseIterable {
                               textColor: .systemGray,
                               imageColor: .systemBackground)
         case .xclear:
-            return ThemeModel(backgound: UIColor(named: "Background") ?? .systemBackground,
+            return ThemeModel(backgound: .systemBackground,
                               buttonBackGound: UIColor(named: "BGButton") ?? .systemGray5,
                               buttonBackGound2: UIColor(named: "BGButton2") ?? .systemGray3,
-                              textColor: UIColor(named: "Text") ?? .label,
+                              textColor: .label,
                               imageColor: UIColor(named: "BGButton") ?? .systemGray5)
         }
     }

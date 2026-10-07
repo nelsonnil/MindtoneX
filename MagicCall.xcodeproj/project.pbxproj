@@ -25,6 +25,7 @@
 		18D6532A2C88C55826E76C81 /* ButtonKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101DBA24C3A8A6E5F8FF5942 /* ButtonKeyboard.swift */; };
 		19FF538245C7E267A53BE4E2 /* CallDirectorySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67C120E02A9B4EB6176A78B /* CallDirectorySync.swift */; };
 		1A496C1D95A030425C92AF6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B6949E0964299D0E2E8531C7 /* Assets.xcassets */; };
+		1E85C3C3E432BA8F6D0FF1D1 /* CarphoneDialSystemAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEF994BABDD70AA1B584796 /* CarphoneDialSystemAppearance.swift */; };
 		20ACC5FFA594DEB4E92EAC0B /* CardCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B18EC83ADCF3B62E44CB7E5 /* CardCaptureService.swift */; };
 		232F0E4CF4F90CFD03D0F2CB /* MicCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A36339EA50D410DA83A649 /* MicCapture.swift */; };
 		242C6F29DEE6403FB8F2C94D /* NotesContactHomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE811A2D141570F6DE6CD107 /* NotesContactHomeCard.swift */; };
@@ -282,6 +283,7 @@
 		C5D33B9D6604B6A2334D1E28 /* UIWindow+MagicCall.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIWindow+MagicCall.swift"; sourceTree = "<group>"; };
 		CB3B7E9B2C65FE01F2C4626E /* WordApiCarphoneDialHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiCarphoneDialHost.swift; sourceTree = "<group>"; };
 		CDBF167EB2FC9F9FEC46A0C9 /* CardSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSongSession.swift; sourceTree = "<group>"; };
+		CEEF994BABDD70AA1B584796 /* CarphoneDialSystemAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarphoneDialSystemAppearance.swift; sourceTree = "<group>"; };
 		D220719203424E371638A6F3 /* ImportedAudioStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportedAudioStore.swift; sourceTree = "<group>"; };
 		DB13D893F634383CA7A3A503 /* CardImageEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardImageEncoder.swift; sourceTree = "<group>"; };
 		DE8E82BCFD38058C2E0B516B /* CardOCRLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRLayout.swift; sourceTree = "<group>"; };
@@ -496,6 +498,7 @@
 				0D3DABF01AC791B07189842D /* CarphoneDialFormat.swift */,
 				5CD430AFE3E41075075858AB /* CarphoneDialKeys.swift */,
 				8DF42FB07E26D2E83D7B1928 /* CarphoneDialLayout.swift */,
+				CEEF994BABDD70AA1B584796 /* CarphoneDialSystemAppearance.swift */,
 				B1EB87806965D886C6FE1446 /* DialNumberFormatting.swift */,
 				BA74984A78AC8A7360B06826 /* PhoneKeyboard.swift */,
 				24B069EB55807C6182CB8E43 /* PhoneKeyboard.xib */,
@@ -795,6 +798,7 @@
 				927A10BFCD5F9445890A7940 /* CarphoneDialFormat.swift in Sources */,
 				0C6F790CE285DD96B133D85F /* CarphoneDialKeys.swift in Sources */,
 				37517C88CA26A7CFF3E7CB21 /* CarphoneDialLayout.swift in Sources */,
+				1E85C3C3E432BA8F6D0FF1D1 /* CarphoneDialSystemAppearance.swift in Sources */,
 				0252A189382C473B6FAD70AB /* DebugLog.swift in Sources */,
 				C4A84B05EE00F8A14BB48FC6 /* DebugLogView.swift in Sources */,
 				E7CA81904A95C7FBED7C53D9 /* DialNumberFormatting.swift in Sources */,

@@ -13,8 +13,8 @@ struct WordApiSpectatorDialSheet: View {
             onCall: startCall
         )
         .ignoresSafeArea()
-        /// Phone dial follows **system** light/dark, not MindtoneX home chrome (`.dark`).
-        .preferredColorScheme(nil)
+        /// Phone dial follows **device** light/dark, not MindtoneX home chrome (`.preferredColorScheme(.dark)`).
+        .preferredColorScheme(CarphoneDialSystemAppearance.preferredColorScheme)
         .interactiveDismissDisabled(WordApiContactPerformGate.awaitingOutgoingEnd)
     }
 
