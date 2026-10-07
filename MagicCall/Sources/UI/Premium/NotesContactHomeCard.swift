@@ -75,7 +75,7 @@ struct NotesContactHomeCard: View {
             summary: collapsedSummary
         ) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Preview clonado de la ficha **Contactos** del iPhone (mobile + Notes). No es la app Notas. Deja la nota vacía si no quieres texto ahí.")
+                Text("Preview matches the iPhone **Contacts** detail sheet (mobile + Notes). This is not the Notes app. Leave the note empty if you do not want text there.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -90,7 +90,7 @@ struct NotesContactHomeCard: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline) {
-                        Text("Texto de la nota (Contactos)")
+                        Text("Note text (Contacts)")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(OracleTheme.textPrimary)
                         Spacer(minLength: 8)
@@ -116,7 +116,7 @@ struct NotesContactHomeCard: View {
 
                     if wordTokenInNote {
                         Label {
-                            Text("En el show, **\(NotesContactSettings.standardWordToken)** se sustituye por la palabra bloqueada del chip Notas (\(NotesContactWordSettings.provider.gridTitle)).")
+                            Text("During Perform, **\(NotesContactSettings.standardWordToken)** is replaced by the locked Notes chip word (\(NotesContactWordSettings.provider.gridTitle)).")
                                 .font(.caption2)
                                 .foregroundStyle(OracleTheme.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -125,7 +125,7 @@ struct NotesContactHomeCard: View {
                                 .foregroundStyle(OracleTheme.gold)
                         }
                     } else {
-                        Text("Vacía por defecto. Pulsa **\(NotesContactSettings.standardWordToken)** para marcar dónde quieres la palabra de la API; si no usas marcador, el texto se copia tal cual.")
+                        Text("Empty by default. Tap **\(NotesContactSettings.standardWordToken)** to mark where the forced word goes; without a marker, the text is saved as-is.")
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)

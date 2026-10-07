@@ -49,7 +49,7 @@ struct StagePeekLines: Equatable {
     @MainActor
     static func build(model: AppModel) -> StagePeekLines {
         var rows: [Row] = []
-        rows.append(Row(id: "song", title: "Canción", value: songLine(model: model)))
+        rows.append(Row(id: "song", title: "Song", value: songLine(model: model)))
 
         if WordApiSettings.callerLabelEnabled {
             rows.append(Row(id: "caller", title: "Caller name", value: callerLine()))
@@ -169,14 +169,14 @@ struct StagePeekLayoutPreview: View {
     @Binding var colorHex: String
 
     private let sample = StagePeekLines(rows: [
-        .init(id: "song", title: "Canción", value: "Lose Yourself — Eminem"),
+        .init(id: "song", title: "Song", value: "Lose Yourself — Eminem"),
         .init(id: "caller", title: "Caller name", value: "NERVOUS"),
-        .init(id: "notes", title: "Notes", value: "Recuerda {word}"),
+        .init(id: "notes", title: "Notes", value: "Remember {word}"),
     ])
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Vista previa · arrastra el bloque")
+            Text("Preview · drag the block")
                 .font(.caption2)
                 .foregroundStyle(OracleTheme.textSecondary)
 

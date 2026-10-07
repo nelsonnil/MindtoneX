@@ -23,7 +23,7 @@ struct NotesContactCallDetailPreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Así se ve en Contactos del iPhone (ficha del número al llamar).")
+            Text("How it looks in iPhone Contacts (detail for that number when calling).")
                 .font(.caption2)
                 .foregroundStyle(OracleTheme.textSecondary)
 

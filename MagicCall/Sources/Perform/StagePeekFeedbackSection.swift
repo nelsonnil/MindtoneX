@@ -25,10 +25,10 @@ struct StagePeekFeedbackSection: View {
                     .background(OracleHomeSection.feedback.accent.opacity(0.14))
                     .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Peek al mantener pulsado")
+                    Text("Hold-to-peek")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Mientras mantienes el dedo en escena ves canción, caller y Notes. Al soltar desaparece.")
+                    Text("Keep your finger on the stage to see song, caller name, and Notes. Release to hide.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -52,7 +52,7 @@ struct StagePeekFeedbackSection: View {
                         colorHex: $colorHex
                     )
                     HStack {
-                        Text("Tamaño \(Int(fontSize)) pt")
+                        Text("Size \(Int(fontSize)) pt")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                         Spacer()
