@@ -100,7 +100,7 @@ enum PerformInstructionsCopy {
     // MARK: - Caller name
 
     static let callerName: [String] = [
-        "Home → **Caller name**. Turn **Show word on incoming call** **ON** to replace the number with a **word** on the incoming call (**banner or full-screen** — needs **Settings → Phone → Call Blocking & Identification → MindtoneX**).",
+        "Home → **Caller name**. Turn **Show word on incoming call** **ON** to replace the number with a **word** on the incoming call (**banner or full-screen**). With **Save locked word as contact name** on, MindtoneX updates **Contacts** when the word **locks** (see **Known vs Unknown** below).",
         "**Inject / Elips / Custom API:** Polls every \(Int(WordApiSettings.pollInterval)) s during Perform. First reading = old word on server; **next change** = spectator’s word → lock.",
         "**Camera (OCR):** **One word** on the line **under the song** (song may use one or two lines above). Requires Song input = **Camera**.",
         "**Voice (AI):** Same mic as Song = Voice; ask what word they think you saved as their contact (script on the card).",
@@ -108,7 +108,8 @@ enum PerformInstructionsCopy {
 
     /// Known vs Unknown — how MindtoneX links a phone number to the forced word in Contacts.
     static let callerNameKnownUnknown: [String] = [
-        "Turn **Save locked word as contact name** **ON** on the **Caller name** card, then pick **How to link the number**: **Known** or **Unknown**. MindtoneX needs **Contacts** permission to write the name (Call Directory is backup if Contacts is denied).",
+        "**Primary path — Contacts:** Turn **Save locked word as contact name** **ON**, pick **How to link the number** (**Known** or **Unknown**), and allow **Contacts** access. When the word locks, MindtoneX **creates or renames** that contact’s first name.",
+        "**Optional backup only:** If you entered a **Call identification** fallback number in Caller name connection settings, you may enable **Settings → Phone → Call Blocking & Identification → MindtoneX Caller Label** — not required for a normal show.",
         "**Unknown** (stranger, one-off number): Before the rest of Perform arms, MindtoneX opens the **Phone-style dial inside the app**. Enter their number and tap the **green call button** — iOS places a **real outgoing call** in the Phone app. When you return to MindtoneX, the **stage screenshot** shows again; after that call **ends**, the app **saves their number** and continues Perform. You **must** complete this dial once so the app knows which number to use.",
         "**Unknown → Contacts:** When the word **locks**, MindtoneX writes the **prediction word** as the contact **first name** for that saved number. **If that phone number is not in Contacts yet** → the app **creates a new contact** (mobile + name + optional Notes). **If a contact with that number already exists** → the app **updates that same card** (replaces **first name** with the word; updates Notes if configured). It does **not** create a duplicate for the same number.",
         "**Known** (repeat volunteer, friend): Choose **Known** → **Choose contact** and pick their card **before** Perform. When the word locks, MindtoneX **updates that existing contact only** — it **replaces the first name** with the prediction word (same person, same card; **not** a new contact). Optional **Restore original name when leaving Caller name connection** puts their real first name back when you close connection details after the show.",

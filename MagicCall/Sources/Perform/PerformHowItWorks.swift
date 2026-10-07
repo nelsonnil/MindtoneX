@@ -134,12 +134,13 @@ enum PerformCopy {
         "During **Perform**, networked providers poll the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with song input. **Card (OCR)** uses fixed lines on the card (**line 1** song · **line 2** caller · **line 3** Notes chip — see **Card & Voice input** in Instructions). **Voice (AI)** uses conversation context instead of lines.",
         "**Elips example:** enable **API** for the song (spectator searches a title in Elips) and **Elips** for the word (spectator submits a word — often one they chose from the lyrics). When the word **locks**, that text can appear as the **incoming caller name** while your stage plays the locked song.",
         "The **first poll** is the old value on the server (baseline). The **next change** is the spectator’s new word → **lock** (three short taps). Then have them call you — the incoming call should show the word (banner or full-screen), not only the digits.",
-        "Turn on **Settings → Phone → Call Blocking & Identification → MindtoneX**. Optional: **Save locked word as contact name** (below) so iOS shows the prediction even more reliably than Call Directory alone.",
+        "Turn **Show word on incoming call** **ON** and **Save locked word as contact name** — **Contacts** rename/create on word lock is the main path for the word on caller ID.",
     ]
 
     /// Known vs Unknown contact — prediction on the incoming-call name.
     static let wordApiContactPrediction: [String] = [
-        "**The idea:** the spectator’s word becomes the **caller name** on the incoming call — via Contacts (and Call Directory as backup).",
+        "**The idea:** the spectator’s word becomes the **caller name** on the incoming call — MindtoneX writes **Contacts** when the word locks (Known / Unknown).",
+        "**Optional backup only:** If you entered a **Call identification** fallback number in Caller name connection settings, you may enable **Settings → Phone → Call Blocking & Identification → MindtoneX Caller Label** — not required for a normal show.",
         "**Unknown:** Perform opens the in-app dial → **real outgoing call** → app stores the number → when the word locks: **new contact** if the number is new, or **update the existing contact** with that number (same card, new first name). See **Instructions → Known vs Unknown**.",
         "**Known:** Pick their contact first → when the word locks MindtoneX **renames that contact’s first name** only (no new card). Optional restore after the show.",
         "**Routine timing:** run song input and word source together; callback = **song on stage** + **word on caller ID**.",
