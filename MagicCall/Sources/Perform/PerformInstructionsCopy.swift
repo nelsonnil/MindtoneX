@@ -135,6 +135,6 @@ enum PerformInstructionsCopy {
 
     static let performLog: [String] = [
         "**Perform log** on Home records each run: which **inputs** were armed and every **Recognized** song/word.",
-        "Use it after rehearsal to confirm Camera lines, API polls, or Voice picks matched what you expected.",
+        "Use it after rehearsal to confirm Camera lines, API polls, or Voice picks matched what you expected. With **Voice (AI)**, each **OpenAI** line shows the model’s answer and **reasoning**, even when it returns **none**.",
     ]
 }

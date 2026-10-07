@@ -41,6 +41,62 @@ enum PerformLogReporter {
         }
     }
 
+    // MARK: - OpenAI (Voice) — always log the model answer, even when empty
+
+    @MainActor
+    static func logOpenAISongAnswer(_ pick: SongPick?, ms: Int) {
+        if let pick {
+            if pick.hasSong, !pick.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let label = WordApiInputPanel.truncated(pick.label, max: 44)
+                let conf = Int((pick.confidence * 100).rounded())
+                let reason = WordApiInputPanel.truncated(pick.reasoning, max: 96)
+                PerformUserLog.shared.log("OpenAI · song · «\(label)» · \(conf)% · \(reason) (\(ms) ms)")
+            } else {
+                let reason = WordApiInputPanel.truncated(
+                    pick.reasoning.isEmpty ? "has_song=false (no choice yet)" : pick.reasoning,
+                    max: 96
+                )
+                PerformUserLog.shared.log("OpenAI · song · none · \(reason) (\(ms) ms)")
+            }
+        } else {
+            PerformUserLog.shared.log("OpenAI · song · none · no structured response (\(ms) ms)")
+        }
+    }
+
+    @MainActor
+    static func logOpenAIWordAnswer(channel: SpectatorListenChannel, pick: WordPick?, ms: Int) {
+        let scope: String
+        switch channel {
+        case .callerName: scope = "caller name"
+        case .notesContact: scope = "Notes chip"
+        case .song: return
+        }
+        if let pick {
+            if pick.hasWord, pick.normalizedWord.count >= 2 {
+                let word = WordApiInputPanel.truncated(pick.normalizedWord, max: 32)
+                let conf = Int((pick.confidence * 100).rounded())
+                let reason = WordApiInputPanel.truncated(pick.reasoning, max: 96)
+                PerformUserLog.shared.log("OpenAI · \(scope) · «\(word)» · \(conf)% · \(reason) (\(ms) ms)")
+            } else {
+                let reason = WordApiInputPanel.truncated(
+                    pick.reasoning.isEmpty ? "has_word=false (no choice yet)" : pick.reasoning,
+                    max: 96
+                )
+                PerformUserLog.shared.log("OpenAI · \(scope) · none · \(reason) (\(ms) ms)")
+            }
+        } else {
+            PerformUserLog.shared.log("OpenAI · \(scope) · none · no structured response (\(ms) ms)")
+        }
+    }
+
+    @MainActor
+    static func logVoiceHeard(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let snippet = WordApiInputPanel.truncated(trimmed, max: 72)
+        PerformUserLog.shared.log("Voice · heard · «\(snippet)»")
+    }
+
     @MainActor
     static func logRecognition(_ kind: Recognition, value: String, via source: String) {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -38,7 +38,7 @@ struct PerformUserLogCard: View {
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 if log.sessions.isEmpty {
-                    Text("Shows **inputs armed**, **Recognized** lines (song, caller, Notes chip), camera OCR detail, and call events.")
+                    Text("Shows **inputs armed**, **Voice · heard**, every **OpenAI** answer (even when empty), **Recognized** locks, camera OCR, and call events.")
                         .font(.caption)
                         .foregroundStyle(OracleTheme.textSecondary)
                 } else {

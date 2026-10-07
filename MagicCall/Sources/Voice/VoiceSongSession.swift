@@ -172,6 +172,9 @@ final class VoiceSongSession: ObservableObject {
         }
         if isFinal {
             dlog("[VOICE] heard: “\(text)”")
+            if context == .perform {
+                PerformLogReporter.logVoiceHeard(text)
+            }
             scheduleEvaluation(after: 0.05)
         } else {
             scheduleEvaluation(after: 0.9)
@@ -218,29 +221,52 @@ final class VoiceSongSession: ObservableObject {
                     let pick = try await SongPicker.pick(transcript: text, previous: previous)
                     guard gen == self.generation else { return }
                     self.lastAIError = nil
-                    self.handle(pick, ms: PreviewService.ms(since: t0))
+                    let ms = PreviewService.ms(since: t0)
+                    if self.context == .perform {
+                        PerformLogReporter.logOpenAISongAnswer(pick, ms: ms)
+                    }
+                    self.handle(pick, ms: ms)
                 }
                 if plan.callerName {
+                    let tWord = CACurrentMediaTime()
                     let pick = try await SpectatorWordPicker.pick(
                         channel: .callerName,
                         transcript: text,
                         previous: self.callerWordCandidate
                     )
                     guard gen == self.generation else { return }
+                    if self.context == .perform {
+                        PerformLogReporter.logOpenAIWordAnswer(
+                            channel: .callerName,
+                            pick: pick,
+                            ms: PreviewService.ms(since: tWord)
+                        )
+                    }
                     self.handleWordPick(pick, channel: .callerName)
                 }
                 if plan.notesContact {
+                    let tWord = CACurrentMediaTime()
                     let pick = try await SpectatorWordPicker.pick(
                         channel: .notesContact,
                         transcript: text,
                         previous: self.notesWordCandidate
                     )
                     guard gen == self.generation else { return }
+                    if self.context == .perform {
+                        PerformLogReporter.logOpenAIWordAnswer(
+                            channel: .notesContact,
+                            pick: pick,
+                            ms: PreviewService.ms(since: tWord)
+                        )
+                    }
                     self.handleWordPick(pick, channel: .notesContact)
                 }
             } catch {
                 guard gen == self.generation else { return }
                 self.lastAIError = error.localizedDescription
+                if self.context == .perform {
+                    PerformUserLog.shared.log("OpenAI · error · \(error.localizedDescription)")
+                }
                 dlog("✗ [VOICE] AI evaluate failed: \(error.localizedDescription)")
             }
         }
@@ -253,6 +279,11 @@ final class VoiceSongSession: ObservableObject {
         guard word.count >= 2 else { return }
         guard pick.confidence >= VoiceSettings.minConfidence else {
             dlog("[VOICE] \(channel.title) word ignored · confidence \(Self.percent(pick.confidence))")
+            if context == .perform {
+                PerformUserLog.shared.log(
+                    "Voice · \(channel.title) ignored · confidence \(Self.percent(pick.confidence)) below minimum"
+                )
+            }
             return
         }
         switch channel {
@@ -283,6 +314,11 @@ final class VoiceSongSession: ObservableObject {
         }
         guard pick.confidence >= VoiceSettings.minConfidence else {
             dlog("[VOICE] AI (\(ms) ms): \(pick.label) ignored, confidence \(Self.percent(pick.confidence)) < \(Self.percent(VoiceSettings.minConfidence)) · \(pick.reasoning)")
+            if context == .perform {
+                PerformUserLog.shared.log(
+                    "Voice · song ignored · «\(WordApiInputPanel.truncated(pick.label, max: 40))» · confidence \(Self.percent(pick.confidence)) below minimum"
+                )
+            }
             return
         }
         if let current = candidate, current.key == pick.key {
