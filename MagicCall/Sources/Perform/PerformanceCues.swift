@@ -339,6 +339,8 @@ struct FeedbackCard: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .tint(OracleTheme.gold)
+                .fixedSize()
+                .accessibilityLabel("Vibration when song locks")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -360,6 +362,8 @@ struct FeedbackCard: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .tint(OracleTheme.gold)
+                .fixedSize()
+                .accessibilityLabel("Status dot when song ready")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

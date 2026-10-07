@@ -38,6 +38,8 @@ struct StagePeekFeedbackSection: View {
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .tint(OracleTheme.gold)
+                    .fixedSize()
+                    .accessibilityLabel("Hold-to-peek")
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)

@@ -204,7 +204,7 @@ final class AppModel: ObservableObject {
             if isArmed { performSessionDisplayTrack = track }
             dlog("Listo: \(track.title) — \(track.artist). \(timings)")
             if isArmed {
-                applyFakePerformMediaVolumeBoost(reason: "songReady")
+                applyPerformMediaVolumeAfterSongReady()
             }
             if Prefs.autoStageRingtone {
                 Task { await stageRingtoneFile(showShare: false, discreet: false) }
@@ -1169,6 +1169,21 @@ final class AppModel: ObservableObject {
             return false
         }
         return true
+    }
+
+    /// Card scan: keep mid media volume until OCR lock so hardware **volume up** can trigger scans.
+    var cardNeedsScanVolumeHeadroom: Bool {
+        usesCardInput && isArmed && !CardSongSession.shared.isLocked
+    }
+
+    /// After preview loads during Perform — skip max-volume boost while Card still needs scan headroom.
+    func applyPerformMediaVolumeAfterSongReady() {
+        if cardNeedsScanVolumeHeadroom {
+            dlog("[VOLUME] skip fake playback boost on songReady (card scan headroom)")
+            primeCardVolumeScanHeadroom(reason: "songReady")
+            return
+        }
+        applyFakePerformMediaVolumeBoost(reason: "songReady")
     }
 
     /// Fake Ringtone: best-effort max media volume via hidden `MPVolumeView` (public API; slider hook undocumented).
