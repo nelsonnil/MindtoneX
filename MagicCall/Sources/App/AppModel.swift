@@ -43,6 +43,10 @@ final class AppModel: ObservableObject {
     /// Camera OCR: ignore side-volume until Perform UI + MPVolumeView are ready (separate from playback boost grace).
     private var cameraVolumeScanReadyAt: CFTimeInterval = 0
     private var cardVolumeHeadroomTask: Task<Void, Never>?
+    private var postSpectatorCallVolumeHeadroomTask: Task<Void, Never>?
+    /// Ignore non-user volume **up** KVO briefly after Phone returns from Unknown outgoing call.
+    private var postOutgoingSpectatorSuppressVolumeUpUntil: CFTimeInterval = 0
+    private var postSpectatorCallScanHeadroomPending = false
     private var incomingCallID: UUID?
     private var incomingDetectedAt: CFTimeInterval = 0
     private var callPollTimer: Timer?
@@ -412,6 +416,10 @@ final class AppModel: ObservableObject {
         SystemVolume.shared.restoreSavedIfNeeded()
         cardVolumeHeadroomTask?.cancel()
         cardVolumeHeadroomTask = nil
+        postSpectatorCallVolumeHeadroomTask?.cancel()
+        postSpectatorCallVolumeHeadroomTask = nil
+        postOutgoingSpectatorSuppressVolumeUpUntil = 0
+        postSpectatorCallScanHeadroomPending = false
         volumeObservation = nil
         voicePerformTask?.cancel()
         voicePerformTask = nil
@@ -952,6 +960,12 @@ final class AppModel: ObservableObject {
 
                     guard volumeUp else { return }
 
+                    if CACurrentMediaTime() < self.postOutgoingSpectatorSuppressVolumeUpUntil,
+                       !SystemVolume.shared.isUserInitiatedHardwareChange(from: old, to: new) {
+                        dlog("[CARD] volume up ignored (outgoing call ended · spurious)")
+                        return
+                    }
+
                     guard self.acceptsCardVolumeScanTrigger(logReason: true) else { return }
                     let revert = SystemVolume.shared.levelForCardScanVolumeRevert(prePress: old)
                     self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.35
@@ -1021,10 +1035,41 @@ final class AppModel: ObservableObject {
         #endif
     }
 
-    /// Ignore side-volume KVO after spectator outgoing call ends (Phone app + headroom restore).
+    /// After Unknown spectator outgoing call: silent mid media volume for Camera scan + brief spurious-up gate.
     func beginVolumeIgnoreAfterOutgoingSpectatorCall() {
-        ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 4.0)
-        dlog("[CARD] volume up ignored (outgoing call ended) · 4s gate · volume down still opens Share after hang-up")
+        postOutgoingSpectatorSuppressVolumeUpUntil = CACurrentMediaTime() + 4.0
+        postSpectatorCallScanHeadroomPending = true
+        postSpectatorCallVolumeHeadroomTask?.cancel()
+        postSpectatorCallVolumeHeadroomTask = Task { @MainActor [weak self] in
+            await self?.runPostSpectatorCallScanHeadroom()
+        }
+        dlog("[VOLUME] post-call scan headroom scheduled · 4s spurious-up gate · volume down → Share only after hang-up")
+    }
+
+    private func runPostSpectatorCallScanHeadroom() async {
+        let target = SystemVolume.postSpectatorCallScanLevel
+        let maxAttempts = 28
+        for attempt in 0 ..< maxAttempts {
+            if Task.isCancelled { return }
+            guard isArmed || postSpectatorCallScanHeadroomPending else { return }
+
+            if !SystemVolume.shared.isAttached {
+                if attempt == 0 {
+                    dlog("[VOLUME] post-call headroom · waiting for MPVolumeView")
+                }
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                continue
+            }
+
+            let before = SystemVolume.shared.outputVolume
+            extendIgnoreForProgrammaticCardVolume(reason: "post-call headroom (silent)")
+            SystemVolume.shared.set(target, label: "post-call headroom (silent)", sliderRetries: 8)
+            postSpectatorCallScanHeadroomPending = false
+            dlog("[VOLUME] post-call headroom \(String(format: "%.2f", target)) (silent) · was \(String(format: "%.2f", before))")
+            return
+        }
+        postSpectatorCallScanHeadroomPending = false
+        dlog("[VOLUME] post-call headroom · MPVolumeView unavailable after retries")
     }
 
     /// Pre-arm media volume below 100 % / above 0 % so the first hardware press always produces KVO (volume up at max is silent).
@@ -1041,6 +1086,14 @@ final class AppModel: ObservableObject {
         for attempt in 0 ..< maxAttempts {
             if Task.isCancelled { return }
             guard usesCardInput, isArmed else { return }
+
+            if postSpectatorCallScanHeadroomPending {
+                if attempt == 0 {
+                    dlog("[CARD] headroom · deferring to post-call mid level (\(reason))")
+                }
+                try? await Task.sleep(nanoseconds: 120_000_000)
+                continue
+            }
 
             if !SystemVolume.shared.isAttached {
                 if attempt == 0 {

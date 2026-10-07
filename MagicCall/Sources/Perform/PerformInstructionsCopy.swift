@@ -44,7 +44,7 @@ enum PerformInstructionsCopy {
     static let duringPerform: [String] = [
         "Tap **Perform** on Home. The stage shows your screenshot — **no on-screen controls** for the audience.",
         "Arm song + words using your chosen inputs (same session — they run **in parallel**).",
-        "**Unknown contact (Caller name):** Perform may open a **Phone-style dial** inside MindtoneX. Enter their number and tap call — iOS opens the **real Phone app**; when you return, the **stage screenshot** is showing again and the app arms after that outgoing call ends.",
+        "**Unknown contact (Caller name):** Perform may open a **Phone-style dial** inside MindtoneX. Enter their number and tap call — iOS opens the **real Phone app**; when you return, the **stage screenshot** is showing again and the app arms after that outgoing call ends. With **Camera** song input, media volume resets to about **half** so **volume up** can scan (playback boosts again when the song locks).",
         "Give your number; when they call back, the app plays the locked song. Hang-up = music stops.",
         "**Performer peek (Feedback):** **Hold** your finger on the screen (~instant) to see **Song**, **Caller name**, and **Notes** lines; **release** to hide. Empty fields show **— —**. **ON by default** — tune position, size, and color under **Feedback**.",
         "**Optional real ringtone (manual):** If **Auto-open Share** is **OFF**, after hang-up press **volume down** on the side of the phone once → Share → **Use as Ringtone** (see **Optional: real ringtone** below).",

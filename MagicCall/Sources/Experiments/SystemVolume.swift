@@ -10,6 +10,8 @@ final class SystemVolume {
 
     /// Side buttons need room below 100 % / above 0 % so `outputVolume` KVO fires on the first press.
     static let cardScanHeadroomLevel: Float = 0.92
+    /// After Unknown spectator outgoing call, nudge media to mid so **volume up** can scan (not stuck at max).
+    static let postSpectatorCallScanLevel: Float = 0.50
     static let volumeCeilingThreshold: Float = 0.985
     static let volumeFloorThreshold: Float = 0.015
 
