@@ -28,7 +28,7 @@ struct StagePeekFeedbackSection: View {
                     Text("Hold-to-peek")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Keep your finger on the stage to see song, caller name, and Notes. Release to hide.")
+                    Text("Keep your finger on the screen to see song, caller name, and Notes. Release to hide.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)

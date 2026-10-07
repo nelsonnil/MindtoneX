@@ -92,7 +92,7 @@ struct PerformanceGuideSheet: View {
                     lines: PerformInstructionsCopy.performLog
                 )
 
-                Text("Exit Perform anytime: **two-finger swipe down** on the stage.")
+                Text("Exit Perform anytime: **two-finger swipe down** on the screen.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .padding(.top, 4)
