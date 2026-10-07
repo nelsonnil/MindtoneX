@@ -49,6 +49,7 @@ final class CardSongSession: ObservableObject {
     private var pendingCandidateKey: String?
     private var pendingCandidateQuery = ""
     private var pendingConfirmSameKey: String?
+    private var snapshotCuePlayed = false
 
     private init() {}
 
@@ -90,6 +91,7 @@ final class CardSongSession: ObservableObject {
         pendingCandidateKey = nil
         pendingCandidateQuery = ""
         pendingConfirmSameKey = nil
+        snapshotCuePlayed = false
         if had { dlog("[CARD] ↺ reset (\(reason))") }
     }
 
@@ -158,12 +160,18 @@ final class CardSongSession: ObservableObject {
             if gen == generation { scanTask = nil }
         }
         startCamera()
-        defer { stopCamera() }
+        var cameraStopped = false
+        func stopCaptureIfNeeded() {
+            guard !cameraStopped else { return }
+            cameraStopped = true
+            stopCamera()
+        }
+        defer { stopCaptureIfNeeded() }
         try? await Task.sleep(nanoseconds: 320_000_000)
         guard gen == generation else { return }
         await MainActor.run { PerformanceCues.cardScanningPulse() }
 
-        let ranked = await capture.collectFramesRankedByText(duration: CardSettings.burstSeconds, maxCandidates: 4)
+        let ranked = await capture.collectFramesRankedByText(duration: CardSettings.burstSeconds, maxCandidates: 3)
         var frameTexts: [[CardOCRReading]] = ranked.map(\.readings)
         var bestLineReadings = ranked.first?.readings ?? []
         var bestBuffer = ranked.first?.buffer
@@ -197,7 +205,13 @@ final class CardSongSession: ObservableObject {
         guard gen == generation else { return }
 
         if VoiceSettings.apiKey != nil, let buf = bestBuffer, let jpeg = CardImageEncoder.jpegData(from: buf) {
-            let hint = bestLineReadings.map(\.text).joined(separator: "\n")
+            let hint = CardOCRProcessor.orderedLineTexts(from: bestLineReadings).joined(separator: "\n")
+            stopCaptureIfNeeded()
+            if context == .perform, !snapshotCuePlayed {
+                snapshotCuePlayed = true
+                PerformanceCues.cardSnapshotSent()
+                PerformUserLog.shared.log("Camera · photo sent · reading card…")
+            }
             do {
                 let ai = try await CardHandwritingPicker.pick(
                     jpeg: jpeg,
@@ -205,7 +219,7 @@ final class CardSongSession: ObservableObject {
                     expectCallerLine: CardOCRLayout.usesCallerLine,
                     expectNotesLine: CardOCRLayout.usesNotesLine
                 )
-                dlog("[CARD] OpenAI vision · \(ai.reasoning) · conf=\(String(format: "%.2f", ai.confidence))")
+                dlog("[CARD] OpenAI vision · \(ai.reasoning) · conf=\(String(format: "%.2f", ai.confidence)) · query=\(ai.searchQuery)")
                 if context == .perform {
                     PerformUserLog.shared.log("Camera · OpenAI · \(WordApiInputPanel.truncated(ai.reasoning, max: 48))")
                 }
@@ -213,11 +227,18 @@ final class CardSongSession: ObservableObject {
                     expectCaller: CardOCRLayout.usesCallerLine,
                     expectNotes: CardOCRLayout.usesNotesLine
                 )
-                if let song = ai.asSongPick(), song.hasSong {
-                    let query = song.searchQuery
-                    let ok = await AppModel.shared.prepareCardQuery(query)
-                    guard gen == generation else { return }
-                    if ok, let track = AppModel.shared.selected {
+                if ai.hasSong {
+                    for query in ai.storeSearchQueries() {
+                        let ok = await AppModel.shared.prepareCardQuery(query)
+                        guard gen == generation else { return }
+                        guard ok, let track = AppModel.shared.selected else {
+                            dlog("[CARD] OpenAI try “\(query)” → no match")
+                            continue
+                        }
+                        guard trackMatchesCardPick(track, pick: ai) else {
+                            dlog("[CARD] OpenAI reject store mismatch · wanted «\(ai.title)» got «\(track.title)»")
+                            continue
+                        }
                         let key = CardTextMapper.canonicalKey(from: track)
                         await handleScanOutcome(
                             gen: gen,
@@ -225,11 +246,12 @@ final class CardSongSession: ObservableObject {
                             query: query,
                             ocrSample: hint,
                             track: track,
-                            ocrParse: ocr
+                            ocrParse: ocr,
+                            skipRecognizedCue: snapshotCuePlayed
                         )
                         return
                     }
-                    dlog("[CARD] OpenAI song “\(query)” → store no preview")
+                    dlog("[CARD] OpenAI song queries exhausted · no acceptable preview")
                 }
             } catch {
                 dlog("[CARD] OpenAI vision fallback: \(error.localizedDescription)")
@@ -316,13 +338,24 @@ final class CardSongSession: ObservableObject {
         )
     }
 
+    private func trackMatchesCardPick(_ track: PreviewTrack, pick: CardHandwritingPick) -> Bool {
+        let wantTitle = PreviewService.normalize(pick.title)
+        guard wantTitle.count >= 3 else { return true }
+        let gotTitle = PreviewService.normalize(track.title)
+        if gotTitle.contains(wantTitle) || wantTitle.contains(gotTitle) { return true }
+        let wantArtist = PreviewService.normalize(pick.artist)
+        if !wantArtist.isEmpty, gotTitle.contains(wantArtist), wantTitle.count < 4 { return false }
+        return wantTitle.split(separator: " ").count <= 1
+    }
+
     private func handleScanOutcome(
         gen: Int,
         vote: (key: String, value: Int)?,
         query: String?,
         ocrSample: String,
         track: PreviewTrack? = nil,
-        ocrParse: CardOCRParse? = nil
+        ocrParse: CardOCRParse? = nil,
+        skipRecognizedCue: Bool = false
     ) async {
         guard gen == generation else { return }
         lastOCRText = ocrSample
@@ -347,7 +380,9 @@ final class CardSongSession: ObservableObject {
         pendingCandidateQuery = query
 
         if context == .perform {
-            PerformanceCues.cardSongRecognized()
+            if !skipRecognizedCue {
+                PerformanceCues.cardSongRecognized()
+            }
             if AppModel.shared.loadState == .ready {
                 PerformanceCues.cardSongReady()
             }

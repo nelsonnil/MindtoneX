@@ -33,7 +33,7 @@ enum CardOCRProcessor {
             request.revision = VNRecognizeTextRequestRevision3
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
-            request.recognitionLanguages = ["en-US", "es-ES"]
+            request.recognitionLanguages = CardSettings.handwritingLanguage.visionLanguageCodes
             request.minimumTextHeight = 0.03
 
             let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up, options: [:])

@@ -7,6 +7,40 @@ enum CardSettings {
         static let burstSeconds = "card.burstSeconds"
         static let maxScanRetries = "card.maxScanRetries"
         static let practiceTipsSeen = "card.practiceTipsSeen"
+        static let handwritingLanguage = "card.handwritingLanguage"
+    }
+
+    /// Language(s) on the handwritten card — Vision OCR + OpenAI vision hints.
+    enum HandwritingLanguage: String, CaseIterable, Identifiable {
+        case englishAndSpanish
+        case english
+        case spanish
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .englishAndSpanish: return "English + Spanish"
+            case .english: return "English"
+            case .spanish: return "Español"
+            }
+        }
+
+        var visionLanguageCodes: [String] {
+            switch self {
+            case .englishAndSpanish: return ["en-US", "es-ES"]
+            case .english: return ["en-US"]
+            case .spanish: return ["es-ES"]
+            }
+        }
+
+        var openAIHint: String {
+            switch self {
+            case .englishAndSpanish: return "Card may mix English and Spanish (song titles often English)."
+            case .english: return "Card text is English (song titles, artist names)."
+            case .spanish: return "Card text is Spanish."
+            }
+        }
     }
 
     /// Short grab after volume press — best frame by text amount, not a long burst.
@@ -19,7 +53,12 @@ enum CardSettings {
         d.register(defaults: [
             Key.burstSeconds: defaultBurstSeconds,
             Key.maxScanRetries: defaultMaxScanRetries,
+            Key.handwritingLanguage: HandwritingLanguage.englishAndSpanish.rawValue,
         ])
+    }
+
+    static var handwritingLanguage: HandwritingLanguage {
+        HandwritingLanguage(rawValue: d.string(forKey: Key.handwritingLanguage) ?? "") ?? .englishAndSpanish
     }
 
     static var burstSeconds: Double {

@@ -112,6 +112,14 @@ enum PerformanceCues {
         dlog("[CUE] card scanning pulse")
     }
 
+    /// Photo captured and sent (camera can stop; OpenAI / store may still run).
+    @MainActor
+    static func cardSnapshotSent() {
+        guard vibrateOnLock else { return }
+        playOneLongBuzz(duration: 0.26, sharpness: 0.55)
+        dlog("[CUE] card snapshot sent (1× medium buzz)")
+    }
+
     /// OCR matched a song title (first performer cue during Card scan).
     @MainActor
     static func cardSongRecognized() {

@@ -9,8 +9,13 @@ struct PerformanceCard: View {
     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
     @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
     @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
+    @AppStorage(VoiceSettings.Key.inputMode) private var songInputModeRaw = VoiceSettings.InputMode.card.rawValue
+    @AppStorage(CardSettings.Key.handwritingLanguage) private var cardLanguageRaw = CardSettings.HandwritingLanguage.englishAndSpanish.rawValue
 
     private var hasScreenshot: Bool { StageImageStore.hasScreenshot }
+    private var songInputIsCamera: Bool {
+        (VoiceSettings.InputMode(rawValue: songInputModeRaw) ?? .card) == .card
+    }
 
     private var performanceSummary: String {
         let shot = hasScreenshot ? "Screenshot set" : "Screenshot required"
@@ -64,6 +69,24 @@ struct PerformanceCard: View {
                     }
                 }
                 .tint(OracleTheme.gold)
+
+                if songInputIsCamera {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Camera card language")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(OracleTheme.textPrimary)
+                        Picker("Card language", selection: $cardLanguageRaw) {
+                            ForEach(CardSettings.HandwritingLanguage.allCases) { lang in
+                                Text(lang.title).tag(lang.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        Text("Used for on-device OCR and OpenAI vision when reading the handwritten card (song + word lines).")
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
         }
     }
