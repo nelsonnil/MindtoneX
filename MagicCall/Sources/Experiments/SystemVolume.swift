@@ -39,10 +39,12 @@ final class SystemVolume {
     }
 
     private var slider: UISlider? {
-        volumeView?.subviews.compactMap { $0 as? UISlider }.first
+        guard let volumeView, volumeView.window != nil else { return nil }
+        return volumeView.subviews.compactMap { $0 as? UISlider }.first
     }
 
-    var isAttached: Bool { volumeView != nil }
+    /// The slider only moves system volume while its `MPVolumeView` is in a window (a stale Home/Stage view is not).
+    var isAttached: Bool { volumeView?.window != nil }
 
     var outputVolume: Float { AVAudioSession.sharedInstance().outputVolume }
 
@@ -88,6 +90,19 @@ final class SystemVolume {
         }
         dlog("[CARD] headroom · ok at \(String(format: "%.2f", v)) (\(reason))")
         return false
+    }
+
+    /// Card Perform entry: silently bring media down to the scan level (side **volume up** must have room to move).
+    @discardableResult
+    func dropToCardScanLevelIfAbove(reason: String, sliderRetries: Int = 8) -> Bool {
+        let v = outputVolume
+        let target = Self.cardScanHeadroomLevel
+        if v > target + 0.02 {
+            dlog("[CARD] headroom · entry media \(String(format: "%.2f", v)) → \(String(format: "%.2f", target)) (\(reason))")
+            set(target, label: "\(reason) headroom", sliderRetries: sliderRetries)
+            return true
+        }
+        return ensureHeadroomForHardwareVolumeButtons(reason: reason, sliderRetries: sliderRetries)
     }
 
     func set(_ value: Float, label: String? = nil, sliderRetries: Int = 0) {

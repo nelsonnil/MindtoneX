@@ -400,9 +400,6 @@ final class AppModel: ObservableObject {
             ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 1.2)
             SystemVolume.shared.set(Float(Prefs.mediaVolumeTarget), label: "stage target", sliderRetries: 5)
         }
-        if usesCardInput {
-            primeCardVolumeScanHeadroom(reason: "Camera perform arm")
-        }
         if Prefs.hotStandby { audio.startStandby() }
         calls.reassertDelegate()
         ensureVolumeButtonWatch()
@@ -413,6 +410,10 @@ final class AppModel: ObservableObject {
         isArmed = true
         isAudible = false
         phase = .stage
+        if usesCardInput {
+            // Needs `isArmed` (guard) and the stage's `HiddenVolumeView`, which mounts after `phase = .stage`.
+            primeCardVolumeScanHeadroom(reason: "Camera perform arm", entry: true)
+        }
         Self.setScreenAwakeWhileInForeground(true)
         CallDirectorySync.syncPerformArmed(true, reason: "arm")
         startWordApiIfNeeded(context: .perform)
@@ -1093,15 +1094,23 @@ final class AppModel: ObservableObject {
     }
 
     /// Pre-arm media volume below 100 % / above 0 % so the first hardware press always produces KVO (volume up at max is silent).
-    func primeCardVolumeScanHeadroom(reason: String) {
-        guard usesCardInput, isArmed else { return }
+    /// `entry`: Perform just started — drop to `cardScanHeadroomLevel` whenever media is above it, not only at 100 %.
+    func primeCardVolumeScanHeadroom(reason: String, entry: Bool = false) {
+        guard usesCardInput, isArmed else {
+            dlog("[CARD] headroom skipped (\(reason)) · card=\(usesCardInput) armed=\(isArmed)")
+            return
+        }
+        guard !CardSongSession.shared.isLocked else {
+            dlog("[CARD] headroom skipped (\(reason)) · song already locked")
+            return
+        }
         cardVolumeHeadroomTask?.cancel()
         cardVolumeHeadroomTask = Task { @MainActor [weak self] in
-            await self?.runCardVolumeHeadroomPrime(reason: reason)
+            await self?.runCardVolumeHeadroomPrime(reason: reason, entry: entry)
         }
     }
 
-    private func runCardVolumeHeadroomPrime(reason: String) async {
+    private func runCardVolumeHeadroomPrime(reason: String, entry: Bool) async {
         let maxAttempts = 28
         for attempt in 0 ..< maxAttempts {
             if Task.isCancelled { return }
@@ -1123,10 +1132,19 @@ final class AppModel: ObservableObject {
                 continue
             }
 
-            let applied = SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: reason)
+            let applied = entry
+                ? SystemVolume.shared.dropToCardScanLevelIfAbove(reason: reason)
+                : SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: reason)
             if applied {
                 extendIgnoreForProgrammaticCardVolume(reason: "headroom \(reason)")
                 cameraVolumeScanReadyAt = max(cameraVolumeScanReadyAt, CACurrentMediaTime() + 0.4)
+                try? await Task.sleep(nanoseconds: 450_000_000)
+                if Task.isCancelled { return }
+                let now = SystemVolume.shared.outputVolume
+                dlog("[CARD] headroom verify (\(reason)) · media vol now \(String(format: "%.2f", now))")
+                if SystemVolume.shared.isAtMediaVolumeCeiling {
+                    dlog("[CARD] headroom FAILED · iOS ignored the hidden volume slider · lower volume by hand once")
+                }
             } else if SystemVolume.shared.isAtMediaVolumeCeiling {
                 dlog("[CARD] volume up blocked (still at ceiling — headroom pending; press **volume up** to scan)")
             }
