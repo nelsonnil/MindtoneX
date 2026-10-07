@@ -374,6 +374,7 @@ final class AppModel: ObservableObject {
         if usesCardInput {
             cameraVolumeScanReadyAt = CACurrentMediaTime() + 0.55
             SystemVolume.shared.ensureHeadroomForHardwareVolumeButtons(reason: "Camera perform arm")
+            ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 2.0)
             dlog("[CARD] perform arm · media vol=\(String(format: "%.2f", SystemVolume.shared.outputVolume)) · scan unlocks in ~0.5s")
         } else {
             applyFakePerformMediaVolumeBoost(reason: "arm")
@@ -479,7 +480,7 @@ final class AppModel: ObservableObject {
         dlog("[APP] paused setup audio/voice (\(reason))")
     }
 
-    /// After the spectator hangs up in Fake Ringtone: stop playback, allow long-press → Share, stay on
+    /// After the spectator hangs up in Fake Ringtone: stop playback, allow volume-down → Share, stay on
     /// stage armed for another call with the same locked song. Share Ringtone Perform is unaffected.
     private func enterPerformedState(reason: String) {
         guard isArmed, !performed else { return }
@@ -502,7 +503,7 @@ final class AppModel: ObservableObject {
         }
         ensureVolumeButtonWatch()
         recordRecentLoadedSongIfReady(reason: "performed:\(reason)")
-        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; long-press stage → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
+        dlog("[TRIGGER] ■ PERFORMED (\(reason)) — playback stopped; volume down → Share; armed for next call. Leave Perform (two-finger swipe down) to reset.")
     }
 
     /// Manual search only — Voice/Notes/API songs live in Library (Recently used / Favorites).
@@ -557,7 +558,7 @@ final class AppModel: ObservableObject {
             return
         }
         guard !performed else {
-            dlog("[TRIGGER] “\(source)” ignorado: post-llamada (long-press → Compartir o nueva llamada)")
+            dlog("[TRIGGER] “\(source)” ignorado: post-llamada (volume down → Share o nueva llamada)")
             return
         }
         guard !isAudible else {
@@ -913,13 +914,14 @@ final class AppModel: ObservableObject {
                 dlog("Volumen multimedia \(String(format: "%.2f", old)) → \(String(format: "%.2f", new))")
                 if CardSongSession.shared.capturesVolumeButtons {
                     if SystemVolume.shared.isProgrammaticVolumeChange {
-                        dlog("[CARD] volume KVO ignored (programmatic slider)")
+                        dlog("[CARD] volume ignored (programmatic slider)")
                         return
                     }
-                    guard self.acceptsCardVolumeScanTrigger() else {
-                        dlog("[CARD] volume KVO ignored (session settling)")
+                    if !SystemVolume.shared.isUserInitiatedHardwareChange(from: old, to: new) {
+                        dlog("[CARD] volume ignored (headroom / programmatic echo)")
                         return
                     }
+                    guard self.acceptsCardVolumeScanTrigger(logReason: true) else { return }
                     // Block echo from reverting volume; do not re-check this inside volumeScanTriggered().
                     self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.35
                     SystemVolume.shared.set(old, label: "card scan revert")
@@ -988,13 +990,30 @@ final class AppModel: ObservableObject {
         #endif
     }
 
+    /// Ignore side-volume KVO after spectator outgoing call ends (Phone app + headroom restore).
+    func beginVolumeIgnoreAfterOutgoingSpectatorCall() {
+        ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 4.0)
+        dlog("[CARD] volume ignored (outgoing call ended) · 4s gate")
+    }
+
     /// Camera OCR: hardware volume may start a scan (KVO / Camera Control gate only).
-    func acceptsCardVolumeScanTrigger() -> Bool {
-        guard usesCardInput, isArmed else { return false }
-        guard CardSongSession.shared.capturesVolumeButtons else { return false }
-        guard CACurrentMediaTime() >= cameraVolumeScanReadyAt else { return false }
+    func acceptsCardVolumeScanTrigger(logReason: Bool = false) -> Bool {
+        guard usesCardInput, isArmed else {
+            if logReason { dlog("[CARD] volume ignored (not armed card perform)") }
+            return false
+        }
+        guard CardSongSession.shared.capturesVolumeButtons else {
+            if logReason { dlog("[CARD] volume ignored (volume capture off)") }
+            return false
+        }
+        guard CACurrentMediaTime() >= cameraVolumeScanReadyAt else {
+            if logReason { dlog("[CARD] volume ignored (perform UI settling)") }
+            return false
+        }
         guard CACurrentMediaTime() > ignoreVolumeChangesUntil else {
-            dlog("[CARD] volume blocked · ignoreUntil=\(String(format: "%.2f", ignoreVolumeChangesUntil - CACurrentMediaTime()))s")
+            if logReason {
+                dlog("[CARD] volume ignored (cooldown · \(String(format: "%.2f", ignoreVolumeChangesUntil - CACurrentMediaTime()))s left)")
+            }
             return false
         }
         return true

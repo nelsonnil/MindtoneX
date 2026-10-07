@@ -62,6 +62,7 @@ enum WordApiContactPerformGate {
         outgoingCallUUID = nil
         dlog("[CONTACT] outgoing ended · saved identification \(dialedPhoneDigits)")
         PerformUserLog.shared.log("Spectator number saved · ready to arm")
+        AppModel.shared.beginVolumeIgnoreAfterOutgoingSpectatorCall()
         finishPendingPerform()
     }
 

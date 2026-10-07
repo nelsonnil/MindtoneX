@@ -13,9 +13,21 @@ final class SystemVolume {
     private var savedOutputVolume: Float?
     /// Ignore side-button KVO briefly after we move the slider in code (headroom / boost).
     private var programmaticChangeUntil: CFTimeInterval = 0
+    /// Last level written via `MPVolumeView` — used to ignore KVO echo after headroom / restore.
+    private(set) var lastProgrammaticLevel: Float?
 
     var isProgrammaticVolumeChange: Bool {
         CACurrentMediaTime() < programmaticChangeUntil
+    }
+
+    /// True when the side buttons likely moved volume (not our slider or call/headroom echo).
+    func isUserInitiatedHardwareChange(from old: Float, to new: Float) -> Bool {
+        guard abs(new - old) > 0.001 else { return false }
+        guard !isProgrammaticVolumeChange else { return false }
+        if let baseline = lastProgrammaticLevel, abs(new - baseline) < 0.02, abs(old - baseline) < 0.02 {
+            return false
+        }
+        return true
     }
 
     private var slider: UISlider? {
@@ -66,7 +78,8 @@ final class SystemVolume {
         let clamped = min(max(value, 0), 1)
         // El slider necesita un ciclo de runloop tras aparecer para aceptar valores.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            self.programmaticChangeUntil = CACurrentMediaTime() + 0.5
+            self.lastProgrammaticLevel = clamped
+            self.programmaticChangeUntil = CACurrentMediaTime() + 1.0
             slider.value = clamped
             slider.sendActions(for: .valueChanged)
             let tag = label.map { " (\($0))" } ?? ""
