@@ -9,8 +9,17 @@ struct AiVoiceInputPanel: View {
 
     @State private var keyDraft = ""
     @State private var savedKeyHint: String?
+    @State private var connectionTesting = false
+    @State private var connectionTestResult: (ok: Bool, text: String)?
 
     private var configured: Bool { VoiceSettings.isConfigured }
+
+    /// Key to validate: unsaved field text wins over Keychain.
+    private var effectiveAPIKeyForTest: String? {
+        let draft = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !draft.isEmpty { return draft }
+        return VoiceSettings.apiKey
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -32,7 +41,11 @@ struct AiVoiceInputPanel: View {
 
     private var connectionBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            OracleEyebrow(text: "Speech")
+            OracleEyebrow(text: "OpenAI connection")
+            Text("Paste your **OpenAI API key** here. Voice recognition and Camera card vision both use this key.")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             VStack(spacing: 0) {
                 languageMenuRow
@@ -85,13 +98,20 @@ struct AiVoiceInputPanel: View {
 
     private var apiKeyRow: some View {
         VStack(alignment: .leading, spacing: 10) {
+            Text("OpenAI API key")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+
             HStack(spacing: 10) {
-                SecureField("", text: $keyDraft)
+                SecureField("sk-… paste key from platform.openai.com", text: $keyDraft)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .font(.subheadline)
                     .submitLabel(.done)
                     .onSubmit { commitKeyDraft() }
+                    .onChange(of: keyDraft) { _, _ in
+                        connectionTestResult = nil
+                    }
 
                 if !keyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Button(action: commitKeyDraft) {
@@ -101,23 +121,55 @@ struct AiVoiceInputPanel: View {
                             .foregroundStyle(OracleTheme.gold)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Save")
+                    .accessibilityLabel("Save API key")
                 }
+
+                Button {
+                    Task { await runConnectionTest() }
+                } label: {
+                    Group {
+                        if connectionTesting {
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(OracleTheme.gold)
+                        } else {
+                            Text("Test")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                    }
+                    .frame(minWidth: 44)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(OracleTheme.gold)
+                .disabled(connectionTesting || effectiveAPIKeyForTest == nil)
+                .accessibilityLabel("Test OpenAI connection")
             }
             .padding(10)
             .background(Color.white.opacity(0.06))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
+            if let connectionTestResult {
+                Label(connectionTestResult.text, systemImage: connectionTestResult.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(connectionTestResult.ok ? OracleTheme.gold : OracleTheme.coral)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             if let hint = savedKeyHint {
                 HStack(spacing: 8) {
-                    Label("Connected · \(hint)", systemImage: "checkmark.seal.fill")
+                    Label("Saved · \(hint)", systemImage: "key.fill")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(OracleTheme.gold)
+                        .foregroundStyle(OracleTheme.textSecondary)
                     Spacer(minLength: 8)
-                    Button("Disconnect") {
+                    Button("Remove key") {
                         VoiceSettings.saveAPIKey(nil)
                         keyDraft = ""
                         refreshKey()
+                        connectionTestResult = nil
                         dlog("[VOICE] token removed")
                     }
                     .font(.caption.weight(.semibold))
@@ -145,7 +197,7 @@ struct AiVoiceInputPanel: View {
             livePreviewTestControls
 
             if !configured {
-                Label("Add your key under Speech to enable tests.", systemImage: "link.circle")
+                Label("Add your OpenAI API key above to enable voice tests.", systemImage: "link.circle")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             }
@@ -405,5 +457,24 @@ struct AiVoiceInputPanel: View {
         keyDraft = ""
         refreshKey()
         dlog("[VOICE] token saved to Keychain")
+    }
+
+    private func runConnectionTest() async {
+        guard let key = effectiveAPIKeyForTest else {
+            connectionTestResult = (false, "Paste your OpenAI API key, then tap Test.")
+            return
+        }
+        connectionTesting = true
+        connectionTestResult = nil
+        defer { connectionTesting = false }
+
+        if let error = await VoiceOpenAIPreflight.validate(apiKey: key) {
+            connectionTestResult = (false, error)
+        } else {
+            connectionTestResult = (true, "Connected")
+            if keyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+                commitKeyDraft()
+            }
+        }
     }
 }
