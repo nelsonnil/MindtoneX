@@ -66,6 +66,7 @@
 		6DE487B3B435779601483AE7 /* WordApiContactPerformGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */; };
 		75092964F794A1AF322ABF44 /* OracleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8F3AAB4CE4D47C84E6771 /* OracleSheets.swift */; };
 		79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */; };
+		F9A4B2C3D5E6789012345DEF /* WordApiIOSPhoneDialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F3A1B2C4D5678901234ABC /* WordApiIOSPhoneDialView.swift */; };
 		7BA36D68D4A7708928889CA2 /* SongInputStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */; };
 		8BC10BB4807461B2F102F8FA /* ApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30B3D15953FEAA8EA8E7828 /* ApiSettingsView.swift */; };
 		8C4101AD9A1105D40C87AAAA /* CardLineParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223FF801202E5B7C647700E7 /* CardLineParser.swift */; };
@@ -221,6 +222,7 @@
 		95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactShowState.swift; sourceTree = "<group>"; };
 		97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongPicker.swift; sourceTree = "<group>"; };
 		9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactViews.swift; sourceTree = "<group>"; };
+		E8F3A1B2C4D5678901234ABC /* WordApiIOSPhoneDialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiIOSPhoneDialView.swift; sourceTree = "<group>"; };
 		C50AE28CFE344C389AD52947 /* CardHandwritingPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardHandwritingPicker.swift; sourceTree = "<group>"; };
 		0C9C8C3312524B0985087781 /* CardImageEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardImageEncoder.swift; sourceTree = "<group>"; };
 		9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
@@ -385,6 +387,7 @@
 				16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */,
 				95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */,
 				9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */,
+				E8F3A1B2C4D5678901234ABC /* WordApiIOSPhoneDialView.swift */,
 				13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */,
 				7BDF1EA0492BCF11335526EC /* WordApiSession.swift */,
 				246424FC8857825942B19C91 /* WordApiSettings.swift */,
@@ -802,6 +805,7 @@
 				6DE487B3B435779601483AE7 /* WordApiContactPerformGate.swift in Sources */,
 				DB0E5A96FCA973B7D2BCC881 /* WordApiContactShowState.swift in Sources */,
 				79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */,
+				F9A4B2C3D5E6789012345DEF /* WordApiIOSPhoneDialView.swift in Sources */,
 				9CAF4275C647D0F5AA7516BE /* WordApiInputPanel.swift in Sources */,
 				8EE3FDC0948FC9B790A9AACA /* WordApiSession.swift in Sources */,
 				CFEA5F4AADB2A23B17F7A0AA /* WordApiSettings.swift in Sources */,

@@ -106,8 +106,9 @@ struct MainShellView: View {
                 ApiSettingsSheet()
             }
         }
-        .sheet(isPresented: $model.wordSpectatorDialSheet) {
+        .fullScreenCover(isPresented: $model.wordSpectatorDialSheet) {
             WordApiSpectatorDialSheet()
+                .environmentObject(model)
         }
         .sheet(isPresented: $model.wordKnownContactPicker) {
             WordApiKnownContactPicker(

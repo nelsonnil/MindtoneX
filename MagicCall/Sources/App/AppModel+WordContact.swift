@@ -3,6 +3,13 @@ import Contacts
 import Foundation
 
 extension AppModel {
+    /// Pantalla de escena (screenshot) mientras la llamada saliente al espectador está en curso.
+    func showStageShellForOutgoingSpectatorCall() {
+        phase = .stage
+        Self.setScreenAwakeWhileInForeground(true)
+        dlog("[CONTACT] outgoing dial → stage screenshot")
+    }
+
     func runPerformWithWordContactPrep() {
         WordApiContactPerformGate.prepareForPerform(
             presentDial: { [weak self] in
