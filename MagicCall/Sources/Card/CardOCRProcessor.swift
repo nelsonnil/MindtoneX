@@ -8,14 +8,25 @@ struct CardOCRReading: Sendable {
     let topRank: CGFloat
 }
 
+struct CardOCRVisionResult: Sendable {
+    let readings: [CardOCRReading]
+    let observationCount: Int
+    let visionError: String?
+}
+
 /// Vision text recognition (revision 3, accurate; languages from `CardSettings.visionRecognitionLanguages`).
 enum CardOCRProcessor {
     static func recognize(_ pixelBuffer: CVPixelBuffer) async -> [CardOCRReading] {
+        let result = await recognizeDetailed(pixelBuffer)
+        return result.readings
+    }
+
+    static func recognizeDetailed(_ pixelBuffer: CVPixelBuffer) async -> CardOCRVisionResult {
         await withCheckedContinuation { cont in
             let request = VNRecognizeTextRequest { req, err in
                 if let err {
                     dlog("[OCR] Vision error: \(err.localizedDescription)")
-                    cont.resume(returning: [])
+                    cont.resume(returning: CardOCRVisionResult(readings: [], observationCount: 0, visionError: err.localizedDescription))
                     return
                 }
                 let observations = (req.results as? [VNRecognizedTextObservation]) ?? []
@@ -28,7 +39,7 @@ enum CardOCRProcessor {
                     let topRank = box.origin.y + box.height
                     lines.append(CardOCRReading(text: t, confidence: best.confidence, topRank: topRank))
                 }
-                cont.resume(returning: lines)
+                cont.resume(returning: CardOCRVisionResult(readings: lines, observationCount: observations.count, visionError: nil))
             }
             request.revision = VNRecognizeTextRequestRevision3
             request.recognitionLevel = .accurate
@@ -41,7 +52,7 @@ enum CardOCRProcessor {
                 try handler.perform([request])
             } catch {
                 dlog("[OCR] perform failed: \(error.localizedDescription)")
-                cont.resume(returning: [])
+                cont.resume(returning: CardOCRVisionResult(readings: [], observationCount: 0, visionError: error.localizedDescription))
             }
         }
     }

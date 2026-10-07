@@ -133,6 +133,22 @@ final class CardCaptureService: NSObject {
         return top.map { ($0.0, $0.1, $0.2) }
     }
 
+    func hasFrame() -> Bool {
+        frameLock.lock()
+        defer { frameLock.unlock() }
+        return latestBuffer != nil
+    }
+
+    /// Wait until at least one video frame arrives (session must be running).
+    func waitForFirstFrame(timeout: TimeInterval) async -> Bool {
+        let end = Date().addingTimeInterval(timeout)
+        while Date() < end {
+            if hasFrame() { return true }
+            try? await Task.sleep(nanoseconds: 45_000_000)
+        }
+        return false
+    }
+
     private func copyLatestBuffer() -> CVPixelBuffer? {
         frameLock.lock()
         defer { frameLock.unlock() }

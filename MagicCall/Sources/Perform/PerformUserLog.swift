@@ -42,6 +42,7 @@ final class PerformUserLog: ObservableObject {
     @Published private(set) var sessions: [Session] = []
     private var activeSessionID: UUID?
     private var lastConnectionWarningAt: Date?
+    private var oncePerSessionKeys: Set<String> = []
 
     private init() {
         reloadFromDisk()
@@ -54,6 +55,7 @@ final class PerformUserLog: ObservableObject {
 
     func beginSession(inputLabel: String) {
         lastConnectionWarningAt = nil
+        oncePerSessionKeys = []
         if activeSessionID != nil { endSession(reason: "New perform") }
         var session = Session(title: inputLabel)
         session.entries.append(Entry(message: "Perform started · \(inputLabel) · log shows inputs + recognized values"))
@@ -81,6 +83,13 @@ final class PerformUserLog: ObservableObject {
         let now = Date()
         if let last = lastConnectionWarningAt, now.timeIntervalSince(last) < minGap { return }
         lastConnectionWarningAt = now
+        log(message)
+    }
+
+    /// Log at most once per active Perform session (e.g. App Group / Call Directory hints).
+    func logOncePerSession(_ key: String, _ message: String) {
+        guard !oncePerSessionKeys.contains(key) else { return }
+        oncePerSessionKeys.insert(key)
         log(message)
     }
 

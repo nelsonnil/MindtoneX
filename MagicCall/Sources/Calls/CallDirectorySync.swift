@@ -107,7 +107,17 @@ enum CallDirectorySync {
         let appGroup = CallerLabelStore.isAppGroupAvailable
         dlog("[CALL-ID] readiness · appGroup=\(appGroup) numbers=\(snapshot.identificationPhoneNumbers) armed=\(snapshot.performArmed)")
         if !appGroup {
-            PerformUserLog.shared.log("Caller name: App Group not signed — rebuild with \(CallerLabelStore.appGroupID).")
+            #if DEBUG
+            PerformUserLog.shared.logOncePerSession(
+                "call-id.app-group",
+                "Caller name · App Group not signed — rebuild with \(CallerLabelStore.appGroupID) on app + Call Directory extension. Song/camera still work; caller label extension may not."
+            )
+            #else
+            PerformUserLog.shared.logOncePerSession(
+                "call-id.app-group",
+                "Caller name · needs App Group \(CallerLabelStore.appGroupID) in provisioning (app + extension). Song/camera unaffected."
+            )
+            #endif
         }
         if snapshot.identificationPhoneNumbers.isEmpty {
             if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .unknown {
@@ -129,7 +139,7 @@ enum CallDirectorySync {
                 MainActor.assumeIsolated {
                     dlog("[CALL-ID] extension status=\(status.rawValue)\(error.map { " error=\($0.localizedDescription)" } ?? "")")
                     if status != .enabled {
-                        PerformUserLog.shared.log(disabledHint)
+                        PerformUserLog.shared.logOncePerSession("call-id.extension-disabled", disabledHint)
                     }
                 }
             }

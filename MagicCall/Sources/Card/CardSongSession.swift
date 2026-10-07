@@ -146,8 +146,18 @@ final class CardSongSession: ObservableObject {
         state = .scanning
         AppModel.shared.primeCardVolumeScanHeadroom(reason: "pre card scan")
         if context == .perform {
-            let mode = VoiceSettings.apiKey != nil ? "snapshot + OpenAI" : "snapshot + local OCR"
-            PerformUserLog.shared.log("Camera · \(mode) (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)")
+            if VoiceSettings.apiKey != nil {
+                PerformUserLog.shared.log(
+                    "Camera · snapshot + OpenAI (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)"
+                )
+            } else {
+                PerformUserLog.shared.log(
+                    "Camera · OpenAI skipped (no API key — add under Song → Voice → Test)"
+                )
+                PerformUserLog.shared.log(
+                    "Camera · snapshot + local OCR (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)"
+                )
+            }
         }
         let gen = generation
         scanTask = Task { [weak self] in
@@ -167,7 +177,21 @@ final class CardSongSession: ObservableObject {
             stopCamera()
         }
         defer { stopCaptureIfNeeded() }
-        try? await Task.sleep(nanoseconds: 320_000_000)
+        if !CardSettings.cameraAuthorized {
+            if context == .perform {
+                PerformUserLog.shared.log("Camera · OCR failed · camera access denied (Settings → MindtoneX → Camera)")
+            }
+            await handleScanOutcome(gen: gen, vote: nil, query: nil, ocrSample: "")
+            return
+        }
+        let gotFrame = await capture.waitForFirstFrame(timeout: 0.85)
+        guard gen == generation else { return }
+        if !gotFrame {
+            if context == .perform {
+                PerformUserLog.shared.log("Camera · OCR failed · camera not running (no video frame yet — try volume up again)")
+            }
+        }
+        try? await Task.sleep(nanoseconds: 450_000_000)
         guard gen == generation else { return }
         await MainActor.run { PerformanceCues.cardScanningPulse() }
 
@@ -181,12 +205,18 @@ final class CardSongSession: ObservableObject {
             guard gen == generation else { return }
             guard !frames.isEmpty else {
                 dlog("[OCR] no frames in snapshot")
+                if context == .perform {
+                    PerformUserLog.shared.log("Camera · OCR failed · blank frame (no pixels captured)")
+                }
                 await handleScanOutcome(gen: gen, vote: nil, query: nil, ocrSample: "")
                 return
             }
             bestBuffer = frames.first
+            var maxObservations = 0
             for (i, buf) in frames.prefix(4).enumerated() {
-                let lines = await CardOCRProcessor.recognize(buf)
+                let vision = await CardOCRProcessor.recognizeDetailed(buf)
+                maxObservations = max(maxObservations, vision.observationCount)
+                let lines = vision.readings
                 if !lines.isEmpty {
                     dlog("[OCR] frame \(i + 1): \(lines.map(\.text).joined(separator: " | "))")
                 }
@@ -196,9 +226,15 @@ final class CardSongSession: ObservableObject {
                     bestBuffer = buf
                 }
             }
+            if context == .perform, bestLineReadings.isEmpty {
+                logLocalOCRFailure(observationCount: maxObservations, gotFrame: gotFrame)
+            }
         } else {
             for (i, sample) in ranked.enumerated() {
                 dlog("[OCR] ranked \(i + 1): \(sample.readings.map(\.text).joined(separator: " | "))")
+            }
+            if context == .perform, bestLineReadings.isEmpty {
+                logLocalOCRFailure(observationCount: 0, gotFrame: gotFrame)
             }
         }
 
@@ -212,6 +248,12 @@ final class CardSongSession: ObservableObject {
             }
         }
 
+        if VoiceSettings.apiKey != nil, bestBuffer == nil, context == .perform {
+            PerformUserLog.shared.log("Camera · OpenAI skipped · no snapshot frame")
+        }
+        if VoiceSettings.apiKey != nil, let buf = bestBuffer, CardImageEncoder.jpegData(from: buf) == nil, context == .perform {
+            PerformUserLog.shared.log("Camera · OpenAI skipped · could not encode photo · local OCR")
+        }
         if VoiceSettings.apiKey != nil, let buf = bestBuffer, let jpeg = CardImageEncoder.jpegData(from: buf) {
             let hint = CardOCRProcessor.orderedLineTexts(from: bestLineReadings).joined(separator: "\n")
             stopCaptureIfNeeded()
@@ -279,12 +321,18 @@ final class CardSongSession: ObservableObject {
             dlog("[CARD] lines top→bottom: \(orderedLines.joined(separator: " | "))")
         }
         if context == .perform {
-            PerformUserLog.shared.log("Camera · OCR lines: \(orderedLines.joined(separator: " | "))")
+            if orderedLines.isEmpty {
+                PerformUserLog.shared.log("Camera · OCR lines: (none — zero text recognized)")
+            } else {
+                PerformUserLog.shared.log("Camera · OCR lines: \(orderedLines.joined(separator: " | "))")
+            }
+            let l1 = ocr.songQuery.isEmpty ? "—" : WordApiInputPanel.truncated(ocr.songQuery, max: 28)
             let l2 = ocr.callerLine.map { WordApiInputPanel.truncated($0, max: 24) } ?? "—"
             let l3 = ocr.notesLine.map { WordApiInputPanel.truncated($0, max: 24) } ?? "—"
-            PerformUserLog.shared.log(
-                "Camera · OCR read · L1 «\(WordApiInputPanel.truncated(ocr.songQuery, max: 28))» · L2 «\(l2)» · L3 «\(l3)»"
-            )
+            PerformUserLog.shared.log("Camera · OCR read · L1 «\(l1)» · L2 «\(l2)» · L3 «\(l3)»")
+            if ocr.songQuery.isEmpty {
+                PerformUserLog.shared.log("Camera · song line empty — caller/notes lines do not block song search")
+            }
         }
         guard gen == generation else { return }
 
@@ -298,7 +346,11 @@ final class CardSongSession: ObservableObject {
         }
         dlog("[CARD] song queries (line 1 first): \(queriesToTry.joined(separator: " · "))")
         if context == .perform {
-            PerformUserLog.shared.log("Camera · song search tries: \(queriesToTry.joined(separator: " · "))")
+            if queriesToTry.isEmpty {
+                PerformUserLog.shared.log("Camera · song search skipped — no line-1 text (add OpenAI key for best read)")
+            } else {
+                PerformUserLog.shared.log("Camera · song search tries: \(queriesToTry.joined(separator: " · "))")
+            }
         }
 
         var votes: [String: Int] = [:]
@@ -509,6 +561,18 @@ final class CardSongSession: ObservableObject {
             PerformUserLog.shared.log("Camera · \(message)")
         }
         dlog("✗ [CARD] \(message)")
+    }
+
+    private func logLocalOCRFailure(observationCount: Int, gotFrame: Bool) {
+        guard context == .perform else { return }
+        if observationCount == 0 {
+            PerformUserLog.shared.log("Camera · OCR failed · Vision saw 0 text regions (lighting, focus, or card too small)")
+        } else {
+            PerformUserLog.shared.log("Camera · OCR failed · Vision saw \(observationCount) region(s) but no readable lines")
+        }
+        if !gotFrame {
+            PerformUserLog.shared.log("Camera · OCR hint · no frame before scan — hold card steady, then volume up")
+        }
     }
 
     private func failScanMaxRetries() {
