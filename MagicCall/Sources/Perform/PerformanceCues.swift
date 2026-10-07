@@ -262,10 +262,13 @@ struct FeedbackCard: View {
                 set: { colorHex = $0.hexString })
     }
 
+    @AppStorage(PerformanceCues.PeekKey.enabled) private var peekEnabled = true
+
     private var summary: String {
         let vib = vibrateOnLock ? "Vibration on" : "Vibration off"
         let song = dotEnabled ? "Song dot on" : "Song dot off"
-        return "\(vib) · \(song)"
+        let peek = peekEnabled ? "Peek on" : "Peek off"
+        return "\(vib) · \(peek) · \(song)"
     }
 
     var body: some View {
@@ -290,6 +293,8 @@ struct FeedbackCard: View {
                         }
                     }
                 }
+
+                StagePeekFeedbackSection()
             }
             .animation(.easeInOut(duration: 0.2), value: dotEnabled)
         }

@@ -65,12 +65,11 @@ struct SettingsView: View {
     private var triggerSection: some View {
         Section {
             Toggle("Auto-start on incoming call", isOn: $autoTrigger)
-            Toggle("Tap screen to start/stop song", isOn: $tapTrigger)
             Toggle("Volume buttons to start/stop", isOn: $volumeButtonTrigger)
         } header: {
             Text("Performance triggers")
         } footer: {
-            Text("Leave auto-start on for performances. Tap is a backup if detection fails.")
+            Text("Leave auto-start on for performances. Hold-to-peek is in Home → Feedback.")
         }
     }
 

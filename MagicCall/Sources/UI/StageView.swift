@@ -11,6 +11,13 @@ struct StageView: View {
     @AppStorage(StageImageStore.luminanceDefaultsKey) private var stageStatusBarLuminance = 0.0
     @AppStorage(StageImageStore.revisionDefaultsKey) private var stageScreenshotRevision = ""
     @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
+    @AppStorage(PerformanceCues.PeekKey.enabled) private var peekEnabled = true
+    @AppStorage(PerformanceCues.PeekKey.fontSize) private var peekFontSize = PerformanceCues.defaultPeekFontSize
+    @AppStorage(PerformanceCues.PeekKey.color) private var peekColorHex = PerformanceCues.defaultPeekColor
+    @AppStorage(PerformanceCues.PeekKey.anchorX) private var peekAnchorX = PerformanceCues.defaultPeekAnchorX
+    @AppStorage(PerformanceCues.PeekKey.anchorY) private var peekAnchorY = PerformanceCues.defaultPeekAnchorY
+
+    @State private var peekVisible = false
 
     private var hasStageScreenshot: Bool { StageImageStore.hasScreenshot }
 
@@ -45,17 +52,27 @@ struct StageView: View {
                 .ignoresSafeArea()
 
             StageGestureLayer(
-                onTap: {
-                    if Prefs.tapTrigger {
-                        model.toggleManual()
-                    }
+                peekHoldEnabled: peekEnabled,
+                onPeekVisibility: { visible in
+                    peekVisible = visible
                 },
-                onLongPress: {
+                onLongPressShare: {
                     model.openFakeShareAfterCallIfNeeded()
                 },
                 onTwoFingerSwipeDown: { model.disarm() }
             )
             .ignoresSafeArea()
+
+            if peekEnabled, peekVisible {
+                StagePeekOverlay(
+                    lines: StagePeekLines.build(model: model),
+                    fontSize: peekFontSize,
+                    colorHex: peekColorHex,
+                    anchorX: peekAnchorX,
+                    anchorY: peekAnchorY
+                )
+                .animation(.easeOut(duration: 0.12), value: peekVisible)
+            }
 
             HiddenVolumeView().frame(width: 1, height: 1)
 
@@ -107,63 +124,71 @@ private struct StageStatusBarStyleController: UIViewControllerRepresentable {
 
 /// UIKit para tener un deslizamiento real con dos dedos; SwiftUI no distingue número de dedos.
 struct StageGestureLayer: UIViewRepresentable {
-    let onTap: () -> Void
-    let onLongPress: () -> Void
+    var peekHoldEnabled: Bool
+    let onPeekVisibility: (Bool) -> Void
+    let onLongPressShare: () -> Void
     let onTwoFingerSwipeDown: () -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator(onLongPress: onLongPress) }
+    func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
         view.backgroundColor = .clear
         view.isMultipleTouchEnabled = true
 
-        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tap))
-        tap.numberOfTouchesRequired = 1
+        let peekHold = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.peekHold(_:)))
+        peekHold.minimumPressDuration = 0.08
+        peekHold.allowableMovement = 48
 
-        let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.longPress(_:)))
-        longPress.minimumPressDuration = 0.55
-        tap.require(toFail: longPress)
+        let shareHold = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.shareHold(_:)))
+        shareHold.minimumPressDuration = 1.05
 
         let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipeDown(_:)))
         swipe.numberOfTouchesRequired = 2
         swipe.direction = .down
 
-        view.addGestureRecognizer(tap)
-        view.addGestureRecognizer(longPress)
+        view.addGestureRecognizer(peekHold)
+        view.addGestureRecognizer(shareHold)
         view.addGestureRecognizer(swipe)
+        context.coordinator.peekHoldRecognizer = peekHold
+        context.coordinator.shareHoldRecognizer = shareHold
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        context.coordinator.onTap = onTap
-        context.coordinator.onLongPress = onLongPress
+        context.coordinator.peekHoldEnabled = peekHoldEnabled
+        context.coordinator.onPeekVisibility = onPeekVisibility
+        context.coordinator.onLongPressShare = onLongPressShare
         context.coordinator.onTwoFingerSwipeDown = onTwoFingerSwipeDown
     }
 
     final class Coordinator: NSObject {
-        var onTap: () -> Void = {}
-        var onLongPress: () -> Void = {}
+        var peekHoldEnabled = true
+        var onPeekVisibility: (Bool) -> Void = { _ in }
+        var onLongPressShare: () -> Void = {}
         var onTwoFingerSwipeDown: () -> Void = {}
-        private var didLongPress = false
+        weak var peekHoldRecognizer: UILongPressGestureRecognizer?
+        weak var shareHoldRecognizer: UILongPressGestureRecognizer?
+        private var shareTriggered = false
 
-        init(onLongPress: @escaping () -> Void) {
-            self.onLongPress = onLongPress
-        }
-
-        @objc func tap() {
-            guard !didLongPress else {
-                didLongPress = false
-                return
+        @objc func peekHold(_ recognizer: UILongPressGestureRecognizer) {
+            guard peekHoldEnabled else { return }
+            switch recognizer.state {
+            case .began, .changed:
+                onPeekVisibility(true)
+            case .ended, .cancelled, .failed:
+                onPeekVisibility(false)
+                shareTriggered = false
+            default:
+                break
             }
-            onTap()
         }
 
-        @objc func longPress(_ recognizer: UILongPressGestureRecognizer) {
-            guard recognizer.state == .began else { return }
-            didLongPress = true
-            dlog("[STAGE] long-press on stage")
-            onLongPress()
+        @objc func shareHold(_ recognizer: UILongPressGestureRecognizer) {
+            guard recognizer.state == .began, !shareTriggered else { return }
+            shareTriggered = true
+            dlog("[STAGE] long hold → share sheet")
+            onLongPressShare()
         }
 
         @objc func swipeDown(_ recognizer: UISwipeGestureRecognizer) {

@@ -109,7 +109,7 @@ enum Prefs {
             Key.fakePlaybackVolume: 1.0,
             Key.attemptRingerMaxOnStage: false,
             Key.autoTrigger: true,
-            Key.tapTrigger: true,
+            Key.tapTrigger: false,
             Key.volumeButtonTrigger: false,
             Key.diskCache: false,
             Key.deezerFallback: true,
@@ -129,6 +129,7 @@ enum Prefs {
         registerHomeSectionDefaults()
         NotesContactSettings.registerDefaults()
         NotesContactWordSettings.registerDefaults()
+        PerformanceCues.registerPeekDefaults()
         migrateClipSecondsIfNeeded()
         migratePerformanceModeToSingleIfNeeded()
     }
