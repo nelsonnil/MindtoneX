@@ -8,7 +8,7 @@ struct CardOCRReading: Sendable {
     let topRank: CGFloat
 }
 
-/// Vision text recognition (revision 3, accurate, EN+ES).
+/// Vision text recognition (revision 3, accurate; languages from `CardSettings.visionRecognitionLanguages`).
 enum CardOCRProcessor {
     static func recognize(_ pixelBuffer: CVPixelBuffer) async -> [CardOCRReading] {
         await withCheckedContinuation { cont in
@@ -33,7 +33,7 @@ enum CardOCRProcessor {
             request.revision = VNRecognizeTextRequestRevision3
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
-            request.recognitionLanguages = CardSettings.handwritingLanguage.visionLanguageCodes
+            request.recognitionLanguages = CardSettings.visionRecognitionLanguages
             request.minimumTextHeight = 0.03
 
             let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up, options: [:])

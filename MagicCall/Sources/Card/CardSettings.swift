@@ -7,41 +7,25 @@ enum CardSettings {
         static let burstSeconds = "card.burstSeconds"
         static let maxScanRetries = "card.maxScanRetries"
         static let practiceTipsSeen = "card.practiceTipsSeen"
-        static let handwritingLanguage = "card.handwritingLanguage"
     }
 
-    /// Language(s) on the handwritten card — Vision OCR + OpenAI vision hints.
-    enum HandwritingLanguage: String, CaseIterable, Identifiable {
-        case englishAndSpanish
-        case english
-        case spanish
-
-        var id: String { rawValue }
-
-        var title: String {
-            switch self {
-            case .englishAndSpanish: return "English + Spanish"
-            case .english: return "English"
-            case .spanish: return "Español"
-            }
+    /// On-device Vision OCR: device locale first, then English + Spanish (song titles are often EN/ES).
+    static var visionRecognitionLanguages: [String] {
+        var codes: [String] = []
+        func appendUnique(_ code: String) {
+            let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard trimmed.count >= 2, !codes.contains(trimmed) else { return }
+            codes.append(trimmed)
         }
-
-        var visionLanguageCodes: [String] {
-            switch self {
-            case .englishAndSpanish: return ["en-US", "es-ES"]
-            case .english: return ["en-US"]
-            case .spanish: return ["es-ES"]
-            }
-        }
-
-        var openAIHint: String {
-            switch self {
-            case .englishAndSpanish: return "Card may mix English and Spanish (song titles often English)."
-            case .english: return "Card text is English (song titles, artist names)."
-            case .spanish: return "Card text is Spanish."
-            }
-        }
+        appendUnique(Locale.current.identifier.replacingOccurrences(of: "_", with: "-"))
+        appendUnique("en-US")
+        appendUnique("es-ES")
+        return codes
     }
+
+    /// OpenAI vision card reader — language-agnostic (no per-locale UI).
+    static let openAIVisionLanguageRule =
+        "Read **all visible text** on the card in whatever language or script was used (song titles and artist names may be in any language)."
 
     /// Short grab after volume press — best frame by text amount, not a long burst.
     static let defaultBurstSeconds = 0.45
@@ -53,12 +37,7 @@ enum CardSettings {
         d.register(defaults: [
             Key.burstSeconds: defaultBurstSeconds,
             Key.maxScanRetries: defaultMaxScanRetries,
-            Key.handwritingLanguage: HandwritingLanguage.englishAndSpanish.rawValue,
         ])
-    }
-
-    static var handwritingLanguage: HandwritingLanguage {
-        HandwritingLanguage(rawValue: d.string(forKey: Key.handwritingLanguage) ?? "") ?? .englishAndSpanish
     }
 
     static var burstSeconds: Double {

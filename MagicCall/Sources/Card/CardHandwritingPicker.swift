@@ -247,12 +247,10 @@ enum CardHandwritingPicker {
         guard let apiKey = VoiceSettings.apiKey else { throw CardHandwritingPickerError.noAPIKey }
         let model = VoiceSettings.pickerModel
         let b64 = jpeg.base64EncodedString()
-        let lang = CardSettings.handwritingLanguage.openAIHint
-
         let instructions = """
         You read a photo of a handwritten performance card (black ink, often ALL CAPS). \
         Use the **whole image** as the source of truth — infer song title and artist from handwriting anywhere on the card. \
-        \(lang)
+        \(CardSettings.openAIVisionLanguageRule)
         Typical layout (flexible): \(CardOCRLayout.lineAssignmentSummary)
 
         Optional OCR hint (often wrong — do not follow line numbers blindly):
