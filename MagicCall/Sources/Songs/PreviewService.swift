@@ -121,7 +121,7 @@ actor PreviewService {
         if found.isEmpty && storefront != "US" {
             found = (try? await itunes(query, country: "US")) ?? []
         }
-        if found.isEmpty && Prefs.deezerFallback {
+        if found.isEmpty {
             do { found = try await deezer(query) } catch { dlog("Deezer falló: \(error.localizedDescription)") }
         }
         let ranked = Self.rank(found, for: query)

@@ -9,7 +9,6 @@ struct PerformanceCard: View {
 
     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
     @AppStorage(Prefs.Key.storeCountry) private var storeCountry = ""
-    @AppStorage(Prefs.Key.deezerFallback) private var deezerFallback = true
     @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
     @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
     @AppStorage(VoiceSettings.Key.inputMode) private var songInputModeRaw = VoiceSettings.InputMode.card.rawValue
@@ -130,22 +129,12 @@ struct PerformanceCard: View {
             .foregroundStyle(OracleTheme.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
 
-            Toggle(isOn: $deezerFallback) {
-                Text("Deezer fallback when iTunes has no preview")
-                    .font(.subheadline)
-                    .foregroundStyle(OracleTheme.textPrimary)
-            }
-            .tint(OracleTheme.gold)
-
-            Text("For Chinese catalogs, try **CN**, **TW**, or **HK**. Deezer helps when Apple has no 30 s preview.")
+            Text("For Chinese catalogs, try **CN**, **TW**, or **HK**. If Apple has no 30 s preview, MindtoneX tries **Deezer** automatically.")
                 .font(.caption2)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .onChange(of: storeCountry) { _, _ in
-            Task { await model.previews.clearCaches() }
-        }
-        .onChange(of: deezerFallback) { _, _ in
             Task { await model.previews.clearCaches() }
         }
     }

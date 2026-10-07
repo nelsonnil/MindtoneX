@@ -21,7 +21,6 @@ struct SettingsView: View {
     @AppStorage(Prefs.Key.volumeButtonTrigger) private var volumeButtonTrigger = false
 
     @AppStorage(Prefs.Key.diskCache) private var diskCache = false
-    @AppStorage(Prefs.Key.deezerFallback) private var deezerFallback = true
 
     @AppStorage(Prefs.Key.autoStageRingtone) private var autoStageRingtone = true
     @AppStorage(Prefs.Key.discreetRingtoneUI) private var discreetRingtoneUI = true
@@ -74,13 +73,12 @@ struct SettingsView: View {
 
     private var previewsSection: some View {
         Section {
-            Toggle("Deezer fallback previews", isOn: $deezerFallback)
             Toggle("Disk cache (testing only)", isOn: $diskCache)
             Button("Clear preview caches") { Task { await model.previews.clearCaches() } }
         } header: {
             Text("Song previews (lab)")
         } footer: {
-            Text("Song search region and Deezer fallback for performers: **Home → Performance settings**. Changes here mirror the same preferences.")
+            Text("Song search region: **Home → Performance settings**. iTunes → US → Deezer is always used when Apple has no preview.")
         }
     }
 

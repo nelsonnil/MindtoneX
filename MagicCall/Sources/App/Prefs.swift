@@ -192,7 +192,8 @@ enum Prefs {
     static var tapTrigger: Bool { d.bool(forKey: Key.tapTrigger) }
     static var volumeButtonTrigger: Bool { d.bool(forKey: Key.volumeButtonTrigger) }
     static var diskCache: Bool { d.bool(forKey: Key.diskCache) }
-    static var deezerFallback: Bool { d.bool(forKey: Key.deezerFallback) }
+    /// Always on — no user toggle; PreviewService uses Deezer after iTunes (local → US).
+    static var deezerFallback: Bool { true }
     static var storeCountry: String { d.string(forKey: Key.storeCountry) ?? "" }
     static var darwinSignals: Bool { d.bool(forKey: Key.darwinSignals) }
     static var toneIdentifierToTry: String { d.string(forKey: Key.toneIdentifierToTry) ?? "system:Radar" }
