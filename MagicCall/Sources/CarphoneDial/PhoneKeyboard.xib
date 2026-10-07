@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina5_5" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
+        <capability name="Image references" minToolsVersion="12.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="PhoneKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+            <connections>
+                <outlet property="addNumberLbl" destination="fwg-bM-ztk" id="5Tx-m4-BvL"/>
+                <outlet property="asteriskBtn" destination="gNz-2H-eCu" id="ijs-oy-U4D"/>
+                <outlet property="backBtn" destination="gDK-ik-kyF" id="aGA-SO-md5"/>
+                <outlet property="backView" destination="Oda-Qw-1FJ" id="9aV-ft-d4Z"/>
+                <outlet property="callBtn" destination="HbF-3q-GbY" id="GCU-Cx-Acq"/>
+                <outlet property="callingImg" destination="Evv-O6-PfA" id="Y0d-8x-dpw"/>
+                <outlet property="eightBtn" destination="yFf-6o-UTS" id="AQ9-qU-A1y"/>
+                <outlet property="fiveBtn" destination="QAR-S3-v2g" id="qeE-TN-QDQ"/>
+                <outlet property="fourBtn" destination="lnv-Ug-TXL" id="Bis-Iz-d11"/>
+                <outlet property="hastashBtn" destination="Kqe-nK-m7V" id="2vV-kn-Eev"/>
+                <outlet property="nineBtn" destination="QSY-HX-sLj" id="MXf-LL-pQv"/>
+                <outlet property="oneBtn" destination="mZY-d4-SzU" id="x9k-HH-JKV"/>
+                <outlet property="sevenBtn" destination="12g-Aq-JGu" id="cYN-CG-g6y"/>
+                <outlet property="sixBtn" destination="7Kt-jl-Urx" id="UCE-HY-UBU"/>
+                <outlet property="sixSection" destination="aQZ-pe-dHI" id="xCx-2I-0db"/>
+                <outlet property="stackContent" destination="KT0-IQ-yWd" id="Ija-o1-Ddr"/>
+                <outlet property="stackLine1" destination="jak-A4-a7W" id="ZXL-lb-lGT"/>
+                <outlet property="stackLine2" destination="DSM-0K-CJQ" id="seF-At-5pK"/>
+                <outlet property="stackLine3" destination="ysz-4v-4sG" id="J9Y-Ce-7kh"/>
+                <outlet property="stackLine4" destination="RGD-ov-saf" id="vug-Qc-w6t"/>
+                <outlet property="stackLine5" destination="Lqo-3g-Qhv" id="Kvd-QC-70w"/>
+                <outlet property="telephoneLbl" destination="qlf-8j-Jut" id="t01-JB-552"/>
+                <outlet property="threeBtn" destination="B4c-09-d1N" id="f8c-PH-kRp"/>
+                <outlet property="twoBtn" destination="XHp-hG-fjB" id="fQi-mw-qWF"/>
+                <outlet property="viewLine1" destination="7u6-3r-p3Q" id="tbG-o4-aaz"/>
+                <outlet property="zeroBtn" destination="Nhy-wW-fqN" id="nL9-X5-6Ww"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB">
+            <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="20" translatesAutoresizingMaskIntoConstraints="NO" id="KT0-IQ-yWd" userLabel="PrincipaStack">
+                    <rect key="frame" x="0.0" y="20" width="414" height="715"/>
+                    <subviews>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qlf-8j-Jut">
+                            <rect key="frame" x="0.0" y="0.0" width="414" height="109"/>
+                            <fontDescription key="fontDescription" type="system" pointSize="37"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7u6-3r-p3Q" userLabel="Line1">
+                            <rect key="frame" x="0.0" y="129" width="414" height="82.666666666666686"/>
+                            <subviews>
+                                <stackView opaque="NO" contentMode="scaleToFill" spacing="28" translatesAutoresizingMaskIntoConstraints="NO" id="jak-A4-a7W" userLabel="Line1">
+                                    <rect key="frame" x="54.666666666666657" y="0.0" width="304.66666666666674" height="82.666666666666671"/>
+                                    <subviews>
+                                        <view tag="1" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mZY-d4-SzU" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="0.0" y="0.0" width="83" height="82.666666666666671"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="mZY-d4-SzU" secondAttribute="height" multiplier="1:1" id="etD-ip-NKq"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="1"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view tag="2" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="XHp-hG-fjB" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="111" y="0.0" width="82.666666666666686" height="82.666666666666671"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="XHp-hG-fjB" secondAttribute="height" multiplier="1:1" id="2bR-FJ-CRa"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="2"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="A B C"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view tag="3" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="B4c-09-d1N" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="221.66666666666663" y="0.0" width="83" height="82.666666666666671"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="B4c-09-d1N" secondAttribute="height" multiplier="1:1" id="m7Z-lb-v2N"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="3"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="D E F"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                    </subviews>
+                                </stackView>
+                            </subviews>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            <constraints>
+                                <constraint firstItem="jak-A4-a7W" firstAttribute="centerX" secondItem="7u6-3r-p3Q" secondAttribute="centerX" id="4eB-3U-MbG"/>
+                                <constraint firstAttribute="bottom" secondItem="jak-A4-a7W" secondAttribute="bottom" id="I2D-A9-rO1"/>
+                                <constraint firstItem="jak-A4-a7W" firstAttribute="top" secondItem="7u6-3r-p3Q" secondAttribute="top" id="KU6-47-XOL"/>
+                            </constraints>
+                        </view>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="K8L-GR-Yxo" userLabel="Line2">
+                            <rect key="frame" x="0.0" y="231.66666666666663" width="414" height="83"/>
+                            <subviews>
+                                <stackView opaque="NO" contentMode="scaleToFill" spacing="28" translatesAutoresizingMaskIntoConstraints="NO" id="DSM-0K-CJQ" userLabel="Line2">
+                                    <rect key="frame" x="54.666666666666657" y="0.0" width="304.66666666666674" height="83"/>
+                                    <subviews>
+                                        <view tag="4" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lnv-Ug-TXL" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="0.0" y="0.0" width="83" height="83"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="lnv-Ug-TXL" secondAttribute="height" multiplier="1:1" id="QIv-Oe-hVr"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="4"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="G H I"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view tag="5" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="QAR-S3-v2g" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="111" y="0.0" width="82.666666666666686" height="83"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="QAR-S3-v2g" secondAttribute="height" multiplier="1:1" id="ghB-6Y-iAA"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="5"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="J K L"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view tag="6" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7Kt-jl-Urx" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="221.66666666666663" y="0.0" width="83" height="83"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="7Kt-jl-Urx" secondAttribute="height" multiplier="1:1" id="0yY-c6-e1F"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="6"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="M N O"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                    </subviews>
+                                </stackView>
+                            </subviews>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            <constraints>
+                                <constraint firstItem="DSM-0K-CJQ" firstAttribute="top" secondItem="K8L-GR-Yxo" secondAttribute="top" id="2Rb-2F-xBG"/>
+                                <constraint firstItem="DSM-0K-CJQ" firstAttribute="centerX" secondItem="K8L-GR-Yxo" secondAttribute="centerX" id="2Vq-AR-1XE"/>
+                                <constraint firstAttribute="bottom" secondItem="DSM-0K-CJQ" secondAttribute="bottom" id="mML-Nb-paF"/>
+                            </constraints>
+                        </view>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="iaZ-6i-Clm" userLabel="Line3">
+                            <rect key="frame" x="0.0" y="334.66666666666669" width="414" height="82.666666666666686"/>
+                            <subviews>
+                                <stackView opaque="NO" contentMode="scaleToFill" spacing="28" translatesAutoresizingMaskIntoConstraints="NO" id="ysz-4v-4sG" userLabel="Line3">
+                                    <rect key="frame" x="54.666666666666657" y="0.0" width="304.66666666666674" height="82.666666666666671"/>
+                                    <subviews>
+                                        <view tag="7" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="12g-Aq-JGu" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="0.0" y="0.0" width="83" height="82.666666666666671"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="12g-Aq-JGu" secondAttribute="height" multiplier="1:1" id="FcV-oE-bYq"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="7"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="P Q R S"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view tag="8" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="yFf-6o-UTS" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="111" y="0.0" width="82.666666666666686" height="82.666666666666671"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="yFf-6o-UTS" secondAttribute="height" multiplier="1:1" id="Ayh-Yz-sMb"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="8"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="T U V"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view tag="9" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="QSY-HX-sLj" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="221.66666666666663" y="0.0" width="83" height="82.666666666666671"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="QSY-HX-sLj" secondAttribute="height" multiplier="1:1" id="lTA-8p-ltD"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="9"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="W X Y Z"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                    </subviews>
+                                </stackView>
+                            </subviews>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            <constraints>
+                                <constraint firstItem="ysz-4v-4sG" firstAttribute="top" secondItem="iaZ-6i-Clm" secondAttribute="top" id="125-ua-EXG"/>
+                                <constraint firstItem="ysz-4v-4sG" firstAttribute="centerX" secondItem="iaZ-6i-Clm" secondAttribute="centerX" id="995-eq-qY3"/>
+                                <constraint firstAttribute="bottom" secondItem="ysz-4v-4sG" secondAttribute="bottom" id="WKS-jU-ZBC"/>
+                            </constraints>
+                        </view>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="f9W-sf-13S" userLabel="Line4">
+                            <rect key="frame" x="0.0" y="437.33333333333331" width="414" height="82.999999999999943"/>
+                            <subviews>
+                                <stackView opaque="NO" contentMode="scaleToFill" spacing="28" translatesAutoresizingMaskIntoConstraints="NO" id="RGD-ov-saf" userLabel="Line4">
+                                    <rect key="frame" x="54.666666666666657" y="0.0" width="304.66666666666674" height="83"/>
+                                    <subviews>
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gNz-2H-eCu" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="0.0" y="0.0" width="83" height="83"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="gNz-2H-eCu" secondAttribute="height" multiplier="1:1" id="J1i-4A-jtq"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                                <userDefinedRuntimeAttribute type="image" keyPath="image">
+                                                    <imageReference key="value" image="asterisk" symbolScale="small"/>
+                                                </userDefinedRuntimeAttribute>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="tintImage">
+                                                    <color key="value" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                </userDefinedRuntimeAttribute>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="imageFactorSize" value="0.33333"/>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view tag="10" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Nhy-wW-fqN" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="111" y="0.0" width="82.666666666666686" height="83"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="Nhy-wW-fqN" secondAttribute="height" multiplier="1:1" id="Nr5-hY-jdL"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="digit" value="0"/>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="subTitle" value="+"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Kqe-nK-m7V" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="221.66666666666663" y="0.0" width="83" height="83"/>
+                                            <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="Kqe-nK-m7V" secondAttribute="height" multiplier="1:1" id="feh-jb-LXO"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGray5Color"/>
+                                                </userDefinedRuntimeAttribute>
+                                                <userDefinedRuntimeAttribute type="image" keyPath="image">
+                                                    <imageReference key="value" image="number" catalog="system" symbolScale="medium"/>
+                                                </userDefinedRuntimeAttribute>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="tintImage">
+                                                    <color key="value" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                </userDefinedRuntimeAttribute>
+                                                <userDefinedRuntimeAttribute type="string" keyPath="imageFactorSize" value="0.33333"/>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                    </subviews>
+                                </stackView>
+                            </subviews>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            <constraints>
+                                <constraint firstItem="RGD-ov-saf" firstAttribute="top" secondItem="f9W-sf-13S" secondAttribute="top" id="Yxw-Hh-lLH"/>
+                                <constraint firstItem="RGD-ov-saf" firstAttribute="centerX" secondItem="f9W-sf-13S" secondAttribute="centerX" id="h3J-De-byC"/>
+                                <constraint firstAttribute="bottom" secondItem="RGD-ov-saf" secondAttribute="bottom" id="svp-vD-6ZH"/>
+                            </constraints>
+                        </view>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="aQZ-pe-dHI" userLabel="Line5">
+                            <rect key="frame" x="0.0" y="540.33333333333337" width="414" height="82.666666666666629"/>
+                            <subviews>
+                                <stackView opaque="NO" contentMode="scaleToFill" spacing="28" translatesAutoresizingMaskIntoConstraints="NO" id="Lqo-3g-Qhv" userLabel="Line5">
+                                    <rect key="frame" x="54.666666666666657" y="0.0" width="304.66666666666674" height="82.666666666666671"/>
+                                    <subviews>
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4eG-3e-HNM">
+                                            <rect key="frame" x="0.0" y="0.0" width="83" height="82.666666666666671"/>
+                                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="4eG-3e-HNM" secondAttribute="height" multiplier="1:1" id="Vlo-Ol-VvX"/>
+                                            </constraints>
+                                        </view>
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="HbF-3q-GbY" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                            <rect key="frame" x="111" y="0.0" width="82.666666666666686" height="82.666666666666671"/>
+                                            <color key="backgroundColor" systemColor="systemGreenColor"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" secondItem="HbF-3q-GbY" secondAttribute="height" multiplier="1:1" id="0Ln-BW-j50"/>
+                                            </constraints>
+                                            <userDefinedRuntimeAttributes>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                    <color key="value" systemColor="systemGreenColor"/>
+                                                </userDefinedRuntimeAttribute>
+                                                <userDefinedRuntimeAttribute type="image" keyPath="image" value="phone.fill" catalog="system"/>
+                                                <userDefinedRuntimeAttribute type="color" keyPath="pushBackground">
+                                                    <color key="value" red="0.20392156862745098" green="0.51963294595181819" blue="0.34901960784313724" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                </userDefinedRuntimeAttribute>
+                                            </userDefinedRuntimeAttributes>
+                                        </view>
+                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Oda-Qw-1FJ">
+                                            <rect key="frame" x="221.66666666666663" y="0.0" width="83" height="82.666666666666671"/>
+                                            <subviews>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="3cq-Xl-aCi">
+                                                    <rect key="frame" x="36" y="30.333333333333258" width="19" height="22"/>
+                                                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="22" id="Ukg-4A-ak0"/>
+                                                        <constraint firstAttribute="width" constant="19" id="oVk-bV-SvA"/>
+                                                    </constraints>
+                                                </view>
+                                                <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gDK-ik-kyF" customClass="ButtonKeyboard" customModule="CarphoneCALL" customModuleProvider="target">
+                                                    <rect key="frame" x="-1.5" y="0.0" width="77" height="77"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                    <userDefinedRuntimeAttributes>
+                                                        <userDefinedRuntimeAttribute type="image" keyPath="image">
+                                                            <imageReference key="value" image="delete.left.fill" catalog="system" symbolScale="medium"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                        <userDefinedRuntimeAttribute type="color" keyPath="tintImage">
+                                                            <color key="value" systemColor="systemGray5Color"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                        <userDefinedRuntimeAttribute type="color" keyPath="background">
+                                                            <color key="value" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                        <userDefinedRuntimeAttribute type="string" keyPath="imageFactorSize" value="0.5"/>
+                                                        <userDefinedRuntimeAttribute type="color" keyPath="pushBackground">
+                                                            <color key="value" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                        <userDefinedRuntimeAttribute type="color" keyPath="tintImageClicked">
+                                                            <color key="value" systemColor="systemGray3Color"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                    </userDefinedRuntimeAttributes>
+                                                </view>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstItem="3cq-Xl-aCi" firstAttribute="centerX" secondItem="Oda-Qw-1FJ" secondAttribute="centerX" constant="4" id="GeN-0g-BoN"/>
+                                                <constraint firstItem="3cq-Xl-aCi" firstAttribute="centerY" secondItem="Oda-Qw-1FJ" secondAttribute="centerY" id="JAI-Tf-D9P"/>
+                                                <constraint firstItem="3cq-Xl-aCi" firstAttribute="centerX" secondItem="Oda-Qw-1FJ" secondAttribute="centerX" constant="4" id="K0A-xt-uoP"/>
+                                                <constraint firstAttribute="width" secondItem="Oda-Qw-1FJ" secondAttribute="height" multiplier="1:1" id="n7T-Yc-yhj"/>
+                                                <constraint firstItem="3cq-Xl-aCi" firstAttribute="centerX" secondItem="Oda-Qw-1FJ" secondAttribute="centerX" constant="4" id="oU6-WW-lJE"/>
+                                            </constraints>
+                                        </view>
+                                    </subviews>
+                                </stackView>
+                            </subviews>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            <constraints>
+                                <constraint firstAttribute="bottom" secondItem="Lqo-3g-Qhv" secondAttribute="bottom" id="F5j-bH-qdU"/>
+                                <constraint firstItem="Lqo-3g-Qhv" firstAttribute="top" secondItem="aQZ-pe-dHI" secondAttribute="top" id="S0s-64-trT"/>
+                                <constraint firstItem="Lqo-3g-Qhv" firstAttribute="centerX" secondItem="aQZ-pe-dHI" secondAttribute="centerX" id="geM-eE-XRA"/>
+                            </constraints>
+                        </view>
+                    </subviews>
+                    <constraints>
+                        <constraint firstItem="f9W-sf-13S" firstAttribute="height" secondItem="7u6-3r-p3Q" secondAttribute="height" id="IXn-gU-eeu"/>
+                        <constraint firstItem="iaZ-6i-Clm" firstAttribute="height" secondItem="7u6-3r-p3Q" secondAttribute="height" id="RCz-pb-hGl"/>
+                        <constraint firstItem="K8L-GR-Yxo" firstAttribute="height" secondItem="7u6-3r-p3Q" secondAttribute="height" id="uxy-cr-Nnv"/>
+                    </constraints>
+                </stackView>
+                <imageView hidden="YES" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="calling" translatesAutoresizingMaskIntoConstraints="NO" id="Evv-O6-PfA">
+                    <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
+                </imageView>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Ech-ND-VXA">
+                    <rect key="frame" x="0.0" y="596" width="70" height="140"/>
+                    <constraints>
+                        <constraint firstAttribute="width" secondItem="Ech-ND-VXA" secondAttribute="height" multiplier="1:2" id="6i4-ZX-hzq"/>
+                        <constraint firstAttribute="width" constant="70" id="TDG-TQ-nhC"/>
+                    </constraints>
+                    <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                    <connections>
+                        <action selector="tapBottomLeft:" destination="-1" eventType="touchUpInside" id="EH8-am-riG"/>
+                    </connections>
+                </button>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Agregar número" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fwg-bM-ztk">
+                    <rect key="frame" x="0.0" y="100.66666666666667" width="414" height="20"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="20" id="sSB-al-EP2"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                    <color key="textColor" systemColor="systemBlueColor"/>
+                    <nil key="highlightedColor"/>
+                </label>
+            </subviews>
+            <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
+            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <constraints>
+                <constraint firstItem="Evv-O6-PfA" firstAttribute="trailing" secondItem="vUN-kp-3ea" secondAttribute="trailing" id="1b4-f6-5Qq"/>
+                <constraint firstItem="KT0-IQ-yWd" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" id="BEz-rb-m3p"/>
+                <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="KT0-IQ-yWd" secondAttribute="trailing" id="Cec-I6-us1"/>
+                <constraint firstItem="Evv-O6-PfA" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="Ie2-sC-GWF"/>
+                <constraint firstItem="Ech-ND-VXA" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="Ifz-XU-xJE"/>
+                <constraint firstItem="fwg-bM-ztk" firstAttribute="width" secondItem="KT0-IQ-yWd" secondAttribute="width" id="JXY-fV-U2c"/>
+                <constraint firstAttribute="bottom" secondItem="Ech-ND-VXA" secondAttribute="bottom" id="R5o-3Y-XMn"/>
+                <constraint firstItem="fwg-bM-ztk" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="Ycz-4y-8RT"/>
+                <constraint firstItem="Evv-O6-PfA" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="bvR-re-Sqs"/>
+                <constraint firstAttribute="bottom" secondItem="Evv-O6-PfA" secondAttribute="bottom" id="gkh-BT-qna"/>
+                <constraint firstItem="fwg-bM-ztk" firstAttribute="centerY" secondItem="qlf-8j-Jut" secondAttribute="centerY" constant="36" id="nXZ-lz-ZHy"/>
+                <constraint firstItem="KT0-IQ-yWd" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="pSg-HP-AwD"/>
+            </constraints>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <point key="canvasLocation" x="20.289855072463769" y="-12.723214285714285"/>
+        </view>
+    </objects>
+    <resources>
+        <image name="asterisk" width="891" height="1033"/>
+        <image name="calling" width="1242" height="2688"/>
+        <image name="delete.left.fill" catalog="system" width="128" height="102"/>
+        <image name="number" catalog="system" width="128" height="123"/>
+        <image name="phone.fill" catalog="system" width="128" height="114"/>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemBlueColor">
+            <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemGray3Color">
+            <color red="0.78039215689999997" green="0.78039215689999997" blue="0.80000000000000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemGray5Color">
+            <color red="0.8980392157" green="0.8980392157" blue="0.91764705879999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemGreenColor">
+            <color red="0.20392156859999999" green="0.78039215689999997" blue="0.34901960780000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

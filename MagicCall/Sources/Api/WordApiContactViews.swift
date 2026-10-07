@@ -9,15 +9,11 @@ struct WordApiSpectatorDialSheet: View {
         : WordApiSettings.lastDialedPhoneDigits
 
     var body: some View {
-        WordApiIOSPhoneDialView(
+        WordApiCarphoneDialHost(
             phoneDigits: $phoneDraft,
-            onCancel: {
-                WordApiContactPerformGate.cancelPendingPerform()
-                model.wordSpectatorDialSheet = false
-            },
-            onCall: startCall,
-            cancelEnabled: !WordApiContactPerformGate.awaitingOutgoingEnd
+            onCall: startCall
         )
+        .ignoresSafeArea()
         .interactiveDismissDisabled(WordApiContactPerformGate.awaitingOutgoingEnd)
     }
 

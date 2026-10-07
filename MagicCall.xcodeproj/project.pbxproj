@@ -66,7 +66,6 @@
 		6DE487B3B435779601483AE7 /* WordApiContactPerformGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */; };
 		75092964F794A1AF322ABF44 /* OracleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8F3AAB4CE4D47C84E6771 /* OracleSheets.swift */; };
 		79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */; };
-		F9A4B2C3D5E6789012345DEF /* WordApiIOSPhoneDialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F3A1B2C4D5678901234ABC /* WordApiIOSPhoneDialView.swift */; };
 		7BA36D68D4A7708928889CA2 /* SongInputStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */; };
 		8BC10BB4807461B2F102F8FA /* ApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30B3D15953FEAA8EA8E7828 /* ApiSettingsView.swift */; };
 		8C4101AD9A1105D40C87AAAA /* CardLineParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223FF801202E5B7C647700E7 /* CardLineParser.swift */; };
@@ -113,6 +112,17 @@
 		F80AF9FD212EA30200E041F5 /* MainShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1281B461D25A6CC77A54696F /* MainShellView.swift */; };
 		FBB7FBCA32D55B7577416FB3 /* CardVolumeScanHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F371D4729BE744EF07925E /* CardVolumeScanHost.swift */; };
 		FECA2C4469B32D6936668F8A /* AppModel+WordContact.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2520D9C08750800C79413F10 /* AppModel+WordContact.swift */; };
+		608D17E57ADD450BAA1DDC61 /* ButtonKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF67B21343D4FF986F93AD9 /* ButtonKeyboard.swift */; };
+		3AA8801D03164F5488B26C51 /* PhoneKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875AAA0456CC400B889EF426 /* PhoneKeyboard.swift */; };
+		3E313C6682CA4889925BBFC2 /* PhoneTabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E56C1D874A943F9B76C696B /* PhoneTabBarView.swift */; };
+		D9C32047C44D4791B12C52C8 /* Themes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6954009FD3DD45A0A240E164 /* Themes.swift */; };
+		D4D3C3E914724030ADD20DEE /* CarphoneDialKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B24895639DA4F95BC0C96C1 /* CarphoneDialKeys.swift */; };
+		562652429E284AABA55926EF /* CarphoneDialLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A9812AE364F4169BD4EC4D8 /* CarphoneDialLayout.swift */; };
+		9C479D2876B345EBA36524D9 /* WordApiCarphoneDialHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7096C38760C4C09A7CD904E /* WordApiCarphoneDialHost.swift */; };
+		A1C2D3E4F5061728394A5B6C /* DialNumberFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* DialNumberFormatting.swift */; };
+		E13EC347668949BEAB663DBD /* ButtonKeyboard.xib in Resources */ = {isa = PBXBuildFile; fileRef = 879801B246784914AFF7BE3E /* ButtonKeyboard.xib */; };
+		C7643623B7E242ABA68E928D /* PhoneKeyboard.xib in Resources */ = {isa = PBXBuildFile; fileRef = 967BFFB0F53944E88871AA4C /* PhoneKeyboard.xib */; };
+		D5E6F708192A3B4C5D6E7F80 /* CarphoneDialLocalizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E6F708192A3B4C5D6E7F809 /* CarphoneDialLocalizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -222,7 +232,6 @@
 		95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactShowState.swift; sourceTree = "<group>"; };
 		97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongPicker.swift; sourceTree = "<group>"; };
 		9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactViews.swift; sourceTree = "<group>"; };
-		E8F3A1B2C4D5678901234ABC /* WordApiIOSPhoneDialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiIOSPhoneDialView.swift; sourceTree = "<group>"; };
 		C50AE28CFE344C389AD52947 /* CardHandwritingPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardHandwritingPicker.swift; sourceTree = "<group>"; };
 		0C9C8C3312524B0985087781 /* CardImageEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardImageEncoder.swift; sourceTree = "<group>"; };
 		9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
@@ -270,6 +279,17 @@
 		F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorWordContactService.swift; sourceTree = "<group>"; };
 		FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPerformanceModeCard.swift; sourceTree = "<group>"; };
 		FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongInputStrip.swift; sourceTree = "<group>"; };
+		4CF67B21343D4FF986F93AD9 /* ButtonKeyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonKeyboard.swift; sourceTree = "<group>"; };
+		875AAA0456CC400B889EF426 /* PhoneKeyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneKeyboard.swift; sourceTree = "<group>"; };
+		2E56C1D874A943F9B76C696B /* PhoneTabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneTabBarView.swift; sourceTree = "<group>"; };
+		6954009FD3DD45A0A240E164 /* Themes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Themes.swift; sourceTree = "<group>"; };
+		6B24895639DA4F95BC0C96C1 /* CarphoneDialKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarphoneDialKeys.swift; sourceTree = "<group>"; };
+		4A9812AE364F4169BD4EC4D8 /* CarphoneDialLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarphoneDialLayout.swift; sourceTree = "<group>"; };
+		B7096C38760C4C09A7CD904E /* WordApiCarphoneDialHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiCarphoneDialHost.swift; sourceTree = "<group>"; };
+		B2C3D4E5F60718293A4B5C6D /* DialNumberFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DialNumberFormatting.swift; sourceTree = "<group>"; };
+		879801B246784914AFF7BE3E /* ButtonKeyboard.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ButtonKeyboard.xib; sourceTree = "<group>"; };
+		967BFFB0F53944E88871AA4C /* PhoneKeyboard.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PhoneKeyboard.xib; sourceTree = "<group>"; };
+		E6F708192A3B4C5D6E7F809 /* CarphoneDialLocalizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = CarphoneDialLocalizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -387,7 +407,6 @@
 				16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */,
 				95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */,
 				9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */,
-				E8F3A1B2C4D5678901234ABC /* WordApiIOSPhoneDialView.swift */,
 				13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */,
 				7BDF1EA0492BCF11335526EC /* WordApiSession.swift */,
 				246424FC8857825942B19C91 /* WordApiSettings.swift */,
@@ -484,9 +503,27 @@
 			path = Perform;
 			sourceTree = "<group>";
 		};
+		AABBCCDDEEFF001122334455 /* CarphoneDial */ = {
+			isa = PBXGroup;
+			children = (
+				4CF67B21343D4FF986F93AD9 /* ButtonKeyboard.swift */,
+				875AAA0456CC400B889EF426 /* PhoneKeyboard.swift */,
+				2E56C1D874A943F9B76C696B /* PhoneTabBarView.swift */,
+				6954009FD3DD45A0A240E164 /* Themes.swift */,
+				6B24895639DA4F95BC0C96C1 /* CarphoneDialKeys.swift */,
+				4A9812AE364F4169BD4EC4D8 /* CarphoneDialLayout.swift */,
+				B7096C38760C4C09A7CD904E /* WordApiCarphoneDialHost.swift */,
+				B2C3D4E5F60718293A4B5C6D /* DialNumberFormatting.swift */,
+				879801B246784914AFF7BE3E /* ButtonKeyboard.xib */,
+				967BFFB0F53944E88871AA4C /* PhoneKeyboard.xib */,
+			);
+			path = CarphoneDial;
+			sourceTree = "<group>";
+		};
 		E900D407A841DCC8BE540D91 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				AABBCCDDEEFF001122334455 /* CarphoneDial */,
 				5C6E9CB8B3652B5FFDFC3A9A /* Api */,
 				9FF1C4C7A77B04B62ED7949E /* App */,
 				81D45F486E9CD99D614BA4C4 /* Audio */,
@@ -702,6 +739,9 @@
 			files = (
 				1A496C1D95A030425C92AF6B /* Assets.xcassets in Resources */,
 				E6AFD06A3F393638BE5731B6 /* PrivacyInfo.xcprivacy in Resources */,
+				E13EC347668949BEAB663DBD /* ButtonKeyboard.xib in Resources */,
+				C7643623B7E242ABA68E928D /* PhoneKeyboard.xib in Resources */,
+				D5E6F708192A3B4C5D6E7F80 /* CarphoneDialLocalizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -719,6 +759,14 @@
 				6D186875F006FE6842FAE093 /* ApiSongSession.swift in Sources */,
 				3990F1E3960F46E9739453B2 /* AppModel+Voice.swift in Sources */,
 				FECA2C4469B32D6936668F8A /* AppModel+WordContact.swift in Sources */,
+				608D17E57ADD450BAA1DDC61 /* ButtonKeyboard.swift in Sources */,
+				3AA8801D03164F5488B26C51 /* PhoneKeyboard.swift in Sources */,
+				3E313C6682CA4889925BBFC2 /* PhoneTabBarView.swift in Sources */,
+				D9C32047C44D4791B12C52C8 /* Themes.swift in Sources */,
+				D4D3C3E914724030ADD20DEE /* CarphoneDialKeys.swift in Sources */,
+				562652429E284AABA55926EF /* CarphoneDialLayout.swift in Sources */,
+				9C479D2876B345EBA36524D9 /* WordApiCarphoneDialHost.swift in Sources */,
+				A1C2D3E4F5061728394A5B6C /* DialNumberFormatting.swift in Sources */,
 				2759F7EDE468921282C2E330 /* AppModel.swift in Sources */,
 				19FF538245C7E267A53BE4E2 /* CallDirectorySync.swift in Sources */,
 				99C1146710877380EBC55FD9 /* CallMonitor.swift in Sources */,
@@ -805,7 +853,6 @@
 				6DE487B3B435779601483AE7 /* WordApiContactPerformGate.swift in Sources */,
 				DB0E5A96FCA973B7D2BCC881 /* WordApiContactShowState.swift in Sources */,
 				79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */,
-				F9A4B2C3D5E6789012345DEF /* WordApiIOSPhoneDialView.swift in Sources */,
 				9CAF4275C647D0F5AA7516BE /* WordApiInputPanel.swift in Sources */,
 				8EE3FDC0948FC9B790A9AACA /* WordApiSession.swift in Sources */,
 				CFEA5F4AADB2A23B17F7A0AA /* WordApiSettings.swift in Sources */,

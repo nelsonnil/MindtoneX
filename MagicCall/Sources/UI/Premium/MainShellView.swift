@@ -106,7 +106,11 @@ struct MainShellView: View {
                 ApiSettingsSheet()
             }
         }
-        .fullScreenCover(isPresented: $model.wordSpectatorDialSheet) {
+        .fullScreenCover(isPresented: $model.wordSpectatorDialSheet, onDismiss: {
+            if !WordApiContactPerformGate.awaitingOutgoingEnd {
+                WordApiContactPerformGate.cancelPendingPerform()
+            }
+        }) {
             WordApiSpectatorDialSheet()
                 .environmentObject(model)
         }
