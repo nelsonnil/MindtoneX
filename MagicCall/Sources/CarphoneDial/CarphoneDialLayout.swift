@@ -34,10 +34,11 @@ extension UIView {
             topAnchor.constraint(equalTo: top, constant: topMargin).isActive = true
         }
         if let left {
-            leftAnchor.constraint(equalTo: left, constant: leftMargin).isActive = true
+            // Must not mix `left`/`right` with `leading`/`trailing` on the other item (SwiftUI hosts use leading).
+            leadingAnchor.constraint(equalTo: left, constant: leftMargin).isActive = true
         }
         if let right {
-            rightAnchor.constraint(equalTo: right, constant: -rightMargin).isActive = true
+            trailingAnchor.constraint(equalTo: right, constant: -rightMargin).isActive = true
         }
         if let bottom {
             bottomAnchor.constraint(equalTo: bottom, constant: -bottomMargin).isActive = true
