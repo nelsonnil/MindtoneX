@@ -32,6 +32,7 @@ struct MagicCallApp: App {
                 case .background:
                     AppModel.setScreenAwakeWhileInForeground(false)
                     dlog("scenePhase → background")
+                    model.pauseVoiceAndAudioForSetupUI(reason: "scenePhase.background")
                     model.maintainArmedInBackgroundIfNeeded()
                 case .inactive:
                     AppModel.setScreenAwakeWhileInForeground(true)

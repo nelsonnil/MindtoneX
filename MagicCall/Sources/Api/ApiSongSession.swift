@@ -116,6 +116,9 @@ final class ApiSongSession: ObservableObject {
 
     private func tick() {
         guard timer != nil, !isRefreshing else { return }
+        if context == .test, UIApplication.shared.applicationState == .background {
+            return
+        }
         if case .loading = state { return }
         isRefreshing = true
         let gen = generation

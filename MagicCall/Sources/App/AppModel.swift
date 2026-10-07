@@ -478,13 +478,19 @@ final class AppModel: ObservableObject {
         voicePerformTask = Task { await VoiceSongSession.shared.start(context: .perform) }
     }
 
-    /// Home sheets / call banner: stop Live preview mic before AVAudioSession changes.
+    /// Home: stop Live watch, test mic/camera, and preview audio when leaving the foreground (sheets, background, Shortcuts handoff).
     func pauseVoiceAndAudioForSetupUI(reason: String) {
         guard phase == .setup, !isArmed else { return }
         voicePerformTask?.cancel()
         voicePerformTask = nil
         VoiceSongSession.shared.stopTest()
         ApiSongSession.shared.stopTest()
+        CardSongSession.shared.stopTest()
+        WordApiSession.shared.stopTest()
+        NotesContactWordSession.shared.stopTest()
+        if NotesSongSession.shared.isActive, NotesSongSession.shared.context == .test {
+            NotesSongSession.shared.reset(reason: "home paused (\(reason))")
+        }
         auditionEndWork?.cancel()
         auditionEndWork = nil
         if isAudible {
@@ -493,7 +499,7 @@ final class AppModel: ObservableObject {
         }
         VoiceAudioSession.recordCategoryActive = false
         VoiceAudioSession.deactivateIfIdle()
-        dlog("[APP] paused setup audio/voice (\(reason))")
+        dlog("[APP] paused setup home idle work (\(reason))")
     }
 
     /// After the spectator hangs up in Fake Ringtone: stop playback, allow volume-down → Share, stay on

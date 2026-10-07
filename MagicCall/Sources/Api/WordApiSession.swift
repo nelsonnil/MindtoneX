@@ -1,5 +1,6 @@
 import Foundation
 import QuartzCore
+import UIKit
 
 /// Polls Inject / Elips / Custom Word API every 2 s during Perform. Uses the latest label; lock + cues when the response changes.
 @MainActor
@@ -145,6 +146,9 @@ final class WordApiSession: ObservableObject {
 
     private func tick() {
         guard timer != nil, !isRefreshing else { return }
+        if context == .test, UIApplication.shared.applicationState == .background {
+            return
+        }
         isRefreshing = true
         let gen = generation
         provider = WordApiSettings.provider
