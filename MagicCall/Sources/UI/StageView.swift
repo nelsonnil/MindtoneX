@@ -56,9 +56,6 @@ struct StageView: View {
                 onPeekVisibility: { visible in
                     peekVisible = visible
                 },
-                onLongPressShare: {
-                    model.openFakeShareAfterCallIfNeeded()
-                },
                 onTwoFingerSwipeDown: { model.disarm() }
             )
             .ignoresSafeArea()
@@ -126,7 +123,6 @@ private struct StageStatusBarStyleController: UIViewControllerRepresentable {
 struct StageGestureLayer: UIViewRepresentable {
     var peekHoldEnabled: Bool
     let onPeekVisibility: (Bool) -> Void
-    let onLongPressShare: () -> Void
     let onTwoFingerSwipeDown: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -140,36 +136,27 @@ struct StageGestureLayer: UIViewRepresentable {
         peekHold.minimumPressDuration = 0.08
         peekHold.allowableMovement = 48
 
-        let shareHold = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.shareHold(_:)))
-        shareHold.minimumPressDuration = 1.05
-
         let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipeDown(_:)))
         swipe.numberOfTouchesRequired = 2
         swipe.direction = .down
 
         view.addGestureRecognizer(peekHold)
-        view.addGestureRecognizer(shareHold)
         view.addGestureRecognizer(swipe)
         context.coordinator.peekHoldRecognizer = peekHold
-        context.coordinator.shareHoldRecognizer = shareHold
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
         context.coordinator.peekHoldEnabled = peekHoldEnabled
         context.coordinator.onPeekVisibility = onPeekVisibility
-        context.coordinator.onLongPressShare = onLongPressShare
         context.coordinator.onTwoFingerSwipeDown = onTwoFingerSwipeDown
     }
 
     final class Coordinator: NSObject {
         var peekHoldEnabled = true
         var onPeekVisibility: (Bool) -> Void = { _ in }
-        var onLongPressShare: () -> Void = {}
         var onTwoFingerSwipeDown: () -> Void = {}
         weak var peekHoldRecognizer: UILongPressGestureRecognizer?
-        weak var shareHoldRecognizer: UILongPressGestureRecognizer?
-        private var shareTriggered = false
 
         @objc func peekHold(_ recognizer: UILongPressGestureRecognizer) {
             guard peekHoldEnabled else { return }
@@ -178,17 +165,9 @@ struct StageGestureLayer: UIViewRepresentable {
                 onPeekVisibility(true)
             case .ended, .cancelled, .failed:
                 onPeekVisibility(false)
-                shareTriggered = false
             default:
                 break
             }
-        }
-
-        @objc func shareHold(_ recognizer: UILongPressGestureRecognizer) {
-            guard recognizer.state == .began, !shareTriggered else { return }
-            shareTriggered = true
-            dlog("[STAGE] long hold → share sheet")
-            onLongPressShare()
         }
 
         @objc func swipeDown(_ recognizer: UISwipeGestureRecognizer) {

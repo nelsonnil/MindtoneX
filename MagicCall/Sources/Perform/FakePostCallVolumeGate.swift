@@ -13,9 +13,9 @@ enum FakePostCallVolumeGate {
     }
 }
 
-/// Fake Ringtone: long-press on stage opens Share only after the spectator’s call ends.
+/// Fake Ringtone: manual Share (Use as Ringtone) only **after** the spectator’s call ends.
 enum FakePostCallShareGate {
-    static func shouldOpenShareOnLongPress(
+    static func shouldOpenSharePostCall(
         phase: AppModel.Phase,
         performed: Bool,
         isArmed: Bool
@@ -31,9 +31,9 @@ enum FakePostCallVolumeGateSelfTest {
             volumeButtonTrigger: true, isArmed: true, performed: false))
         assert(!FakePostCallVolumeGate.shouldTogglePlayOnVolume(
             volumeButtonTrigger: true, isArmed: true, performed: true))
-        assert(FakePostCallShareGate.shouldOpenShareOnLongPress(
+        assert(FakePostCallShareGate.shouldOpenSharePostCall(
             phase: .stage, performed: true, isArmed: true))
-        assert(!FakePostCallShareGate.shouldOpenShareOnLongPress(
+        assert(!FakePostCallShareGate.shouldOpenSharePostCall(
             phase: .stage, performed: false, isArmed: true))
     }
 }

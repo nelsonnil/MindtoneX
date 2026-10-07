@@ -33,7 +33,7 @@ enum PerformInstructionsCopy {
         if autoShareOn {
             lines.append("On this device, **Auto-open Share** is **ON**.")
         } else {
-            lines.append("On this device, **Auto-open Share** is **OFF**. After the call ends, **hold** the screen ~**1 s** to open Share manually (Fake Ringtone post-call only).")
+            lines.append("On this device, **Auto-open Share** is **OFF**. After the call ends, press **volume down** once to open Share manually (**Use as Ringtone**) — separate from **hold-to-peek** on the screen.")
         }
         lines.append("After **Use as Ringtone**, iOS may open **Settings → Ringtone** — press **Home once** to return; the tone is already saved.")
         return lines

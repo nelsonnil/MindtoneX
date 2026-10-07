@@ -288,18 +288,17 @@ final class AppModel: ObservableObject {
         await stageRingtoneFile(showShare: true, discreet: true)
     }
 
-    /// Solo abre Compartir si el archivo ya se preparó al buscar la canción.
-    /// Fake Ringtone: after hang-up, long-press the stage to open Share (Use as Ringtone).
+    /// Opens Share (Use as Ringtone) after hang-up when Auto-open Share is off — triggered by **volume down**.
     func openFakeShareAfterCallIfNeeded() {
-        guard FakePostCallShareGate.shouldOpenShareOnLongPress(
+        guard FakePostCallShareGate.shouldOpenSharePostCall(
             phase: phase,
             performed: performed,
             isArmed: isArmed
         ) else {
-            dlog("[SHARE] long-press ignored (Fake post-call only, after hang-up)")
+            dlog("[SHARE] manual post-call Share ignored (need stage + after hang-up)")
             return
         }
-        dlog("[SHARE] long-press post-call → Share ringtone")
+        dlog("[SHARE] post-call → Share ringtone")
         Task { await applyRingtoneNow() }
     }
 
@@ -929,6 +928,19 @@ final class AppModel: ObservableObject {
                     return
                 }
                 guard CACurrentMediaTime() > self.ignoreVolumeChangesUntil else { return }
+
+                if new < old - 0.001,
+                   FakePostCallShareGate.shouldOpenSharePostCall(
+                       phase: self.phase,
+                       performed: self.performed,
+                       isArmed: self.isArmed
+                   ) {
+                    self.ignoreVolumeChangesUntil = CACurrentMediaTime() + 0.6
+                    SystemVolume.shared.set(old, label: "post-call share")
+                    self.openFakeShareAfterCallIfNeeded()
+                    return
+                }
+
                 guard FakePostCallVolumeGate.shouldTogglePlayOnVolume(
                     volumeButtonTrigger: Prefs.volumeButtonTrigger,
                     isArmed: self.isArmed,

@@ -28,14 +28,6 @@ struct NotesPerformView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
 
-            if model.performed {
-                Color.white.opacity(0.001)
-                    .ignoresSafeArea()
-                    .onLongPressGesture(minimumDuration: 0.55) {
-                        model.openFakeShareAfterCallIfNeeded()
-                    }
-            }
-
             HiddenVolumeView().frame(width: 1, height: 1)
 
             if model.showDebugOverlay {
