@@ -8,71 +8,40 @@ enum CarphoneDialFormat {
 
     /// Legacy `xxx` pattern for Carphone preload / reverse routines.
     static func patternForDeviceRegion() -> String {
-        switch WordApiSettings.deviceRegionISO.uppercased() {
-        case "ES":
-            return "xxx xxx xxx"
+        switch WordApiSettings.dialDisplayRegionISO.uppercased() {
         case "US", "CA", "PR", "DO":
             return "(xxx) xxx-xxxx"
-        case "GB", "UK":
-            return "xxxx xxx xxxx"
-        case "FR":
-            return "xx xx xx xx xx"
-        case "DE":
-            return "xxxx xxxxxxx"
-        case "IT":
-            return "xxx xxx xxxx"
-        case "PT":
-            return "xxx xxx xxx"
-        case "MX":
-            return "xx xx xx xx xx"
         default:
-            return "xxx xxx xxxx"
+            return "xxx xxx xxx"
         }
     }
 
-    /// Formats digits while typing (national layout, no country code).
+    /// Formats digits while typing (national layout). Most regions use **spaces only** (ES, GB, …).
     static func liveDisplay(_ rawDigits: String) -> String {
         let digits = rawDigits.filter(\.isNumber)
         guard !digits.isEmpty else { return rawDigits.filter { $0 == "+" || $0 == "*" || $0 == "#" } }
 
-        let region = WordApiSettings.deviceRegionISO.uppercased()
         let formatted: String
-        switch region {
-        case "ES", "PT":
-            formatted = grouped(digits, sizes: [3, 3, 3])
-        case "US", "CA", "PR", "DO":
+        if usesNorthAmericanPunctuation(digits: digits) {
             formatted = formatNANP(digits)
-        case "GB", "UK":
-            formatted = grouped(digits, sizes: [4, 3, 4])
-        case "FR", "MX":
-            formatted = grouped(digits, sizes: [2, 2, 2, 2, 2])
-        case "DE":
-            formatted = grouped(digits, sizes: [4, 7])
-        case "IT":
-            formatted = grouped(digits, sizes: [3, 3, 4])
-        default:
+        } else {
             formatted = groupedByThree(digits)
         }
 
         return preserveDialSymbols(rawDigits, formattedDigits: formatted)
     }
 
-    // MARK: - Private
-
-    private static func grouped(_ digits: String, sizes: [Int]) -> String {
-        var parts: [String] = []
-        var index = digits.startIndex
-        for size in sizes {
-            guard index < digits.endIndex else { break }
-            let end = digits.index(index, offsetBy: size, limitedBy: digits.endIndex) ?? digits.endIndex
-            parts.append(String(digits[index..<end]))
-            index = end
+    /// US/CA-style `(415) 555-0123` only when region and digit count match NANP — not for 9-digit ES mobiles.
+    private static func usesNorthAmericanPunctuation(digits: String) -> Bool {
+        let region = WordApiSettings.dialDisplayRegionISO.uppercased()
+        guard ["US", "CA", "PR", "DO"].contains(region) else { return false }
+        if digits.count == 9, ["6", "7", "9"].contains(String(digits.prefix(1))) {
+            return false
         }
-        if index < digits.endIndex {
-            parts.append(String(digits[index...]))
-        }
-        return parts.joined(separator: " ")
+        return digits.count >= 10 || digits.count == 7
     }
+
+    // MARK: - Private
 
     private static func groupedByThree(_ digits: String) -> String {
         var parts: [String] = []

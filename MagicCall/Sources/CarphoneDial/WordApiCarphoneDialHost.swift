@@ -29,11 +29,34 @@ final class CarphoneDialViewController: UIViewController {
     private(set) var isEditingLocally = false
 
     let phoneView = PhoneKeyboard(frame: .zero)
+    private var styleObservers: [NSObjectProtocol] = []
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .default }
 
+    deinit {
+        styleObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        CarphoneDialSystemAppearance.startObservingSystemStyle()
+        let center = NotificationCenter.default
+        styleObservers = [
+            center.addObserver(
+                forName: .carphoneDialSystemStyleDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.applySystemPhoneAppearance()
+            },
+            center.addObserver(
+                forName: UIApplication.willEnterForegroundNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.applySystemPhoneAppearance()
+            },
+        ]
 
         phoneView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(phoneView)
@@ -80,12 +103,16 @@ final class CarphoneDialViewController: UIViewController {
 
     /// Match the real Phone app: device light/dark, not MindtoneX forced dark shell.
     private func applySystemPhoneAppearance() {
+        let style = CarphoneDialSystemAppearance.userInterfaceStyle
         CarphoneDialSystemAppearance.apply(to: self)
-        phoneView.overrideUserInterfaceStyle = CarphoneDialSystemAppearance.userInterfaceStyle
-        view.backgroundColor = .systemBackground
-        phoneView.backgroundColor = .systemBackground
+        phoneView.overrideUserInterfaceStyle = style
+        let traits = UITraitCollection(userInterfaceStyle: style)
+        let background = UIColor.systemBackground.resolvedColor(with: traits)
+        view.backgroundColor = background
+        phoneView.backgroundColor = background
         phoneView.themeFromDefaults()
         phoneView.applyLocalizedAddNumberCaption()
+        phoneView.syncTelephoneDisplay(animated: false)
         phoneView.setNeedsLayout()
     }
 }

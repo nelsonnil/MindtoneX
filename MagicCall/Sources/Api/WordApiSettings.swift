@@ -280,6 +280,15 @@ enum WordApiSettings {
         return codes?.first
     }
 
+    /// Dial pad spacing (Phone app): **Region** first; if Region is US/CA but SIM is elsewhere, prefer SIM.
+    static var dialDisplayRegionISO: String {
+        let localeRegion = deviceRegionISO.uppercased()
+        if ["US", "CA"].contains(localeRegion), let sim = cellularCountryISO(), sim != localeRegion {
+            return sim
+        }
+        return localeRegion
+    }
+
     static func defaultCountryCallingCode(for region: String = deviceRegionISO) -> String? {
         switch region.uppercased() {
         case "ES": return "34"
@@ -348,19 +357,15 @@ enum WordApiSettings {
         let canonical = canonicalPhoneDigits(raw)
         guard canonical.count >= 9 else { return phoneDisplayPlaceholder() }
         let national = nationalNumber(fromCanonical: canonical)
-        if national.count == 9 {
-            let a = national.prefix(3)
-            let b = national.dropFirst(3).prefix(3)
-            let c = national.suffix(3)
-            return "\(a) \(b) \(c)"
-        }
-        if national.count == 10 {
-            let a = national.prefix(3)
-            let b = national.dropFirst(3).prefix(3)
-            let c = national.suffix(4)
+        let digits = String(national.filter(\.isNumber))
+        if digits.count == 10,
+           ["US", "CA", "PR", "DO"].contains(dialDisplayRegionISO.uppercased()) {
+            let a = digits.prefix(3)
+            let b = digits.dropFirst(3).prefix(3)
+            let c = digits.suffix(4)
             return "(\(a)) \(b)-\(c)"
         }
-        return national
+        return CarphoneDialFormat.liveDisplay(digits)
     }
 
     static func phoneDisplayPlaceholder() -> String {

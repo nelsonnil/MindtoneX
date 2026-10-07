@@ -6,6 +6,7 @@ struct WordApiSpectatorDialSheet: View {
     @EnvironmentObject private var model: AppModel
     /// Always start blank — spectator dials fresh each Perform (saved only after outgoing call ends).
     @State private var phoneDraft = ""
+    @State private var dialAppearanceToken = 0
 
     var body: some View {
         WordApiCarphoneDialHost(
@@ -15,6 +16,11 @@ struct WordApiSpectatorDialSheet: View {
         .ignoresSafeArea()
         /// Phone dial follows **device** light/dark, not MindtoneX home chrome (`.preferredColorScheme(.dark)`).
         .preferredColorScheme(CarphoneDialSystemAppearance.preferredColorScheme)
+        .id(dialAppearanceToken)
+        .onAppear { CarphoneDialSystemAppearance.startObservingSystemStyle() }
+        .onReceive(NotificationCenter.default.publisher(for: .carphoneDialSystemStyleDidChange)) { _ in
+            dialAppearanceToken += 1
+        }
         .interactiveDismissDisabled(WordApiContactPerformGate.awaitingOutgoingEnd)
     }
 
