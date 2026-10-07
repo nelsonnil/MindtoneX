@@ -1,55 +1,73 @@
 import Foundation
 
 /// iTunes Search API storefront for song preview lookup (`country` query param).
-enum SongStorefront: String, CaseIterable, Identifiable {
-    case auto = ""
-    case cn = "CN"
-    case hk = "HK"
-    case tw = "TW"
-    case us = "US"
-    case gb = "GB"
-    case es = "ES"
-    case fr = "FR"
-    case de = "DE"
-    case jp = "JP"
-    case kr = "KR"
-    case mx = "MX"
-    case br = "BR"
-    case au = "AU"
-    case inRegion = "IN"
+/// Not app UI language — pick which Apple Music / iTunes catalog to search.
+enum SongStorefront {
+    static let automaticTitle = "Automatic (iPhone region)"
 
-    var id: String { rawValue }
+    private static let catalogByCode: [String: String] = loadCatalog()
+    private static let sortedCatalogEntries: [(code: String, name: String)] = {
+        catalogByCode
+            .map { (code: $0.key, name: englishDisplayName(code: $0.key, fallback: $0.value)) }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }()
 
-    var menuTitle: String {
-        switch self {
-        case .auto: return "Automatic (iPhone region)"
-        case .cn: return "China mainland (CN)"
-        case .hk: return "Hong Kong (HK)"
-        case .tw: return "Taiwan (TW)"
-        case .us: return "United States (US)"
-        case .gb: return "United Kingdom (GB)"
-        case .es: return "Spain (ES)"
-        case .fr: return "France (FR)"
-        case .de: return "Germany (DE)"
-        case .jp: return "Japan (JP)"
-        case .kr: return "Korea (KR)"
-        case .mx: return "Mexico (MX)"
-        case .br: return "Brazil (BR)"
-        case .au: return "Australia (AU)"
-        case .inRegion: return "India (IN)"
-        }
+    /// All storefronts for the picker (ISO code → English name), alphabetical by name.
+    static var catalogEntries: [(code: String, name: String)] { sortedCatalogEntries }
+
+    static func isAutomatic(stored: String) -> Bool {
+        stored.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
-    static func from(stored: String) -> SongStorefront {
-        let code = stored.trimmingCharacters(in: .whitespaces).uppercased()
-        if code.isEmpty { return .auto }
-        return SongStorefront(rawValue: code) ?? .auto
+    static func normalizedCode(stored: String) -> String {
+        stored.trimmingCharacters(in: .whitespaces).uppercased()
+    }
+
+    static func isKnownStorefront(code: String) -> Bool {
+        let c = code.uppercased()
+        return !c.isEmpty && catalogByCode[c] != nil
+    }
+
+    /// Label for the Performance settings row.
+    static func pickerRowTitle(stored: String) -> String {
+        if isAutomatic(stored: stored) { return automaticTitle }
+        let code = normalizedCode(stored: stored)
+        if let official = catalogByCode[code] {
+            return "\(englishDisplayName(code: code, fallback: official)) (\(code))"
+        }
+        return "Custom storefront (\(code))"
     }
 
     /// Resolved code sent to iTunes (same rules as `PreviewService`).
     static func effectiveCode(stored: String = Prefs.storeCountry) -> String {
-        let manual = stored.trimmingCharacters(in: .whitespaces).uppercased()
+        let manual = normalizedCode(stored: stored)
         if !manual.isEmpty { return manual }
         return Locale.current.region?.identifier.uppercased() ?? "US"
+    }
+
+    private static func loadCatalog() -> [String: String] {
+        guard
+            let url = Bundle.main.url(forResource: "ITunesStorefrontCountries", withExtension: "json"),
+            let data = try? Data(contentsOf: url),
+            let decoded = try? JSONDecoder().decode([String: String].self, from: data)
+        else {
+            assertionFailure("Missing ITunesStorefrontCountries.json")
+            return ["US": "United States"]
+        }
+        return decoded
+    }
+
+    private static func englishDisplayName(code: String, fallback: String) -> String {
+        let locale = Locale(identifier: "en_US")
+        if let localized = locale.localizedString(forRegionCode: code), !localized.isEmpty {
+            return localized
+        }
+        return sanitizeCatalogName(fallback)
+    }
+
+    private static func sanitizeCatalogName(_ raw: String) -> String {
+        raw
+            .replacingOccurrences(of: " (the)", with: "")
+            .replacingOccurrences(of: "Bahamas (the)", with: "Bahamas")
     }
 }

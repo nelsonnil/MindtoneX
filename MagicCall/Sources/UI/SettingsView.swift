@@ -78,7 +78,7 @@ struct SettingsView: View {
         } header: {
             Text("Song previews (lab)")
         } footer: {
-            Text("Song search region: **Home → Performance settings**. iTunes → US → Deezer is always used when Apple has no preview.")
+            Text("Song search storefront: **Home → Performance settings** (iTunes country, not app language). Automatic = iPhone region; searchable list of all storefronts. Fallback: US → Deezer.")
         }
     }
 

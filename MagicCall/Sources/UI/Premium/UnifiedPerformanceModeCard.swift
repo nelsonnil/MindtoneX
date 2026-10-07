@@ -9,6 +9,7 @@ struct PerformanceCard: View {
 
     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
     @AppStorage(Prefs.Key.storeCountry) private var storeCountry = ""
+    @State private var showSongStorefrontPicker = false
     @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
     @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
     private var hasScreenshot: Bool { StageImageStore.hasScreenshot }
@@ -71,44 +72,49 @@ struct PerformanceCard: View {
         }
     }
 
-    private var songStorefrontSelection: Binding<SongStorefront> {
-        Binding(
-            get: { SongStorefront.from(stored: storeCountry) },
-            set: { newValue in
-                storeCountry = newValue.rawValue
-            }
-        )
-    }
-
     private var songSearchRegionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Song search region")
+            Text("Song search storefront")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(OracleTheme.textPrimary)
-            Picker("Song search region", selection: songStorefrontSelection) {
-                ForEach(SongStorefront.allCases) { region in
-                    Text(region.menuTitle).tag(region)
+            Text("Apple iTunes catalog country — not MindtoneX app language.")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+
+            Button {
+                showSongStorefrontPicker = true
+            } label: {
+                HStack {
+                    Text(SongStorefront.pickerRowTitle(stored: storeCountry))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textSecondary)
                 }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background(OracleTheme.cardFill.opacity(0.85), in: RoundedRectangle(cornerRadius: 10))
             }
-            .pickerStyle(.menu)
-            .tint(OracleTheme.gold)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Song search storefront")
+            .accessibilityHint("Opens searchable list of iTunes storefront countries")
 
             Text(
                 "iTunes preview catalog for Voice, Camera, Notes, API, and Library. "
                 + "Trying **\(SongStorefront.effectiveCode(stored: storeCountry))** first"
-                + (SongStorefront.from(stored: storeCountry) == .auto
-                    ? " (from your iPhone region)."
+                + (SongStorefront.isAutomatic(stored: storeCountry)
+                    ? " (iPhone region)."
                     : ".")
-                + " If empty, falls back to **US**."
+                + " If empty, falls back to **US**, then **Deezer**."
             )
             .font(.caption)
             .foregroundStyle(OracleTheme.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
-
-            Text("For Chinese catalogs, try **CN**, **TW**, or **HK**. If Apple has no 30 s preview, MindtoneX tries **Deezer** automatically.")
-                .font(.caption2)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+        }
+        .sheet(isPresented: $showSongStorefrontPicker) {
+            SongStorefrontPickerView(storeCountry: $storeCountry)
         }
         .onChange(of: storeCountry) { _, _ in
             Task { await model.previews.clearCaches() }
