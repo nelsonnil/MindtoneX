@@ -172,17 +172,7 @@ struct WordApiIncomingCallBannerPreview: View {
     }
 
     static func formatPhone(_ raw: String) -> String {
-        let digits = WordApiSettings.normalizePhoneDigits(raw)
-        guard digits.count >= 7 else { return "+34 612 34 56 78" }
-        if digits.count <= 9 {
-            return "+\(digits)"
-        }
-        let cc = digits.prefix(digits.count - 9)
-        let rest = digits.suffix(9)
-        let a = rest.prefix(3)
-        let b = rest.dropFirst(3).prefix(2)
-        let c = rest.suffix(2)
-        return "+\(cc) \(a) \(b) \(c)"
+        WordApiSettings.formatPhoneForDisplay(raw)
     }
 
     private struct CyclePhase: Equatable {

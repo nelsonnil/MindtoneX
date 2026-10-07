@@ -44,8 +44,12 @@ struct WordApiSettingsView: View {
                 oracleCard {
                     VStack(alignment: .leading, spacing: 12) {
                         OracleEyebrow(text: "Call Identification (caller number)")
-                        oracleField("34612345678 (country code + number)", text: $fallbackPhoneDigits)
+                        oracleField(WordApiSettings.phoneDisplayPlaceholder(), text: $fallbackPhoneDigits)
                             .keyboardType(.phonePad)
+                        Text(WordApiSettings.phoneEntryHint())
+                            .font(.caption2)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                         Text("Used when **Save locked word as contact name** is off, or as backup digits. With contact modes on the **Caller name** card, Known uses the picked contact; Unknown uses the number from the Perform dial sheet.")
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)

@@ -43,7 +43,7 @@ enum WordApiContactPerformGate {
     }
 
     static func beginDialCapture(phoneDigits: String) {
-        dialedPhoneDigits = WordApiSettings.normalizePhoneDigits(phoneDigits)
+        dialedPhoneDigits = WordApiSettings.canonicalPhoneDigits(phoneDigits)
         awaitingOutgoingEnd = true
         outgoingCallUUID = nil
     }

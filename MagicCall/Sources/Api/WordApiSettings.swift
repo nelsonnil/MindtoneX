@@ -231,7 +231,7 @@ enum WordApiSettings {
     ) {
         d.set(identifier, forKey: Key.knownContactIdentifier)
         d.set(displayName, forKey: Key.knownContactDisplayName)
-        d.set(normalizePhoneDigits(phoneDigits), forKey: Key.knownContactPhoneDigits)
+        d.set(canonicalPhoneDigits(phoneDigits), forKey: Key.knownContactPhoneDigits)
         d.set(originalGivenName, forKey: Key.knownContactOriginalGivenName)
         d.removeObject(forKey: Key.knownContactGivenNameBeforeLock)
     }
@@ -249,13 +249,119 @@ enum WordApiSettings {
     }
 
     static func setLastDialedPhoneDigits(_ digits: String) {
-        d.set(normalizePhoneDigits(digits), forKey: Key.lastDialedPhoneDigits)
+        d.set(canonicalPhoneDigits(digits), forKey: Key.lastDialedPhoneDigits)
     }
 
+    /// Strip to digits only (no country inference).
     static func normalizePhoneDigits(_ raw: String) -> String {
         var digits = raw.filter(\.isNumber)
         if digits.hasPrefix("00") { digits.removeFirst(2) }
         return digits
+    }
+
+    /// Device region for national dial heuristics (e.g. ES → prepend 34 when user omits country code).
+    static var deviceRegionISO: String {
+        Locale.current.region?.identifier ?? "US"
+    }
+
+    static func defaultCountryCallingCode(for region: String = deviceRegionISO) -> String? {
+        switch region.uppercased() {
+        case "ES": return "34"
+        case "US", "CA", "DO", "PR": return "1"
+        case "GB", "UK": return "44"
+        case "FR": return "33"
+        case "DE": return "49"
+        case "IT": return "39"
+        case "PT": return "351"
+        case "MX": return "52"
+        case "AR": return "54"
+        case "CO": return "57"
+        case "CL": return "56"
+        default: return nil
+        }
+    }
+
+    /// Full digits for Call Directory / Contacts (adds country code when user typed a national number).
+    static func canonicalPhoneDigits(_ raw: String) -> String {
+        var d = normalizePhoneDigits(raw)
+        guard !d.isEmpty else { return d }
+        if d.hasPrefix("00") { d.removeFirst(2) }
+        while d.first == "0", d.count > 10 { d.removeFirst() }
+        guard let cc = defaultCountryCallingCode() else { return d }
+        if d.hasPrefix(cc) { return d }
+        if shouldPrependCountryCode(d, countryCode: cc) {
+            return cc + d
+        }
+        return d
+    }
+
+    private static func shouldPrependCountryCode(_ digits: String, countryCode: String) -> Bool {
+        switch countryCode {
+        case "34":
+            return digits.count == 9 && ["6", "7", "9"].contains(String(digits.prefix(1)))
+        case "1":
+            return digits.count == 10
+        case "44":
+            return digits.count >= 10 && digits.count <= 11 && digits.hasPrefix("7")
+        default:
+            return digits.count >= 8 && digits.count <= 11
+        }
+    }
+
+    /// National number without country code — how you usually dial on this phone.
+    static func nationalNumber(fromCanonical digits: String) -> String {
+        let d = canonicalPhoneDigits(digits)
+        guard let cc = defaultCountryCallingCode(), d.hasPrefix(cc), d.count > cc.count else {
+            return d
+        }
+        return String(d.dropFirst(cc.count))
+    }
+
+    /// `tel:` URL using national format when possible (same as Phone app dial pad).
+    static func phoneDialURL(storedDigits: String) -> URL? {
+        let canonical = canonicalPhoneDigits(storedDigits)
+        guard canonical.count >= 7 else { return nil }
+        let national = nationalNumber(fromCanonical: canonical)
+        if national.count >= 7, let url = URL(string: "tel://\(national)") {
+            return url
+        }
+        return URL(string: "tel://+\(canonical)")
+    }
+
+    static func formatPhoneForDisplay(_ raw: String) -> String {
+        let canonical = canonicalPhoneDigits(raw)
+        guard canonical.count >= 9 else { return phoneDisplayPlaceholder() }
+        let national = nationalNumber(fromCanonical: canonical)
+        if national.count == 9 {
+            let a = national.prefix(3)
+            let b = national.dropFirst(3).prefix(3)
+            let c = national.suffix(3)
+            return "\(a) \(b) \(c)"
+        }
+        if national.count == 10 {
+            let a = national.prefix(3)
+            let b = national.dropFirst(3).prefix(3)
+            let c = national.suffix(4)
+            return "(\(a)) \(b)-\(c)"
+        }
+        return national
+    }
+
+    static func phoneDisplayPlaceholder() -> String {
+        switch deviceRegionISO.uppercased() {
+        case "ES": return "690 808 919"
+        case "US", "CA": return "(415) 555-0123"
+        default: return "phone number"
+        }
+    }
+
+    static func phoneEntryHint() -> String {
+        switch deviceRegionISO.uppercased() {
+        case "ES":
+            return "Escribe el móvil como en Teléfono (690 808 919). No hace falta +34 ni 034."
+        default:
+            return "Enter the number like your Phone app — country code optional; we use your iPhone region."
+        }
     }
 
     /// Digits used for Call Directory + contact sync (contact modes override manual field when ON).
@@ -263,12 +369,16 @@ enum WordApiSettings {
         if saveWordAsContactEnabled {
             switch contactMode {
             case .known:
-                if knownContactPhoneDigits.count >= 7 { return knownContactPhoneDigits }
+                if knownContactPhoneDigits.count >= 7 {
+                    return canonicalPhoneDigits(knownContactPhoneDigits)
+                }
             case .unknown:
-                if lastDialedPhoneDigits.count >= 7 { return lastDialedPhoneDigits }
+                if lastDialedPhoneDigits.count >= 7 {
+                    return canonicalPhoneDigits(lastDialedPhoneDigits)
+                }
             }
         }
-        return normalizePhoneDigits(fallbackPhoneDigits)
+        return canonicalPhoneDigits(fallbackPhoneDigits)
     }
 
     static var customHeaderValue: String? {

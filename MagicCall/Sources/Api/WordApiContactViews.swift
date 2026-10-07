@@ -16,7 +16,7 @@ struct WordApiSpectatorDialSheet: View {
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                TextField("Country code + number", text: $phoneDraft)
+                TextField(WordApiSettings.phoneDisplayPlaceholder(), text: $phoneDraft)
                     .keyboardType(.phonePad)
                     .font(.body.monospaced())
                     .padding(12)
@@ -33,6 +33,11 @@ struct WordApiSpectatorDialSheet: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(OracleTheme.gold)
+
+                Text(WordApiSettings.phoneEntryHint())
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text("Waiting for hang-up… Perform starts automatically after the call ends.")
                     .font(.caption2)
@@ -58,11 +63,10 @@ struct WordApiSpectatorDialSheet: View {
     }
 
     private func startCall() {
-        let digits = WordApiSettings.normalizePhoneDigits(phoneDraft)
+        let digits = WordApiSettings.canonicalPhoneDigits(phoneDraft)
         guard digits.count >= 7 else { return }
         WordApiContactPerformGate.beginDialCapture(phoneDigits: digits)
-        let tel = "tel://+\(digits)"
-        guard let url = URL(string: tel) else { return }
+        guard let url = WordApiSettings.phoneDialURL(storedDigits: digits) else { return }
         UIApplication.shared.open(url)
     }
 }
