@@ -31,9 +31,11 @@ enum PerformInstructionsCopy {
             "Only songs that **lock live during Perform** count — not tracks picked from Library on Home.",
         ]
         if autoShareOn {
-            lines.append("On this device, **Auto-open Share** is **ON**.")
+            lines.append("On this device, **Auto-open Share** is **ON** — Share opens when the song locks (no volume button needed for that step).")
         } else {
-            lines.append("On this device, **Auto-open Share** is **OFF**. After the call ends, press **volume down** once to open Share manually (**Use as Ringtone**) — separate from **hold-to-peek** on the screen.")
+            lines.append("On this device, **Auto-open Share** is **OFF**.")
+            lines.append("**Manual Share after the call:** When the spectator **hangs up**, press the **volume down** button on the **side of the iPhone** (lower rocker) **once**. iOS opens the Share sheet → tap **Use as Ringtone**. The app briefly restores the previous volume level so the press stays invisible to the audience.")
+            lines.append("This uses the **hardware volume down** key — **not** a long press on the screen — so it does **not** conflict with **hold-to-peek** (Feedback).")
         }
         lines.append("After **Use as Ringtone**, iOS may open **Settings → Ringtone** — press **Home once** to return; the tone is already saved.")
         return lines
@@ -45,6 +47,7 @@ enum PerformInstructionsCopy {
         "**Unknown contact (Caller name):** Perform may open a **Phone-style dial** inside MindtoneX. Enter their number and tap call — iOS opens the **real Phone app**; when you return, the **stage screenshot** is showing again and the app arms after that outgoing call ends.",
         "Give your number; when they call back, the app plays the locked song. Hang-up = music stops.",
         "**Performer peek (Feedback):** **Hold** your finger on the screen (~instant) to see **Song**, **Caller name**, and **Notes** lines; **release** to hide. Empty fields show **— —**. **ON by default** — tune position, size, and color under **Feedback**.",
+        "**Optional real ringtone (manual):** If **Auto-open Share** is **OFF**, after hang-up press **volume down** on the side of the phone once → Share → **Use as Ringtone** (see **Optional: real ringtone** below).",
         "Exit Perform: **two-finger swipe down** from the middle of the screen.",
     ]
 
