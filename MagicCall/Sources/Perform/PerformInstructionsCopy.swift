@@ -18,7 +18,7 @@ enum PerformInstructionsCopy {
         "**Stage screenshot (required):** On the **Performance settings** card, tap **Choose screenshot**. Use a **full-screen capture of your real Home Screen** (or Lock screen). During Perform, the audience only sees that image.",
         "**Status bar:** The thin strip at the top (time, signal, battery). In Performance settings, use the preview to pick **Auto**, **Dark**, or **Light** so icons match your wallpaper — it should look like a real iPhone, not a floating wallpaper.",
         "**Playback volume:** Set the slider to **100%** (or as loud as you need) so the song is audible when the call rings. You can still adjust with the side buttons during Perform.",
-        "**Phone → Incoming Calls:** Banner (standard iOS). Keep **Silent mode** how you prefer for your show; the trick is **in-app playback** when the call arrives, not changing the carrier ringtone unless you choose the optional Share step below.",
+        "**Phone → Incoming Calls:** iOS may show a **banner** or **full-screen** incoming UI — MindtoneX works with **either**. Keep **Silent mode** how you prefer; the trick is **in-app playback** when the call arrives, not changing the carrier ringtone unless you choose the optional Share step below.",
         "Do **not** lock the phone or switch apps during Perform — MindtoneX keeps the screen awake, but leaving the app stops the effect.",
     ]
 
@@ -97,7 +97,7 @@ enum PerformInstructionsCopy {
     // MARK: - Caller name
 
     static let callerName: [String] = [
-        "Home → **Caller name**. Turn **Show word on incoming call** **ON** to replace the number with a **word** on the incoming-call banner (needs **Settings → Phone → Call Blocking & Identification → MindtoneX**).",
+        "Home → **Caller name**. Turn **Show word on incoming call** **ON** to replace the number with a **word** on the incoming call (**banner or full-screen** — needs **Settings → Phone → Call Blocking & Identification → MindtoneX**).",
         "**Inject / Elips / Custom API:** Polls every \(Int(WordApiSettings.pollInterval)) s during Perform. First reading = old word on server; **next change** = spectator’s word → lock.",
         "**Camera (OCR):** **One word** on the line **under the song** (song may use one or two lines above). Requires Song input = **Camera**.",
         "**Voice (AI):** Same mic as Song = Voice; ask what word they think you saved as their contact (script on the card).",

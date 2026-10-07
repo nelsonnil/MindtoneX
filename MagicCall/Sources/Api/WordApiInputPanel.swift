@@ -30,9 +30,10 @@ struct WordApiInputPanel: View {
                     Text("Show word on incoming call")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
-                    Text("One-time: turn on MindtoneX in Settings → Phone → Call Blocking & Identification")
+                    Text("Works with iOS **banner** or **full-screen** incoming call. One-time: enable MindtoneX under Settings → Phone → Call Blocking & Identification.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .tint(OracleTheme.gold)
@@ -288,7 +289,7 @@ struct WordApiInputPanel: View {
                     }
                     .buttonStyle(.plain)
 
-                    Text("On Perform, polls every \(Int(WordApiSettings.pollInterval)) s — first reading is the old word; the **next change** is the spectator’s word for the call banner.")
+                    Text("On Perform, polls every \(Int(WordApiSettings.pollInterval)) s — first reading is the old word; the **next change** is the spectator’s word on the incoming call.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                 } else if provider == .card {

@@ -133,7 +133,7 @@ enum PerformCopy {
         "On home, open **Caller name** (below Song input). Turn **Show word on incoming call** **ON** and pick **Inject**, **Elips**, **Custom API**, **Card (OCR)**, or **Voice (AI)** — separate from the song API unless you share Card or Voice with song input.",
         "During **Perform**, networked providers poll the word URL every \(Int(WordApiSettings.pollInterval)) s **in parallel** with song input. **Card (OCR)** uses fixed lines on the card (**line 1** song · **line 2** caller · **line 3** Notes chip — see **Card & Voice input** in Instructions). **Voice (AI)** uses conversation context instead of lines.",
         "**Elips example:** enable **API** for the song (spectator searches a title in Elips) and **Elips** for the word (spectator submits a word — often one they chose from the lyrics). When the word **locks**, that text can appear as the **incoming caller name** while your stage plays the locked song.",
-        "The **first poll** is the old value on the server (baseline). The **next change** is the spectator’s new word → **lock** (three short taps). Then have them call you — the banner should show the word, not only the digits.",
+        "The **first poll** is the old value on the server (baseline). The **next change** is the spectator’s new word → **lock** (three short taps). Then have them call you — the incoming call should show the word (banner or full-screen), not only the digits.",
         "Turn on **Settings → Phone → Call Blocking & Identification → MindtoneX**. Optional: **Save locked word as contact name** (below) so iOS shows the prediction even more reliably than Call Directory alone.",
     ]
 

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Preferences for the Word API (incoming-call banner label). Separate keys and endpoints from song API.
+/// Preferences for the Word API (incoming-call caller name). Separate keys and endpoints from song API.
 enum WordApiSettings {
     enum Key {
         /// Master toggle: caller label during Perform (UserDefaults `wordApi.callerLabelEnabled`).
@@ -118,7 +118,7 @@ enum WordApiSettings {
             case .inject:
                 return "Enter your Inject ID for the **word** endpoint. The app reads the JSON; a new submission changes count/value and that text becomes the incoming caller name."
             case .elips:
-                return "Paste the full **word** API URL from Elips (https://pag.gg/…). During Perform the app polls every 2 s; if the word changes it updates the banner, otherwise it stays as is."
+                return "Paste the full **word** API URL from Elips (https://pag.gg/…). During Perform the app polls every 2 s; if the word changes it updates the **incoming caller name**, otherwise it stays as is."
             case .custom:
                 return "Any URL returning a JSON object. Pick the field for the label (e.g. word, label, value). Polled every 2 s during Perform; optional `count` / `receiveCount` in JSON help detect changes."
             case .card:

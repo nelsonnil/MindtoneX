@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 /// Lo que ve el espectador: un fondo neutro a pantalla completa. Sin texto ni controles.
-/// El banner real de llamada de iOS aparece encima de esto.
+/// Real iOS incoming call UI (banner or full-screen) appears above this.
 struct StageView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var notes = NotesSongSession.shared

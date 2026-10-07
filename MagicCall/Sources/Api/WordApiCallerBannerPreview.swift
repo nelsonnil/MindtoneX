@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Animated iOS-style incoming-call banner: phone digits → spectator prediction (Word API).
+/// Animated incoming-call preview (compact banner layout): digits → spectator word — same caller ID on full-screen incoming UI.
 struct WordApiIncomingCallBannerPreview: View {
     var phoneDigits: String
     var predictionWord: String
@@ -24,7 +24,7 @@ struct WordApiIncomingCallBannerPreview: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Preview incoming call banner from phone number to prediction word")
+        .accessibilityLabel("Preview incoming call from phone number to prediction word, banner or full screen")
     }
 
     private var headerRow: some View {
@@ -208,7 +208,7 @@ struct WordApiIncomingCallBannerPreview: View {
         var caption: String {
             switch kind {
             case .phoneNumber:
-                return "What the spectator sees first — the dialed number on the banner."
+                return "First phase — the dialed number as caller ID (banner or full-screen incoming UI)."
             case .morphing:
                 return "When the word locks, Contacts + Call Directory swap the label in place."
             case .prediction:
