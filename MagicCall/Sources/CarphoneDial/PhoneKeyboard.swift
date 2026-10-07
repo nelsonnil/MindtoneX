@@ -559,15 +559,17 @@ class PhoneKeyboard: UIView {
         self.callingImg.isHidden = true
     }
     
-    func configureColor(theme: Themes, forSnapshot: Bool = false) {
+    func configureColor(theme: Themes, forSnapshot: Bool = false, resolvedWith traits: UITraitCollection? = nil) {
         let applyChrome = { [weak self] in
             guard let self else {
                 return
             }
-            self.backgroundColor = theme.colors.backgound
-            self.contentView.backgroundColor = theme.colors.backgound
-            self.telephoneLbl.textColor = theme.colors.textColor
-            self.addNumberLbl.textColor = theme.colors.textColor.withAlphaComponent(0.55)
+            let background = theme.colors.backgound.resolvedForDialAppearance(traits)
+            let text = theme.colors.textColor.resolvedForDialAppearance(traits)
+            self.backgroundColor = background
+            self.contentView.backgroundColor = background
+            self.telephoneLbl.textColor = text
+            self.addNumberLbl.textColor = text.withAlphaComponent(0.55)
         }
         if Thread.isMainThread {
             applyChrome()
@@ -575,11 +577,12 @@ class PhoneKeyboard: UIView {
             DispatchQueue.main.sync(execute: applyChrome)
         }
 
+        let palette = theme.resolvedColors(for: traits)
         for button in numberBtnArray {
             if forSnapshot {
                 button.applySnapshotKeyAppearance()
             } else {
-                button.configure(theme: theme)
+                button.configure(palette: palette)
             }
         }
         if forSnapshot {
@@ -587,8 +590,8 @@ class PhoneKeyboard: UIView {
             hastashBtn.applySnapshotKeyAppearance()
             callBtn.applySnapshotCallAppearance(fill: Self.callGreen)
         } else {
-            asteriskBtn.configure(theme: theme)
-            hastashBtn.configure(theme: theme)
+            asteriskBtn.configure(palette: palette)
+            hastashBtn.configure(palette: palette)
             if !callBtn.applyGlassIfAvailable(tint: Self.callGreen) {
                 callBtn.background = Self.callGreen
                 callBtn.pushBackground = Self.callGreenPressed
@@ -756,9 +759,15 @@ class PhoneKeyboard: UIView {
         button.pressButton()
     }
     
-    func themeFromDefaults() {
+    func applyDialSystemInterfaceStyle(_ style: UIUserInterfaceStyle, background: UIColor) {
+        overrideUserInterfaceStyle = style
+        contentView.overrideUserInterfaceStyle = style
+        contentView.backgroundColor = background
+    }
+
+    func themeFromDefaults(resolvedWith traits: UITraitCollection? = nil) {
         UserDefaults.standard.set(Themes.xclear.rawValue, forKey: CarphoneDialKeys.theme)
-        configureColor(theme: .xclear)
+        configureColor(theme: .xclear, resolvedWith: traits)
         for btn in numberBtnArray {
             btn.updateIndicators()
         }

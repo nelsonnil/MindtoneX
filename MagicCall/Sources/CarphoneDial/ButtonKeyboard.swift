@@ -226,7 +226,11 @@ class ButtonKeyboard: UIView {
     }
     
     func configure(theme: Themes) {
-        applyTheme(theme, forSnapshot: false)
+        applyTheme(theme.colors, forSnapshot: false)
+    }
+
+    func configure(palette: ThemeModel) {
+        applyTheme(palette, forSnapshot: false)
     }
 
     /// Solid fills for off-screen capture — `UIVisualEffectView` glass does not rasterize in snapshots.
@@ -252,15 +256,15 @@ class ButtonKeyboard: UIView {
         contentView.backgroundColor = fill
     }
 
-    private func applyTheme(_ theme: Themes, forSnapshot: Bool) {
+    private func applyTheme(_ palette: ThemeModel, forSnapshot: Bool) {
         let work = { [weak self] in
             guard let self else {
                 return
             }
-            self.backImage.tintColor = theme.colors.textColor
-            self.titleLbl.textColor = theme.colors.textColor
-            self.subTitleLbl.textColor = theme.colors.textColor
-            self.tintImage = theme.colors.textColor
+            self.backImage.tintColor = palette.textColor
+            self.titleLbl.textColor = palette.textColor
+            self.subTitleLbl.textColor = palette.textColor
+            self.tintImage = palette.textColor
             if forSnapshot {
                 self.applySnapshotKeyAppearance()
                 return
@@ -268,10 +272,10 @@ class ButtonKeyboard: UIView {
             if self.applyGlassIfAvailable() {
                 return
             }
-            self.backgroundColor = theme.colors.buttonBackGound
-            self.background = theme.colors.buttonBackGound
-            self.contentView.backgroundColor = theme.colors.buttonBackGound
-            self.pushBackground = theme.colors.buttonBackGound2
+            self.backgroundColor = palette.buttonBackGound
+            self.background = palette.buttonBackGound
+            self.contentView.backgroundColor = palette.buttonBackGound
+            self.pushBackground = palette.buttonBackGound2
         }
         if Thread.isMainThread {
             work()

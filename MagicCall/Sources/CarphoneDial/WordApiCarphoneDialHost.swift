@@ -110,7 +110,8 @@ final class CarphoneDialViewController: UIViewController {
         let background = UIColor.systemBackground.resolvedColor(with: traits)
         view.backgroundColor = background
         phoneView.backgroundColor = background
-        phoneView.themeFromDefaults()
+        phoneView.applyDialSystemInterfaceStyle(style, background: background)
+        phoneView.themeFromDefaults(resolvedWith: traits)
         phoneView.applyLocalizedAddNumberCaption()
         phoneView.syncTelephoneDisplay(animated: false)
         phoneView.setNeedsLayout()

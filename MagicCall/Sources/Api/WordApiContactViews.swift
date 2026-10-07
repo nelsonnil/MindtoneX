@@ -8,12 +8,19 @@ struct WordApiSpectatorDialSheet: View {
     @State private var phoneDraft = ""
     @State private var dialAppearanceToken = 0
 
+    private var dialSheetBackground: Color {
+        CarphoneDialSystemAppearance.userInterfaceStyle == .dark ? Color.black : Color(uiColor: .systemBackground)
+    }
+
     var body: some View {
-        WordApiCarphoneDialHost(
-            phoneDigits: $phoneDraft,
-            onCall: startCall
-        )
-        .ignoresSafeArea()
+        ZStack {
+            dialSheetBackground.ignoresSafeArea()
+            WordApiCarphoneDialHost(
+                phoneDigits: $phoneDraft,
+                onCall: startCall
+            )
+            .ignoresSafeArea()
+        }
         /// Phone dial follows **device** light/dark, not MindtoneX home chrome (`.preferredColorScheme(.dark)`).
         .preferredColorScheme(CarphoneDialSystemAppearance.preferredColorScheme)
         .id(dialAppearanceToken)

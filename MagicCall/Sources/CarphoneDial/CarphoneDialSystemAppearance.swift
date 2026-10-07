@@ -35,18 +35,21 @@ private final class SystemStyleProbe {
 
     var resolvedStyle: UIUserInterfaceStyle {
         ensureInstalled()
-        let fromProbe = window?.traitCollection.userInterfaceStyle ?? UIUserInterfaceStyle.unspecified
-        if fromProbe == .light || fromProbe == .dark {
-            return fromProbe
-        }
+        // Settings → Appearance (works while MindtoneX home forces `.preferredColorScheme(.dark)`).
         switch UserDefaults.standard.string(forKey: "AppleInterfaceStyle") {
         case "Dark":
             return .dark
         case "Light":
             return .light
         default:
+            // Light appearance or Automatic while system is light — key absent. Do not read the probe window here:
+            // MindtoneX home forces dark and the probe inherits that trait even on a Light device.
             return .light
         }
+    }
+
+    func refreshAfterForegroundOrTraitChange() {
+        NotificationCenter.default.post(name: .carphoneDialSystemStyleDidChange, object: nil)
     }
 
     func ensureInstalled() {
@@ -59,8 +62,7 @@ private final class SystemStyleProbe {
 
         let controller = StyleHostController()
         controller.onStyleChange = { [weak self] in
-            guard self != nil else { return }
-            NotificationCenter.default.post(name: .carphoneDialSystemStyleDidChange, object: nil)
+            self?.refreshAfterForegroundOrTraitChange()
         }
         host = controller
 
@@ -71,6 +73,15 @@ private final class SystemStyleProbe {
         probeWindow.rootViewController = controller
         probeWindow.isHidden = false
         window = probeWindow
+
+        let center = NotificationCenter.default
+        center.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshAfterForegroundOrTraitChange()
+        }
     }
 }
 

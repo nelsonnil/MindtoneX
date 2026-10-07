@@ -143,3 +143,24 @@ struct ThemeModel {
         self.imageColor = imageColor
     }
 }
+
+extension Themes {
+    func resolvedColors(for traits: UITraitCollection?) -> ThemeModel {
+        let base = colors
+        guard let traits else { return base }
+        return ThemeModel(
+            backgound: base.backgound.resolvedColor(with: traits),
+            buttonBackGound: base.buttonBackGound.resolvedColor(with: traits),
+            buttonBackGound2: base.buttonBackGound2.resolvedColor(with: traits),
+            textColor: base.textColor.resolvedColor(with: traits),
+            imageColor: base.imageColor.resolvedColor(with: traits)
+        )
+    }
+}
+
+extension UIColor {
+    func resolvedForDialAppearance(_ traits: UITraitCollection?) -> UIColor {
+        guard let traits else { return self }
+        return resolvedColor(with: traits)
+    }
+}
