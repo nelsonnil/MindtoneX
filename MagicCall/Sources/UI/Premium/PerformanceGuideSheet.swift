@@ -59,6 +59,11 @@ struct PerformanceGuideSheet: View {
                     lines: PerformInstructionsCopy.callerName
                 )
 
+                InstructionSubsection(
+                    title: "Known vs Unknown (Contacts)",
+                    lines: PerformInstructionsCopy.callerNameKnownUnknown
+                )
+
                 InstructionSection(
                     title: "Notes contact",
                     icon: "note.text",

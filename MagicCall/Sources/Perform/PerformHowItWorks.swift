@@ -139,10 +139,10 @@ enum PerformCopy {
 
     /// Known vs Unknown contact — prediction on the incoming-call name.
     static let wordApiContactPrediction: [String] = [
-        "**The idea:** the spectator’s word from the API becomes the **name** on the incoming call — a contact “prediction” instead of an anonymous number.",
-        "**Known** (friend, family, repeat volunteer): turn **Save locked word as contact name** **ON** → **Known** → **Choose contact**. When the word locks, MindtoneX **replaces that contact’s first name** with the API word. After the show, close **Caller name connection** with **Restore original name when leaving Caller name connection** **ON** — the app puts their real name back.",
-        "**Unknown** (stranger, one-off): same save toggle **ON** → **Unknown**. Press **Perform** — a **Phone-style dial** (like the iOS Phone app) opens **inside MindtoneX**. Enter their number and tap call: iOS switches to the **real Phone app** for the outgoing call. When you come back to MindtoneX, the **stage screenshot** is visible again; after that call ends, the app **arms**. You are **not** saving their real name — when the word locks, MindtoneX **creates or updates** a contact for that number with the **prediction word** as the display name.",
-        "**Routine timing:** run song input and word API together — e.g. spectator searches the song in Elips while you submit their lyric word on the word endpoint; both lock during the same Perform. Then the callback shows **song on stage** + **word on caller ID**.",
+        "**The idea:** the spectator’s word becomes the **caller name** on the incoming call — via Contacts (and Call Directory as backup).",
+        "**Unknown:** Perform opens the in-app dial → **real outgoing call** → app stores the number → when the word locks: **new contact** if the number is new, or **update the existing contact** with that number (same card, new first name). See **Instructions → Known vs Unknown**.",
+        "**Known:** Pick their contact first → when the word locks MindtoneX **renames that contact’s first name** only (no new card). Optional restore after the show.",
+        "**Routine timing:** run song input and word source together; callback = **song on stage** + **word on caller ID**.",
     ]
 
 }

@@ -57,9 +57,9 @@ enum WordApiSettings {
         var detailLine: String {
             switch self {
             case .unknown:
-                return "Dial the spectator on Perform; we create or update a contact so the incoming call shows the API word instead of the number."
+                return "Dial from the app on Perform (real call) so we learn the number. On lock: new contact if the number is new, or update that number’s existing card — first name becomes the word."
             case .known:
-                return "Choose an existing contact; when the word locks we replace their first name with the API word for the incoming-call name."
+                return "Pick their contact before Perform. On lock: update that same card only — replace first name with the word (not a new contact)."
             }
         }
     }
