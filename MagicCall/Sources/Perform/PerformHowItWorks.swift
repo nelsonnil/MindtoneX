@@ -126,7 +126,7 @@ enum PerformCopy {
         "Stay on the stage screen in MindtoneX — the app keeps the display awake. Don’t press the side button or lock the phone.",
         "While the spectator names the song, share your number and ask them to call you when you are ready.",
         "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you **two-finger swipe down** to leave.",
-        "**Hold** the screen (Feedback → peek, default ON) to read song / caller / Notes without the audience seeing text. **No tap** on the screen to start or stop playback.",
+        "**Hold** the screen (Feedback → peek, default ON) to read song / caller / Notes without the audience seeing text.",
     ]
 
     static let wordApiSteps: [String] = [

@@ -45,7 +45,6 @@ enum PerformInstructionsCopy {
         "**Unknown contact (Caller name):** Perform may open a **Phone-style dial** inside MindtoneX. Enter their number and tap call — iOS opens the **real Phone app**; when you return, the **stage screenshot** is showing again and the app arms after that outgoing call ends.",
         "Give your number; when they call back, the app plays the locked song. Hang-up = music stops.",
         "**Performer peek (Feedback):** **Hold** your finger on the screen (~instant) to see **Song**, **Caller name**, and **Notes** lines; **release** to hide. Empty fields show **— —**. **ON by default** — tune position, size, and color under **Feedback**.",
-        "The screen does **not** use a tap to start/stop playback — only the real call drives audio.",
         "Exit Perform: **two-finger swipe down** from the middle of the screen.",
     ]
 
@@ -130,7 +129,6 @@ enum PerformInstructionsCopy {
         "**Vibration when song locks:** Two long buzzes so you know the track is ready without looking.",
         "**Status dot when song ready:** Small dot on the **top-right of the screen** after the song locks (Voice / API / Camera). Toggle color and size to taste.",
         "Caller name lock uses a **different** vibration pattern (three short taps) when enabled.",
-        "Playback is **not** toggled with a screen tap — use peek and vibrations instead.",
     ]
 
     // MARK: - Library
