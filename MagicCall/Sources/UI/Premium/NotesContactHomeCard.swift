@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Contacts **Notes** field preview + word source for the Notes chip (API / OCR / Voice).
 struct NotesContactHomeCard: View {
@@ -7,6 +8,11 @@ struct NotesContactHomeCard: View {
     @AppStorage(NotesContactSettings.Key.noteBody) private var noteBody = ""
     @AppStorage(NotesContactSettings.Key.buttonPlaceholder) private var buttonPlaceholder = NotesContactSettings.defaultButtonPlaceholder
     @AppStorage(NotesContactWordSettings.Key.wordInputEnabled) private var wordInputEnabled = true
+
+    private var wordTokenInNote: Bool {
+        noteBody.contains(NotesContactSettings.standardWordToken)
+            || (!buttonPlaceholder.isEmpty && noteBody.contains(buttonPlaceholder))
+    }
 
     private var spectatorWord: String? {
         guard wordInputEnabled else { return nil }
@@ -82,10 +88,23 @@ struct NotesContactHomeCard: View {
                     notesText: previewNotesText
                 )
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Note text (Contacts field)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(OracleTheme.textPrimary)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Texto de la nota (Contactos)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(OracleTheme.textPrimary)
+                        Spacer(minLength: 8)
+                        Button {
+                            insertWordPlaceholderToken()
+                        } label: {
+                            Label(NotesContactSettings.standardWordToken, systemImage: "plus.circle.fill")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(OracleTheme.gold)
+                        .disabled(wordTokenInNote)
+                    }
+
                     TextEditor(text: $noteBody)
                         .font(.subheadline)
                         .foregroundStyle(OracleTheme.textPrimary)
@@ -94,27 +113,38 @@ struct NotesContactHomeCard: View {
                         .padding(10)
                         .background(Color.white.opacity(0.06))
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    Text("Empty by default. Only this text is saved — no MindtoneX boilerplate.")
-                        .font(.caption2)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Word placeholder (optional)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(OracleTheme.textPrimary)
-                    TextField("e.g. WORD", text: $buttonPlaceholder)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .padding(12)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    Text("If this exact word appears in the note above, it is replaced by the locked **Notes chip** word (Inject / Camera line 3 / Voice). Without a placeholder, the note is copied as-is.")
-                        .font(.caption2)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if wordTokenInNote {
+                        Label {
+                            Text("En el show, **\(NotesContactSettings.standardWordToken)** se sustituye por la palabra bloqueada del chip Notas (\(NotesContactWordSettings.provider.gridTitle)).")
+                                .font(.caption2)
+                                .foregroundStyle(OracleTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } icon: {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(OracleTheme.gold)
+                        }
+                    } else {
+                        Text("Vacía por defecto. Pulsa **\(NotesContactSettings.standardWordToken)** para marcar dónde quieres la palabra de la API; si no usas marcador, el texto se copia tal cual.")
+                            .font(.caption2)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
         }
+    }
+
+    private func insertWordPlaceholderToken() {
+        let token = NotesContactSettings.standardWordToken
+        buttonPlaceholder = token
+        guard !noteBody.contains(token) else { return }
+        if noteBody.isEmpty {
+            noteBody = token
+            return
+        }
+        let needsSpace = noteBody.last.map { !$0.isWhitespace && !$0.isNewline } ?? false
+        noteBody += (needsSpace ? " " : "") + token
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 }

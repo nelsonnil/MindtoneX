@@ -10,12 +10,24 @@ enum NotesContactSettings {
 
     static let defaultButtonPlaceholder = ""
 
+    /// Token inserted from the home note editor; replaced by the locked Notes-chip word on Perform.
+    static let standardWordToken = "{word}"
+
     private static var d: UserDefaults { .standard }
 
     static func registerDefaults() {
         d.register(defaults: [
             Key.buttonPlaceholder: defaultButtonPlaceholder,
         ])
+    }
+
+    /// Placeholder substring used when resolving the contact note (explicit setting or `{word}` in the template).
+    static func effectiveWordPlaceholder(in template: String? = nil) -> String {
+        let body = template ?? storedNoteBody
+        let explicit = storedWordPlaceholder
+        if !explicit.isEmpty { return explicit }
+        if body.contains(standardWordToken) { return standardWordToken }
+        return ""
     }
 
     static var storedNoteBody: String {
@@ -30,7 +42,7 @@ enum NotesContactSettings {
     static func resolvedContactNote(lockedWord: String?) -> String {
         let template = storedNoteBody
         guard !template.isEmpty else { return "" }
-        let token = storedWordPlaceholder
+        let token = effectiveWordPlaceholder(in: template)
         guard !token.isEmpty, template.contains(token) else { return template }
         let replacement = lockedWord?
             .trimmingCharacters(in: .whitespacesAndNewlines)
