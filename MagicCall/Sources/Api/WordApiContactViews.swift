@@ -4,9 +4,8 @@ import SwiftUI
 
 struct WordApiSpectatorDialSheet: View {
     @EnvironmentObject private var model: AppModel
-    @State private var phoneDraft = WordApiSettings.lastDialedPhoneDigits.isEmpty
-        ? WordApiSettings.fallbackPhoneDigits
-        : WordApiSettings.lastDialedPhoneDigits
+    /// Always start blank — spectator dials fresh each Perform (saved only after outgoing call ends).
+    @State private var phoneDraft = ""
 
     var body: some View {
         WordApiCarphoneDialHost(
@@ -14,6 +13,8 @@ struct WordApiSpectatorDialSheet: View {
             onCall: startCall
         )
         .ignoresSafeArea()
+        /// Phone dial follows **system** light/dark, not MindtoneX home chrome (`.dark`).
+        .preferredColorScheme(nil)
         .interactiveDismissDisabled(WordApiContactPerformGate.awaitingOutgoingEnd)
     }
 

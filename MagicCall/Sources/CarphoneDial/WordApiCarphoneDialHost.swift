@@ -41,8 +41,6 @@ final class CarphoneDialViewController: UIViewController {
 
         phoneView.format = CarphoneDialFormat.patternForDeviceRegion()
         phoneView.isReverse = false
-        phoneView.applyLocalizedAddNumberCaption()
-        phoneView.themeFromDefaults()
 
         phoneView.buttonPressed = { [weak self] digit in
             guard let self else { return }
@@ -59,14 +57,18 @@ final class CarphoneDialViewController: UIViewController {
 
         if !initialDigits.isEmpty {
             setTelephone(CarphoneDialFormat.digitsOnly(initialDigits))
+        } else {
+            setTelephone("")
         }
 
-        applyInterfaceStyle()
+        applySystemPhoneAppearance()
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        applyInterfaceStyle()
+        if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle {
+            applySystemPhoneAppearance()
+        }
     }
 
     func setTelephone(_ digits: String) {
@@ -74,8 +76,14 @@ final class CarphoneDialViewController: UIViewController {
         phoneView.syncTelephoneDisplay(animated: false)
     }
 
-    private func applyInterfaceStyle() {
-        phoneView.overrideUserInterfaceStyle = traitCollection.userInterfaceStyle == .dark ? .dark : .light
+    /// Match the real Phone app: system light/dark, not MindtoneX forced dark shell.
+    private func applySystemPhoneAppearance() {
+        overrideUserInterfaceStyle = .unspecified
+        view.overrideUserInterfaceStyle = .unspecified
+        phoneView.overrideUserInterfaceStyle = .unspecified
+        view.backgroundColor = UIColor(named: "Background") ?? .systemBackground
+        phoneView.themeFromDefaults()
+        phoneView.applyLocalizedAddNumberCaption()
     }
 }
 

@@ -40,9 +40,10 @@ struct PhoneKeypadMetrics {
         rowGap = 20 * heightScale
         callGap = 26 * heightScale
         tabBarGap = 62 * heightScale
-        numberCenterY = 54.5 * heightScale
+        /// Slightly lower than the first Carphone port — full-screen cover safe area reads higher on device.
+        numberCenterY = 68 * heightScale
         numberFontSize = 36 * min(1, widthScale)
-        addContactCenterY = 22.7 * heightScale
+        addContactCenterY = 30 * heightScale
         asteriskPointSize = 20 * widthScale
         hashPointSize = 24 * widthScale
         deletePointSize = 31 * widthScale
@@ -232,7 +233,11 @@ class PhoneKeyboard: UIView {
     }
 
     func applyLocalizedAddNumberCaption() {
-        addNumberLbl.text = String(localized: "dialer.add_number_caption")
+        addNumberLbl.text = String(
+            localized: "dialer.add_number_caption",
+            table: "CarphoneDialLocalizable",
+            bundle: .main
+        )
     }
 
     deinit {
@@ -550,6 +555,8 @@ class PhoneKeyboard: UIView {
             }
             self.backgroundColor = theme.colors.backgound
             self.contentView.backgroundColor = theme.colors.backgound
+            self.telephoneLbl.textColor = theme.colors.textColor
+            self.addNumberLbl.textColor = theme.colors.textColor.withAlphaComponent(0.55)
         }
         if Thread.isMainThread {
             applyChrome()
