@@ -5,6 +5,9 @@ options:
     iOS: "17.0"
   createIntermediateGroups: true
   developmentLanguage: en
+  locales:
+    - en
+    - es
 
 configs:
   Debug: debug

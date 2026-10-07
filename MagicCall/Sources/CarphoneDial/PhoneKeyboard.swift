@@ -116,9 +116,16 @@ class PhoneKeyboard: UIView {
             guard let self else {
                 return
             }
-            self.telephoneLbl.attributedText = self.displayText(
-                self.configureFormat(phone: self.telephone, format: self.getFormat(phone: self.possibleNumber))
-            )
+            let formatted: String
+            if self.isReverse {
+                formatted = self.configureFormat(
+                    phone: self.telephone,
+                    format: self.getFormat(phone: self.possibleNumber)
+                )
+            } else {
+                formatted = CarphoneDialFormat.liveDisplay(self.telephone)
+            }
+            self.telephoneLbl.attributedText = self.displayText(formatted)
             let show = !self.telephone.isEmpty
             let apply = {
                 self.backView.layer.opacity = show ? 1.0 : 0.0
@@ -233,11 +240,15 @@ class PhoneKeyboard: UIView {
     }
 
     func applyLocalizedAddNumberCaption() {
-        addNumberLbl.text = String(
-            localized: "dialer.add_number_caption",
-            table: "CarphoneDialLocalizable",
-            bundle: .main
+        let key = "dialer.add_number_caption"
+        let localized = NSLocalizedString(
+            key,
+            tableName: "CarphoneDialLocalizable",
+            bundle: .main,
+            value: "Add Number",
+            comment: "Caption under the dialed number on the in-app Phone keypad"
         )
+        addNumberLbl.text = localized
     }
 
     deinit {

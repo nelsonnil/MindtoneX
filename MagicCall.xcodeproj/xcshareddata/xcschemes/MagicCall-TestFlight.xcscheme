@@ -29,7 +29,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DD0000700000000000000070"
+               BlueprintIdentifier = "82F6CE481CE82E38A1293AAC"
                BuildableName = "MagicCallCallDirectory.appex"
                BlueprintName = "MagicCallCallDirectory"
                ReferencedContainer = "container:MagicCall.xcodeproj">
@@ -43,7 +43,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DD0000720000000000000072"
+               BlueprintIdentifier = "F4C7E9F38150AFC8D5BBD590"
                BuildableName = "MagicCallLiveCallerLookup.appex"
                BlueprintName = "MagicCallLiveCallerLookup"
                ReferencedContainer = "container:MagicCall.xcodeproj">

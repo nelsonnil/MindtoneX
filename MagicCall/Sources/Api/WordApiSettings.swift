@@ -1,3 +1,4 @@
+import CoreTelephony
 import Foundation
 
 /// Preferences for the Word API (incoming-call caller name). Separate keys and endpoints from song API.
@@ -259,9 +260,24 @@ enum WordApiSettings {
         return digits
     }
 
-    /// Device region for national dial heuristics (e.g. ES → prepend 34 when user omits country code).
+    /// Device region for national dial heuristics (Settings → Region, then SIM country).
     static var deviceRegionISO: String {
-        Locale.current.region?.identifier ?? "US"
+        if let region = Locale.current.region?.identifier, !region.isEmpty {
+            return region.uppercased()
+        }
+        if let sim = cellularCountryISO() {
+            return sim
+        }
+        return "US"
+    }
+
+    private static func cellularCountryISO() -> String? {
+        let info = CTTelephonyNetworkInfo()
+        let codes = info.serviceSubscriberCellularProviders?
+            .values
+            .compactMap { $0.isoCountryCode?.uppercased() }
+            .filter { !$0.isEmpty && $0 != "--" }
+        return codes?.first
     }
 
     static func defaultCountryCallingCode(for region: String = deviceRegionISO) -> String? {

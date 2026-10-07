@@ -86,21 +86,3 @@ final class CarphoneDialViewController: UIViewController {
         phoneView.applyLocalizedAddNumberCaption()
     }
 }
-
-enum CarphoneDialFormat {
-    static func digitsOnly(_ raw: String) -> String {
-        raw.filter { $0.isNumber || $0 == "+" || $0 == "*" || $0 == "#" }
-    }
-
-    /// Default display pattern aligned with Carphone settings previews (ES mobile spacing).
-    static func patternForDeviceRegion() -> String {
-        switch Locale.current.region?.identifier.uppercased() {
-        case "ES":
-            return "xxx xxx xxx"
-        case "US", "CA":
-            return "(xxx) xxx-xxxx"
-        default:
-            return "xxx xxx xxxx"
-        }
-    }
-}
