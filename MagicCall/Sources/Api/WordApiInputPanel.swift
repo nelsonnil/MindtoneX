@@ -211,7 +211,7 @@ struct WordApiInputPanel: View {
 
     private var unknownContactBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("On Perform: dial the spectator, then arm when the outgoing call ends.")
+            Text("On Perform: use the in-app Phone-style dial, place a real outgoing call, then arm when that call ends.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
             if !WordApiSettings.lastDialedPhoneDigits.isEmpty {
@@ -219,7 +219,7 @@ struct WordApiInputPanel: View {
                     .font(.caption.monospaced())
                     .foregroundStyle(OracleTheme.textSecondary)
             } else {
-                Text("No number yet — Perform opens the dial sheet.")
+                Text("No number yet — Perform opens the Phone-style dial first.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
             }

@@ -68,7 +68,7 @@ struct PerformanceGuideSheet: View {
 
                 InstructionSection(
                     title: "Feedback",
-                    icon: "hand.tap.fill",
+                    icon: "eye.fill",
                     tint: OracleHomeSection.feedback.accent,
                     lines: PerformInstructionsCopy.feedback
                 )

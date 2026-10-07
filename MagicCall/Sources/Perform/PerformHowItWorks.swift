@@ -125,7 +125,8 @@ enum PerformCopy {
         "**Silent must be ON.** With the “MindtoneX Silent On” shortcut installed, Perform turns it on for you (Shortcuts flashes briefly — press Perform before you begin the performance). Otherwise turn it on by hand.",
         "Stay on the stage screen in MindtoneX — the app keeps the display awake. Don’t press the side button or lock the phone.",
         "While the spectator names the song, share your number and ask them to call you when you are ready.",
-        "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you swipe down with two fingers to leave.",
+        "When the call arrives the song plays by itself. When the caller hangs up it stops for good — nothing plays again until you **two-finger swipe down** to leave.",
+        "**Hold** the stage (Feedback → peek, default ON) to read song / caller / Notes without the audience seeing text. **No tap** on the stage to start or stop playback.",
     ]
 
     static let wordApiSteps: [String] = [
@@ -140,7 +141,7 @@ enum PerformCopy {
     static let wordApiContactPrediction: [String] = [
         "**The idea:** the spectator’s word from the API becomes the **name** on the incoming call — a contact “prediction” instead of an anonymous number.",
         "**Known** (friend, family, repeat volunteer): turn **Save locked word as contact name** **ON** → **Known** → **Choose contact**. When the word locks, MindtoneX **replaces that contact’s first name** with the API word. After the show, close **Caller name connection** with **Restore original name when leaving Caller name connection** **ON** — the app puts their real name back.",
-        "**Unknown** (stranger, one-off): same save toggle **ON** → **Unknown**. Press **Perform** — a **dial sheet** appears. Tell the spectator you need their number for a **missed-call** bit and that they should keep your number. Place the outgoing call; when it ends, MindtoneX arms. You are **not** saving their real name — when the word locks, the app **creates or updates** a contact for that number with the **prediction word** as the display name.",
+        "**Unknown** (stranger, one-off): same save toggle **ON** → **Unknown**. Press **Perform** — a **Phone-style dial** (like the iOS Phone app) opens **inside MindtoneX**. Enter their number and tap call: iOS switches to the **real Phone app** for the outgoing call. When you come back to MindtoneX, the **stage screenshot** is visible again; after that call ends, the app **arms**. You are **not** saving their real name — when the word locks, MindtoneX **creates or updates** a contact for that number with the **prediction word** as the display name.",
         "**Routine timing:** run song input and word API together — e.g. spectator searches the song in Elips while you submit their lyric word on the word endpoint; both lock during the same Perform. Then the callback shows **song on stage** + **word on caller ID**.",
     ]
 

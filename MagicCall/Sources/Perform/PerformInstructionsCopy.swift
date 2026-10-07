@@ -32,17 +32,20 @@ enum PerformInstructionsCopy {
         if autoShareOn {
             lines.append("On this device, **Auto-open Share** is **ON**.")
         } else {
-            lines.append("On this device, **Auto-open Share** is **OFF**. After the call ends, you can **long-press** the stage ~0.5 s to open Share manually.")
+            lines.append("On this device, **Auto-open Share** is **OFF**. After the call ends, **hold** the stage ~**1 s** to open Share manually (Fake Ringtone post-call only).")
         }
         lines.append("After **Use as Ringtone**, iOS may open **Settings → Ringtone** — press **Home once** to return; the tone is already saved.")
         return lines
     }
 
     static let duringPerform: [String] = [
-        "Tap **Perform** on Home. The stage shows your screenshot.",
+        "Tap **Perform** on Home. The stage shows your screenshot — **no on-screen controls** for the audience.",
         "Arm song + words using your chosen inputs (same session — they run **in parallel**).",
-        "Give your number; when they call, the app plays the locked song. Hang-up = music stops.",
-        "Exit: **two-finger swipe down** from the middle of the stage.",
+        "**Unknown contact (Caller name):** Perform may open a **Phone-style dial** inside MindtoneX. Enter their number and tap call — iOS opens the **real Phone app**; when you return, the **stage screenshot** is showing again and the app arms after that outgoing call ends.",
+        "Give your number; when they call back, the app plays the locked song. Hang-up = music stops.",
+        "**Performer peek (Feedback):** **Hold** your finger on the stage (~instant) to see **Canción**, **Caller name**, and **Notes** lines; **release** to hide. Empty fields show **— —**. **ON by default** — tune position, size, and color under **Feedback**.",
+        "The stage does **not** use a tap to start/stop playback — only the real call drives audio.",
+        "Exit Perform: **two-finger swipe down** from the middle of the stage.",
     ]
 
     // MARK: - Song input
@@ -98,14 +101,14 @@ enum PerformInstructionsCopy {
         "**Inject / Elips / Custom API:** Polls every \(Int(WordApiSettings.pollInterval)) s during Perform. First reading = old word on server; **next change** = spectator’s word → lock.",
         "**Camera (OCR):** **One word** on the line **under the song** (song may use one or two lines above). Requires Song input = **Camera**.",
         "**Voice (AI):** Same mic as Song = Voice; ask what word they think you saved as their contact (script on the card).",
-        "**Save locked word as contact name:** Optional but strong — updates Contacts so the **name** on the call matches the word. **Known** = pick their contact first; **Unknown** = dial them on Perform once so the app learns the number.",
+        "**Save locked word as contact name:** Optional but strong — updates Contacts so the **name** on the call matches the word. **Known** = pick their contact first; **Unknown** = on Perform, use the in-app **Phone-style dial**, place one **real outgoing call**, then continue — MindtoneX stores that number for the prediction contact.",
     ]
 
     // MARK: - Notes contact
 
     static let notesContact: [String] = [
         "Home → **Notes contact**. Sets the **Contacts → Notes** field on the spectator’s card (preview matches the real call sheet).",
-        "**Note text** is empty by default — only what you type is saved. Optional **word placeholder**: if that word appears in your note, it is replaced by the locked **Notes chip** word (Inject / OCR line 3 / Voice).",
+        "**Note text** is empty by default — only what you type is saved. Tap **`{word}`** in the editor to insert the marker where the forced word should go; during the show, **`{word}`** is replaced by the locked **Notes chip** word (Inject / OCR line 3 / Voice). No separate placeholder field.",
         "Uses its **own** word source — independent from Caller name.",
         "**Camera:** **Line 3** on the card (line 1 = song, line 2 = caller if enabled).",
     ]
@@ -114,9 +117,11 @@ enum PerformInstructionsCopy {
 
     static let feedback: [String] = [
         "Home → **Feedback** (optional performer cues).",
+        "**Peek al mantener pulsado (default ON):** While your finger stays on the stage, you see live **Canción**, **Caller name** (if armed), and **Notes** (if configured). Drag the **preview** to set position; adjust **size** and **color**. Release to hide — the audience still only sees the screenshot.",
         "**Vibration when song locks:** Two long buzzes so you know the track is ready without looking.",
         "**Status dot when song ready:** Small dot on the **top-right of the stage** after the song locks (Voice / API / Camera). Toggle color and size to taste.",
         "Caller name lock uses a **different** vibration pattern (three short taps) when enabled.",
+        "Playback is **not** toggled with a stage tap — use peek and vibrations instead.",
     ]
 
     // MARK: - Library
