@@ -34,7 +34,7 @@ struct PerformanceGuideSheet: View {
                 PerformanceGuideOptionalShare(onOpenFavorites: onOpenFavorites)
 
                 InstructionSection(
-                    title: "Song input",
+                    title: "Song",
                     icon: "music.note.list",
                     tint: OracleTheme.indigo,
                     lines: PerformInstructionsCopy.songInputOverview

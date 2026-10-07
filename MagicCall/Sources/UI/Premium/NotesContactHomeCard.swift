@@ -72,7 +72,8 @@ struct NotesContactHomeCard: View {
             accent: OracleTheme.sectionTeal,
             icon: "person.crop.circle.badge.checkmark",
             title: "Notes contact",
-            summary: collapsedSummary
+            summary: collapsedSummary,
+            showsRevelationStar: true
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 Text("Preview matches the iPhone **Contacts** detail sheet (mobile + Notes). This is not the Notes app. Leave the note empty if you do not want text there.")

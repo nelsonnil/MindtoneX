@@ -18,6 +18,8 @@ struct CollapsibleHomeSection<Content: View>: View {
     let icon: String
     let title: String
     let summary: String
+    /// Yellow star on revelation cards (Song, Caller name, Notes contact).
+    let showsRevelationStar: Bool
     @ViewBuilder let content: () -> Content
 
     init(
@@ -26,6 +28,7 @@ struct CollapsibleHomeSection<Content: View>: View {
         icon: String,
         title: String,
         summary: String,
+        showsRevelationStar: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
         _expanded = AppStorage(wrappedValue: false, expandedKey)
@@ -33,6 +36,7 @@ struct CollapsibleHomeSection<Content: View>: View {
         self.icon = icon
         self.title = title
         self.summary = summary
+        self.showsRevelationStar = showsRevelationStar
         self.content = content
     }
 
@@ -50,9 +54,17 @@ struct CollapsibleHomeSection<Content: View>: View {
                             .background(accent.opacity(0.14))
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(title)
-                                .font(.headline.weight(.semibold))
-                                .foregroundStyle(OracleTheme.textPrimary)
+                            HStack(spacing: 6) {
+                                Text(title)
+                                    .font(.headline.weight(.semibold))
+                                    .foregroundStyle(OracleTheme.textPrimary)
+                                if showsRevelationStar {
+                                    Image(systemName: "star.fill")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(Color.yellow)
+                                        .accessibilityLabel("Revelation input")
+                                }
+                            }
                             Text(summary)
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.textSecondary)

@@ -452,7 +452,8 @@ struct WordApiHomeCard: View {
             accent: OracleHomeSection.wordApi.accent,
             icon: "phone.arrow.down.left.fill",
             title: "Caller name",
-            summary: subtitle
+            summary: subtitle,
+            showsRevelationStar: true
         ) {
             WordApiInputPanel()
         }

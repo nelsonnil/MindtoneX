@@ -23,8 +23,9 @@ struct SongInputStrip: View {
             expandedKey: HomeSectionExpandKey.songInput,
             accent: OracleTheme.indigo,
             icon: "music.note.list",
-            title: "Song input",
-            summary: songInputSummary
+            title: "Song",
+            summary: songInputSummary,
+            showsRevelationStar: true
         ) {
             VStack(alignment: .leading, spacing: 16) {
             LazyVGrid(columns: inputColumns, spacing: 10) {
