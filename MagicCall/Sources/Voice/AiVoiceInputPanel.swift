@@ -26,18 +26,24 @@ struct AiVoiceInputPanel: View {
         VoiceOpenAILanguages.resolve(stored: languageRaw)
     }
 
+    private var showsVoiceOpenAIHints: Bool {
+        !model.isPerformTrickUIActive
+    }
+
     private var connectionBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
             OracleEyebrow(text: "Voice language")
-            Text(OpenAIAPIKeyCopy.performanceSettingsHint)
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if showsVoiceOpenAIHints {
+                Text(OpenAIAPIKeyCopy.performanceSettingsHint)
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            if let onFile = VoiceSettings.apiKeyOnFileLabel {
-                Label(onFile, systemImage: "key.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(OracleTheme.gold.opacity(0.95))
+                if let onFile = VoiceSettings.apiKeyOnFileLabel {
+                    Label(onFile, systemImage: "key.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(OracleTheme.gold.opacity(0.95))
+                }
             }
 
             VStack(spacing: 0) {
@@ -102,7 +108,7 @@ struct AiVoiceInputPanel: View {
 
             livePreviewTestControls
 
-            if !configured {
+            if showsVoiceOpenAIHints, !configured {
                 Label("Add your OpenAI API key under Performance settings to enable voice tests.", systemImage: "link.circle")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)

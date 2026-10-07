@@ -7,7 +7,9 @@ struct PerformBottomBar: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            ReadinessStatusBar()
+            if model.showsHomePerformSetupChrome {
+                ReadinessStatusBar()
+            }
 
             OraclePerformButton(
                 title: model.voiceOpenAIPreflightInProgress ? "Checking…" : "Perform",

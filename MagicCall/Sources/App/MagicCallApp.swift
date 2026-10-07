@@ -21,6 +21,20 @@ struct MagicCallApp: App {
             .fullScreenCover(isPresented: $model.showingDiscreetRingtonePrep) {
                 RingtoneDisguiseView()
             }
+            .fullScreenCover(isPresented: $model.wordSpectatorDialSheet, onDismiss: {
+                if !WordApiContactPerformGate.awaitingOutgoingEnd {
+                    WordApiContactPerformGate.cancelPendingPerform()
+                }
+            }) {
+                WordApiSpectatorDialSheet()
+                    .environmentObject(model)
+            }
+            .sheet(isPresented: $model.wordKnownContactPicker) {
+                WordApiKnownContactPicker(
+                    onPick: { model.handleKnownContactPicked($0) },
+                    onCancel: { model.handleKnownContactPickerCancelled() }
+                )
+            }
             .onAppear {
                 AppModel.setScreenAwakeWhileInForeground(true)
             }

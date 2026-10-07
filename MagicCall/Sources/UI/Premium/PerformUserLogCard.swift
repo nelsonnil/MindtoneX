@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Home card: recent Perform sessions with plain English event lines.
 struct PerformUserLogCard: View {
+    @EnvironmentObject private var model: AppModel
     @ObservedObject private var log = PerformUserLog.shared
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -29,6 +30,14 @@ struct PerformUserLogCard: View {
     }
 
     var body: some View {
+        if model.isPerformTrickUIActive {
+            EmptyView()
+        } else {
+            performLogCard
+        }
+    }
+
+    private var performLogCard: some View {
         CollapsibleHomeSection(
             expandedKey: HomeSectionExpandKey.performLog,
             accent: OracleHomeSection.advanced.accent,

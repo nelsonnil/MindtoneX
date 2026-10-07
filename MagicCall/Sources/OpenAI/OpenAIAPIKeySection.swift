@@ -2,6 +2,7 @@ import SwiftUI
 
 /// OpenAI API key field — single edit location (Performance settings). Uses `VoiceSettings` Keychain.
 struct OpenAIAPIKeySection: View {
+    @EnvironmentObject private var model: AppModel
     @State private var keyDraft = ""
     @State private var savedKeyHint: String?
     @State private var connectionTesting = false
@@ -14,28 +15,36 @@ struct OpenAIAPIKeySection: View {
         return VoiceSettings.apiKey
     }
 
+    private var showsOpenAISetupHints: Bool {
+        !model.isPerformTrickUIActive
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("OpenAI API key")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(OracleTheme.textPrimary)
-                Button {
-                    showHelpSheet = true
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(OracleTheme.gold.opacity(0.95))
+                if showsOpenAISetupHints {
+                    Button {
+                        showHelpSheet = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(OracleTheme.gold.opacity(0.95))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("How to set up OpenAI")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("How to set up OpenAI")
                 Spacer(minLength: 0)
             }
 
-            Text(OpenAIAPIKeyCopy.singleKeyHelper)
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if showsOpenAISetupHints {
+                Text(OpenAIAPIKeyCopy.singleKeyHelper)
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             HStack(spacing: 10) {
                 SecureField("sk-… paste key from platform.openai.com", text: $keyDraft)
@@ -87,14 +96,14 @@ struct OpenAIAPIKeySection: View {
             .background(Color.white.opacity(0.06))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
-            if let connectionTestResult {
+            if showsOpenAISetupHints, let connectionTestResult {
                 Label(connectionTestResult.text, systemImage: connectionTestResult.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(connectionTestResult.ok ? OracleTheme.gold : OracleTheme.coral)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if let onFile = savedKeyHint ?? VoiceSettings.apiKeyOnFileLabel {
+            if showsOpenAISetupHints, let onFile = savedKeyHint ?? VoiceSettings.apiKeyOnFileLabel {
                 HStack(spacing: 8) {
                     Label(onFile, systemImage: "key.fill")
                         .font(.caption.weight(.medium))

@@ -57,7 +57,9 @@ struct PerformanceCard: View {
 
                 songSearchRegionSection
 
-                openAIKeySection
+                if !model.isPerformTrickUIActive {
+                    openAIKeySection
+                }
 
                 Toggle(isOn: $autoShareOnSongLock) {
                     VStack(alignment: .leading, spacing: 4) {

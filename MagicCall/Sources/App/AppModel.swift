@@ -74,6 +74,16 @@ final class AppModel: ObservableObject {
     @Published var wordSpectatorDialSheet = false
     @Published var wordKnownContactPicker = false
 
+    /// Stage, armed perform, Unknown dial, or Known contact picker — no OpenAI/status hints on screen.
+    var isPerformTrickUIActive: Bool {
+        phase == .stage || isArmed || wordSpectatorDialSheet || wordKnownContactPicker
+    }
+
+    /// Home-only setup chrome (Perform bar, missing-key sheet, preflight alert).
+    var showsHomePerformSetupChrome: Bool {
+        phase == .setup && !isArmed && !wordSpectatorDialSheet && !wordKnownContactPicker
+    }
+
     func setVoiceOpenAIPreflightInProgress(_ inProgress: Bool) {
         voiceOpenAIPreflightInProgress = inProgress
     }

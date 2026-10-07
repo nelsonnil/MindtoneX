@@ -57,10 +57,14 @@ struct MainShellView: View {
         }
         .background { OracleAnimatedBackdrop() }
         .overlay(alignment: .topTrailing) {
-            instructionsButton
+            if model.showsHomePerformSetupChrome {
+                instructionsButton
+            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            PerformBottomBar()
+            if model.showsHomePerformSetupChrome {
+                PerformBottomBar()
+            }
         }
         .preferredColorScheme(.dark)
         .toolbar(.hidden, for: .navigationBar)
@@ -90,7 +94,7 @@ struct MainShellView: View {
         } message: {
             Text(model.voiceOpenAIPreflightAlert ?? "")
         }
-        .sheet(isPresented: $model.openAIMissingKeySheet) {
+        .sheet(isPresented: openAIMissingKeySheetPresented) {
             OpenAIMissingKeySheet()
         }
         .sheet(item: $activeSheet) { sheet in
@@ -109,26 +113,19 @@ struct MainShellView: View {
                 ApiSettingsSheet()
             }
         }
-        .fullScreenCover(isPresented: $model.wordSpectatorDialSheet, onDismiss: {
-            if !WordApiContactPerformGate.awaitingOutgoingEnd {
-                WordApiContactPerformGate.cancelPendingPerform()
-            }
-        }) {
-            WordApiSpectatorDialSheet()
-                .environmentObject(model)
-        }
-        .sheet(isPresented: $model.wordKnownContactPicker) {
-            WordApiKnownContactPicker(
-                onPick: { model.handleKnownContactPicked($0) },
-                onCancel: { model.handleKnownContactPickerCancelled() }
-            )
-        }
     }
 
     private var voicePreflightAlertPresented: Binding<Bool> {
         Binding(
-            get: { model.voiceOpenAIPreflightAlert != nil },
+            get: { model.showsHomePerformSetupChrome && model.voiceOpenAIPreflightAlert != nil },
             set: { if !$0 { model.voiceOpenAIPreflightAlert = nil } }
+        )
+    }
+
+    private var openAIMissingKeySheetPresented: Binding<Bool> {
+        Binding(
+            get: { model.showsHomePerformSetupChrome && model.openAIMissingKeySheet },
+            set: { if !$0 { model.openAIMissingKeySheet = false } }
         )
     }
 
