@@ -130,6 +130,7 @@ enum Prefs {
         NotesContactSettings.registerDefaults()
         NotesContactWordSettings.registerDefaults()
         PerformanceCues.registerPeekDefaults()
+        PerformanceCues.registerCueDefaults()
         migrateClipSecondsIfNeeded()
         migratePerformanceModeToSingleIfNeeded()
     }

@@ -12,7 +12,7 @@ final class CardCaptureService: NSObject {
 
         var errorDescription: String? {
             switch self {
-            case .noCamera: return "No back camera available."
+            case .noCamera: return "No camera available for the selected facing."
             case .cannotAddInput: return "Could not open the camera."
             case .cannotAddOutput: return "Could not read video frames."
             case .notRunning: return "Camera is not running."
@@ -25,7 +25,8 @@ final class CardCaptureService: NSObject {
     private let queue = DispatchQueue(label: "MagicCall.CardCapture", qos: .userInitiated)
     private var latestBuffer: CVPixelBuffer?
     private var frameLock = NSLock()
-    private var isConfigured = false
+    private var configuredPosition: AVCaptureDevice.Position?
+    private var sessionBasicsConfigured = false
 
     var previewLayer: AVCaptureVideoPreviewLayer {
         let layer = AVCaptureVideoPreviewLayer(session: session)
@@ -34,24 +35,31 @@ final class CardCaptureService: NSObject {
     }
 
     func configureIfNeeded() throws {
-        guard !isConfigured else { return }
+        let position = CardSettings.cameraFacing.capturePosition
+        if configuredPosition == position, !session.inputs.isEmpty { return }
+        if configuredPosition != nil, configuredPosition != position {
+            removeVideoInputs()
+        }
         session.beginConfiguration()
         defer { session.commitConfiguration() }
-        session.sessionPreset = .hd1920x1080
-        session.automaticallyConfiguresApplicationAudioSession = false
+        if !sessionBasicsConfigured {
+            session.sessionPreset = .hd1920x1080
+            session.automaticallyConfiguresApplicationAudioSession = false
 
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+            output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
+            output.alwaysDiscardsLateVideoFrames = true
+            output.setSampleBufferDelegate(self, queue: queue)
+            guard session.canAddOutput(output) else { throw CaptureError.cannotAddOutput }
+            session.addOutput(output)
+            sessionBasicsConfigured = true
+        }
+
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position) else {
             throw CaptureError.noCamera
         }
         let input = try AVCaptureDeviceInput(device: device)
         guard session.canAddInput(input) else { throw CaptureError.cannotAddInput }
         session.addInput(input)
-
-        output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
-        output.alwaysDiscardsLateVideoFrames = true
-        output.setSampleBufferDelegate(self, queue: queue)
-        guard session.canAddOutput(output) else { throw CaptureError.cannotAddOutput }
-        session.addOutput(output)
 
         if let conn = output.connection(with: .video), conn.isVideoRotationAngleSupported(90) {
             conn.videoRotationAngle = 90
@@ -62,8 +70,28 @@ final class CardCaptureService: NSObject {
         if device.isAutoFocusRangeRestrictionSupported { device.autoFocusRangeRestriction = .near }
         device.unlockForConfiguration()
 
-        isConfigured = true
-        dlog("[CARD] capture configured · preset=\(session.sessionPreset.rawValue)")
+        configuredPosition = position
+        dlog("[CARD] capture configured · \(position == .back ? "back" : "front") · preset=\(session.sessionPreset.rawValue)")
+    }
+
+    /// Call after changing `CardSettings.cameraFacing` while the session may be running.
+    func invalidateConfiguration() {
+        if session.isRunning {
+            session.stopRunning()
+        }
+        removeVideoInputs()
+        frameLock.lock()
+        latestBuffer = nil
+        frameLock.unlock()
+    }
+
+    private func removeVideoInputs() {
+        session.beginConfiguration()
+        for input in session.inputs {
+            session.removeInput(input)
+        }
+        session.commitConfiguration()
+        configuredPosition = nil
     }
 
     func start() throws {

@@ -3,14 +3,35 @@ import SwiftUI
 struct CardInputPanel: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var session = CardSongSession.shared
+    @AppStorage(CardSettings.Key.cameraFacing) private var cameraFacingRaw = CardSettings.defaultCameraFacing.rawValue
+
+    private var cameraFacing: Binding<CardSettings.CameraFacing> {
+        Binding(
+            get: { CardSettings.CameraFacing(rawValue: cameraFacingRaw) ?? .back },
+            set: { cameraFacingRaw = $0.rawValue }
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             OracleEyebrow(text: "Camera · handwriting OCR")
 
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Camera for card")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textSecondary)
+                Picker("Camera for card", selection: cameraFacing) {
+                    ForEach(CardSettings.CameraFacing.allCases) { facing in
+                        Text(facing.segmentTitle).tag(facing)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
             VStack(alignment: .leading, spacing: 10) {
                 tipRow("doc.plaintext", "White matte card + thick black marker")
                 tipRow("textformat.size.larger", "ALL CAPS · \(CardOCRLayout.lineAssignmentSummary) (optional SONG:/WORD:/NOTES: labels)")
+                tipRow("hand.raised.fill", "Hold the card steady for the full ~\(String(format: "%.1f", CardSettings.burstSeconds)) s scan burst — motion blur hurts OCR")
                 tipRow("camera.fill", "During Perform: press **volume up** to scan — green dot ~\(Int(CardSettings.defaultBurstSeconds)) s while reading (Camera Control also works on iPhone 16+)")
                 tipRow("button.programmable", "1 buzz = song read · 2 strong buzzes = preview ready")
             }
@@ -24,25 +45,15 @@ struct CardInputPanel: View {
                     .foregroundStyle(OracleTheme.coral)
             }
 
-            Button {
-                PerformanceCues.playSongLockVibration()
-            } label: {
-                Label("Test lock vibration", systemImage: "waveform")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(OracleTheme.gold)
-
             if model.loadState == .ready, let track = model.selected, session.state == .locked {
                 LoadedSongReadyRow(track: track)
             }
         }
         .onAppear {
             Task { _ = await CardSettings.requestCameraIfNeeded() }
+        }
+        .onChange(of: cameraFacingRaw) { _, _ in
+            CardSongSession.shared.restartCameraIfRunning()
         }
     }
 

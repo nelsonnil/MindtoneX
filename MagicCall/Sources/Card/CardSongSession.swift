@@ -604,4 +604,17 @@ final class CardSongSession: ObservableObject {
         captureRunning = false
     }
 
+    /// After changing camera facing in Settings, swap the live capture device without leaving test/practice running.
+    func restartCameraIfRunning() {
+        guard captureRunning else { return }
+        capture.invalidateConfiguration()
+        do {
+            try capture.start()
+            dlog("[CARD] camera restarted · \(CardSettings.cameraFacing.segmentTitle)")
+        } catch {
+            captureRunning = false
+            fail(error.localizedDescription)
+        }
+    }
+
 }

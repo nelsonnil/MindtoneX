@@ -84,9 +84,9 @@ struct CollapsibleHomeSection<Content: View>: View {
                 if expanded {
                     content()
                         .padding(.top, 16)
+                        .contentShape(Rectangle())
                 }
             }
         }
-        .accessibilityElement(children: .contain)
     }
 }

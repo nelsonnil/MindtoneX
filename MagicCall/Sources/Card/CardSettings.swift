@@ -7,7 +7,31 @@ enum CardSettings {
         static let burstSeconds = "card.burstSeconds"
         static let maxScanRetries = "card.maxScanRetries"
         static let practiceTipsSeen = "card.practiceTipsSeen"
+        static let cameraFacing = "card.cameraFacing"
     }
+
+    enum CameraFacing: String, CaseIterable, Identifiable {
+        case back
+        case front
+
+        var id: String { rawValue }
+
+        var segmentTitle: String {
+            switch self {
+            case .back: return "Back"
+            case .front: return "Front"
+            }
+        }
+
+        var capturePosition: AVCaptureDevice.Position {
+            switch self {
+            case .back: return .back
+            case .front: return .front
+            }
+        }
+    }
+
+    static let defaultCameraFacing = CameraFacing.back
 
     /// On-device Vision OCR: device locale first, then English + Spanish (song titles are often EN/ES).
     static var visionRecognitionLanguages: [String] {
@@ -37,7 +61,13 @@ enum CardSettings {
         d.register(defaults: [
             Key.burstSeconds: defaultBurstSeconds,
             Key.maxScanRetries: defaultMaxScanRetries,
+            Key.cameraFacing: defaultCameraFacing.rawValue,
         ])
+    }
+
+    static var cameraFacing: CameraFacing {
+        get { CameraFacing(rawValue: d.string(forKey: Key.cameraFacing) ?? "") ?? defaultCameraFacing }
+        set { d.set(newValue.rawValue, forKey: Key.cameraFacing) }
     }
 
     static var burstSeconds: Double {
@@ -66,6 +96,6 @@ enum CardSettings {
     }
 
     static func summary() -> String {
-        "burst=\(burstSeconds)s retries=\(maxScanRetries) cam=\(cameraAuthorized ? "ok" : "denied")"
+        "burst=\(burstSeconds)s retries=\(maxScanRetries) facing=\(cameraFacing.rawValue) cam=\(cameraAuthorized ? "ok" : "denied")"
     }
 }

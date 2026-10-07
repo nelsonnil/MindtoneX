@@ -38,6 +38,15 @@ enum PerformanceCues {
 
     private static var d: UserDefaults { .standard }
 
+    static func registerCueDefaults() {
+        d.register(defaults: [
+            Key.vibrateOnLock: true,
+            Key.dotEnabled: false,
+            Key.dotSize: defaultDotSize,
+            Key.dotColor: defaultDotColor,
+        ])
+    }
+
     static var vibrateOnLock: Bool { d.object(forKey: Key.vibrateOnLock) == nil ? true : d.bool(forKey: Key.vibrateOnLock) }
 
     /// The performer's song is locked (AI Voice, API) or loaded from the note (Notes).
@@ -290,13 +299,13 @@ struct FeedbackCard: View {
                         if dotEnabled {
                             CueDivider()
                             dotCustomizeRow(color: dotColor, size: $dotSize, colorHex: $colorHex)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                     }
                 }
 
                 StagePeekFeedbackSection()
             }
-            .animation(.easeInOut(duration: 0.2), value: dotEnabled)
         }
     }
 

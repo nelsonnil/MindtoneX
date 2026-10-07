@@ -84,6 +84,7 @@ struct StagePeekFeedbackSection: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .background(Color.white.opacity(0.04))
@@ -92,6 +93,5 @@ struct StagePeekFeedbackSection: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
-        .animation(.easeInOut(duration: 0.2), value: peekEnabled)
     }
 }
