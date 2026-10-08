@@ -108,6 +108,8 @@ struct WordApiInputPanel: View {
 
     private var wordContactCard: some View {
         VStack(alignment: .leading, spacing: 12) {
+            CallerNameSetupStatusView(saveWordAsContact: saveWordAsContact)
+
             OracleEyebrow(text: "Preview")
 
             WordApiIncomingCallBannerPreview(

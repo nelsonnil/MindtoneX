@@ -89,6 +89,7 @@
 		99C1146710877380EBC55FD9 /* CallMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303BA173088357A9233FE003 /* CallMonitor.swift */; };
 		9BC788D2F180C967FBFF14AB /* MagicIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48131BF78F88DFF0CB3E192 /* MagicIntents.swift */; };
 		9CAF4275C647D0F5AA7516BE /* WordApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */; };
+		EF187488AA7323B12558F5FD /* CallerNameSetupStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CEDC4E44EB5BD0902967336 /* CallerNameSetupStatusView.swift */; };
 		A1527BE9FA2E86C4B75BAB86 /* NotesPerformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C269D939BB5F7D004EF20F /* NotesPerformView.swift */; };
 		A44853952E079252482E4F83 /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA922A0D263D3309553D389 /* Prefs.swift */; };
 		A4614B1A536192430CFD5A9C /* StageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3305BEFC5DE85E1D1E566060 /* StageView.swift */; };
@@ -179,6 +180,7 @@
 		101DBA24C3A8A6E5F8FF5942 /* ButtonKeyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonKeyboard.swift; sourceTree = "<group>"; };
 		1281B461D25A6CC77A54696F /* MainShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainShellView.swift; sourceTree = "<group>"; };
 		13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiInputPanel.swift; sourceTree = "<group>"; };
+		9CEDC4E44EB5BD0902967336 /* CallerNameSetupStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerNameSetupStatusView.swift; sourceTree = "<group>"; };
 		15278D9105D3F5FF00D1BAD5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		157F18B545F0BC6C204DB511 /* ApiSongSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiSongSession.swift; sourceTree = "<group>"; };
 		1632E6A6608418A102AFC4CF /* PerformLogReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformLogReporter.swift; sourceTree = "<group>"; };
@@ -417,6 +419,7 @@
 				157F18B545F0BC6C204DB511 /* ApiSongSession.swift */,
 				F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */,
 				0837021B0DCC752CFA645B40 /* WordApiCallerBannerPreview.swift */,
+				9CEDC4E44EB5BD0902967336 /* CallerNameSetupStatusView.swift */,
 				16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */,
 				95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */,
 				9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */,
@@ -860,6 +863,7 @@
 				F31464D57BF9700BFD4B2325 /* VoiceSettings.swift in Sources */,
 				BAE78790890F3890D985AE32 /* VoiceSongSession.swift in Sources */,
 				C04371F3C53F5F34E65FDDEE /* WordApiCallerBannerPreview.swift in Sources */,
+				EF187488AA7323B12558F5FD /* CallerNameSetupStatusView.swift in Sources */,
 				FB47353581316D4966940F55 /* WordApiCarphoneDialHost.swift in Sources */,
 				6DE487B3B435779601483AE7 /* WordApiContactPerformGate.swift in Sources */,
 				DB0E5A96FCA973B7D2BCC881 /* WordApiContactShowState.swift in Sources */,
