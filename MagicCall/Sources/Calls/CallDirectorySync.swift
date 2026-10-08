@@ -12,16 +12,66 @@ enum CallDirectorySync {
     /// serialized: requests during a load collapse into one follow-up that reads the latest store.
     private static var reloadInFlight = false
     private static var pendingReason: String?
+    private static var inFlightCompletions: [(ReloadResult) -> Void] = []
+    private static var pendingCompletions: [(ReloadResult) -> Void] = []
 
     static let disabledHint = "Enable MindtoneX under Settings → Phone → Call Blocking & Identification."
 
-    static func reloadExtensions(reason: String) {
+    enum ReloadResult {
+        /// `load` is nil when the extension finished without writing its report to the App Group.
+        case loaded(CallerLabelStore.ExtensionLoad?, requestedAt: Date)
+        case failed(code: Int, message: String)
+    }
+
+    /// Setup check: proves the extension process reads the same App Group as the app.
+    enum ExtensionCheck: Equatable {
+        case read(entries: Int, at: Date)
+        case noReport
+        case failed(code: Int, message: String)
+    }
+
+    static func reloadExtensions(reason: String, completion: ((ReloadResult) -> Void)? = nil) {
         guard active else { return }
         guard !reloadInFlight else {
             pendingReason = reason
+            if let completion { pendingCompletions.append(completion) }
             return
         }
+        if let completion { inFlightCompletions.append(completion) }
         startReload(reason: reason, attempt: 1)
+    }
+
+    static func checkExtensionReadsSharedData(completion: @escaping (ExtensionCheck) -> Void) {
+        guard active else {
+            completion(.failed(code: -1, message: "Turn on Show word on incoming call first."))
+            return
+        }
+        reloadExtensions(reason: "setup check") { result in
+            switch result {
+            case .failed(let code, let message):
+                completion(.failed(code: code, message: message))
+            case .loaded(let load?, _):
+                completion(.read(entries: load.entries, at: load.at))
+            case .loaded(nil, let requestedAt):
+                // The extension writes from another process; give cfprefsd a moment before calling it missing.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    MainActor.assumeIsolated {
+                        if let load = freshExtensionLoad(since: requestedAt) {
+                            completion(.read(entries: load.entries, at: load.at))
+                        } else {
+                            completion(.noReport)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static func freshExtensionLoad(since requestedAt: Date) -> CallerLabelStore.ExtensionLoad? {
+        guard let load = CallerLabelStore.lastExtensionLoad(), load.at >= requestedAt.addingTimeInterval(-1) else {
+            return nil
+        }
+        return load
     }
 
     private static func startReload(reason: String, attempt: Int) {
@@ -47,6 +97,8 @@ enum CallDirectorySync {
                     MainActor.assumeIsolated {
                         let next = pendingReason ?? reason
                         pendingReason = nil
+                        inFlightCompletions += pendingCompletions
+                        pendingCompletions = []
                         startReload(reason: next, attempt: attempt + 1)
                     }
                 }
@@ -54,15 +106,27 @@ enum CallDirectorySync {
             }
             if code == .extensionDisabled {
                 PerformUserLog.shared.logConnectionIssue(disabledHint)
+            } else {
+                PerformUserLog.shared.logOncePerSession(
+                    "call-id.reload-failed",
+                    "Caller name · Call Directory reload failed (code \((error as NSError).code)) — the word can only show through Contacts."
+                )
             }
         } else {
             let retry = attempt > 1 ? " · succeeded on retry \(attempt)" : ""
             dlog("[CALL-ID] reload \(id) ok (\(reason))\(retry) · \(extensionLoadSummary(since: requestedAt))")
             logExtensionLoadForUser(since: requestedAt)
         }
+        let result: ReloadResult = error.map { .failed(code: ($0 as NSError).code, message: $0.localizedDescription) }
+            ?? .loaded(freshExtensionLoad(since: requestedAt), requestedAt: requestedAt)
+        let completions = inFlightCompletions
+        inFlightCompletions = []
         reloadInFlight = false
+        completions.forEach { $0(result) }
         if let next = pendingReason {
             pendingReason = nil
+            inFlightCompletions = pendingCompletions
+            pendingCompletions = []
             startReload(reason: next, attempt: 1)
         }
     }
@@ -75,7 +139,7 @@ enum CallDirectorySync {
     }
 
     private static func extensionLoadSummary(since requestedAt: Date) -> String {
-        guard let load = CallerLabelStore.lastExtensionLoad(), load.at >= requestedAt.addingTimeInterval(-1) else {
+        guard let load = freshExtensionLoad(since: requestedAt) else {
             return "extension did not report back (App Group \(CallerLabelStore.appGroupID) missing from signing?)"
         }
         return "extension saw armed=\(load.performArmed) label=«\(load.label)» entries=\(load.entries)"
@@ -85,7 +149,7 @@ enum CallDirectorySync {
     private static func logExtensionLoadForUser(since requestedAt: Date) {
         let snapshot = CallerLabelStore.load()
         guard snapshot.performArmed else { return }
-        guard let load = CallerLabelStore.lastExtensionLoad(), load.at >= requestedAt.addingTimeInterval(-1) else {
+        guard let load = freshExtensionLoad(since: requestedAt) else {
             PerformUserLog.shared.logOncePerSession(
                 "call-id.no-report",
                 "Caller name · Call Directory extension did not read MindtoneX data (App Group \(CallerLabelStore.appGroupID) missing in this build) — only the Contacts save can show the word."
@@ -155,6 +219,9 @@ enum CallDirectorySync {
                 SpectatorWordContactService.logContactOverridingCallDirectory(phone: phone)
             }
         }
+        if let warning = WordApiSettings.callerNumberFormatWarning() {
+            PerformUserLog.shared.log("Caller name · ⚠ \(warning)")
+        }
         if snapshot.identificationPhoneNumbers.isEmpty {
             if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .unknown {
                 PerformUserLog.shared.log("Caller name: dial the spectator on Perform (Unknown mode) or add a fallback number in Caller name settings.")
@@ -168,6 +235,8 @@ enum CallDirectorySync {
             let contacts = CNContactStore.authorizationStatus(for: .contacts)
             if contacts == .denied || contacts == .restricted {
                 PerformUserLog.shared.log("Contacts off · word on call screen needs Contacts access, or use Call Directory only.")
+            } else if #available(iOS 18.0, *), contacts == .limited {
+                PerformUserLog.shared.log("Contacts · Limited access — a spectator card you didn't share stays hidden and keeps its name. Choose Full Access in Settings → MindtoneX → Contacts.")
             }
         }
         directoryManager.getEnabledStatusForExtension(withIdentifier: CallerLabelStore.extensionBundleID) { status, error in

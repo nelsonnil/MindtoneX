@@ -101,6 +101,14 @@ final class WordReadingTests: XCTestCase {
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("06 12345678", region: "NL"), "31612345678")
     }
 
+    func testCallerNumberFormatWarningFlagsNumbersWithoutCountryCode() {
+        XCTAssertNotNil(WordApiSettings.callerNumberFormatWarning(digits: "690 808 919", region: "US"))
+        XCTAssertNil(WordApiSettings.callerNumberFormatWarning(digits: "690 808 919", region: "ES"))
+        XCTAssertNil(WordApiSettings.callerNumberFormatWarning(digits: "34690808919", region: "US"))
+        XCTAssertNil(WordApiSettings.callerNumberFormatWarning(digits: "", region: "ES"))
+        XCTAssertNotNil(WordApiSettings.callerNumberFormatWarning(digits: "34690808919", region: "RU"))
+    }
+
     func testCanonicalPhoneDigitsKeepsInternationalAndItalianZero() {
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("+33 6 12 34 56 78", region: "ES"), "33612345678")
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("(415) 555-0123", region: "US"), "14155550123")

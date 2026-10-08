@@ -13,9 +13,23 @@ struct CallerNameSetupStatusView: View {
     @State private var callDirectoryStatus: CXCallDirectoryManager.EnabledStatus = .unknown
     @State private var callDirectoryLoading = true
     @State private var contactsStatus = CNContactStore.authorizationStatus(for: .contacts)
+    @State private var extensionCheck: ExtensionCheckState = .idle
+
+    private enum ExtensionCheckState: Equatable {
+        case idle
+        case checking
+        case done(CallDirectorySync.ExtensionCheck)
+    }
 
     private static let extensionToggleName = "MindtoneX"
     private static let phoneSettingsPath = "Settings → Phone → Call Blocking & Identification"
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.unitsStyle = .full
+        return f
+    }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -25,6 +39,10 @@ struct CallerNameSetupStatusView: View {
 
             appGroupSharingRow
 
+            if callDirectoryEnabled {
+                extensionCheckRow
+            }
+
             if saveWordAsContact {
                 contactsAccessRow
             } else {
@@ -32,6 +50,10 @@ struct CallerNameSetupStatusView: View {
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let warning = WordApiSettings.callerNumberFormatWarning() {
+                warningBox(warning)
             }
         }
         .onAppear { refreshStatus() }
@@ -282,6 +304,138 @@ struct CallerNameSetupStatusView: View {
         appGroupAvailable ? Color.green : OracleTheme.coral
     }
 
+    // MARK: - Extension check
+
+    /// The App Group row only proves the app's entitlement; this reload proves the extension reads the same data.
+    private var extensionCheckRow: some View {
+        Button(action: runExtensionCheck) {
+            HStack(alignment: .top, spacing: 10) {
+                extensionCheckIcon
+                    .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Extension data check")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(OracleTheme.textPrimary)
+                        Spacer(minLength: 8)
+                        if extensionCheck != .checking {
+                            HStack(spacing: 4) {
+                                Text(extensionCheck == .idle ? "Check" : "Check again")
+                                    .font(.caption.weight(.bold))
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.caption2.weight(.bold))
+                            }
+                            .foregroundStyle(OracleTheme.gold)
+                        }
+                    }
+
+                    Text(extensionCheckStatusLine)
+                        .font(.caption)
+                        .foregroundStyle(extensionCheckStatusColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 10)
+            .background(Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(extensionCheck == .checking)
+    }
+
+    @ViewBuilder
+    private var extensionCheckIcon: some View {
+        switch extensionCheck {
+        case .checking:
+            ProgressView()
+                .controlSize(.small)
+                .tint(OracleTheme.textSecondary)
+        case .done(.read):
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(Color.green)
+        case .done:
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title3)
+                .foregroundStyle(OracleTheme.coral)
+        case .idle:
+            Image(systemName: "questionmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(OracleTheme.textSecondary)
+        }
+    }
+
+    private var extensionCheckStatusLine: String {
+        switch extensionCheck {
+        case .idle:
+            if let load = CallerLabelStore.lastExtensionLoad() {
+                let when = Self.relativeFormatter.localizedString(for: load.at, relativeTo: Date())
+                return "Extension last read MindtoneX data \(when). Tap to confirm it still does."
+            }
+            return "Tap to confirm the Call Directory extension reads the word MindtoneX shares."
+        case .checking:
+            return "Reloading the Call Directory extension…"
+        case .done(.read(let entries, _)):
+            let numbers = entries == 1 ? "1 number" : "\(entries) numbers"
+            return "Extension read MindtoneX data (\(numbers) labeled — 0 is normal outside Perform)."
+        case .done(.noReport):
+            return "The extension ran but never read MindtoneX data — its App Group \(CallerLabelStore.appGroupID) is missing in this build. Only Contacts can show the word until a correctly signed build is installed."
+        case .done(.failed(let code, let message)):
+            return Self.extensionCheckFailureLine(code: code, message: message)
+        }
+    }
+
+    private var extensionCheckStatusColor: Color {
+        switch extensionCheck {
+        case .done(.read): return Color.green
+        case .done: return OracleTheme.coral
+        default: return OracleTheme.textSecondary
+        }
+    }
+
+    private static func extensionCheckFailureLine(code: Int, message: String) -> String {
+        switch CXErrorCodeCallDirectoryManagerError.Code(rawValue: code) ?? .unknown {
+        case .noExtensionFound:
+            return "iOS found no MindtoneX Call Directory extension in this build (code \(code))."
+        case .extensionDisabled:
+            return "Disabled — turn MindtoneX on under \(phoneSettingsPath)."
+        case .currentlyLoading, .loadingInterrupted:
+            return "iOS is still loading the extension (code \(code)) — try again in a few seconds."
+        default:
+            return "Reload failed: \(message) (code \(code)). Turn MindtoneX off and on under \(phoneSettingsPath), then check again."
+        }
+    }
+
+    private func runExtensionCheck() {
+        extensionCheck = .checking
+        CallDirectorySync.checkExtensionReadsSharedData { result in
+            extensionCheck = .done(result)
+        }
+    }
+
+    // MARK: - Number format
+
+    private func warningBox(_ text: String) -> some View {
+        Label(text, systemImage: "exclamationmark.triangle.fill")
+            .font(.caption)
+            .foregroundStyle(OracleTheme.coral)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(OracleTheme.coral.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(OracleTheme.coral.opacity(0.25), lineWidth: 1)
+            }
+    }
+
     private func callIdentificationTapped() {
         guard callIdentificationNeedsSettings else {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -336,11 +490,11 @@ struct CallerNameSetupStatusView: View {
     @ViewBuilder
     private var contactsStatusIcon: some View {
         switch contactsStatus {
-        case .authorized, .limited:
+        case .authorized:
             Image(systemName: "checkmark.circle.fill")
                 .font(.title3)
                 .foregroundStyle(Color.green)
-        case .denied, .restricted:
+        case .denied, .restricted, .limited:
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.title3)
                 .foregroundStyle(OracleTheme.coral)
@@ -355,14 +509,18 @@ struct CallerNameSetupStatusView: View {
         }
     }
 
+    /// Limited access hides any spectator card the user didn't share, and that hidden card keeps its name on the call.
     private var contactsNeedsSettings: Bool {
-        contactsStatus == .denied || contactsStatus == .restricted
+        switch contactsStatus {
+        case .denied, .restricted, .limited: return true
+        default: return false
+        }
     }
 
     private var contactsActionTitle: String {
         switch contactsStatus {
         case .notDetermined: return "Allow"
-        case .denied, .restricted: return "Open Settings"
+        case .denied, .restricted, .limited: return "Open Settings"
         default: return ""
         }
     }
@@ -372,7 +530,7 @@ struct CallerNameSetupStatusView: View {
         case .authorized:
             return "Authorized — MindtoneX can save the locked word to Contacts."
         case .limited:
-            return "Limited — selected contacts only; verify your spectator is allowed."
+            return "Limited — MindtoneX can't see cards you didn't share, so a spectator already in Contacts keeps their name. Choose Full Access."
         case .denied:
             return "Denied — enable Contacts for MindtoneX in Settings."
         case .restricted:
@@ -386,9 +544,9 @@ struct CallerNameSetupStatusView: View {
 
     private var contactsStatusColor: Color {
         switch contactsStatus {
-        case .authorized, .limited:
+        case .authorized:
             return Color.green
-        case .denied, .restricted:
+        case .denied, .restricted, .limited:
             return OracleTheme.coral
         case .notDetermined:
             return OracleTheme.textSecondary
@@ -403,9 +561,9 @@ struct CallerNameSetupStatusView: View {
             CNContactStore().requestAccess(for: .contacts) { _, _ in
                 DispatchQueue.main.async { refreshStatus() }
             }
-        case .denied, .restricted:
+        case .denied, .restricted, .limited:
             openAppSettings()
-        case .authorized, .limited:
+        case .authorized:
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         @unknown default:
             break
@@ -416,6 +574,9 @@ struct CallerNameSetupStatusView: View {
 
     private func refreshStatus() {
         contactsStatus = CNContactStore.authorizationStatus(for: .contacts)
+        if extensionCheck != .checking {
+            extensionCheck = .idle
+        }
         callDirectoryLoading = true
         CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(
             withIdentifier: CallerLabelStore.extensionBundleID

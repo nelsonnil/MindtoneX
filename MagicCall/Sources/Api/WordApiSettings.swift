@@ -425,6 +425,21 @@ enum WordApiSettings {
         return "manual number in Caller name settings"
     }
 
+    /// National numbers get their country code from Settings → Region, not from the SIM; when that fails the
+    /// saved number can never match the incoming call (Contacts or Call Directory).
+    static func callerNumberFormatWarning(
+        digits: String = identificationPhoneDigitsRaw(),
+        region: String = deviceRegionISO
+    ) -> String? {
+        let regionName = Locale(identifier: "en_US").localizedString(forRegionCode: region) ?? region
+        guard defaultCountryCallingCode(for: region) != nil else {
+            return "iPhone Region «\(regionName)» isn't in MindtoneX's country list — enter caller numbers with their country code."
+        }
+        let canonical = canonicalPhoneDigits(digits, region: region)
+        guard canonical.count >= 7, canonical.count < 10 else { return nil }
+        return "Number \(canonical) has no country code for iPhone Region «\(regionName)» — set Region to your SIM's country (Settings → General → Language & Region) or it won't match the incoming call."
+    }
+
     static var customHeaderValue: String? {
         let value = trimmed(Keychain.get(account: customHeaderAccount))
         return value.isEmpty ? nil : value
