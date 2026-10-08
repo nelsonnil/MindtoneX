@@ -58,6 +58,7 @@ enum CallDirectorySync {
         } else {
             let retry = attempt > 1 ? " · succeeded on retry \(attempt)" : ""
             dlog("[CALL-ID] reload \(id) ok (\(reason))\(retry) · \(extensionLoadSummary(since: requestedAt))")
+            logExtensionLoadForUser(since: requestedAt)
         }
         reloadInFlight = false
         if let next = pendingReason {
@@ -78,6 +79,32 @@ enum CallDirectorySync {
             return "extension did not report back (App Group \(CallerLabelStore.appGroupID) missing from signing?)"
         }
         return "extension saw armed=\(load.performArmed) label=«\(load.label)» entries=\(load.entries)"
+    }
+
+    /// Perform log: tells "extension never read our data" apart from "read it but had no number / no word".
+    private static func logExtensionLoadForUser(since requestedAt: Date) {
+        let snapshot = CallerLabelStore.load()
+        guard snapshot.performArmed else { return }
+        guard let load = CallerLabelStore.lastExtensionLoad(), load.at >= requestedAt.addingTimeInterval(-1) else {
+            PerformUserLog.shared.logOncePerSession(
+                "call-id.no-report",
+                "Caller name · Call Directory extension did not read MindtoneX data (App Group \(CallerLabelStore.appGroupID) missing in this build) — only the Contacts save can show the word."
+            )
+            return
+        }
+        guard !snapshot.lockedLabel.isEmpty else { return }
+        if load.entries == 0 {
+            PerformUserLog.shared.logOncePerSession(
+                "call-id.zero-entries",
+                "Caller name · Call Directory got the word but no phone number — dial / pick the spectator or add a number."
+            )
+        } else {
+            let numbers = snapshot.identificationPhoneNumbers.map { "+\($0)" }.joined(separator: ", ")
+            PerformUserLog.shared.logOncePerSession(
+                "call-id.loaded.\(load.label)",
+                "Caller name · Call Directory ready «\(WordApiInputPanel.truncated(load.label, max: 32))» for \(numbers) (shows only if that number is not in Contacts)"
+            )
+        }
     }
 
     static func syncPerformArmed(_ armed: Bool, reason: String) {
@@ -118,6 +145,15 @@ enum CallDirectorySync {
                 "Caller name · needs App Group \(CallerLabelStore.appGroupID) in provisioning (app + extension). Song/camera unaffected."
             )
             #endif
+        }
+        if let phone = WordApiSettings.identificationPhoneE164String() {
+            let contacts = WordApiSettings.saveWordAsContactEnabled
+                ? "Contacts save ON (\(WordApiSettings.contactMode.title))"
+                : "Contacts save OFF (Call Directory only)"
+            PerformUserLog.shared.log("Caller name · spectator must call from \(phone) · source \(WordApiSettings.identificationPhoneSource) · \(contacts)")
+            if !WordApiSettings.saveWordAsContactEnabled {
+                SpectatorWordContactService.logContactOverridingCallDirectory(phone: phone)
+            }
         }
         if snapshot.identificationPhoneNumbers.isEmpty {
             if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .unknown {
