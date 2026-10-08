@@ -23,6 +23,8 @@ struct CallerNameSetupStatusView: View {
 
             callIdentificationBlock
 
+            appGroupSharingRow
+
             if saveWordAsContact {
                 contactsAccessRow
             } else {
@@ -83,10 +85,12 @@ struct CallerNameSetupStatusView: View {
             .buttonStyle(.plain)
             .disabled(!callIdentificationNeedsSettings && !callDirectoryLoading)
 
-            if callDirectoryEnabled {
+            if callDirectoryFullyReady {
                 Label("On — incoming calls can show your word", systemImage: "checkmark.circle.fill")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(Color.green)
+            } else if callDirectoryEnabled && !appGroupAvailable {
+                extensionOnButAppGroupMissingBanner
             } else {
                 callIdentificationMiniGuide
             }
@@ -150,10 +154,14 @@ struct CallerNameSetupStatusView: View {
             ProgressView()
                 .controlSize(.small)
                 .tint(OracleTheme.textSecondary)
-        } else if callDirectoryEnabled {
+        } else if callDirectoryFullyReady {
             Image(systemName: "checkmark.circle.fill")
                 .font(.title3)
                 .foregroundStyle(Color.green)
+        } else if callDirectoryEnabled && !appGroupAvailable {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title3)
+                .foregroundStyle(OracleTheme.coral)
         } else {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.title3)
@@ -161,8 +169,17 @@ struct CallerNameSetupStatusView: View {
         }
     }
 
+    private var appGroupAvailable: Bool {
+        CallerLabelStore.isAppGroupAvailable
+    }
+
     private var callDirectoryEnabled: Bool {
         !callDirectoryLoading && callDirectoryStatus == .enabled
+    }
+
+    /// Extension toggle ON is not enough — App Group must be signed for Call Directory to read the word.
+    private var callDirectoryFullyReady: Bool {
+        callDirectoryEnabled && appGroupAvailable
     }
 
     private var callIdentificationNeedsSettings: Bool {
@@ -173,7 +190,10 @@ struct CallerNameSetupStatusView: View {
         if callDirectoryLoading { return "Checking Call Directory…" }
         switch callDirectoryStatus {
         case .enabled:
-            return "Enabled — MindtoneX can label incoming calls."
+            if appGroupAvailable {
+                return "Enabled — MindtoneX can label incoming calls."
+            }
+            return "Enabled in Settings, but App Group sharing is missing from this build."
         case .disabled:
             return "Disabled — turn MindtoneX on under \(Self.phoneSettingsPath)."
         case .unknown:
@@ -185,7 +205,81 @@ struct CallerNameSetupStatusView: View {
 
     private var callIdentificationStatusColor: Color {
         if callDirectoryLoading { return OracleTheme.textSecondary }
+        if callDirectoryFullyReady { return Color.green }
+        if callDirectoryEnabled && !appGroupAvailable { return OracleTheme.coral }
         return callDirectoryEnabled ? Color.green : OracleTheme.coral
+    }
+
+    private var extensionOnButAppGroupMissingBanner: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Call identification is ON in Settings, but this install cannot share data with the extension.")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(OracleTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Delete MindtoneX and install a recent TestFlight build signed with App Group \(CallerLabelStore.appGroupID). Peek may still work; incoming caller name will not.")
+                .font(.caption2)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .background(OracleTheme.coral.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(OracleTheme.coral.opacity(0.25), lineWidth: 1)
+        }
+    }
+
+    // MARK: - App Group
+
+    private var appGroupSharingRow: some View {
+        HStack(alignment: .top, spacing: 10) {
+            appGroupStatusIcon
+                .frame(width: 28, height: 28)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("App Group data sharing")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textPrimary)
+
+                Text(appGroupStatusLine)
+                    .font(.caption)
+                    .foregroundStyle(appGroupStatusColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+    }
+
+    @ViewBuilder
+    private var appGroupStatusIcon: some View {
+        if appGroupAvailable {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(Color.green)
+        } else {
+            Image(systemName: "xmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(OracleTheme.coral)
+        }
+    }
+
+    private var appGroupStatusLine: String {
+        if appGroupAvailable {
+            return "Available — app and Call Directory can share the locked word."
+        }
+        return "Not available — reinstall a TestFlight build with App Group signing (app + extension)."
+    }
+
+    private var appGroupStatusColor: Color {
+        appGroupAvailable ? Color.green : OracleTheme.coral
     }
 
     private func callIdentificationTapped() {
