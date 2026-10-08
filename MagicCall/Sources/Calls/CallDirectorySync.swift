@@ -235,6 +235,8 @@ enum CallDirectorySync {
             let contacts = CNContactStore.authorizationStatus(for: .contacts)
             if contacts == .denied || contacts == .restricted {
                 PerformUserLog.shared.log("Contacts off · word on call screen needs Contacts access, or use Call Directory only.")
+            } else if contacts == .notDetermined {
+                PerformUserLog.shared.log("Contacts · not allowed yet (fresh install?) — iOS will ask at lock, mid-show. Allow it on the Caller name card before performing.")
             } else if #available(iOS 18.0, *), contacts == .limited {
                 PerformUserLog.shared.log("Contacts · Limited access — a spectator card you didn't share stays hidden and keeps its name. Choose Full Access in Settings → MindtoneX → Contacts.")
             }
