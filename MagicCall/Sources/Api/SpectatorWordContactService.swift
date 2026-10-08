@@ -71,15 +71,17 @@ enum SpectatorWordContactService {
     private static func createUnknownIfNeeded(word: String, phone: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            let note = NotesContactSettings.resolvedContactNote(
-                lockedWord: NotesContactWordSession.shared.lockedReading?.label
-            )
-            let outcome = try upsertUnknown(word: word, phone: phone, note: note)
+            let outcome = try upsertUnknown(word: word, phone: phone)
             dlog("[CONTACT] created/updated unknown «\(word)» → \(phone) (\(reason)) · \(outcome.debugSummary)")
             PerformUserLog.shared.log("Contact saved · \(phone) · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
         } catch {
             dlog("✗ [CONTACT] unknown (\(reason)): \(error.localizedDescription)")
-            PerformUserLog.shared.log("Contact not saved · \(error.localizedDescription)")
+            PerformUserLog.shared.log("Contact not saved · \(describe(error))")
+            return
+        }
+        let note = performContactNote()
+        if !note.isEmpty {
+            await updateNoteForPhone(phone: phone, note: note, reason: reason)
         }
     }
 
@@ -87,17 +89,50 @@ enum SpectatorWordContactService {
     private static func renameKnownContact(identifier: String, word: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            let note = NotesContactSettings.resolvedContactNote(
-                lockedWord: NotesContactWordSession.shared.lockedReading?.label
-            )
-            let outcome = try renameGivenName(identifier: identifier, word: word, note: note)
+            let outcome = try renameGivenName(identifier: identifier, word: word)
             WordApiContactShowState.shared.knownContactRenamedForShow = true
             dlog("[CONTACT] renamed known → «\(word)» (\(reason)) · \(outcome.debugSummary)")
             PerformUserLog.shared.log("Contact renamed · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
         } catch {
             dlog("✗ [CONTACT] known rename (\(reason)): \(error.localizedDescription)")
-            PerformUserLog.shared.log("Contact not renamed · \(error.localizedDescription)")
+            PerformUserLog.shared.log("Contact not renamed · \(describe(error))")
+            return
         }
+        let note = performContactNote()
+        if !note.isEmpty {
+            await updateNoteForKnown(identifier: identifier, note: note, reason: reason)
+        }
+    }
+
+    @MainActor
+    private static func performContactNote() -> String {
+        NotesContactSettings.resolvedContactNote(
+            lockedWord: NotesContactWordSession.shared.lockedReading?.label
+        )
+    }
+
+    /// `CNContactNoteKey` needs Apple's `com.apple.developer.contacts.notes` entitlement; without it every
+    /// fetch that asks for the note fails with `unauthorizedKeys`, so notes stay out of the name save.
+    private static func isMissingNotesEntitlement(_ error: Error) -> Bool {
+        (error as? CNError)?.code == .unauthorizedKeys
+    }
+
+    private static func describe(_ error: Error) -> String {
+        guard let cnError = error as? CNError else { return error.localizedDescription }
+        return "\(error.localizedDescription) (Contacts error \(cnError.code.rawValue))"
+    }
+
+    @MainActor
+    private static func logNoteSkipped(_ error: Error, reason: String) {
+        guard isMissingNotesEntitlement(error) else {
+            dlog("✗ [CONTACT] note (\(reason)): \(error.localizedDescription)")
+            return
+        }
+        dlog("[CONTACT] note skipped (\(reason)): app lacks com.apple.developer.contacts.notes")
+        PerformUserLog.shared.logOncePerSession(
+            "contact.note-entitlement",
+            "Contact note skipped · this build has no Contacts Notes entitlement (caller name still saved)"
+        )
     }
 
     @MainActor
@@ -155,13 +190,15 @@ enum SpectatorWordContactService {
     struct SaveOutcome {
         var displayName: String
         var nickname: String
-        var contactsSharingNumber: Int
+        var cardsRenamed: Int
+        /// Cards with the spectator number that keep their own name; iOS may show any of them.
+        var otherCardsWithNumber: Int
         var limitedAccess: Bool
 
         var warnings: String {
             var parts: [String] = []
-            if contactsSharingNumber > 1 {
-                parts.append("\(contactsSharingNumber) contacts have this number — iOS may show another one")
+            if otherCardsWithNumber > 0 {
+                parts.append("\(otherCardsWithNumber) other contact(s) have this number — iOS may show one of them")
             }
             if !nickname.isEmpty {
                 parts.append("card nickname «\(nickname)» may show instead")
@@ -169,11 +206,12 @@ enum SpectatorWordContactService {
             if limitedAccess {
                 parts.append("Contacts access is Limited — a hidden card with this number would win")
             }
-            return parts.isEmpty ? "" : " · ⚠ " + parts.joined(separator: " · ")
+            let renamed = cardsRenamed > 1 ? " · \(cardsRenamed) cards with this number renamed" : ""
+            return renamed + (parts.isEmpty ? "" : " · ⚠ " + parts.joined(separator: " · "))
         }
 
         var debugSummary: String {
-            "display=«\(displayName)» nickname=«\(nickname)» sharing=\(contactsSharingNumber) limited=\(limitedAccess)"
+            "display=«\(displayName)» nickname=«\(nickname)» renamed=\(cardsRenamed) others=\(otherCardsWithNumber) limited=\(limitedAccess)"
         }
     }
 
@@ -189,80 +227,92 @@ enum SpectatorWordContactService {
         return CNContactStore.authorizationStatus(for: .contacts) == .limited
     }
 
-    private static func outcome(for contact: CNContact, sharing: Int, fallback: String) -> SaveOutcome {
+    private static func outcome(
+        for contact: CNContact,
+        cardsRenamed: Int,
+        otherCardsWithNumber: Int,
+        fallback: String
+    ) -> SaveOutcome {
         let formatted = CNContactFormatter.string(from: contact, style: .fullName)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return SaveOutcome(
             displayName: formatted.isEmpty ? fallback : formatted,
             nickname: contact.nickname.trimmingCharacters(in: .whitespacesAndNewlines),
-            contactsSharingNumber: sharing,
+            cardsRenamed: cardsRenamed,
+            otherCardsWithNumber: otherCardsWithNumber,
             limitedAccess: isLimitedAccess
         )
     }
 
-    private static func upsertUnknown(word: String, phone: String, note: String) throws -> SaveOutcome {
-        let keys: [CNKeyDescriptor] = [
-            CNContactIdentifierKey as CNKeyDescriptor,
-            CNContactGivenNameKey as CNKeyDescriptor,
-            CNContactPhoneNumbersKey as CNKeyDescriptor,
-            CNContactNoteKey as CNKeyDescriptor,
-        ] + displayKeys
-        let number = CNPhoneNumber(stringValue: phone)
-        let matches = try store.unifiedContacts(
-            matching: CNContact.predicateForContacts(matching: number),
+    private static func cards(withPhone phone: String, keysToFetch keys: [CNKeyDescriptor]) throws -> [CNContact] {
+        try store.unifiedContacts(
+            matching: CNContact.predicateForContacts(matching: CNPhoneNumber(stringValue: phone)),
             keysToFetch: keys
         )
-        let save = CNSaveRequest()
-        let saved: CNMutableContact
-
-        if let existing = matches.first {
-            let mutable = existing.mutableCopy() as! CNMutableContact
-            mutable.givenName = word
-            mutable.note = note
-            ensurePhone(mutable, phone: phone, number: number)
-            save.update(mutable)
-            saved = mutable
-        } else {
-            let contact = CNMutableContact()
-            contact.givenName = word
-            contact.note = note
-            contact.phoneNumbers = [
-                CNLabeledValue(label: CNLabelPhoneNumberMobile, value: number),
-            ]
-            save.add(contact, toContainerWithIdentifier: store.defaultContainerIdentifier())
-            saved = contact
-        }
-        try store.execute(save)
-        return outcome(for: saved, sharing: max(matches.count, 1), fallback: word)
     }
 
-    private static func renameGivenName(identifier: String, word: String, note: String) throws -> SaveOutcome {
+    private static func upsertUnknown(word: String, phone: String) throws -> SaveOutcome {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
-            CNContactNoteKey as CNKeyDescriptor,
+        ] + displayKeys
+        let matches = try cards(withPhone: phone, keysToFetch: keys)
+        let save = CNSaveRequest()
+        var saved: [CNMutableContact] = []
+
+        if matches.isEmpty {
+            let contact = CNMutableContact()
+            contact.givenName = word
+            contact.phoneNumbers = [
+                CNLabeledValue(label: CNLabelPhoneNumberMobile, value: CNPhoneNumber(stringValue: phone)),
+            ]
+            save.add(contact, toContainerWithIdentifier: store.defaultContainerIdentifier())
+            saved = [contact]
+        } else {
+            // iOS may show any card that carries the number, so every one of them gets the word.
+            for existing in matches {
+                let mutable = existing.mutableCopy() as! CNMutableContact
+                mutable.givenName = word
+                save.update(mutable)
+                saved.append(mutable)
+            }
+        }
+        try store.execute(save)
+        return outcome(for: saved[0], cardsRenamed: saved.count, otherCardsWithNumber: 0, fallback: word)
+    }
+
+    private static func renameGivenName(identifier: String, word: String) throws -> SaveOutcome {
+        let keys: [CNKeyDescriptor] = [
+            CNContactIdentifierKey as CNKeyDescriptor,
+            CNContactGivenNameKey as CNKeyDescriptor,
         ] + displayKeys
         let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
         WordApiSettings.saveKnownContactGivenNameBeforeLock(contact.givenName)
         let mutable = contact.mutableCopy() as! CNMutableContact
         mutable.givenName = word
-        mutable.note = note
         let save = CNSaveRequest()
         save.update(mutable)
         try store.execute(save)
-        return outcome(for: mutable, sharing: 1, fallback: word)
+        var others = 0
+        if let phone = WordApiSettings.identificationPhoneE164String() {
+            let sharing = (try? cards(withPhone: phone, keysToFetch: [CNContactIdentifierKey as CNKeyDescriptor])) ?? []
+            others = sharing.filter { $0.identifier != identifier }.count
+        }
+        return outcome(for: mutable, cardsRenamed: 1, otherCardsWithNumber: others, fallback: word)
     }
 
     /// Call Directory labels only numbers that are **not** in Contacts; warn when Contacts save is off.
     @MainActor
     static func logContactOverridingCallDirectory(phone: String) {
-        guard CNContactStore.authorizationStatus(for: .contacts) == .authorized || isLimitedAccess else { return }
-        let matches = (try? store.unifiedContacts(
-            matching: CNContact.predicateForContacts(matching: CNPhoneNumber(stringValue: phone)),
-            keysToFetch: displayKeys
-        )) ?? []
+        guard CNContactStore.authorizationStatus(for: .contacts) == .authorized || isLimitedAccess else {
+            PerformUserLog.shared.log(
+                "Caller name · Contacts not readable, so MindtoneX can't check \(phone) — if a card has that number (old MindtoneX card too), iOS shows the card, not the word."
+            )
+            return
+        }
+        let matches = (try? cards(withPhone: phone, keysToFetch: displayKeys)) ?? []
         guard let first = matches.first else { return }
-        let name = outcome(for: first, sharing: matches.count, fallback: phone).displayName
+        let name = outcome(for: first, cardsRenamed: 0, otherCardsWithNumber: matches.count - 1, fallback: phone).displayName
         dlog("[CONTACT] \(phone) already in Contacts as «\(name)» (\(matches.count)) — overrides Call Directory label")
         PerformUserLog.shared.log(
             "Caller name · \(phone) is saved in Contacts as «\(WordApiInputPanel.truncated(name, max: 32))» — iOS shows that name, not the word. Turn Save word as contact ON or delete that contact."
@@ -295,22 +345,19 @@ enum SpectatorWordContactService {
             let keys: [CNKeyDescriptor] = [
                 CNContactIdentifierKey as CNKeyDescriptor,
                 CNContactNoteKey as CNKeyDescriptor,
-                CNContactPhoneNumbersKey as CNKeyDescriptor,
             ]
-            let number = CNPhoneNumber(stringValue: phone)
-            let matches = try store.unifiedContacts(
-                matching: CNContact.predicateForContacts(matching: number),
-                keysToFetch: keys
-            )
-            guard let existing = matches.first else { return }
-            let mutable = existing.mutableCopy() as! CNMutableContact
-            mutable.note = note
+            let matches = try cards(withPhone: phone, keysToFetch: keys)
+            guard !matches.isEmpty else { return }
             let save = CNSaveRequest()
-            save.update(mutable)
+            for existing in matches {
+                let mutable = existing.mutableCopy() as! CNMutableContact
+                mutable.note = note
+                save.update(mutable)
+            }
             try store.execute(save)
             dlog("[CONTACT] note updated (\(reason)) · \(note.prefix(40))…")
         } catch {
-            dlog("✗ [CONTACT] note (\(reason)): \(error.localizedDescription)")
+            logNoteSkipped(error, reason: reason)
         }
     }
 
@@ -330,7 +377,7 @@ enum SpectatorWordContactService {
             try store.execute(save)
             dlog("[CONTACT] known note updated (\(reason))")
         } catch {
-            dlog("✗ [CONTACT] known note (\(reason)): \(error.localizedDescription)")
+            logNoteSkipped(error, reason: reason)
         }
     }
 
@@ -345,14 +392,5 @@ enum SpectatorWordContactService {
         let save = CNSaveRequest()
         save.update(mutable)
         try store.execute(save)
-    }
-
-    private static func ensurePhone(_ contact: CNMutableContact, phone: String, number: CNPhoneNumber) {
-        let normalized = WordApiSettings.normalizePhoneDigits(phone)
-        let hasNumber = contact.phoneNumbers.contains { labeled in
-            WordApiSettings.normalizePhoneDigits(labeled.value.stringValue) == normalized
-        }
-        guard !hasNumber else { return }
-        contact.phoneNumbers.append(CNLabeledValue(label: CNLabelPhoneNumberMobile, value: number))
     }
 }
