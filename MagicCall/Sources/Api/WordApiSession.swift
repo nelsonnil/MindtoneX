@@ -214,6 +214,8 @@ final class WordApiSession: ObservableObject {
             loggedStalePollWarning = false
             pushCallerLabel(label, reason: "start")
             dlog("[WORD] start (\(ms) ms) · \(provider.title) «\(label)»")
+            let snippet = WordApiInputPanel.truncated(label, max: 32)
+            PerformUserLog.shared.log("Caller name · word already on server at start «\(snippet)» → applied now; a new submission replaces it")
             return
         }
 
@@ -289,7 +291,8 @@ final class WordApiSession: ObservableObject {
         CallDirectorySync.refreshIdentificationNumbers()
         CallDirectorySync.reloadExtensions(reason: "word \(reason)")
         dlog("[WORD] etiqueta → «\(label)» (\(reason))")
-        if context == .perform, reason == "text-changed" || reason == "card-scan" {
+        // Peek shows this label, so Contacts must match it — a stale contact name overrides Call Directory.
+        if context == .perform {
             SpectatorWordContactService.applyOnWordLock(word: label, reason: reason)
         }
     }

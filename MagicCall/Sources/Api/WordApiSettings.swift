@@ -290,32 +290,40 @@ enum WordApiSettings {
     }
 
     static func defaultCountryCallingCode(for region: String = deviceRegionISO) -> String? {
-        switch region.uppercased() {
-        case "ES": return "34"
-        case "US", "CA", "DO", "PR": return "1"
-        case "GB", "UK": return "44"
-        case "FR": return "33"
-        case "DE": return "49"
-        case "IT": return "39"
-        case "PT": return "351"
-        case "MX": return "52"
-        case "AR": return "54"
-        case "CO": return "57"
-        case "CL": return "56"
-        default: return nil
-        }
+        countryCallingCodes[region.uppercased()]
     }
 
+    private static let countryCallingCodes: [String: String] = [
+        "ES": "34", "US": "1", "CA": "1", "DO": "1", "PR": "1",
+        "GB": "44", "UK": "44", "IE": "353", "FR": "33", "DE": "49", "IT": "39", "PT": "351",
+        "NL": "31", "BE": "32", "CH": "41", "AT": "43", "LU": "352", "AD": "376",
+        "SE": "46", "NO": "47", "DK": "45", "FI": "358", "PL": "48", "CZ": "420", "RO": "40", "GR": "30",
+        "MX": "52", "AR": "54", "CO": "57", "CL": "56", "PE": "51", "VE": "58", "EC": "593",
+        "UY": "598", "PY": "595", "BO": "591", "CR": "506", "PA": "507", "GT": "502", "SV": "503",
+        "HN": "504", "NI": "505", "BR": "55",
+        "AU": "61", "NZ": "64", "JP": "81", "KR": "82", "IN": "91", "IL": "972", "ZA": "27", "TR": "90", "AE": "971",
+    ]
+
+    /// National dialing keeps a trunk `0` that E.164 drops (FR 06…, DE 030…, UK 020…, NL 06…).
+    private static let trunkZeroCallingCodes: Set<String> = [
+        "44", "353", "33", "49", "31", "32", "41", "43", "46", "358",
+        "51", "58", "593", "598", "595", "61", "64", "81", "82", "91", "972", "27", "90", "971",
+    ]
+
     /// Full digits for Call Directory / Contacts (adds country code when user typed a national number).
-    static func canonicalPhoneDigits(_ raw: String) -> String {
+    static func canonicalPhoneDigits(_ raw: String, region: String = deviceRegionISO) -> String {
         var d = normalizePhoneDigits(raw)
         guard !d.isEmpty else { return d }
         if d.hasPrefix("00") { d.removeFirst(2) }
         while d.first == "0", d.count > 10 { d.removeFirst() }
-        guard let cc = defaultCountryCallingCode() else { return d }
+        guard let cc = defaultCountryCallingCode(for: region) else { return d }
         if d.hasPrefix(cc) { return d }
-        if shouldPrependCountryCode(d, countryCode: cc) {
-            return cc + d
+        var national = d
+        if national.first == "0", trunkZeroCallingCodes.contains(cc) {
+            national.removeFirst()
+        }
+        if shouldPrependCountryCode(national, countryCode: cc) {
+            return cc + national
         }
         return d
     }
@@ -323,11 +331,11 @@ enum WordApiSettings {
     private static func shouldPrependCountryCode(_ digits: String, countryCode: String) -> Bool {
         switch countryCode {
         case "34":
-            return digits.count == 9 && ["6", "7", "9"].contains(String(digits.prefix(1)))
+            return digits.count == 9 && ["6", "7", "8", "9"].contains(String(digits.prefix(1)))
         case "1":
             return digits.count == 10
         case "44":
-            return digits.count >= 10 && digits.count <= 11 && digits.hasPrefix("7")
+            return digits.count >= 9 && digits.count <= 10
         default:
             return digits.count >= 8 && digits.count <= 11
         }
@@ -400,6 +408,21 @@ enum WordApiSettings {
             }
         }
         return canonicalPhoneDigits(fallbackPhoneDigits)
+    }
+
+    /// Which setting `identificationPhoneDigitsRaw()` used (Perform log).
+    static var identificationPhoneSource: String {
+        if saveWordAsContactEnabled {
+            switch contactMode {
+            case .known where knownContactPhoneDigits.count >= 7:
+                return "Known contact «\(knownContactDisplayName)»"
+            case .unknown where lastDialedPhoneDigits.count >= 7:
+                return "Unknown dial"
+            default:
+                break
+            }
+        }
+        return "manual number in Caller name settings"
     }
 
     static var customHeaderValue: String? {

@@ -84,4 +84,27 @@ final class WordReadingTests: XCTestCase {
         XCTAssertEqual(reading.count, 2)
         XCTAssertEqual(reading.receiveCount, 5)
     }
+
+    func testCanonicalPhoneDigitsSpain() {
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("690 808 919", region: "ES"), "34690808919")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("+34 690 808 919", region: "ES"), "34690808919")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("0034690808919", region: "ES"), "34690808919")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("034690808919", region: "ES"), "34690808919")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("812 345 678", region: "ES"), "34812345678")
+    }
+
+    func testCanonicalPhoneDigitsDropsTrunkZero() {
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("06 12 34 56 78", region: "FR"), "33612345678")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("030 1234567", region: "DE"), "49301234567")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("07700 900123", region: "GB"), "447700900123")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("020 7123 4567", region: "GB"), "442071234567")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("06 12345678", region: "NL"), "31612345678")
+    }
+
+    func testCanonicalPhoneDigitsKeepsInternationalAndItalianZero() {
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("+33 6 12 34 56 78", region: "ES"), "33612345678")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("(415) 555-0123", region: "US"), "14155550123")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("06 1234567", region: "IT"), "39061234567")
+        XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("987 654 321", region: "PE"), "51987654321")
+    }
 }

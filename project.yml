@@ -34,6 +34,9 @@ targets:
       - path: MagicCall/Resources
     entitlements:
       path: MagicCall/MagicCall.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.nelson.tono
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono
@@ -69,6 +72,9 @@ targets:
       - path: MagicCallCallDirectory
     entitlements:
       path: MagicCallCallDirectory/MagicCallCallDirectory.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.nelson.tono
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nelson.tono.CallDirectory
