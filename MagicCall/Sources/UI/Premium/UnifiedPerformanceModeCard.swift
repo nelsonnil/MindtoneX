@@ -58,6 +58,7 @@ struct PerformanceCard: View {
                 songSearchRegionSection
 
                 if !model.isPerformTrickUIActive {
+                    InterferenceRingtoneSettingsSection()
                     openAIKeySection
                 }
 

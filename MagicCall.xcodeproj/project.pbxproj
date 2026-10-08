@@ -135,6 +135,12 @@
 		FC28CE1D89FB6C7CF7A94EEA /* OpenAIAPIKeySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D553F239B35F56C84031FE /* OpenAIAPIKeySection.swift */; };
 		FDBD89E4929DDF8542EDE8AA /* StagePeek.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82FCB8DF29F7ECE5781B9B78 /* StagePeek.swift */; };
 		FECA2C4469B32D6936668F8A /* AppModel+WordContact.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2520D9C08750800C79413F10 /* AppModel+WordContact.swift */; };
+		09BE5BAB974C43AC8406E7D1 /* HandGestureDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E496200F664F203A10AADB9 /* HandGestureDetector.swift */; };
+		3D1B9D71DD33E9FFC8520EC2 /* InterferenceAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E944D8E5738D09A7B85D387 /* InterferenceAudioEngine.swift */; };
+		28249B99F586AD3C740FEF66 /* InterferenceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32809EF12DA386D52CCE77DD /* InterferenceSettings.swift */; };
+		297D407748A90DF71B873446 /* InterferenceTestController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */; };
+		478B9B5E4AE2277CB5DA8EB3 /* InterferenceRingtoneSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78CBD020F0C38AC0AB9039FA /* InterferenceRingtoneSettings.swift */; };
+		5C93B264A0C2525AA4578AFD /* InterferenceRingtone in Resources */ = {isa = PBXBuildFile; fileRef = 2329F42BD66BB2222F1CAB76 /* InterferenceRingtone */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -304,6 +310,12 @@
 		F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorWordContactService.swift; sourceTree = "<group>"; };
 		FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPerformanceModeCard.swift; sourceTree = "<group>"; };
 		FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongInputStrip.swift; sourceTree = "<group>"; };
+		8E496200F664F203A10AADB9 /* HandGestureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandGestureDetector.swift; sourceTree = "<group>"; };
+		8E944D8E5738D09A7B85D387 /* InterferenceAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceAudioEngine.swift; sourceTree = "<group>"; };
+		32809EF12DA386D52CCE77DD /* InterferenceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceSettings.swift; sourceTree = "<group>"; };
+		E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceTestController.swift; sourceTree = "<group>"; };
+		78CBD020F0C38AC0AB9039FA /* InterferenceRingtoneSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceRingtoneSettings.swift; sourceTree = "<group>"; };
+		2329F42BD66BB2222F1CAB76 /* InterferenceRingtone */ = {isa = PBXFileReference; lastKnownFileType = folder; path = InterferenceRingtone; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -341,6 +353,7 @@
 				B6949E0964299D0E2E8531C7 /* Assets.xcassets */,
 				3396A83176A5AA134A6619C9 /* CarphoneDialLocalizable.xcstrings */,
 				72AC74524CAF7C0D6B683FE2 /* Info.plist */,
+				2329F42BD66BB2222F1CAB76 /* InterferenceRingtone */,
 				4DFC213B5576688D29A3DAF4 /* ITunesStorefrontCountries.json */,
 				8A83ABBC42C589B55EA84806 /* PrivacyInfo.xcprivacy */,
 			);
@@ -555,6 +568,7 @@
 				31B4E312D30B2DE9EFB3E3A5 /* Debug */,
 				46B89EE582F954AA05B2FF8F /* Experiments */,
 				EC06A23E0F798A1BAFB9AAA3 /* Intents */,
+				17FC25DA9D5789152D619880 /* Interference */,
 				4BD55508B51C6858FEC11095 /* Notes */,
 				8FDE90DD7E0C0552C09F83D6 /* OpenAI */,
 				DF0DA7E76FCD333F65171859 /* Perform */,
@@ -599,6 +613,7 @@
 			children = (
 				A2A7D6817DA44304F1D5ABC6 /* HeroLogoView.swift */,
 				7A21CCF1F7089541B6DC60FF /* HomeCollapsibleSection.swift */,
+				78CBD020F0C38AC0AB9039FA /* InterferenceRingtoneSettings.swift */,
 				2A1FF07ACEFA69383ABF652C /* LibrarySongSearchBlock.swift */,
 				088157D88358BCAC626D0D35 /* LoadedSongReadyRow.swift */,
 				1281B461D25A6CC77A54696F /* MainShellView.swift */,
@@ -630,6 +645,17 @@
 				F54C1553240FB204BB2CB06A /* Premium */,
 			);
 			path = UI;
+			sourceTree = "<group>";
+		};
+		17FC25DA9D5789152D619880 /* Interference */ = {
+			isa = PBXGroup;
+			children = (
+				8E496200F664F203A10AADB9 /* HandGestureDetector.swift */,
+				8E944D8E5738D09A7B85D387 /* InterferenceAudioEngine.swift */,
+				32809EF12DA386D52CCE77DD /* InterferenceSettings.swift */,
+				E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */,
+			);
+			path = Interference;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -743,6 +769,7 @@
 				1A496C1D95A030425C92AF6B /* Assets.xcassets in Resources */,
 				BE759452922244415149A4EA /* ButtonKeyboard.xib in Resources */,
 				8F014C7E9581D085BBA7C712 /* CarphoneDialLocalizable.xcstrings in Resources */,
+				5C93B264A0C2525AA4578AFD /* InterferenceRingtone in Resources */,
 				BC1B39785CB26950D9FBCBB1 /* ITunesStorefrontCountries.json in Resources */,
 				77A82688C8150980D18BF032 /* PhoneKeyboard.xib in Resources */,
 				E6AFD06A3F393638BE5731B6 /* PrivacyInfo.xcprivacy in Resources */,
@@ -756,6 +783,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				09BE5BAB974C43AC8406E7D1 /* HandGestureDetector.swift in Sources */,
+				3D1B9D71DD33E9FFC8520EC2 /* InterferenceAudioEngine.swift in Sources */,
+				28249B99F586AD3C740FEF66 /* InterferenceSettings.swift in Sources */,
+				297D407748A90DF71B873446 /* InterferenceTestController.swift in Sources */,
+				478B9B5E4AE2277CB5DA8EB3 /* InterferenceRingtoneSettings.swift in Sources */,
 				0C7DD1810B8A32E53E19A6EF /* AiVoiceInputPanel.swift in Sources */,
 				E35A7B10CDB728AE2BBC1BAA /* ApiInputPanel.swift in Sources */,
 				60358E4481DA131134CE881A /* ApiSettings.swift in Sources */,

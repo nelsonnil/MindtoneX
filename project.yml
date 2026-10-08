@@ -32,6 +32,12 @@ targets:
     sources:
       - path: MagicCall/Sources
       - path: MagicCall/Resources
+        excludes:
+          - "InterferenceRingtone"
+          - "InterferenceRingtone/**"
+      # Folder reference: swap ringtone/interference .m4a files with the same names, no project edits.
+      - path: MagicCall/Resources/InterferenceRingtone
+        type: folder
     entitlements:
       path: MagicCall/MagicCall.entitlements
       properties:

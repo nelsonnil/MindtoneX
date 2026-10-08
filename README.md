@@ -254,8 +254,19 @@ MagicCall/Sources/Api       API: Inject / Elips / Custom API, sondeo cada 2 s, a
 MagicCall/Sources/Perform   Flujo Perform de Share Ringtone y textos "How it works"
 MagicCall/Sources/Intents   App Intents para Toque posterior / botón de Acción
 MagicCall/Sources/Experiments  APIs privadas, CallKit, volumen
+MagicCall/Sources/Interference Tono → mano (cámara frontal) → interferencia → canción (de momento solo modo test)
+MagicCall/Resources/InterferenceRingtone  ringtone1-default / ringtone2-optional / interferencia-radio (.m4a)
 docs/                       Informe de investigación
 ```
+
+### Interference ringtone (modo test)
+
+En **Home › Performance settings › Interference ringtone › Open test mode**: busca una canción, elige
+Ringtone 1 (por defecto) o 2, pulsa **Play** y pon la mano abierta sobre el iPhone. Suena el tono en
+bucle; al ver la mano entra la interferencia y se convierte en el preview de la canción. Las llamadas
+reales en Perform **no** usan todavía este motor. Los `.m4a` de `Resources/InterferenceRingtone` son
+provisionales: sustitúyelos por archivos con el mismo nombre (es una *folder reference*, no hay que
+tocar Xcode). Registro: líneas `[INTERF]`.
 
 ## 7. Licencias
 
