@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Home card: recent Perform sessions with plain English event lines.
 struct PerformUserLogCard: View {
@@ -7,10 +8,14 @@ struct PerformUserLogCard: View {
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateStyle = .none
-        f.timeStyle = .short
+        f.dateFormat = "HH:mm:ss"
         return f
     }()
+
+    /// The latest session keeps its first lines: caller-name checks are logged at arm, before any event.
+    private static let latestSessionHead = 20
+    private static let latestSessionTail = 40
+    private static let olderSessionLineLimit = 12
 
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -89,18 +94,29 @@ struct PerformUserLogCard: View {
                         .background(OracleTheme.gold.opacity(0.15))
                         .clipShape(Capsule())
                 }
+                Button {
+                    UIPasteboard.general.string = Self.plainText(session)
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.caption.weight(.semibold))
+                        .padding(4)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(OracleTheme.gold)
+                .accessibilityLabel("Copy this perform log")
             }
             Text(Self.dayFormatter.string(from: session.startedAt))
                 .font(.caption2)
                 .foregroundStyle(OracleTheme.textSecondary)
 
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(session.entries.suffix(12)) { entry in
+                ForEach(visibleEntries(of: session)) { entry in
                     HStack(alignment: .top, spacing: 8) {
                         Text(Self.timeFormatter.string(from: entry.at))
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(OracleTheme.textSecondary.opacity(0.85))
-                            .frame(width: 52, alignment: .leading)
+                            .frame(width: 58, alignment: .leading)
                         Text(entry.message)
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textPrimary.opacity(0.92))
@@ -117,5 +133,30 @@ struct PerformUserLogCard: View {
                     .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
             }
         }
+    }
+
+    private func visibleEntries(of session: PerformUserLog.Session) -> [PerformUserLog.Entry] {
+        let entries = session.entries
+        guard session.id == log.sessions.first?.id else {
+            return Array(entries.suffix(Self.olderSessionLineLimit))
+        }
+        let head = Self.latestSessionHead
+        let tail = Self.latestSessionTail
+        guard entries.count > head + tail else { return entries }
+        let gap = PerformUserLog.Entry(
+            at: entries[head].at,
+            message: "… \(entries.count - head - tail) more lines — copy the log to see them all"
+        )
+        return Array(entries.prefix(head)) + [gap] + Array(entries.suffix(tail))
+    }
+
+    private static func plainText(_ session: PerformUserLog.Session) -> String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        let device = "MindtoneX \(version) (\(build)) · iOS \(UIDevice.current.systemVersion) · Region \(Locale.current.region?.identifier ?? "?")"
+        let header = "\(session.title) · \(dayFormatter.string(from: session.startedAt))"
+        let lines = session.entries.map { "\(timeFormatter.string(from: $0.at)) \($0.message)" }
+        return ([device, header] + lines).joined(separator: "\n")
     }
 }
