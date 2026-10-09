@@ -50,6 +50,8 @@ final class CardSongSession: ObservableObject {
     private var pendingCandidateQuery = ""
     private var pendingConfirmSameKey: String?
     private var snapshotCuePlayed = false
+    /// Spectators = 2: song 1 loaded by an earlier scan of this Perform; the next scan only looks for song 2.
+    private var twoSongFirstReady = false
 
     private init() {}
 
@@ -92,6 +94,7 @@ final class CardSongSession: ObservableObject {
         pendingCandidateQuery = ""
         pendingConfirmSameKey = nil
         snapshotCuePlayed = false
+        twoSongFirstReady = false
         if had { dlog("[CARD] ↺ reset (\(reason))") }
     }
 
@@ -104,6 +107,9 @@ final class CardSongSession: ObservableObject {
         scanTask = nil
         if AppModel.shared.loadState == .ready, AppModel.shared.selected != nil {
             lock(reason: "call/trigger (\(source))", auto: true, playLockHaptic: false)
+            if SpectatorSettings.isTwo {
+                SecondSpectatorSong.shared.abandon(reason: "call before song 2")
+            }
             return
         }
         dlog("[CARD] call/trigger (\(source)) with no song ready (state=\(state))")
@@ -246,6 +252,21 @@ final class CardSongSession: ObservableObject {
                 snapshotCuePlayed = true
                 PerformanceCues.cardSnapshotSent()
             }
+        }
+
+        if SpectatorSettings.isTwo {
+            var jpeg: Data?
+            if VoiceSettings.apiKey != nil, let buf = bestBuffer {
+                jpeg = CardImageEncoder.jpegData(from: buf)
+            }
+            stopCaptureIfNeeded()
+            if context == .perform, !snapshotCuePlayed, jpeg != nil {
+                snapshotCuePlayed = true
+                PerformanceCues.cardSnapshotSent()
+                PerformUserLog.shared.log("Camera · photo sent · reading two songs…")
+            }
+            await runTwoSongRead(gen: gen, jpeg: jpeg, bestLineReadings: bestLineReadings)
+            return
         }
 
         if VoiceSettings.apiKey != nil, bestBuffer == nil, context == .perform {
@@ -436,13 +457,160 @@ final class CardSongSession: ObservableObject {
     }
 
     private func trackMatchesCardPick(_ track: PreviewTrack, pick: CardHandwritingPick) -> Bool {
-        let wantTitle = PreviewService.normalize(pick.title)
-        guard wantTitle.count >= 3 else { return true }
-        let gotTitle = PreviewService.normalize(track.title)
-        if gotTitle.contains(wantTitle) || wantTitle.contains(gotTitle) { return true }
-        let wantArtist = PreviewService.normalize(pick.artist)
-        if !wantArtist.isEmpty, gotTitle.contains(wantArtist), wantTitle.count < 4 { return false }
-        return wantTitle.split(separator: " ").count <= 1
+        pick.accepts(track)
+    }
+
+    // MARK: Two spectators
+
+    /// Spectators = 2: one card, two titles. Song 1 (top) loads into the normal slot exactly like one
+    /// spectator; song 2 (below) loads next to it. Both are needed to lock, except on the last allowed scan.
+    private func runTwoSongRead(gen: Int, jpeg: Data?, bestLineReadings: [CardOCRReading]) async {
+        let hintLines = CardLineParser.expandMergedOCRLines(CardOCRProcessor.orderedLineTexts(from: bestLineReadings))
+        let hint = hintLines.joined(separator: "\n")
+        let lookupContext: SecondSpectatorSong.Context = context == .perform ? .perform : .test
+        SecondSpectatorSong.shared.beginWaiting(source: "Camera", context: lookupContext)
+
+        var firstPick: CardHandwritingPick?
+        var secondPick: CardHandwritingPick?
+        var words: CardOCRParse?
+        var visionAnswered = false
+        if let jpeg {
+            do {
+                let t0 = CACurrentMediaTime()
+                let ai = try await CardHandwritingPicker.pickTwoSongs(
+                    jpeg: jpeg,
+                    visionOCRHint: hint,
+                    expectCallerLine: CardOCRLayout.usesCallerLine,
+                    expectNotesLine: CardOCRLayout.usesNotesLine
+                )
+                guard gen == generation else { return }
+                let ms = PreviewService.ms(since: t0)
+                dlog("[CARD] OpenAI two songs · 1=“\(ai.searchQuery1)” · 2=“\(ai.searchQuery2)” · conf=\(String(format: "%.2f", ai.confidence)) · \(ai.reasoning)")
+                if context == .perform {
+                    let one = ai.hasSong1 ? WordApiInputPanel.truncated(ai.searchQuery1, max: 32) : "—"
+                    let two = ai.hasSong2 ? WordApiInputPanel.truncated(ai.searchQuery2, max: 32) : "—"
+                    PerformUserLog.shared.log("OpenAI · card · song 1 «\(one)» · song 2 «\(two)» · \(Int((ai.confidence * 100).rounded()))% (\(ms) ms)")
+                }
+                let first = ai.firstSong
+                let second = ai.secondSong
+                if first.hasSong { firstPick = first }
+                if second.hasSong { secondPick = second }
+                words = ai.wordsParse(expectCaller: CardOCRLayout.usesCallerLine, expectNotes: CardOCRLayout.usesNotesLine)
+                visionAnswered = true
+            } catch {
+                dlog("[CARD] OpenAI two songs fallback: \(error.localizedDescription)")
+                if context == .perform {
+                    PerformUserLog.shared.log("Camera · OpenAI failed · local OCR")
+                }
+            }
+        }
+
+        // Vision's answer decides the layout; local OCR lines are only a fallback when vision did not answer
+        // (its "line 2" may be song 1's artist).
+        let local = CardLineParser.parseTwoSongs(orderedLines: hintLines)
+        let firstQueries: [String]
+        let secondQueries: [String]
+        if visionAnswered {
+            firstQueries = Self.uniqueQueries(firstPick.map { $0.storeSearchQueries() + $0.storeSearchRetryQueries() } ?? [])
+            secondQueries = Self.uniqueQueries(secondPick.map { $0.storeSearchQueries() + $0.storeSearchRetryQueries() } ?? [])
+        } else {
+            firstQueries = Self.uniqueQueries(CardTextMapper.songSearchVariants(from: local.song1))
+            secondQueries = Self.uniqueQueries(CardTextMapper.songSearchVariants(from: local.song2))
+        }
+        if words == nil {
+            words = CardOCRParse(songQuery: local.song1, callerLine: local.callerLine, notesLine: local.notesLine)
+        }
+        lastOCRText = hint
+        dlog("[CARD] two songs · lines \(hintLines.joined(separator: " | ")) · song 1 tries \(firstQueries.joined(separator: " · ")) · song 2 tries \(secondQueries.joined(separator: " · "))")
+        if context == .perform {
+            let l1 = firstQueries.first.map { WordApiInputPanel.truncated($0, max: 28) } ?? "—"
+            let l2 = secondQueries.first.map { WordApiInputPanel.truncated($0, max: 28) } ?? "—"
+            PerformUserLog.shared.log("Camera · 2 spectators · song 1 «\(l1)» · song 2 «\(l2)»")
+        }
+
+        var songTwoTask: Task<PreviewTrack?, Never>?
+        if !secondQueries.isEmpty {
+            let pickForCheck = secondPick
+            songTwoTask = Task { @MainActor in
+                await SecondSpectatorSong.shared.lookup(
+                    queries: secondQueries,
+                    source: "Camera · song 2",
+                    context: lookupContext,
+                    accept: { track in pickForCheck?.accepts(track) ?? true }
+                )
+            }
+        }
+
+        var match: (track: PreviewTrack, query: String, key: String)?
+        if twoSongFirstReady, AppModel.shared.loadState == .ready, let loaded = AppModel.shared.selected, let key = pendingCandidateKey {
+            match = (loaded, pendingCandidateQuery, key)
+            dlog("[CARD] two songs · song 1 already loaded (\(loaded.title)) — this scan only reads song 2")
+        } else if let pick = firstPick {
+            match = await searchCardSongWithQueries(firstQueries, pick: pick, gen: gen, retryPass: false)
+        } else {
+            for query in firstQueries {
+                let ok = await AppModel.shared.prepareCardQuery(query)
+                guard gen == generation else { return }
+                if ok, let track = AppModel.shared.selected {
+                    match = (track, query, CardTextMapper.canonicalKey(from: track))
+                    if context == .perform {
+                        PerformUserLog.shared.log("Camera · song 1 «\(query)» → \(track.title) — \(track.artist)")
+                    }
+                    break
+                }
+            }
+        }
+        guard gen == generation else { return }
+        let secondTrack: PreviewTrack? = await songTwoTask?.value
+        guard gen == generation else { return }
+
+        guard let match else {
+            dlog("[CARD] two songs · song 1 not found\(secondTrack != nil ? " (song 2 ready)" : "")")
+            await handleScanOutcome(gen: gen, vote: nil, query: nil, ocrSample: hint, ocrParse: words)
+            return
+        }
+
+        if secondTrack != nil || scanAttempts >= CardSettings.maxScanRetries {
+            twoSongFirstReady = false
+            await handleScanOutcome(
+                gen: gen,
+                vote: (match.key, 2),
+                query: match.query,
+                ocrSample: hint,
+                track: match.track,
+                ocrParse: words,
+                skipRecognizedCue: snapshotCuePlayed
+            )
+            guard gen == generation else { return }
+            if secondTrack != nil {
+                SecondSpectatorSong.shared.confirm(source: "Camera · song 2", vibrationDelay: 1.4)
+            } else {
+                SecondSpectatorSong.shared.abandon(reason: "song 2 unreadable after \(scanAttempts) scans")
+            }
+            return
+        }
+
+        twoSongFirstReady = true
+        candidateLabel = "\(match.track.title) — \(match.track.artist)"
+        pendingCandidateKey = match.key
+        pendingCandidateQuery = match.query
+        state = .armed
+        AppModel.shared.primeCardVolumeScanHeadroom(reason: "song 2 retry armed")
+        PerformanceCues.cardCandidateUncertain()
+        dlog("[CARD] two songs · song 1 ready, song 2 not read — waiting for another volume-up scan")
+        if context == .perform {
+            PerformUserLog.shared.log("Camera · song 1 ready · song 2 not read — press volume up to scan again")
+        }
+    }
+
+    private static func uniqueQueries(_ raw: [String]) -> [String] {
+        var out: [String] = []
+        for query in raw {
+            let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard trimmed.count >= 2, !out.contains(where: { ApiJSON.sameText($0, trimmed) }) else { continue }
+            out.append(trimmed)
+        }
+        return out
     }
 
     private func handleScanOutcome(

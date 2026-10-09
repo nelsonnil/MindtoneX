@@ -38,9 +38,10 @@ enum SongPickerError: LocalizedError {
 }
 
 enum SongPicker {
-    static func pick(transcript: String, previous: SongPick?) async throws -> SongPick? {
+    /// `context`: extra situation text placed before the transcript (e.g. the second spectator's turn).
+    static func pick(transcript: String, previous: SongPick?, context: String? = nil) async throws -> SongPick? {
         if let key = VoiceSettings.apiKey {
-            return try await openAI(transcript: transcript, previous: previous, apiKey: key, model: VoiceSettings.pickerModel)
+            return try await openAI(transcript: transcript, previous: previous, apiKey: key, model: VoiceSettings.pickerModel, context: context)
         }
         return heuristic(transcript: transcript)
     }
@@ -88,12 +89,19 @@ enum SongPicker {
         return URLSession(configuration: config)
     }()
 
-    static func openAI(transcript: String, previous: SongPick?, apiKey: String, model: String) async throws -> SongPick {
+    static func openAI(
+        transcript: String,
+        previous: SongPick?,
+        apiKey: String,
+        model: String,
+        context: String? = nil
+    ) async throws -> SongPick {
         let previousText = previous.map { "\($0.label) (confidence \(String(format: "%.2f", $0.confidence)))" } ?? "none"
+        let contextText = context.map { "Situation: \($0)\n\n" } ?? ""
         var body: [String: Any] = [
             "model": model,
             "instructions": instructions,
-            "input": "Transcript so far, oldest first:\n\"\"\"\n\(transcript)\n\"\"\"\n\nYour previous answer: \(previousText). Re-read the whole transcript and answer again.",
+            "input": "\(contextText)Transcript so far, oldest first:\n\"\"\"\n\(transcript)\n\"\"\"\n\nYour previous answer: \(previousText). Re-read the whole transcript and answer again.",
             "text": ["format": ["type": "json_schema", "name": "spectator_song", "strict": true, "schema": schema]],
             "store": false,
             "max_output_tokens": 2000,

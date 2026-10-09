@@ -6,6 +6,8 @@ import UIKit
 struct StageView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var notes = NotesSongSession.shared
+    /// Keeps the peek's Ringtone line live while the interference ringtone runs.
+    @ObservedObject private var interference = AppModel.shared.interferenceShow
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
     /// Observed so status bar style refreshes when a new screenshot is saved (luminance is recomputed in `StageImageStore.save`).
     @AppStorage(StageImageStore.luminanceDefaultsKey) private var stageStatusBarLuminance = 0.0

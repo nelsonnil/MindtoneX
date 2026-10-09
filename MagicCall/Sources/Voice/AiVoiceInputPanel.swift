@@ -6,6 +6,7 @@ struct AiVoiceInputPanel: View {
     @ObservedObject private var voice = VoiceSongSession.shared
 
     @AppStorage(VoiceSettings.Key.language) private var languageRaw = "en"
+    @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
 
     private var configured: Bool { VoiceSettings.isConfigured }
 
@@ -204,7 +205,10 @@ struct AiVoiceInputPanel: View {
             }
 
             if voice.hasContent && !voice.isActive {
-                Button { model.resetVoicePerformance() } label: {
+                Button {
+                    model.resetVoicePerformance()
+                    SecondSpectatorSong.shared.reset(reason: "voice test cleared")
+                } label: {
                     Label("Clear transcript & pick", systemImage: "arrow.counterclockwise")
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity)
@@ -221,7 +225,7 @@ struct AiVoiceInputPanel: View {
             switch voice.state {
             case .idle: return ("Off", OracleTheme.textSecondary)
             case .starting: return ("Preparing voice…", OracleTheme.indigo)
-            case .listening: return ("Listening", OracleTheme.coral)
+            case .listening: return (voice.listeningForSecondSong ? "Listening · song 2" : "Listening", OracleTheme.coral)
             case .locked: return ("Locked", OracleTheme.gold)
             case .failed: return ("Error", OracleTheme.coral)
             }
@@ -280,7 +284,12 @@ struct AiVoiceInputPanel: View {
                     Text("Matching…").font(.caption2).foregroundStyle(OracleTheme.textSecondary)
                 }
             }
-            if let pick = voice.lockedPick ?? voice.candidate {
+            if spectatorCount == 2 {
+                VStack(alignment: .leading, spacing: 8) {
+                    spectatorPickRow(1, pick: voice.lockedPick ?? voice.candidate, status: firstSpectatorStatus)
+                    spectatorPickRow(2, pick: voice.secondLockedPick ?? voice.secondCandidate, status: secondSpectatorStatus)
+                }
+            } else if let pick = voice.lockedPick ?? voice.candidate {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(pick.label)
                         .font(.subheadline.weight(.semibold))
@@ -305,6 +314,49 @@ struct AiVoiceInputPanel: View {
         .padding(10)
         .background(Color.black.opacity(0.2))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    // MARK: Two spectators
+
+    private func spectatorPickRow(_ number: Int, pick: SongPick?, status: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("\(number)")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(OracleTheme.ink)
+                .frame(width: 18, height: 18)
+                .background(OracleTheme.gold.opacity(pick == nil ? 0.35 : 1), in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(pick?.label ?? "No song yet")
+                    .font(.subheadline.weight(pick == nil ? .regular : .semibold))
+                    .foregroundStyle(pick == nil ? OracleTheme.textSecondary : OracleTheme.textPrimary)
+                    .lineLimit(1)
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
+        }
+    }
+
+    private var firstSpectatorStatus: String {
+        if voice.lockedPick != nil { return "Locked" }
+        return prepStatus(voice.prep) ?? (voice.isActive ? "Listening for spectator 1…" : "Spectator 1")
+    }
+
+    private var secondSpectatorStatus: String {
+        if voice.secondLockedPick != nil { return "Locked — listening stopped" }
+        if voice.listeningForSecondSong {
+            return prepStatus(voice.secondPrep) ?? "Listening for spectator 2…"
+        }
+        return voice.lockedPick == nil ? "Starts after song 1 locks" : "Not locked"
+    }
+
+    private func prepStatus(_ prep: VoiceSongSession.Prep?) -> String? {
+        switch prep {
+        case .preparing: return "Finding and preparing the song…"
+        case .ready: return "Ready · locks after \(Int(VoiceSettings.lockDelay)) s without changes"
+        case .notFound: return "Not found in previews — keep speaking"
+        case nil: return nil
+        }
     }
 
     @ViewBuilder

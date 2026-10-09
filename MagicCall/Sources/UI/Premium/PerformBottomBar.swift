@@ -110,6 +110,9 @@ struct ReadinessStatusBar: View {
             case .starting:
                 return Status(tone: .working, icon: "mic.fill", text: "Starting microphone…")
             case .listening:
+                if voice.listeningForSecondSong {
+                    return Status(tone: .working, icon: "waveform", text: "Song 1 locked · listening for song 2…")
+                }
                 return Status(tone: .working, icon: "waveform", text: "Listening…")
             case .locked:
                 if model.loadState == .ready, let track = model.selected {
@@ -140,6 +143,9 @@ struct ReadinessStatusBar: View {
                 return Status(tone: .working, icon: "arrow.down.circle", text: "Found “\(label)” · loading…")
             case .locked:
                 let title = model.selected.map { "\($0.title) — \($0.artist)" } ?? api.lockedReading?.label ?? "song"
+                if api.watchingSecondSong {
+                    return Status(tone: .working, icon: "dot.radiowaves.left.and.right", text: "Song 1 locked · waiting for song 2…")
+                }
                 return Status(tone: .ready, icon: "lock.fill", text: "Locked · \(title)")
             case .failed(let message):
                 return Status(tone: .warning, icon: "exclamationmark.triangle.fill", text: message)

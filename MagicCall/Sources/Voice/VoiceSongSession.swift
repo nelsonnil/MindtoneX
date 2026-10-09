@@ -39,6 +39,11 @@ final class VoiceSongSession: ObservableObject {
     @Published private(set) var level: Float = 0
     @Published private(set) var callerWordCandidate: WordPick?
     @Published private(set) var notesWordCandidate: WordPick?
+    /// Spectators = 2: song 1 is in `lockedPick` and the mic keeps listening for the second spectator.
+    @Published private(set) var listeningForSecondSong = false
+    @Published private(set) var secondCandidate: SongPick?
+    @Published private(set) var secondPrep: Prep?
+    @Published private(set) var secondLockedPick: SongPick?
 
     var isActive: Bool { state == .starting || state == .listening }
     var hasContent: Bool { !lines.isEmpty || candidate != nil || lockedPick != nil || state != .idle }
@@ -60,6 +65,10 @@ final class VoiceSongSession: ObservableObject {
     private var prefetchTask: Task<Void, Never>?
     private var pendingPrefetch: SongPick?
     private var pendingCallLock = false
+    /// First transcript line that belongs to the second spectator's turn.
+    private var secondTranscriptStart = 0
+    private var secondPrefetchTask: Task<Void, Never>?
+    private var pendingSecondPrefetch: SongPick?
 
     private init() {}
 
@@ -72,7 +81,10 @@ final class VoiceSongSession: ObservableObject {
         let gen = generation
         self.context = context
         state = .starting
-        dlog("[VOICE] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(VoiceSettings.summary())")
+        if context == .test, SpectatorSettings.isTwo {
+            SecondSpectatorSong.shared.reset(reason: "voice test")
+        }
+        dlog("[VOICE] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(VoiceSettings.summary()) · \(SpectatorSettings.summary())")
 
         guard VoiceSettings.isConfigured else {
             fail("Add your OpenAI API key under Performance settings.")
@@ -126,6 +138,10 @@ final class VoiceSongSession: ObservableObject {
     func stopTest() {
         guard isActive else { return }
         stopListening()
+        if listeningForSecondSong {
+            listeningForSecondSong = false
+            SecondSpectatorSong.shared.abandon(reason: "voice test stopped")
+        }
         state = .idle
         lockDeadline = nil
         VoiceAudioSession.recordCategoryActive = false
@@ -146,6 +162,10 @@ final class VoiceSongSession: ObservableObject {
     /// A call (or a manual trigger) arrived: use the best candidate right away.
     func callArrived(source: String) {
         guard isActive else { return }
+        if listeningForSecondSong {
+            finishSecondSpectator(reason: "call/trigger (\(source))", duringCall: true)
+            return
+        }
         if let c = candidate, prep == .ready {
             pendingCallLock = false
             lock(c, reason: "call/trigger before lock (\(source))", duringCall: true)
@@ -200,7 +220,10 @@ final class VoiceSongSession: ObservableObject {
         guard text.count >= 3, text != lastEvaluatedText else { return }
         lastEvaluatedText = text
         let gen = generation
-        let previous = candidate
+        let secondSong = listeningForSecondSong
+        let previous = secondSong ? secondCandidate : candidate
+        let songTranscript = secondSong ? secondSpectatorTranscript : text
+        let songContext = secondSong ? secondSpectatorPromptContext : nil
         isThinking = true
         let t0 = CACurrentMediaTime()
         let plan = VoiceListenPlan.current
@@ -217,15 +240,19 @@ final class VoiceSongSession: ObservableObject {
                 }
             }
             do {
-                if plan.song {
-                    let pick = try await SongPicker.pick(transcript: text, previous: previous)
+                if plan.song, songTranscript.count >= 3 {
+                    let pick = try await SongPicker.pick(transcript: songTranscript, previous: previous, context: songContext)
                     guard gen == self.generation else { return }
                     self.lastAIError = nil
                     let ms = PreviewService.ms(since: t0)
                     if self.context == .perform {
                         PerformLogReporter.logOpenAISongAnswer(pick, ms: ms)
                     }
-                    self.handle(pick, ms: ms)
+                    if secondSong {
+                        self.handleSecond(pick, ms: ms)
+                    } else {
+                        self.handle(pick, ms: ms)
+                    }
                 }
                 if plan.callerName {
                     let tWord = CACurrentMediaTime()
@@ -307,7 +334,7 @@ final class VoiceSongSession: ObservableObject {
     }
 
     private func handle(_ pick: SongPick?, ms: Int) {
-        guard state == .listening else { return }
+        guard state == .listening, !listeningForSecondSong else { return }
         guard let pick, pick.hasSong, !pick.searchQuery.isEmpty else {
             dlog("[VOICE] AI (\(ms) ms): no song chosen yet\(pick.map { " · \($0.reasoning)" } ?? "")")
             return
@@ -385,6 +412,10 @@ final class VoiceSongSession: ObservableObject {
     }
 
     private func lockTimerFired() {
+        if listeningForSecondSong {
+            secondLockTimerFired()
+            return
+        }
         guard state == .listening, let c = candidate else { return }
         switch prep {
         case .preparing:
@@ -399,6 +430,10 @@ final class VoiceSongSession: ObservableObject {
     }
 
     private func lock(_ pick: SongPick, reason: String, duringCall: Bool) {
+        if SpectatorSettings.isTwo, !duringCall, lockedPick == nil {
+            lockFirstOfTwo(pick, reason: reason)
+            return
+        }
         stopListening()
         lockedPick = pick
         lockDeadline = nil
@@ -413,7 +448,161 @@ final class VoiceSongSession: ObservableObject {
             )
             AppModel.shared.notePerformDisplayTrack()
         }
+        if SpectatorSettings.isTwo {
+            SecondSpectatorSong.shared.abandon(reason: "call before song 1 locked")
+        }
         // During a ringing call the session category must not change (see RingtoneAudioEngine).
+        if !duringCall { VoiceAudioSession.recordCategoryActive = false }
+        AppModel.shared.voiceDidLock(context: context, duringCall: duringCall)
+    }
+
+    // MARK: Second spectator (Spectators = 2)
+
+    /// Song 1 locks like with one spectator, but the mic and transcriber keep running for spectator 2.
+    private func lockFirstOfTwo(_ pick: SongPick, reason: String) {
+        lockTimer?.invalidate()
+        lockTimer = nil
+        lockDeadline = nil
+        lockedPick = pick
+        listeningForSecondSong = true
+        secondCandidate = nil
+        secondPrep = nil
+        secondLockedPick = nil
+        secondTranscriptStart = lines.firstIndex(where: { !$0.isFinal }) ?? lines.count
+        dlog("[VOICE] 🔒 song 1 of 2 · \(pick.label) · \(Self.percent(pick.confidence)) · \(reason) · mic stays on for spectator 2 (transcript from line \(secondTranscriptStart))")
+        SecondSpectatorSong.shared.beginWaiting(source: "Voice", context: context == .perform ? .perform : .test)
+        if context == .perform {
+            PerformanceCues.songLocked(source: "Voice · spectator 1")
+            let preview = AppModel.shared.selected?.previewURL.absoluteString
+                ?? AppModel.shared.lastReadyTrack?.previewURL.absoluteString
+            SongLibraryStore.shared.commitPerformSnapshot(
+                RecentPerformSnapshot(pick: pick, previewURL: preview)
+            )
+            AppModel.shared.notePerformDisplayTrack()
+            PerformUserLog.shared.log("Voice · song 1 locked · listening for spectator 2")
+        }
+        AppModel.shared.voiceFirstOfTwoLocked(context: context)
+    }
+
+    /// What was said after song 1 locked.
+    private var secondSpectatorTranscript: String {
+        lines.dropFirst(secondTranscriptStart)
+            .map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
+    }
+
+    private var secondSpectatorPromptContext: String? {
+        guard let first = lockedPick else { return nil }
+        return "Two spectators. Spectator 1 already chose «\(first.label)» and it is locked. "
+            + "This transcript starts after that lock, when the performer turns to a SECOND spectator. "
+            + "Return only the song the second spectator chooses. Never return «\(first.label)»: "
+            + "if it is the only song mentioned, return has_song=false."
+    }
+
+    private func handleSecond(_ pick: SongPick?, ms: Int) {
+        guard state == .listening, listeningForSecondSong else { return }
+        guard let pick, pick.hasSong, !pick.searchQuery.isEmpty else {
+            dlog("[VOICE] AI (\(ms) ms): spectator 2 · no song yet\(pick.map { " · \($0.reasoning)" } ?? "")")
+            return
+        }
+        guard pick.confidence >= VoiceSettings.minConfidence else {
+            dlog("[VOICE] AI (\(ms) ms): spectator 2 · \(pick.label) ignored, confidence \(Self.percent(pick.confidence)) < \(Self.percent(VoiceSettings.minConfidence))")
+            if context == .perform {
+                PerformUserLog.shared.log(
+                    "Voice · song 2 ignored · «\(WordApiInputPanel.truncated(pick.label, max: 40))» · confidence \(Self.percent(pick.confidence)) below minimum"
+                )
+            }
+            return
+        }
+        if let first = lockedPick, first.key == pick.key {
+            dlog("[VOICE] AI (\(ms) ms): spectator 2 · same as song 1 (\(pick.label)) — ignored")
+            return
+        }
+        if let current = secondCandidate, current.key == pick.key {
+            secondCandidate = pick
+            return
+        }
+        dlog("[VOICE] ★ spectator 2 candidate \(secondCandidate?.label ?? "none") → \(pick.label) · \(Self.percent(pick.confidence)) · \(pick.reasoning) (\(ms) ms)")
+        secondCandidate = pick
+        secondPrep = .preparing
+        restartLockTimer()
+        prefetchSecond(pick)
+    }
+
+    /// Song 2 loads next to song 1 (`SecondSpectatorSong`), never into the Home slot.
+    private func prefetchSecond(_ pick: SongPick) {
+        pendingSecondPrefetch = pick
+        guard secondPrefetchTask == nil else { return }
+        let gen = generation
+        let lookupContext: SecondSpectatorSong.Context = context == .perform ? .perform : .test
+        secondPrefetchTask = Task { [weak self] in
+            while true {
+                guard let self, gen == self.generation, let next = self.pendingSecondPrefetch else { break }
+                self.pendingSecondPrefetch = nil
+                let track = await SecondSpectatorSong.shared.lookup(
+                    queries: [next.searchQuery],
+                    source: "Voice",
+                    context: lookupContext
+                )
+                guard gen == self.generation else { break }
+                if self.secondCandidate?.key == next.key {
+                    self.secondPrep = track != nil ? .ready : .notFound
+                    if track == nil {
+                        self.lockTimer?.invalidate()
+                        self.lockDeadline = nil
+                        if self.context == .perform {
+                            PerformUserLog.shared.log("Voice · song 2 · no match for “\(next.label)”")
+                        }
+                    }
+                }
+            }
+            if let self, gen == self.generation { self.secondPrefetchTask = nil }
+        }
+    }
+
+    private func secondLockTimerFired() {
+        guard state == .listening, listeningForSecondSong, let c = secondCandidate else { return }
+        switch secondPrep {
+        case .preparing:
+            lockTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
+                MainActor.assumeIsolated { self?.lockTimerFired() }
+            }
+        case .ready:
+            lockSecond(c, reason: "\(Int(VoiceSettings.lockDelay)) s without changes", duringCall: false)
+        default:
+            lockDeadline = nil
+        }
+    }
+
+    /// Song 2 locked: the mic stops here (same moment as the single-spectator lock).
+    private func lockSecond(_ pick: SongPick, reason: String, duringCall: Bool) {
+        stopListening()
+        listeningForSecondSong = false
+        secondLockedPick = pick
+        lockDeadline = nil
+        state = .locked
+        dlog("[VOICE] 🔒 song 2 of 2 · \(pick.label) · \(Self.percent(pick.confidence)) · \(reason) · mic running=\(mic.isRunning)")
+        if context == .perform {
+            PerformUserLog.shared.log("Voice · song 2 locked · «\(WordApiInputPanel.truncated(pick.label, max: 40))» · mic off")
+        }
+        SecondSpectatorSong.shared.confirm(source: "Voice")
+        if !duringCall { VoiceAudioSession.recordCategoryActive = false }
+        AppModel.shared.voiceDidLock(context: context, duringCall: duringCall)
+    }
+
+    /// A call or trigger arrived while listening for spectator 2: keep song 1, take song 2 only if ready.
+    private func finishSecondSpectator(reason: String, duringCall: Bool) {
+        if let c = secondCandidate, secondPrep == .ready {
+            lockSecond(c, reason: reason, duringCall: duringCall)
+            return
+        }
+        stopListening()
+        listeningForSecondSong = false
+        lockDeadline = nil
+        state = .locked
+        dlog("[VOICE] spectator 2 not locked (\(reason)) · song 1 stays")
+        SecondSpectatorSong.shared.abandon(reason: reason)
         if !duringCall { VoiceAudioSession.recordCategoryActive = false }
         AppModel.shared.voiceDidLock(context: context, duringCall: duringCall)
     }
@@ -451,10 +640,19 @@ final class VoiceSongSession: ObservableObject {
         pendingCallLock = false
         callerWordCandidate = nil
         notesWordCandidate = nil
+        listeningForSecondSong = false
+        secondCandidate = nil
+        secondPrep = nil
+        secondLockedPick = nil
+        secondTranscriptStart = 0
+        pendingSecondPrefetch = nil
+        secondPrefetchTask?.cancel()
+        secondPrefetchTask = nil
     }
 
     private func fail(_ message: String) {
         stopListening()
+        listeningForSecondSong = false
         state = .failed(message)
         if context == .perform {
             PerformUserLog.shared.log("Voice · \(message)")

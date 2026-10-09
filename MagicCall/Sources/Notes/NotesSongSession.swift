@@ -37,6 +37,9 @@ final class NotesSongSession: ObservableObject {
     private var searchTask: Task<Void, Never>?
     private var pendingText: String?
     private var lastSubmittedText = ""
+    /// Spectators = 2: line 2 of the note is spectator 2's song.
+    private var lastSubmittedSecondLine = ""
+    private var secondSearchTask: Task<Void, Never>?
 
     private init() {}
 
@@ -46,7 +49,10 @@ final class NotesSongSession: ObservableObject {
         reset(reason: "start")
         self.context = context
         state = .writing
-        dlog("[NOTES] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(NotesSettings.summary())")
+        if SpectatorSettings.isTwo {
+            SecondSpectatorSong.shared.beginWaiting(source: "Notes", context: context == .perform ? .perform : .test)
+        }
+        dlog("[NOTES] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(NotesSettings.summary())\(SpectatorSettings.isTwo ? " · 2 spectators: line 1 + line 2" : "")")
     }
 
     func reset(reason: String) {
@@ -56,8 +62,11 @@ final class NotesSongSession: ObservableObject {
         idleTimer = nil
         searchTask?.cancel()
         searchTask = nil
+        secondSearchTask?.cancel()
+        secondSearchTask = nil
         pendingText = nil
         lastSubmittedText = ""
+        lastSubmittedSecondLine = ""
         lastQuery = ""
         lastSubmitReason = ""
         readyLabel = nil
@@ -95,6 +104,10 @@ final class NotesSongSession: ObservableObject {
         guard isActive, !isLocked else { return }
         idleTimer?.invalidate()
         idleTimer = nil
+        if SpectatorSettings.isTwo {
+            submitSpectatorLines(reason: reason)
+            return
+        }
         let note = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard note.count >= 2 else { return }
         guard note != lastSubmittedText else {
@@ -116,6 +129,24 @@ final class NotesSongSession: ObservableObject {
         guard isActive, !isLocked else { return }
         idleTimer?.invalidate()
         idleTimer = nil
+        if SpectatorSettings.isTwo {
+            let lines = Self.spectatorLines(text)
+            if AppModel.shared.loadState != .ready, let first = lines.first, first.count >= 2, first != lastSubmittedText {
+                lastSubmittedText = first
+                lastSubmitReason = "call"
+                pendingText = first
+                dlog("[NOTES] call/trigger (\(source)) before line 1 was searched → searching “\(Self.oneLine(first, max: 80))” now")
+                runSearchLoop()
+            }
+            if lines.count >= 2, lines[1].count >= 2, lines[1] != lastSubmittedSecondLine {
+                lastSubmittedSecondLine = lines[1]
+                searchSecondLine(lines[1])
+            } else if lines.count < 2 {
+                SecondSpectatorSong.shared.abandon(reason: "call before line 2")
+            }
+            lock(reason: "call/trigger (\(source))")
+            return
+        }
         let note = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if AppModel.shared.loadState != .ready, note.count >= 2, note != lastSubmittedText {
             lastSubmittedText = note
@@ -171,8 +202,59 @@ final class NotesSongSession: ObservableObject {
     }
 
     private func songReady() {
-        if context == .perform { PerformanceCues.songLocked(source: "Notes") }
+        if context == .perform { PerformanceCues.songLocked(source: SpectatorSettings.isTwo ? "Notes line 1" : "Notes") }
         AppModel.shared.notesSongReady(context: context)
+    }
+
+    // MARK: Two spectators (line 1 + line 2)
+
+    /// Non-empty lines of the note, top to bottom.
+    static func spectatorLines(_ text: String) -> [String] {
+        text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Line 1 → song 1 (normal slot, same search loop as one spectator); line 2 → song 2. Each line is searched once per edit.
+    private func submitSpectatorLines(reason: String) {
+        let lines = Self.spectatorLines(text)
+        if let first = lines.first, first.count >= 2, first != lastSubmittedText {
+            lastSubmittedText = first
+            lastSubmitReason = reason
+            dlog("[NOTES] ✎ line 1 submit (\(reason)): “\(Self.oneLine(first, max: 120))”")
+            pendingText = first
+            runSearchLoop()
+        }
+        if lines.count >= 2 {
+            let second = lines[1]
+            if second.count >= 2, second != lastSubmittedSecondLine {
+                lastSubmittedSecondLine = second
+                dlog("[NOTES] ✎ line 2 submit (\(reason)): “\(Self.oneLine(second, max: 120))”")
+                searchSecondLine(second)
+            }
+        }
+    }
+
+    private func searchSecondLine(_ line: String) {
+        secondSearchTask?.cancel()
+        let gen = generation
+        let lookupContext: SecondSpectatorSong.Context = context == .perform ? .perform : .test
+        secondSearchTask = Task { [weak self] in
+            let query = await NotesSongSession.resolveQuery(from: line)
+            guard let self, gen == self.generation, !Task.isCancelled else { return }
+            guard let query, !query.isEmpty else { return }
+            let track = await SecondSpectatorSong.shared.lookup(
+                queries: [query],
+                source: "Notes line 2",
+                context: lookupContext
+            )
+            guard gen == self.generation, !Task.isCancelled else { return }
+            if track != nil {
+                SecondSpectatorSong.shared.confirm(source: "Notes line 2")
+            } else if self.context == .perform {
+                PerformUserLog.shared.log("Notes · line 2 · no match for “\(query)”")
+            }
+        }
     }
 
     private func lock(reason: String) {

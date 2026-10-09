@@ -6,6 +6,19 @@ struct LibrarySongSearchBlock: View {
     @ObservedObject private var library = SongLibraryStore.shared
     @FocusState private var queryFocused: Bool
 
+    /// When set, matches scroll inside this fixed height instead of growing the parent.
+    private let resultsHeight: CGFloat?
+    /// When set, tapping a match hands it to the caller instead of loading it as the Home song.
+    private let onPick: ((PreviewTrack) -> Void)?
+    /// Checkmark for `onPick` mode (the caller's current pick).
+    private let pickedTrackID: String?
+
+    init(resultsHeight: CGFloat? = nil, pickedTrackID: String? = nil, onPick: ((PreviewTrack) -> Void)? = nil) {
+        self.resultsHeight = resultsHeight
+        self.pickedTrackID = pickedTrackID
+        self.onPick = onPick
+    }
+
     private var searchDisabled: Bool {
         model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || model.loadState == .searching
@@ -64,7 +77,7 @@ struct LibrarySongSearchBlock: View {
                 }
             }
 
-            if let track = model.selected, model.loadState == .ready {
+            if onPick == nil, let track = model.selected, model.loadState == .ready {
                 LoadedSongReadyRow(track: track)
             }
         }
@@ -77,10 +90,17 @@ struct LibrarySongSearchBlock: View {
 
     private func searchResultRow(_ track: PreviewTrack) -> some View {
         let favorited = library.isFavorite(track)
-        let isSelected = model.selected?.id == track.id && model.loadState == .ready
+        let picking = onPick != nil
+        let isSelected = picking
+            ? pickedTrackID == track.id
+            : model.selected?.id == track.id && model.loadState == .ready
         return HStack(spacing: 8) {
             Button {
-                Task { await model.select(track) }
+                if let onPick {
+                    onPick(track)
+                } else {
+                    Task { await model.select(track) }
+                }
             } label: {
                 HStack(spacing: 10) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -97,7 +117,7 @@ struct LibrarySongSearchBlock: View {
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(OracleTheme.gold)
-                    } else if model.loadState == .downloading, model.selected?.id == track.id {
+                    } else if !picking, model.loadState == .downloading, model.selected?.id == track.id {
                         ProgressView()
                             .scaleEffect(0.85)
                     }
@@ -105,7 +125,7 @@ struct LibrarySongSearchBlock: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(model.loadState == .downloading && model.selected?.id != track.id)
+            .disabled(!picking && model.loadState == .downloading && model.selected?.id != track.id)
 
             Button {
                 library.toggleFavorite(library.canonicalTrackForLibrary(track))

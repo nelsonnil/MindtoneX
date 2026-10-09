@@ -49,6 +49,7 @@
 		37517C88CA26A7CFF3E7CB21 /* CarphoneDialLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF42FB07E26D2E83D7B1928 /* CarphoneDialLayout.swift */; };
 		3990F1E3960F46E9739453B2 /* AppModel+Voice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB5BDB6A1DCECFBD46E5FC1 /* AppModel+Voice.swift */; };
 		3A2FD63EC057C245B5A4779C /* SongStorefront.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1B8DC27EC42C698E3626F3 /* SongStorefront.swift */; };
+		3E8B1D07C5A92F4E6D10B7C3 /* TwoSpectators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3C5E91B2D4F60817C9E2A4 /* TwoSpectators.swift */; };
 		3BCE337D4E4DDFFA5142F61D /* NotesContactWordSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E263FE4707E78890CA7FB0F2 /* NotesContactWordSettings.swift */; };
 		424BC87CA51E4E2654D834A4 /* UnifiedPerformanceModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */; };
 		42C8AEF7433386023083BFCE /* CardOCRLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8E82BCFD38058C2E0B516B /* CardOCRLayout.swift */; };
@@ -139,6 +140,7 @@
 		3D1B9D71DD33E9FFC8520EC2 /* InterferenceAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E944D8E5738D09A7B85D387 /* InterferenceAudioEngine.swift */; };
 		28249B99F586AD3C740FEF66 /* InterferenceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32809EF12DA386D52CCE77DD /* InterferenceSettings.swift */; };
 		297D407748A90DF71B873446 /* InterferenceTestController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */; };
+		6C3F8D2AE5B4071F92D8BA13 /* InterferenceShowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2E7C19D4A3F60E81C7A9D2 /* InterferenceShowController.swift */; };
 		478B9B5E4AE2277CB5DA8EB3 /* InterferenceRingtoneSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78CBD020F0C38AC0AB9039FA /* InterferenceRingtoneSettings.swift */; };
 		5C93B264A0C2525AA4578AFD /* InterferenceRingtone in Resources */ = {isa = PBXBuildFile; fileRef = 2329F42BD66BB2222F1CAB76 /* InterferenceRingtone */; };
 /* End PBXBuildFile section */
@@ -260,6 +262,7 @@
 		95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactShowState.swift; sourceTree = "<group>"; };
 		97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongPicker.swift; sourceTree = "<group>"; };
 		9B1B8DC27EC42C698E3626F3 /* SongStorefront.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongStorefront.swift; sourceTree = "<group>"; };
+		7A3C5E91B2D4F60817C9E2A4 /* TwoSpectators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoSpectators.swift; sourceTree = "<group>"; };
 		9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactViews.swift; sourceTree = "<group>"; };
 		9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
 		9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -314,6 +317,7 @@
 		8E944D8E5738D09A7B85D387 /* InterferenceAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceAudioEngine.swift; sourceTree = "<group>"; };
 		32809EF12DA386D52CCE77DD /* InterferenceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceSettings.swift; sourceTree = "<group>"; };
 		E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceTestController.swift; sourceTree = "<group>"; };
+		5B2E7C19D4A3F60E81C7A9D2 /* InterferenceShowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceShowController.swift; sourceTree = "<group>"; };
 		78CBD020F0C38AC0AB9039FA /* InterferenceRingtoneSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceRingtoneSettings.swift; sourceTree = "<group>"; };
 		2329F42BD66BB2222F1CAB76 /* InterferenceRingtone */ = {isa = PBXFileReference; lastKnownFileType = folder; path = InterferenceRingtone; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -534,6 +538,7 @@
 				270405B2C76043701C1E008B /* RecentPerformSnapshot.swift */,
 				47F714394D355E859CF8CEAB /* SongLibraryStore.swift */,
 				9B1B8DC27EC42C698E3626F3 /* SongStorefront.swift */,
+				7A3C5E91B2D4F60817C9E2A4 /* TwoSpectators.swift */,
 			);
 			path = Songs;
 			sourceTree = "<group>";
@@ -653,6 +658,7 @@
 				8E496200F664F203A10AADB9 /* HandGestureDetector.swift */,
 				8E944D8E5738D09A7B85D387 /* InterferenceAudioEngine.swift */,
 				32809EF12DA386D52CCE77DD /* InterferenceSettings.swift */,
+				5B2E7C19D4A3F60E81C7A9D2 /* InterferenceShowController.swift */,
 				E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */,
 			);
 			path = Interference;
@@ -787,6 +793,7 @@
 				3D1B9D71DD33E9FFC8520EC2 /* InterferenceAudioEngine.swift in Sources */,
 				28249B99F586AD3C740FEF66 /* InterferenceSettings.swift in Sources */,
 				297D407748A90DF71B873446 /* InterferenceTestController.swift in Sources */,
+				6C3F8D2AE5B4071F92D8BA13 /* InterferenceShowController.swift in Sources */,
 				478B9B5E4AE2277CB5DA8EB3 /* InterferenceRingtoneSettings.swift in Sources */,
 				0C7DD1810B8A32E53E19A6EF /* AiVoiceInputPanel.swift in Sources */,
 				E35A7B10CDB728AE2BBC1BAA /* ApiInputPanel.swift in Sources */,
@@ -876,6 +883,7 @@
 				567203094B7B7CBAD29085F7 /* SongLibraryStore.swift in Sources */,
 				128B2FC902A3063C29DBBCAB /* SongPicker.swift in Sources */,
 				3A2FD63EC057C245B5A4779C /* SongStorefront.swift in Sources */,
+				3E8B1D07C5A92F4E6D10B7C3 /* TwoSpectators.swift in Sources */,
 				0BD7FF8A0856F253F66D76B1 /* SongStorefrontPickerView.swift in Sources */,
 				0C13519901D4C9A57CFA2E01 /* SpectatorWordContactService.swift in Sources */,
 				24E7F1F82A624CBD51EE706F /* SpectatorWordPicker.swift in Sources */,

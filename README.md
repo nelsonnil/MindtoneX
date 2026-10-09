@@ -255,7 +255,7 @@ MagicCall/Sources/Perform   Flujo Perform de Share Ringtone y textos "How it wor
 MagicCall/Sources/Intents   App Intents para Toque posterior / botón de Acción
 MagicCall/Sources/Experiments  APIs privadas, CallKit, volumen
 MagicCall/Sources/Interference Tono → mano (cámara frontal) → interferencia → canción (de momento solo modo test)
-MagicCall/Resources/InterferenceRingtone  ringtone1-default / ringtone2-optional / interferencia-radio (.m4a)
+MagicCall/Resources/InterferenceRingtone  ringtone1-default / ringtone2-optional / interferencia-radio / interferencia-audio2 (.m4a)
 docs/                       Informe de investigación
 ```
 
@@ -263,10 +263,27 @@ docs/                       Informe de investigación
 
 En **Home › Performance settings › Interference ringtone › Open test mode**: busca una canción, elige
 Ringtone 1 (por defecto) o 2, pulsa **Play** y pon la mano abierta sobre el iPhone. Suena el tono en
-bucle; al ver la mano entra la interferencia y se convierte en el preview de la canción. Las llamadas
-reales en Perform **no** usan todavía este motor. Los `.m4a` de `Resources/InterferenceRingtone` son
+bucle; al ver la mano entra la interferencia y se convierte en el preview de la canción. **En Perform**
+(con *Interference ringtone* elegido) la llamada real hace lo mismo: suena el tono de la app en bucle,
+la cámara frontal espera la mano abierta y entonces interferencia → canción (la canción se repite si
+se acaba). Si la cámara no está permitida o el audio no arranca, esa llamada usa el tono normal (la
+canción suena directamente). *Sonar canción* (Toque posterior) o el disparador de volumen sustituyen a
+la mano si la cámara no la ve. Los `.m4a` de `Resources/InterferenceRingtone` son
 provisionales: sustitúyelos por archivos con el mismo nombre (es una *folder reference*, no hay que
 tocar Xcode). Registro: líneas `[INTERF]`.
+
+### 2 espectadores (Experimental)
+
+En **Home › Song › Spectators 1 | 2**. Con **2**, cada entrada busca una segunda canción:
+Camera = dos títulos en la carta (arriba = espectador 1), Voice = la IA bloquea la canción 1 y sigue
+escuchando hasta bloquear la 2, Notes = línea 1 / línea 2, API = primer cambio = canción 1, siguiente
+cambio = canción 2. La canción 1 va al hueco normal (la llamada real la reproduce como siempre); la
+canción 2 se guarda aparte (`SecondSpectatorSong`) y sale en *Song 2*, en el peek y en el registro.
+En el **test de interferencia** se eligen Song 1 y Song 2: 1ª mano → interferencia elegida → canción 1;
+2ª mano (desde 2 s después, la mano anterior tiene que salir del encuadre) → `interferencia-audio2.m4a`
+→ canción 2. En Perform igual, en la misma llamada, si la canción 2 está lista al sonar (si no, esa
+llamada solo usa la 1ª mano). No pensado para Caller name: si está activo sigue siendo un teléfono y una
+palabra. Registro: `[SPECTATOR 2]` e `[INTERF]` (Perform: `[INTERF] perform`).
 
 ## 7. Licencias
 

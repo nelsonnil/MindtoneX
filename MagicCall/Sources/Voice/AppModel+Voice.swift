@@ -70,6 +70,7 @@ extension AppModel {
             CardSongSession.shared.reset(reason: "new Perform")
             WordApiSession.shared.reset(reason: "new Perform")
             NotesContactWordSession.shared.reset(reason: "new Perform")
+            SecondSpectatorSong.shared.reset(reason: "new Perform")
             clearSongForNextPerformance()
         }
         guard StageImageStore.hasScreenshot else {
@@ -86,6 +87,9 @@ extension AppModel {
         let input = VoiceSettings.inputMode
         let apiHandoff = pendingApiLiveWatchHandoff
         pendingApiLiveWatchHandoff = nil
+        if SpectatorSettings.isTwo, findsSongDuringPerform {
+            SecondSpectatorSong.shared.beginWaiting(source: input.title, context: .perform)
+        }
         switch input {
         case .aiVoice:
             VoiceAudioSession.recordCategoryActive = true
@@ -173,6 +177,15 @@ extension AppModel {
         }
     }
 
+    /// Spectators = 2: song 1 locked while the mic stays on for spectator 2 — no audio-session switch yet.
+    func voiceFirstOfTwoLocked(context: VoiceSongSession.Context) {
+        guard context == .perform else { return }
+        recordRecentLoadedSongIfReady(reason: "voiceFirstOfTwo")
+        if isArmed {
+            applyFakePerformMediaVolumeBoost(reason: "songLocked")
+        }
+    }
+
     func notesSongReady(context: NotesSongSession.Context) {
         guard context == .perform else { return }
         recordRecentLoadedSongIfReady(reason: "notesReady")
@@ -218,6 +231,7 @@ extension AppModel {
         CardSongSession.shared.reset(reason: "left Perform")
         WordApiSession.shared.reset(reason: "left Perform")
         NotesContactWordSession.shared.reset(reason: "left Perform")
+        SecondSpectatorSong.shared.abandon(reason: "left Perform")
         clearSongForNextPerformance()
     }
 
@@ -238,6 +252,7 @@ extension AppModel {
         NotesSongSession.shared.reset(reason: "input mode")
         ApiSongSession.shared.reset(reason: "input mode")
         CardSongSession.shared.reset(reason: "input mode")
+        SecondSpectatorSong.shared.reset(reason: "input mode")
         WordApiSession.shared.stopTest()
         NotesContactWordSession.shared.stopTest()
         if previous != .manual || next != .manual {
@@ -254,6 +269,10 @@ extension AppModel {
     func autoShareOnSongLockIfEnabled(source: String) {
         guard Prefs.autoShareOnSongLock, isArmed, phase == .stage, !autoSharePresentedThisPerform else { return }
         guard loadState == .ready else { return }
+        if SecondSpectatorSong.shared.isPendingInPerform {
+            dlog("[AUTO-SHARE] song locked (\(source)) · waiting for spectator 2 before Share")
+            return
+        }
         autoSharePresentedThisPerform = true
         dlog("[AUTO-SHARE] song locked (\(source)) → Share sheet")
         Task { await presentShareDuringPerform() }

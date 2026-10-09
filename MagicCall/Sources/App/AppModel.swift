@@ -36,6 +36,8 @@ final class AppModel: ObservableObject {
     let previews = PreviewService()
     let audio = RingtoneAudioEngine()
     let calls = CallMonitor()
+    /// Interference ringtone in Perform (Song card › Interference ringtone): ringtone → hand → song.
+    let interferenceShow = InterferenceShowController()
 
     private var observers: [NSObjectProtocol] = []
     private var volumeObservation: NSKeyValueObservation?
@@ -54,6 +56,8 @@ final class AppModel: ObservableObject {
     private var autoTriggerCooldownUntil: CFTimeInterval = 0
     private var callSignalActive = false
     private var hadCallWhileArmed = false
+    /// Interference ringtone could not start for this call: stay on the normal ringtone until the call ends.
+    private var interferenceFallbackThisCall = false
     private(set) var performed = false
     private var currentAudio: (data: Data, hint: String)?
     private var auditionEndWork: DispatchWorkItem?
@@ -107,6 +111,9 @@ final class AppModel: ObservableObject {
         calls.start()
         audio.onFinishedClip = { [weak self] in
             MainActor.assumeIsolated { self?.isAudible = false }
+        }
+        interferenceShow.onEngineLost = { [weak self] reason in
+            self?.interferenceEngineLost(reason)
         }
         installObservers()
         Task { await previews.warmUp() }
@@ -406,6 +413,7 @@ final class AppModel: ObservableObject {
         performed = false
         hadCallWhileArmed = false
         autoTriggerCooldownUntil = 0
+        interferenceFallbackThisCall = false
         startCallPolling()
         isArmed = true
         isAudible = false
@@ -443,6 +451,8 @@ final class AppModel: ObservableObject {
         hadCallWhileArmed = false
         isAudible = false
         resetVoicePerformance()
+        interferenceShow.stop(reason: "disarm")
+        interferenceFallbackThisCall = false
         audio.stop()
         audio.deactivateSession()
         isArmed = false
@@ -523,6 +533,8 @@ final class AppModel: ObservableObject {
         incomingDetectedAt = 0
         hadCallWhileArmed = false
         autoTriggerCooldownUntil = 0
+        interferenceShow.stop(reason: "performed")
+        interferenceFallbackThisCall = false
         audio.stop()
         audio.player?.currentTime = 0
         isAudible = false
@@ -607,6 +619,9 @@ final class AppModel: ObservableObject {
             return
         }
         applySystemVolumeBoostForTrigger()
+        if InterferenceSettings.enabled, !interferenceFallbackThisCall, triggerInterferenceRingtone(source: source) {
+            return
+        }
         let t0 = CACurrentMediaTime()
         logAudioSession(context: "antes de disparo [\(source)]")
         let ok = audio.makeAudible(reconfigureSession: { try self.audio.configureSession(preferIPhoneSpeaker: true) })
@@ -640,14 +655,80 @@ final class AppModel: ObservableObject {
     }
 
     func toggleManual() {
+        if interferenceShow.awaitingHand {
+            interferenceShow.forceHand(source: "volume")
+            return
+        }
         if isAudible { silence(reason: "toque") } else { trigger(source: "toque") }
     }
 
+    /// Back Tap / Action button (“Sonar canción”): while the interference ringtone waits for a hand,
+    /// it stands in for the hand; otherwise it plays like any manual trigger.
+    func manualTrigger(source: String) {
+        if interferenceShow.awaitingHand {
+            interferenceShow.forceHand(source: source)
+            return
+        }
+        trigger(source: source)
+    }
+
     func silence(reason: String) {
+        if interferenceShow.isActive {
+            interferenceShow.stop(reason: reason)
+            isAudible = false
+            dlog("■ Silencio [\(reason)] · interference ringtone")
+            return
+        }
         guard isAudible else { return }
         audio.silence(holdUntilExplicitPlay: true)
         isAudible = false
         dlog("■ Silencio [\(reason)]")
+    }
+
+    // MARK: Interference ringtone (Perform)
+
+    /// Ringtone → open hand → interference → song 1; Spectators = 2 with song 2 ready → second hand → song 2.
+    /// Returns false when the effect cannot run, so the call falls back to the normal song playback.
+    private func triggerInterferenceRingtone(source: String) -> Bool {
+        let configure: () throws -> Void = { try self.audio.configureSession(preferIPhoneSpeaker: true) }
+        if interferenceShow.isActive {
+            let ok = interferenceShow.reassert(reason: source, configureSession: configure)
+            isAudible = ok
+            dlog("[TRIGGER] ▶︎ [\(source)] interference reassert=\(ok) · \(interferenceShow.snapshot())")
+            if !ok { schedulePlayRetries(origin: source) }
+            return true
+        }
+        guard let track = selected, let current = currentAudio else { return false }
+        var secondSong: InterferenceShowController.Song?
+        if SpectatorSettings.isTwo {
+            let second = SecondSpectatorSong.shared
+            if second.isLocked, let track2 = second.track, let data2 = second.trackData {
+                secondSong = InterferenceShowController.Song(data: data2, fileTypeHint: track2.fileTypeHint, title: track2.title)
+            } else {
+                PerformUserLog.shared.log("Interference · song 2 not ready · this call uses the first hand only")
+            }
+        }
+        let started = interferenceShow.start(
+            song1: InterferenceShowController.Song(data: current.data, fileTypeHint: current.hint, title: track.title),
+            song2: secondSong,
+            configureSession: configure
+        )
+        guard started else {
+            interferenceFallbackThisCall = true
+            dlog("[TRIGGER] [\(source)] interference ringtone unavailable → normal ringtone for this call")
+            return false
+        }
+        isAudible = true
+        dlog("[TRIGGER] ▶︎ [\(source)] interference ringtone · \(interferenceShow.snapshot())")
+        scheduleHealthChecks(label: source)
+        return true
+    }
+
+    /// The interference engine was stopped by iOS: retrigger so `reassert` restarts it while the call rings.
+    private func interferenceEngineLost(_ reason: String) {
+        guard isArmed, interferenceShow.isActive else { return }
+        isAudible = false
+        trigger(source: reason)
     }
 
     /// Lo que de verdad queremos saber en el iPhone: ¿sigue avanzando el audio con el banner encima?
@@ -655,7 +736,8 @@ final class AppModel: ObservableObject {
         for delay in [0.3, 1.0, 2.5, 5.0, 9.0] {
             onMain(after: delay) { [weak self] in
                 guard let self, self.isArmed else { return }
-                dlog("   chequeo +\(delay)s [\(label)] \(self.audio.snapshot())")
+                let interference = self.interferenceShow.isActive ? " · interference \(self.interferenceShow.snapshot())" : ""
+                dlog("   chequeo +\(delay)s [\(label)] \(self.audio.snapshot())\(interference)")
             }
         }
     }
@@ -739,7 +821,12 @@ final class AppModel: ObservableObject {
         }
         observe(AVAudioSession.mediaServicesWereResetNotification) { [weak self] _ in
             dlog("⚠️ mediaServicesWereReset: recargando audio")
-            guard let self, let track = self.selected else { return }
+            guard let self else { return }
+            if self.interferenceShow.isActive {
+                self.interferenceShow.stop(reason: "media services reset")
+                self.isAudible = false
+            }
+            guard let track = self.selected else { return }
             Task { await self.select(track) }
         }
         observe(UIApplication.willResignActiveNotification) { _ in dlog("App → willResignActive") }
@@ -817,6 +904,12 @@ final class AppModel: ObservableObject {
             } else if !isAudible {
                 audio.player?.volume = 0
             }
+        }
+        if interferenceShow.isActive {
+            let ok = interferenceShow.reassert(reason: reason, configureSession: {
+                try self.audio.configureSession(preferIPhoneSpeaker: true)
+            })
+            isAudible = ok
         }
         calls.reassertDelegate()
         syncOngoingIncomingCalls()

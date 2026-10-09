@@ -190,6 +190,9 @@ struct ApiInputPanel: View {
         case .loading(let label):
             return ("Found “\(label)” — loading preview…", "arrow.down.circle", false)
         case .locked:
+            if session.watchingSecondSong {
+                return ("Song 1 locked · waiting for spectator 2’s search in \(provider.title)", "dot.radiowaves.left.and.right", false)
+            }
             return nil
         case .failed(let message):
             return (message, "exclamationmark.triangle.fill", true)

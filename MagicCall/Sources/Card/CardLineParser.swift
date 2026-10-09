@@ -107,6 +107,38 @@ enum CardLineParser {
         return CardOCRParse(songQuery: song, callerLine: callerLine, notesLine: notesLine)
     }
 
+    /// Spectators = 2 (local OCR fallback): top song line = song 1, next = song 2; caller / Notes word lines
+    /// (when those use Camera) sit below. Four song lines are read as two title + artist pairs.
+    static func parseTwoSongs(orderedLines: [String]) -> (song1: String, song2: String, callerLine: String?, notesLine: String?) {
+        let plain = expandMergedOCRLines(orderedLines)
+            .map { CardTextMapper.clean($0) }
+            .filter { $0.count >= 2 }
+        let reserved = (CardOCRLayout.usesCallerLine ? 1 : 0) + (CardOCRLayout.usesNotesLine ? 1 : 0)
+        let songLineCount = plain.count >= 2 + reserved ? plain.count - reserved : plain.count
+        let songLines = Array(plain.prefix(songLineCount))
+        let wordLines = Array(plain.dropFirst(songLineCount))
+
+        let song1: String
+        let song2: String
+        if songLines.count == 4 {
+            song1 = "\(songLines[0]) \(songLines[1])"
+            song2 = "\(songLines[2]) \(songLines[3])"
+        } else {
+            song1 = songLines.first ?? ""
+            song2 = songLines.count >= 2 ? songLines[1] : ""
+        }
+
+        var callerLine: String?
+        var notesLine: String?
+        if CardOCRLayout.usesCallerLine {
+            callerLine = wordLines.first
+        }
+        if CardOCRLayout.usesNotesLine {
+            notesLine = CardOCRLayout.usesCallerLine ? (wordLines.count >= 2 ? wordLines.last : nil) : wordLines.first
+        }
+        return (song1, song2, callerLine, notesLine)
+    }
+
     /// All plain OCR lines treated as song material (song-only Camera mode).
     static func mergeSongFromPlainLines(_ lines: [String]) -> String {
         let cleaned = lines.map { CardTextMapper.clean($0) }.filter { $0.count >= 2 }

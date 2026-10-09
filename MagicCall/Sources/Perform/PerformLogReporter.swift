@@ -13,6 +13,22 @@ enum PerformLogReporter {
     static func logConfiguredInputs() {
         PerformUserLog.shared.log("── Inputs this perform ──")
         PerformUserLog.shared.log("Song · \(VoiceSettings.inputMode.title)")
+        if SpectatorSettings.isTwo {
+            PerformUserLog.shared.log(InterferenceSettings.enabled
+                ? "Spectators · 2 (experimental) · 1st hand → song 1 · 2nd hand → song 2"
+                : "Spectators · 2 (experimental) · normal ringtone plays song 1 only")
+        }
+        if InterferenceSettings.enabled {
+            let preset = InterferenceSettings.resolvedPreset(
+                storedRaw: UserDefaults.standard.string(forKey: InterferenceSettings.Key.presetID)
+            )
+            var line = "Ringtone · interference · \(InterferenceSettings.ringtone.title) · \(preset.title)"
+            if SpectatorSettings.isTwo { line += " · 2nd hand \(InterferenceSettings.secondHandTitle)" }
+            if !CardSettings.cameraAuthorized { line += " · camera not allowed → normal ringtone" }
+            PerformUserLog.shared.log(line)
+        } else {
+            PerformUserLog.shared.log("Ringtone · normal")
+        }
 
         if WordApiSettings.callerLabelEnabled {
             PerformUserLog.shared.log("Caller name · \(WordApiSettings.provider.title) · on")

@@ -21,6 +21,9 @@ final class HandGestureDetector: NSObject {
 
     static let requiredFingers = 4
     static let holdSeconds: CFTimeInterval = 0.3
+    /// `start(requireClearFirst:)`: analysed frames without an open hand (~0.4 s) before a new hand may fire,
+    /// so a hand still held over the phone from the previous trigger never counts twice.
+    static let clearFramesBeforeNextHand = 6
 
     let session = AVCaptureSession()
 
@@ -47,6 +50,8 @@ final class HandGestureDetector: NSObject {
     private var missesInRow = 0
     private var fired = true
     private var lastReportedFingers = -1
+    private var waitingForClear = false
+    private var clearFramesInRow = 0
 
     override init() {
         super.init()
@@ -75,7 +80,7 @@ final class HandGestureDetector: NSObject {
         observers.forEach { NotificationCenter.default.removeObserver($0) }
     }
 
-    func start() throws {
+    func start(requireClearFirst: Bool = false) throws {
         try configureIfNeeded()
         queue.async { [weak self] in
             guard let self else { return }
@@ -83,9 +88,11 @@ final class HandGestureDetector: NSObject {
             self.openSince = nil
             self.missesInRow = 0
             self.lastReportedFingers = -1
+            self.waitingForClear = requireClearFirst
+            self.clearFramesInRow = 0
             self.fired = false
             if !self.session.isRunning { self.session.startRunning() }
-            dlog("[INTERF] front camera started")
+            dlog("[INTERF] front camera started\(requireClearFirst ? " · previous hand must leave first" : "")")
         }
     }
 
@@ -130,6 +137,18 @@ final class HandGestureDetector: NSObject {
         if fingers != lastReportedFingers {
             lastReportedFingers = fingers
             DispatchQueue.main.async { [weak self] in self?.onFingers?(fingers) }
+        }
+        if waitingForClear {
+            if fingers >= Self.requiredFingers {
+                clearFramesInRow = 0
+            } else {
+                clearFramesInRow += 1
+                if clearFramesInRow >= Self.clearFramesBeforeNextHand {
+                    waitingForClear = false
+                    dlog("[INTERF] previous hand gone · watching for the next open hand")
+                }
+            }
+            return
         }
         if fingers >= Self.requiredFingers {
             missesInRow = 0

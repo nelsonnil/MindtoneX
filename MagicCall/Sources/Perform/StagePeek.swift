@@ -49,7 +49,14 @@ struct StagePeekLines: Equatable {
     @MainActor
     static func build(model: AppModel) -> StagePeekLines {
         var rows: [Row] = []
-        rows.append(Row(id: "song", title: "Song", value: songLine(model: model)))
+        let twoSpectators = SpectatorSettings.isTwo
+        rows.append(Row(id: "song", title: twoSpectators ? "Song 1" : "Song", value: songLine(model: model)))
+        if twoSpectators {
+            rows.append(Row(id: "song2", title: "Song 2", value: SecondSpectatorSong.shared.label ?? missingValue))
+        }
+        if InterferenceSettings.enabled {
+            rows.append(Row(id: "interference", title: "Ringtone", value: model.interferenceShow.peekStatus))
+        }
 
         if WordApiSettings.callerLabelEnabled {
             rows.append(Row(id: "caller", title: "Caller name", value: callerLine()))

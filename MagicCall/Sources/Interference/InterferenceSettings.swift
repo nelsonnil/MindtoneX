@@ -1,7 +1,7 @@
 import Foundation
 
 /// Interference ringtone (ringtone → hand gesture → radio interference → song).
-/// Build 1 only drives the Settings test lab; Perform / real calls do not read these keys yet.
+/// Home › Song › Ringtone. Read by the test lab and by Perform (`AppModel.trigger` → `InterferenceShowController`).
 enum InterferenceSettings {
     enum Key {
         static let enabled = "interference.enabled"
@@ -35,6 +35,17 @@ enum InterferenceSettings {
 
     static let resourceFolder = "InterferenceRingtone"
     static let interferenceResourceName = "interferencia-radio"
+
+    /// Spectators = 2: the second open hand always uses this file (audio of `interferenciaradio2`).
+    static let secondHandResourceName = "interferencia-audio2"
+    /// After the first confirmed hand, a second hand only counts from this point (anti double trigger).
+    static let secondHandCooldown: TimeInterval = 2.0
+
+    static var secondHandInterferenceURL: URL? { bundledAudioURL(named: secondHandResourceName) }
+
+    static var secondHandTitle: String {
+        secondHandInterferenceURL != nil ? "Interference audio 2" : "Same as 1st hand (audio 2 file missing)"
+    }
 
     private static var d: UserDefaults { .standard }
 

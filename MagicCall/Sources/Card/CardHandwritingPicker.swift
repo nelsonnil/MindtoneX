@@ -208,6 +208,17 @@ struct CardHandwritingPick: Equatable, Codable {
         return r
     }
 
+    /// Store hit plausibly matches what vision read (rejects unrelated top results such as another song by the artist).
+    func accepts(_ track: PreviewTrack) -> Bool {
+        let wantTitle = PreviewService.normalize(title)
+        guard wantTitle.count >= 3 else { return true }
+        let gotTitle = PreviewService.normalize(track.title)
+        if gotTitle.contains(wantTitle) || wantTitle.contains(gotTitle) { return true }
+        let wantArtist = PreviewService.normalize(artist)
+        if !wantArtist.isEmpty, gotTitle.contains(wantArtist), wantTitle.count < 4 { return false }
+        return wantTitle.split(separator: " ").count <= 1
+    }
+
     private static func callerLooksLikeSongFragment(_ caller: String, title: String, artist: String) -> Bool {
         let c = caller.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
         let blob = (title + " " + artist).folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
@@ -217,6 +228,74 @@ struct CardHandwritingPick: Equatable, Codable {
             return true
         }
         return false
+    }
+}
+
+/// Spectators = 2: one card with two song titles — upper = spectator 1 (`_1`), lower = spectator 2 (`_2`).
+struct CardTwoSongPick: Equatable, Codable {
+    var hasSong1: Bool
+    var title1: String
+    var artist1: String
+    var searchQuery1: String
+    var hasSong2: Bool
+    var title2: String
+    var artist2: String
+    var searchQuery2: String
+    var confidence: Double
+    var reasoning: String
+    var hasCallerWord: Bool
+    var callerWord: String
+    var hasNotesWord: Bool
+    var notesWord: String
+
+    enum CodingKeys: String, CodingKey {
+        case hasSong1 = "has_song_1"
+        case title1 = "title_1"
+        case artist1 = "artist_1"
+        case searchQuery1 = "search_query_1"
+        case hasSong2 = "has_song_2"
+        case title2 = "title_2"
+        case artist2 = "artist_2"
+        case searchQuery2 = "search_query_2"
+        case confidence, reasoning
+        case hasCallerWord = "has_caller_word"
+        case callerWord = "caller_word"
+        case hasNotesWord = "has_notes_word"
+        case notesWord = "notes_word"
+    }
+
+    /// Each song as a regular card pick, so store queries and the title check match one spectator.
+    var firstSong: CardHandwritingPick {
+        songPick(hasSong: hasSong1, title: title1, artist: artist1, query: searchQuery1)
+    }
+
+    var secondSong: CardHandwritingPick {
+        songPick(hasSong: hasSong2, title: title2, artist: artist2, query: searchQuery2)
+    }
+
+    func wordsParse(expectCaller: Bool, expectNotes: Bool) -> CardOCRParse {
+        CardOCRParse(
+            songQuery: searchQuery1,
+            callerLine: expectCaller && hasCallerWord ? callerWord : nil,
+            notesLine: expectNotes && hasNotesWord ? notesWord : nil
+        )
+    }
+
+    private func songPick(hasSong: Bool, title: String, artist: String, query: String) -> CardHandwritingPick {
+        let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return CardHandwritingPick(
+            hasSong: hasSong && !(cleanTitle.isEmpty && cleanQuery.isEmpty),
+            title: cleanTitle,
+            artist: artist.trimmingCharacters(in: .whitespacesAndNewlines),
+            searchQuery: cleanQuery,
+            confidence: confidence,
+            reasoning: reasoning,
+            hasCallerWord: false,
+            callerWord: "",
+            hasNotesWord: false,
+            notesWord: ""
+        )
     }
 }
 
@@ -283,6 +362,105 @@ enum CardHandwritingPicker {
             "additionalProperties": false,
         ]
 
+        let text = try await requestCardJSON(
+            apiKey: apiKey,
+            model: model,
+            instructions: instructions,
+            imageBase64: b64,
+            schemaName: "card_handwriting",
+            schema: schema
+        )
+        guard var pick = try? JSONDecoder().decode(CardHandwritingPick.self, from: Data(text.utf8)) else {
+            throw CardHandwritingPickerError.badOutput(text)
+        }
+        let hintLines = visionOCRHint.components(separatedBy: .newlines)
+        pick.reconcile(withHintLines: hintLines, expectCallerLine: expectCallerLine, expectNotesLine: expectNotesLine)
+        return pick
+    }
+
+    /// Spectators = 2: two song titles on one card (upper = spectator 1, lower = spectator 2).
+    static func pickTwoSongs(
+        jpeg: Data,
+        visionOCRHint: String,
+        expectCallerLine: Bool,
+        expectNotesLine: Bool
+    ) async throws -> CardTwoSongPick {
+        guard let apiKey = VoiceSettings.apiKey else { throw CardHandwritingPickerError.noAPIKey }
+        let model = VoiceSettings.pickerModel
+        let b64 = jpeg.base64EncodedString()
+        let callerRule = expectCallerLine
+            ? "Caller word: the first single-word line BELOW both songs (has_caller_word=true). Never take it from a song title."
+            : "Caller word: not used (has_caller_word=false, caller_word empty)."
+        let notesRule = expectNotesLine
+            ? "Notes chip word: the bottom single-word line on the card (has_notes_word=true)."
+            : "Notes word: not used (has_notes_word=false, notes_word empty)."
+        let instructions = """
+        You read a photo of a handwritten performance card (black ink, often ALL CAPS). \
+        TWO spectators each wrote ONE song. \(CardSettings.openAIVisionLanguageRule)
+        The UPPER song belongs to spectator 1 (fields ending in _1); the LOWER song belongs to spectator 2 (fields ending in _2). \
+        Usually one line each: a title, sometimes with the artist ("THRILLER - MICHAEL JACKSON"). If one song wraps onto a second line, merge it.
+
+        Optional OCR hint, top to bottom (often wrong — do not follow line numbers blindly):
+        \"\"\"\(visionOCRHint)\"\"\"
+
+        \(callerRule)
+        \(notesRule)
+
+        Fix handwriting/OCR (YOULSELF → Yourself). Add the main artist when the title is famous and unambiguous; otherwise leave artist empty. \
+        search_query_1 / search_query_2 = "Title Artist" (or the title alone). An unreadable song: has_song_N=false with empty strings. \
+        confidence 0–1 for the whole card. reasoning: one short English sentence (max 25 words).
+        """
+
+        let schema: [String: Any] = [
+            "type": "object",
+            "properties": [
+                "has_song_1": ["type": "boolean"],
+                "title_1": ["type": "string"],
+                "artist_1": ["type": "string"],
+                "search_query_1": ["type": "string"],
+                "has_song_2": ["type": "boolean"],
+                "title_2": ["type": "string"],
+                "artist_2": ["type": "string"],
+                "search_query_2": ["type": "string"],
+                "confidence": ["type": "number"],
+                "reasoning": ["type": "string"],
+                "has_caller_word": ["type": "boolean"],
+                "caller_word": ["type": "string"],
+                "has_notes_word": ["type": "boolean"],
+                "notes_word": ["type": "string"],
+            ],
+            "required": [
+                "has_song_1", "title_1", "artist_1", "search_query_1",
+                "has_song_2", "title_2", "artist_2", "search_query_2",
+                "confidence", "reasoning",
+                "has_caller_word", "caller_word", "has_notes_word", "notes_word",
+            ],
+            "additionalProperties": false,
+        ]
+
+        let text = try await requestCardJSON(
+            apiKey: apiKey,
+            model: model,
+            instructions: instructions,
+            imageBase64: b64,
+            schemaName: "card_two_songs",
+            schema: schema
+        )
+        guard let pick = try? JSONDecoder().decode(CardTwoSongPick.self, from: Data(text.utf8)) else {
+            throw CardHandwritingPickerError.badOutput(text)
+        }
+        return pick
+    }
+
+    /// Responses API call with the card photo and a strict JSON schema; returns the JSON text.
+    private static func requestCardJSON(
+        apiKey: String,
+        model: String,
+        instructions: String,
+        imageBase64: String,
+        schemaName: String,
+        schema: [String: Any]
+    ) async throws -> String {
         var body: [String: Any] = [
             "model": model,
             "instructions": instructions,
@@ -291,11 +469,11 @@ enum CardHandwritingPicker {
                     "role": "user",
                     "content": [
                         ["type": "input_text", "text": "Read this card and return JSON."],
-                        ["type": "input_image", "image_url": "data:image/jpeg;base64,\(b64)"],
+                        ["type": "input_image", "image_url": "data:image/jpeg;base64,\(imageBase64)"],
                     ],
                 ],
             ],
-            "text": ["format": ["type": "json_schema", "name": "card_handwriting", "strict": true, "schema": schema]],
+            "text": ["format": ["type": "json_schema", "name": schemaName, "strict": true, "schema": schema]],
             "store": false,
             "max_output_tokens": 1200,
         ]
@@ -318,11 +496,6 @@ enum CardHandwritingPicker {
               let text = SongPicker.outputText(json) else {
             throw CardHandwritingPickerError.badOutput(String(decoding: data, as: UTF8.self))
         }
-        guard var pick = try? JSONDecoder().decode(CardHandwritingPick.self, from: Data(text.utf8)) else {
-            throw CardHandwritingPickerError.badOutput(text)
-        }
-        let hintLines = visionOCRHint.components(separatedBy: .newlines)
-        pick.reconcile(withHintLines: hintLines, expectCallerLine: expectCallerLine, expectNotesLine: expectNotesLine)
-        return pick
+        return text
     }
 }

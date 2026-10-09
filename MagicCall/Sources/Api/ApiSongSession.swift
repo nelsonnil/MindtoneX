@@ -30,10 +30,14 @@ final class ApiSongSession: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var consecutiveErrors = 0
     @Published private(set) var pollCount = 0
+    /// Spectators = 2: song 1 is locked and polling continues until the next new search (song 2).
+    @Published private(set) var watchingSecondSong = false
+    @Published private(set) var secondLockedReading: ApiReading?
 
     var isActive: Bool {
         switch state {
         case .connecting, .watching, .loading: return true
+        case .locked: return watchingSecondSong
         default: return false
         }
     }
@@ -47,6 +51,8 @@ final class ApiSongSession: ObservableObject {
     private var previousPollReading: ApiReading?
     /// Live watch baseline handed off when Perform starts (spectator may have searched before Perform).
     private var performHandoffSeed: ApiReading?
+    private var secondBaseline: ApiReading?
+    private var secondLoading = false
 
     private init() {}
 
@@ -70,9 +76,12 @@ final class ApiSongSession: ObservableObject {
             fail(ApiSettings.setupHint)
             return
         }
+        if context == .test, SpectatorSettings.isTwo {
+            SecondSpectatorSong.shared.reset(reason: "API watch test")
+        }
         state = .connecting
         ApiSongClient.resetPerformFetchDiagnostics()
-        dlog("[API] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(ApiSettings.summary())")
+        dlog("[API] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(ApiSettings.summary()) · \(SpectatorSettings.summary())")
         if context == .perform, let seed = performHandoffSeed {
             dlog("[API] perform handoff from Live watch · «\(seed.label)»")
         }
@@ -90,6 +99,13 @@ final class ApiSongSession: ObservableObject {
         guard isActive else { return }
         generation += 1
         stopPolling()
+        if state == .locked {
+            watchingSecondSong = false
+            secondLoading = false
+            SecondSpectatorSong.shared.abandon(reason: "API watch stopped")
+            dlog("[API] ■ song 2 watch stopped after \(pollCount) polls · song 1 stays locked")
+            return
+        }
         state = .idle
         dlog("[API] ■ test stopped after \(pollCount) polls")
     }
@@ -106,6 +122,15 @@ final class ApiSongSession: ObservableObject {
     /// A call (or manual trigger) arrived before the spectator's search was found: stop polling.
     func callArrived(source: String) {
         guard isActive else { return }
+        if state == .locked {
+            dlog("[API] call/trigger (\(source)) before spectator 2's search — song 2 watch stopped, song 1 stays")
+            generation += 1
+            stopPolling()
+            watchingSecondSong = false
+            secondLoading = false
+            SecondSpectatorSong.shared.abandon(reason: "call before song 2")
+            return
+        }
         dlog("[API] call/trigger (\(source)) before a song locked (state=\(state)) — polling stopped")
         generation += 1
         stopPolling()
@@ -120,6 +145,7 @@ final class ApiSongSession: ObservableObject {
             return
         }
         if case .loading = state { return }
+        if secondLoading { return }
         isRefreshing = true
         let gen = generation
         let provider = self.provider
@@ -160,6 +186,10 @@ final class ApiSongSession: ObservableObject {
             lastError = nil
             lastReading = reading
             if case .loading = state { return }
+            if watchingSecondSong {
+                handleSecondSongPoll(reading, ms: ms)
+                return
+            }
             if context == .perform {
                 handlePerformPoll(reading, ms: ms)
             } else {
@@ -254,17 +284,80 @@ final class ApiSongSession: ObservableObject {
     }
 
     private func lock(_ reading: ApiReading) {
-        stopPolling()
+        let watchSecond = SpectatorSettings.isTwo
+        if watchSecond {
+            watchingSecondSong = true
+            secondBaseline = reading
+            SecondSpectatorSong.shared.beginWaiting(source: "API", context: context == .perform ? .perform : .test)
+        } else {
+            stopPolling()
+        }
         lockedReading = reading
         state = .locked
-        dlog("[API] 🔒 locked “\(reading.label)” after \(pollCount) polls")
+        dlog("[API] 🔒 locked “\(reading.label)” after \(pollCount) polls\(watchSecond ? " · song 1 of 2, still polling for spectator 2" : "")")
         if context == .perform {
             let snippet = WordApiInputPanel.truncated(reading.label, max: 44)
-            PerformUserLog.shared.log("API · \(provider.title) · locked · «\(snippet)»")
+            PerformUserLog.shared.log("API · \(provider.title) · locked · «\(snippet)»\(watchSecond ? " · waiting for spectator 2" : "")")
             PerformLogReporter.logRecognition(.song, value: reading.label, via: "API · \(provider.title)")
             PerformanceCues.songLocked(source: "API")
         }
         AppModel.shared.apiSongLocked(context: context)
+    }
+
+    // MARK: Second spectator (Spectators = 2)
+
+    /// After song 1: the next new search (vs the locked reading) is spectator 2's song.
+    private func handleSecondSongPoll(_ reading: ApiReading, ms: Int) {
+        guard !secondLoading else { return }
+        let prior = previousPollReading
+        previousPollReading = reading
+        guard let base = secondBaseline else {
+            secondBaseline = reading
+            return
+        }
+        if context == .perform {
+            let snippet = reading.hasSong ? "«\(WordApiInputPanel.truncated(reading.label, max: 44))»" : "(no song yet)"
+            PerformUserLog.shared.log("API · \(provider.title) · song 2 watch · poll #\(pollCount) · \(snippet) (\(ms) ms)")
+        }
+        guard reading.shouldLockPerformSong(comparedTo: base, previousPoll: prior) else { return }
+        secondBaseline = reading
+        guard reading.hasSong else { return }
+        if let first = lockedReading, ApiJSON.sameText(first.searchQuery, reading.searchQuery) {
+            dlog("[API] spectator 2 search repeats song 1 “\(reading.label)” — still waiting")
+            return
+        }
+        dlog("[API] ★ spectator 2 search (\(ms) ms): “\(base.label)” → “\(reading.label)”")
+        Task { await loadSecond(reading) }
+    }
+
+    private func loadSecond(_ reading: ApiReading) async {
+        let gen = generation
+        secondLoading = true
+        let lookupContext: SecondSpectatorSong.Context = context == .perform ? .perform : .test
+        let track = await SecondSpectatorSong.shared.lookup(
+            queries: [reading.searchQuery],
+            source: "API · \(provider.title)",
+            context: lookupContext
+        )
+        guard gen == generation else { return }
+        secondLoading = false
+        if track != nil {
+            lockSecond(reading)
+        } else if context == .perform {
+            PerformUserLog.shared.log("No song found for “\(reading.label)” (spectator 2)")
+        }
+    }
+
+    private func lockSecond(_ reading: ApiReading) {
+        stopPolling()
+        watchingSecondSong = false
+        secondLockedReading = reading
+        dlog("[API] 🔒 spectator 2 locked “\(reading.label)” after \(pollCount) polls")
+        if context == .perform {
+            let snippet = WordApiInputPanel.truncated(reading.label, max: 44)
+            PerformUserLog.shared.log("API · \(provider.title) · song 2 locked · «\(snippet)»")
+        }
+        SecondSpectatorSong.shared.confirm(source: "API · \(provider.title)")
     }
 
     // MARK: Helpers
@@ -286,11 +379,17 @@ final class ApiSongSession: ObservableObject {
         pollCount = 0
         previousPollReading = nil
         performHandoffSeed = nil
+        watchingSecondSong = false
+        secondLockedReading = nil
+        secondBaseline = nil
+        secondLoading = false
         ApiSongClient.resetPerformFetchDiagnostics()
     }
 
     private func fail(_ message: String) {
         stopPolling()
+        watchingSecondSong = false
+        secondLoading = false
         state = .failed(message)
         if context == .perform {
             PerformUserLog.shared.log("Song API · \(message)")

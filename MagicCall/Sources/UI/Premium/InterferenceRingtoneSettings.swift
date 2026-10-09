@@ -23,6 +23,12 @@ struct InterferenceRingtoneSettingsSection: View {
                 }
             }
             .tint(OracleTheme.gold)
+            .onChange(of: enabled) { _, value in
+                dlog("[INTERF] ringtone mode → \(value ? "interference" : "normal")")
+                if value {
+                    Task { _ = await CardSettings.requestCameraIfNeeded() }
+                }
+            }
 
             InterferenceRingtonePicker(selectionRaw: $ringtoneID)
 
@@ -38,10 +44,17 @@ struct InterferenceRingtoneSettingsSection: View {
             }
             .buttonStyle(.plain)
 
-            Text("Test mode runs here in Settings only. Real calls in Perform still use the current ringtone engine — this switch is saved for the next build.")
+            Text("Perform: the incoming call plays this ringtone until the front camera sees an open hand. Banner call style keeps the camera on; Back Tap (Sonar canción) or the volume trigger can stand in for the hand.")
                 .font(.caption2)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if !CardSettings.cameraAuthorized {
+                Label("Camera access is off — Perform will use the normal ringtone. Allow it in iPhone Settings → MindtoneX → Camera.", systemImage: "camera.fill")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.coral)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .sheet(isPresented: $showTestMode) {
             NavigationStack {
@@ -77,7 +90,14 @@ struct InterferenceTestView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(InterferenceSettings.Key.ringtoneID) private var ringtoneID = InterferenceSettings.Ringtone.defaultValue.rawValue
+    @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
     @StateObject private var test = InterferenceTestController()
+
+    private var twoSpectators: Bool { spectatorCount == 2 }
+
+    private var songsMissing: Bool {
+        twoSpectators && (test.song1 == nil || test.song2 == nil)
+    }
 
     private var ringtone: InterferenceSettings.Ringtone {
         InterferenceSettings.Ringtone(rawValue: ringtoneID) ?? InterferenceSettings.Ringtone.defaultValue
@@ -92,10 +112,16 @@ struct InterferenceTestView: View {
                     cameraCard
                 }
 
-                block(number: 1, title: "Song") {
-                    LibrarySongSearchBlock()
-                        .disabled(test.phase.isBusy)
-                        .opacity(test.phase.isBusy ? 0.5 : 1)
+                block(number: 1, title: twoSpectators ? "Songs" : "Song") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if twoSpectators { songSlots }
+                        LibrarySongSearchBlock(
+                            pickedTrackID: twoSpectators ? slotTrack(test.pickSlot)?.id : nil,
+                            onPick: songPickHandler
+                        )
+                    }
+                    .disabled(test.phase.isBusy)
+                    .opacity(test.phase.isBusy ? 0.5 : 1)
                 }
 
                 block(number: 2, title: "Ringtone") {
@@ -125,12 +151,75 @@ struct InterferenceTestView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear { test.prefillSongs(model: model) }
         .onDisappear { test.stop() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background, test.phase.isBusy {
                 test.stop(note: "Stopped because MindtoneX left the screen.")
             }
         }
+    }
+
+    // MARK: Songs (Spectators = 2)
+
+    private func slotTrack(_ slot: Int) -> PreviewTrack? {
+        slot == 2 ? test.song2 : test.song1
+    }
+
+    /// Spectators = 2: matches fill the highlighted slot instead of loading into the Home song.
+    private var songPickHandler: ((PreviewTrack) -> Void)? {
+        guard twoSpectators else { return nil }
+        let test = self.test
+        let model = self.model
+        return { track in
+            test.assign(track, toSlot: test.pickSlot, model: model)
+        }
+    }
+
+    private var songSlots: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            songSlotRow(1)
+            songSlotRow(2)
+            Text("Tap a row, then a match below.")
+                .font(.caption2)
+                .foregroundStyle(OracleTheme.textSecondary)
+        }
+    }
+
+    private func songSlotRow(_ slot: Int) -> some View {
+        let active = test.pickSlot == slot
+        let track = slotTrack(slot)
+        return Button {
+            test.pickSlot = slot
+        } label: {
+            HStack(spacing: 8) {
+                Text("\(slot)")
+                    .font(.caption.weight(.bold))
+                    .frame(width: 20, height: 20)
+                    .foregroundStyle(active ? OracleTheme.ink : OracleTheme.textSecondary)
+                    .background(active ? OracleTheme.gold : Color.white.opacity(0.08), in: Circle())
+                Text(track.map { "\($0.title) — \($0.artist)" } ?? "Song \(slot) · spectator \(slot)")
+                    .font(.subheadline.weight(track == nil ? .regular : .medium))
+                    .foregroundStyle(track == nil ? OracleTheme.textSecondary : OracleTheme.textPrimary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                if track != nil {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.gold)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.white.opacity(active ? 0.08 : 0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(active ? OracleTheme.gold.opacity(0.6) : OracleTheme.cardBorder, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Song \(slot): \(track.map { $0.title } ?? "not picked")")
+        .accessibilityAddTraits(active ? .isSelected : [])
     }
 
     // MARK: Status
@@ -177,9 +266,12 @@ struct InterferenceTestView: View {
         case .idle: return "Idle"
         case .starting: return "Starting…"
         case .playingRingtone: return "Playing ringtone"
-        case .handDetected: return "Hand detected"
+        case .handDetected: return twoSpectators ? "Hand 1 detected" : "Hand detected"
         case .interference: return "Interference"
-        case .playingSong: return "Playing song"
+        case .playingSong: return twoSpectators ? "Playing song 1" : "Playing song"
+        case .secondHandDetected: return "Hand 2 detected"
+        case .secondInterference: return "Interference 2"
+        case .playingSecondSong: return "Playing song 2"
         case .error: return "Error"
         }
     }
@@ -187,7 +279,10 @@ struct InterferenceTestView: View {
     private var statusDetail: String {
         switch test.phase {
         case .idle:
-            return test.note ?? "Pick a song, choose a ringtone, then tap Play."
+            if let note = test.note { return note }
+            return twoSpectators
+                ? "Pick Song 1 and Song 2, choose a ringtone, then tap Play."
+                : "Pick a song, choose a ringtone, then tap Play."
         case .starting:
             return "Loading sounds and opening the front camera."
         case .playingRingtone:
@@ -195,9 +290,22 @@ struct InterferenceTestView: View {
         case .handDetected:
             return "Camera off. Interference is coming in."
         case .interference:
-            return "Static takes over the ringtone; the song comes through like a radio."
+            return twoSpectators
+                ? "Static takes over the ringtone; song 1 comes through like a radio."
+                : "Static takes over the ringtone; the song comes through like a radio."
         case .playingSong:
-            return "Clean song preview. Tap Stop to reset."
+            guard twoSpectators else { return "Clean song preview. Tap Stop to reset." }
+            if test.waitingForSecondHand {
+                let wait = "Waiting for hand 2 · fingers seen: \(test.fingersSeen) / \(HandGestureDetector.requiredFingers)+"
+                return test.note.map { "\($0) \(wait)" } ?? wait
+            }
+            return "Song 1 is clean. The camera comes back for hand 2 in a moment."
+        case .secondHandDetected:
+            return "Camera off. Interference 2 is coming in."
+        case .secondInterference:
+            return "Interference 2 takes over song 1; song 2 comes through like a radio."
+        case .playingSecondSong:
+            return "Clean song 2. Tap Stop to reset."
         case .error(let message):
             return message
         }
@@ -208,9 +316,9 @@ struct InterferenceTestView: View {
         case .idle: return "pause.circle"
         case .starting: return "hourglass"
         case .playingRingtone: return "bell.and.waves.left.and.right.fill"
-        case .handDetected: return "hand.raised.fill"
-        case .interference: return "antenna.radiowaves.left.and.right"
-        case .playingSong: return "music.note"
+        case .handDetected, .secondHandDetected: return "hand.raised.fill"
+        case .interference, .secondInterference: return "antenna.radiowaves.left.and.right"
+        case .playingSong, .playingSecondSong: return "music.note"
         case .error: return "exclamationmark.triangle.fill"
         }
     }
@@ -219,7 +327,7 @@ struct InterferenceTestView: View {
         switch test.phase {
         case .idle, .starting: return OracleTheme.textSecondary
         case .error: return OracleTheme.danger
-        case .playingSong: return OracleTheme.sectionTeal
+        case .playingSong, .playingSecondSong: return OracleTheme.sectionTeal
         default: return OracleTheme.gold
         }
     }
@@ -288,9 +396,9 @@ struct InterferenceTestView: View {
                     .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
-            .disabled(test.phase.isBusy)
-            .opacity(test.phase.isBusy ? 0.45 : 1)
-            .accessibilityHint("Starts the ringtone and the front camera")
+            .disabled(test.phase.isBusy || songsMissing)
+            .opacity(test.phase.isBusy || songsMissing ? 0.45 : 1)
+            .accessibilityHint(songsMissing ? "Pick Song 1 and Song 2 first" : "Starts the ringtone and the front camera")
 
             Button {
                 test.stop()

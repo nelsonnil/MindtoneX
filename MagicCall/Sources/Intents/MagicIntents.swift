@@ -8,7 +8,7 @@ struct PlaySongIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        AppModel.shared.trigger(source: "App Intent")
+        AppModel.shared.manualTrigger(source: "App Intent")
         return .result()
     }
 }
