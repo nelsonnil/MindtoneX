@@ -6,6 +6,7 @@ enum InterferenceSettings {
     enum Key {
         static let enabled = "interference.enabled"
         static let ringtoneID = "interference.ringtoneID"
+        static let presetID = "interference.presetID"
     }
 
     enum Ringtone: String, CaseIterable, Identifiable {
@@ -33,6 +34,29 @@ enum InterferenceSettings {
         }
     }
 
+    enum InterferencePreset: String, CaseIterable, Identifiable {
+        case radio = "interferencia-radio"
+        case slot2 = "interferencia2"
+        case slot3 = "interferencia3"
+        case slot4 = "interferencia4"
+
+        static let defaultValue = InterferencePreset.radio
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .radio: return "Radio"
+            case .slot2: return "Interference 2"
+            case .slot3: return "Interference 3"
+            case .slot4: return "Interference 4"
+            }
+        }
+
+        /// File name inside `Resources/InterferenceRingtone/` (no extension).
+        var resourceName: String { rawValue }
+    }
+
     static let resourceFolder = "InterferenceRingtone"
     static let interferenceResourceName = "interferencia-radio"
 
@@ -53,6 +77,22 @@ enum InterferenceSettings {
 
     static var ringtone: Ringtone {
         Ringtone(rawValue: d.string(forKey: Key.ringtoneID) ?? "") ?? Ringtone.defaultValue
+    }
+
+    static var preset: InterferencePreset {
+        InterferencePreset(rawValue: d.string(forKey: Key.presetID) ?? "") ?? InterferencePreset.defaultValue
+    }
+
+    /// Presets whose `.m4a` is present in the app bundle (missing slots stay hidden in Settings).
+    static var bundledPresets: [InterferencePreset] {
+        InterferencePreset.allCases.filter { bundledAudioURL(named: $0.resourceName) != nil }
+    }
+
+    /// Resolved preset for playback; falls back to default when the saved ID has no bundled file.
+    static func resolvedPreset(storedRaw: String?) -> InterferencePreset {
+        let stored = InterferencePreset(rawValue: storedRaw ?? "") ?? InterferencePreset.defaultValue
+        if bundledAudioURL(named: stored.resourceName) != nil { return stored }
+        return bundledPresets.first ?? InterferencePreset.defaultValue
     }
 
     static func bundledAudioURL(named name: String) -> URL? {
