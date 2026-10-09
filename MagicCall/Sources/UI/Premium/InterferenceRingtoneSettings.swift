@@ -203,7 +203,8 @@ struct InterferenceTestView: View {
                         if twoSpectators { songSlots }
                         LibrarySongSearchBlock(
                             pickedTrackID: twoSpectators ? slotTrack(test.pickSlot)?.id : nil,
-                            onPick: songPickHandler
+                            onPick: songPickHandler,
+                            resultsPresentation: .sheet
                         )
                     }
                     .disabled(test.phase.isBusy)
@@ -322,40 +323,106 @@ struct InterferenceTestView: View {
     // MARK: Status
 
     private var statusCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 12) {
-                Image(systemName: statusIcon)
-                    .font(.title2.weight(.semibold))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(statusTitle)
+                    .font(.headline)
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Text(statusPhaseLabel)
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(statusColor)
-                    .frame(width: 44, height: 44)
-                    .background(statusColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(statusTitle)
-                        .font(.headline)
-                        .foregroundStyle(OracleTheme.textPrimary)
-                    Text(statusDetail)
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(statusColor.opacity(0.14), in: Capsule())
                 Spacer(minLength: 0)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                stepRow(1, "Playing ringtone", detail: ringtone.title)
-                stepRow(2, "Hand detected", detail: test.handDetectedAfter.map { String(format: "after %.1f s", $0) })
-                stepRow(3, "Interference", detail: preset.title)
-                stepRow(4, "Playing song", detail: model.selected.map { $0.title })
-            }
+            Text(statusDetail)
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            flowLayoutSteps
         }
         .padding(16)
         .background(OracleTheme.cardFill, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(statusColor.opacity(0.45), lineWidth: 1)
+                .strokeBorder(statusColor.opacity(0.35), lineWidth: 1)
         }
         .animation(.easeInOut(duration: 0.2), value: test.phase)
         .accessibilityElement(children: .combine)
+    }
+
+    private var statusPhaseLabel: String {
+        switch test.phase {
+        case .idle: return "Ready"
+        case .error: return "Issue"
+        case .playingSong, .playingSecondSong: return "Song"
+        default: return "Live"
+        }
+    }
+
+    private var flowLayoutSteps: some View {
+        let steps = twoSpectators ? twoSpectatorFlowSteps : oneSpectatorFlowSteps
+        let active = twoSpectators ? test.phase.twoSpectatorStep : test.phase.step
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(steps, id: \.index) { step in
+                    stepChip(step, activeStep: active)
+                }
+            }
+        }
+    }
+
+    private var oneSpectatorFlowSteps: [(index: Int, title: String, detail: String?)] {
+        [
+            (1, "Ringtone", ringtone.title),
+            (2, "Hand", test.handDetectedAfter.map { String(format: "%.1fs", $0) }),
+            (3, "Static", preset.title),
+            (4, "Song", resolvedSongTitle(for: 1)),
+        ]
+    }
+
+    private var twoSpectatorFlowSteps: [(index: Int, title: String, detail: String?)] {
+        [
+            (1, "Ringtone", ringtone.title),
+            (2, "Hand 1", test.handDetectedAfter.map { String(format: "%.1fs", $0) }),
+            (3, "Song 1", resolvedSongTitle(for: 1)),
+            (4, "Hand 2", test.secondHandDetectedAfter.map { String(format: "%.1fs", $0) }),
+            (5, "Song 2", resolvedSongTitle(for: 2)),
+        ]
+    }
+
+    private func resolvedSongTitle(for slot: Int) -> String? {
+        if twoSpectators {
+            return slotTrack(slot)?.title
+        }
+        return model.selected?.title
+    }
+
+    private func stepChip(_ step: (index: Int, title: String, detail: String?), activeStep: Int) -> some View {
+        let done = activeStep > step.index
+        let active = activeStep == step.index
+        let tone: Color = done || active ? OracleTheme.gold : OracleTheme.textSecondary.opacity(0.75)
+        return HStack(spacing: 4) {
+            Text(step.title)
+                .font(.caption2.weight(active ? .bold : .semibold))
+            if let detail = step.detail, done || active {
+                Text("· \(detail)")
+                    .font(.caption2)
+                    .lineLimit(1)
+            }
+        }
+        .foregroundStyle(tone)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Color.white.opacity(active ? 0.1 : 0.04), in: Capsule())
+        .overlay {
+            Capsule().strokeBorder(active ? OracleTheme.gold.opacity(0.55) : Color.clear, lineWidth: 1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(step.title)\(step.detail.map { ", \($0)" } ?? "")")
     }
 
     private var statusTitle: String {
@@ -408,44 +475,12 @@ struct InterferenceTestView: View {
         }
     }
 
-    private var statusIcon: String {
-        switch test.phase {
-        case .idle: return "pause.circle"
-        case .starting: return "hourglass"
-        case .playingRingtone: return "bell.and.waves.left.and.right.fill"
-        case .handDetected, .secondHandDetected: return "hand.raised.fill"
-        case .interference, .secondInterference: return "antenna.radiowaves.left.and.right"
-        case .playingSong, .playingSecondSong: return "music.note"
-        case .error: return "exclamationmark.triangle.fill"
-        }
-    }
-
     private var statusColor: Color {
         switch test.phase {
         case .idle, .starting: return OracleTheme.textSecondary
         case .error: return OracleTheme.danger
         case .playingSong, .playingSecondSong: return OracleTheme.sectionTeal
         default: return OracleTheme.gold
-        }
-    }
-
-    private func stepRow(_ step: Int, _ title: String, detail: String?) -> some View {
-        let current = test.phase.step
-        let done = current > step
-        let active = current == step
-        return HStack(spacing: 10) {
-            Image(systemName: done ? "checkmark.circle.fill" : (active ? "dot.circle.fill" : "circle"))
-                .foregroundStyle(done || active ? OracleTheme.gold : OracleTheme.textSecondary.opacity(0.6))
-            Text(title)
-                .font(.subheadline.weight(active ? .semibold : .regular))
-                .foregroundStyle(done || active ? OracleTheme.textPrimary : OracleTheme.textSecondary)
-            Spacer(minLength: 8)
-            if let detail, done || active {
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.textSecondary)
-                    .lineLimit(1)
-            }
         }
     }
 
