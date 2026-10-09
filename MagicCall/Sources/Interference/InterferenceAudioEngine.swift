@@ -123,6 +123,14 @@ final class InterferenceAudioEngine {
     /// True when the last `prepare` loaded interference 2 + song 2.
     var hasSecondStage: Bool { static2Buffer != nil && song2File != nil }
 
+    /// **Performance settings → Playback volume** (0.3…1). Matches `RingtoneAudioEngine` / `Prefs.fakePlaybackVolume`.
+    private var playbackVolume: Float = 1
+
+    private func scaled(_ level: Float) -> Float { min(1, level * playbackVolume) }
+
+    /// Clean song level — full slider should match normal fake-ringtone playback, not the morph headroom cap.
+    private var cleanSongVolume: Float { playbackVolume }
+
     var isRunning: Bool { engine.isRunning }
 
     init() {
@@ -157,6 +165,7 @@ final class InterferenceAudioEngine {
         second: SecondStage? = nil
     ) throws {
         stop()
+        playbackVolume = Float(Prefs.fakePlaybackVolume)
         let ring = try Self.loadBuffer(ringtoneURL)
         let noise = try Self.loadBuffer(interferenceURL)
         let file = try AVAudioFile(forReading: try Self.writeSongToCache(songData, fileTypeHint: songFileTypeHint, name: "interference-test-song"))
@@ -229,7 +238,7 @@ final class InterferenceAudioEngine {
         needsResume = false
         stage = .ringing
 
-        ringtonePlayer.volume = Level.ringtone
+        ringtonePlayer.volume = scaled(Level.ringtone)
         ringtonePlayer.scheduleBuffer(ring, at: nil, options: .loops, completionHandler: nil)
         ringtonePlayer.play()
 
@@ -259,7 +268,7 @@ final class InterferenceAudioEngine {
         startMorph(
             Morph(
                 outgoing: ringtonePlayer,
-                outgoingLevel: Level.ringtone,
+                outgoingLevel: scaled(Level.ringtone),
                 interference: staticPlayer,
                 incoming: songPlayer,
                 incomingEQ: songEQ,
@@ -294,7 +303,7 @@ final class InterferenceAudioEngine {
         startMorph(
             Morph(
                 outgoing: songPlayer,
-                outgoingLevel: Level.song,
+                outgoingLevel: cleanSongVolume,
                 interference: static2Player,
                 incoming: song2Player,
                 incomingEQ: song2EQ,
@@ -374,7 +383,7 @@ final class InterferenceAudioEngine {
         guard engine.isRunning, let morph else { return }
         let t = CACurrentMediaTime() - transitionStart
 
-        morph.interference.volume = Level.interference * Self.staticEnvelope(t)
+        morph.interference.volume = scaled(Level.interference) * Self.staticEnvelope(t)
 
         if t < Timeline.ringtoneFadeEnd {
             let duckDB = Level.ringtoneDuckDB * Float(t / Timeline.ringtoneFadeEnd)
@@ -396,7 +405,7 @@ final class InterferenceAudioEngine {
                 incomingStarted = true
                 startIncomingSong(isSecond: morph.isSecond, player: morph.incoming)
             }
-            morph.incoming.volume = Level.song * Float(min(1, (t - Timeline.songIn) / Timeline.songInRamp))
+            morph.incoming.volume = cleanSongVolume * Float(min(1, (t - Timeline.songIn) / Timeline.songInRamp))
         }
 
         if t >= Timeline.filterOpenStart, t < Timeline.filterOpenEnd {
@@ -408,7 +417,7 @@ final class InterferenceAudioEngine {
         if t >= Timeline.filterOpenEnd {
             morph.incomingEQ.bypass = true
             morph.interference.stop()
-            morph.incoming.volume = Level.song
+            morph.incoming.volume = cleanSongVolume
             transitionTimer?.invalidate()
             transitionTimer = nil
             self.morph = nil
@@ -448,7 +457,7 @@ final class InterferenceAudioEngine {
         guard let file = isSecond ? song2File : songFile else { return }
         let frame = currentFrame(of: file, anchor: anchor)
         eq.bypass = true
-        player.volume = Level.song
+        player.volume = cleanSongVolume
         scheduleSong(file, on: player, token: token, isSecond: isSecond, startFrame: frame)
         if isSecond {
             song2Started = true

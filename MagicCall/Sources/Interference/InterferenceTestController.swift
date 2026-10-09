@@ -209,6 +209,7 @@ final class InterferenceTestController: ObservableObject {
 
         do {
             try model.audio.configureSession(preferIPhoneSpeaker: true)
+            model.applyPerformancePlaybackVolume(reason: "interference test")
             try audio.prepare(
                 ringtoneURL: ringtoneURL,
                 interferenceURL: interferenceURL,

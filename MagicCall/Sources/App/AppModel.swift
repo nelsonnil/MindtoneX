@@ -618,7 +618,7 @@ final class AppModel: ObservableObject {
             dlog("[TRIGGER] “\(source)” ignorado: canción aún no bloqueada en este Perform")
             return
         }
-        applySystemVolumeBoostForTrigger()
+        applyPerformancePlaybackVolume(reason: "trigger")
         if InterferenceSettings.enabled, !interferenceFallbackThisCall, triggerInterferenceRingtone(source: source) {
             return
         }
@@ -1305,6 +1305,12 @@ final class AppModel: ObservableObject {
         let before = SystemVolume.shared.outputVolume
         SystemVolume.shared.set(target, label: "fake playback (\(reason))", sliderRetries: 5)
         dlog("[VOLUME] Fake Perform (\(reason)) target=\(String(format: "%.2f", target)) before=\(String(format: "%.2f", before)) attached=\(SystemVolume.shared.isAttached)")
+    }
+
+    /// Same volume path as Perform `trigger`: **Playback volume** slider + optional system boost (interference test lab and ringtone).
+    func applyPerformancePlaybackVolume(reason: String) {
+        applySystemVolumeBoostForTrigger()
+        applyFakePerformMediaVolumeBoost(reason: reason)
     }
 
     /// Ruta 2: sube el volumen multimedia del sistema al 100 % al disparar (llamada o toque manual).
