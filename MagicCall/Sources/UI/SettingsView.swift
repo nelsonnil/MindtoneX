@@ -78,7 +78,7 @@ struct SettingsView: View {
         } header: {
             Text("Song previews (lab)")
         } footer: {
-            Text("Song search storefront: **Home → Performance settings** (iTunes country, not app language). Automatic = iPhone region; searchable list of all storefronts. Fallback: US → Deezer.")
+            Text("Song search catalog: **Home → Song → Catalog & ringtone** (iTunes country, not app language). Automatic = iPhone region; searchable list of all storefronts. Fallback: US → Deezer.")
         }
     }
 

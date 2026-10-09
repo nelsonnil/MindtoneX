@@ -75,6 +75,7 @@
 		77A82688C8150980D18BF032 /* PhoneKeyboard.xib in Resources */ = {isa = PBXBuildFile; fileRef = 24B069EB55807C6182CB8E43 /* PhoneKeyboard.xib */; };
 		79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */; };
 		7BA36D68D4A7708928889CA2 /* SongInputStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */; };
+		8A2F1C3D4E5B6789012345AB /* SongCatalogSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3E2D4C5F6A7890123456BC /* SongCatalogSettings.swift */; };
 		8B702C8C809749F044FCE136 /* WordApiIOSPhoneDialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C6F9C561E1F5EF11CCEF21 /* WordApiIOSPhoneDialView.swift */; };
 		8BC10BB4807461B2F102F8FA /* ApiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30B3D15953FEAA8EA8E7828 /* ApiSettingsView.swift */; };
 		8C4101AD9A1105D40C87AAAA /* CardLineParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223FF801202E5B7C647700E7 /* CardLineParser.swift */; };
@@ -313,6 +314,7 @@
 		F65132DC6AAC18668D41A807 /* SpectatorWordContactService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorWordContactService.swift; sourceTree = "<group>"; };
 		FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedPerformanceModeCard.swift; sourceTree = "<group>"; };
 		FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongInputStrip.swift; sourceTree = "<group>"; };
+		9B3E2D4C5F6A7890123456BC /* SongCatalogSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongCatalogSettings.swift; sourceTree = "<group>"; };
 		8E496200F664F203A10AADB9 /* HandGestureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandGestureDetector.swift; sourceTree = "<group>"; };
 		8E944D8E5738D09A7B85D387 /* InterferenceAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceAudioEngine.swift; sourceTree = "<group>"; };
 		32809EF12DA386D52CCE77DD /* InterferenceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceSettings.swift; sourceTree = "<group>"; };
@@ -631,6 +633,7 @@
 				270DC6372BA38BD591C5EEC2 /* PerformUserLogCard.swift */,
 				038495DF0F13C324D46A2120 /* SilentShortcutStatusRow.swift */,
 				FAF6D9D7CFB92C263EEB4BA9 /* SongInputStrip.swift */,
+				9B3E2D4C5F6A7890123456BC /* SongCatalogSettings.swift */,
 				56EDC64AB7D42A6E6DCF202B /* SongLibrarySection.swift */,
 				315D7CF03C3D23932B3B26A8 /* SongStorefrontPickerView.swift */,
 				FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */,
@@ -879,6 +882,7 @@
 				9859991404C830797C7B4062 /* SilentShortcutCard.swift in Sources */,
 				2826965C4287D1C90DFB1C1C /* SilentShortcutStatusRow.swift in Sources */,
 				7BA36D68D4A7708928889CA2 /* SongInputStrip.swift in Sources */,
+				8A2F1C3D4E5B6789012345AB /* SongCatalogSettings.swift in Sources */,
 				BBFF503A2A2C25749054043F /* SongLibrarySection.swift in Sources */,
 				567203094B7B7CBAD29085F7 /* SongLibraryStore.swift in Sources */,
 				128B2FC902A3063C29DBBCAB /* SongPicker.swift in Sources */,

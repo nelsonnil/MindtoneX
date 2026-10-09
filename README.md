@@ -261,8 +261,9 @@ docs/                       Informe de investigación
 
 ### Interference ringtone (modo test)
 
-En **Home › Performance settings › Interference ringtone › Open test mode**: busca una canción, elige
-Ringtone 1 (por defecto) o 2, pulsa **Play** y pon la mano abierta sobre el iPhone. Suena el tono en
+En **Home › Song › Catalog & ringtone**: elige **Normal ringtone** o **Interference ringtone**; con
+Interference aparecen Ringtone 1 (por defecto) / 2, **Interference sound** y **Open test mode**. En la
+hoja de test: elige el sonido, busca una canción, pulsa **Play** y pon la mano abierta sobre el iPhone. Suena el tono en
 bucle; al ver la mano entra la interferencia y se convierte en el preview de la canción. **En Perform**
 (con *Interference ringtone* elegido) la llamada real hace lo mismo: suena el tono de la app en bucle,
 la cámara frontal espera la mano abierta y entonces interferencia → canción (la canción se repite si

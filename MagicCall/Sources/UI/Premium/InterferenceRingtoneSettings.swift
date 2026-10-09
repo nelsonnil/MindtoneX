@@ -2,60 +2,72 @@ import AVFoundation
 import SwiftUI
 import UIKit
 
-/// Performance settings block: master toggle, Ringtone 1 / 2, and the test lab (sheet inside Settings).
-struct InterferenceRingtoneSettingsSection: View {
+/// Song card › Ringtone — Normal vs Interference, Ringtone 1 / 2, interference sound, test lab.
+struct SongRingtoneModeBlock: View {
     @EnvironmentObject private var model: AppModel
     @AppStorage(InterferenceSettings.Key.enabled) private var enabled = false
     @AppStorage(InterferenceSettings.Key.ringtoneID) private var ringtoneID = InterferenceSettings.Ringtone.defaultValue.rawValue
+    @AppStorage(InterferenceSettings.Key.presetID) private var presetID = InterferenceSettings.InterferencePreset.defaultValue.rawValue
     @State private var showTestMode = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Toggle(isOn: $enabled) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Interference ringtone")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(OracleTheme.textPrimary)
-                    Text("Your ringtone plays first. When the front camera sees an open hand, radio interference takes over and morphs into the song.")
-                        .font(.caption)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .tint(OracleTheme.gold)
-            .onChange(of: enabled) { _, value in
-                dlog("[INTERF] ringtone mode → \(value ? "interference" : "normal")")
-                if value {
-                    Task { _ = await CardSettings.requestCameraIfNeeded() }
-                }
+            Text("Ringtone")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+
+            HStack(spacing: 10) {
+                modeChip("Normal ringtone", icon: "bell.fill", value: false)
+                modeChip("Interference ringtone", icon: "antenna.radiowaves.left.and.right", value: true)
             }
 
-            InterferenceRingtonePicker(selectionRaw: $ringtoneID)
-
-            Button {
-                showTestMode = true
-            } label: {
-                Label("Open test mode", systemImage: "hand.raised.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .foregroundStyle(OracleTheme.ink)
-                    .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            .buttonStyle(.plain)
-
-            Text("Perform: the incoming call plays this ringtone until the front camera sees an open hand. Banner call style keeps the camera on; Back Tap (Sonar canción) or the volume trigger can stand in for the hand.")
-                .font(.caption2)
+            Text(enabled
+                ? "Your ringtone plays first. When the front camera sees an open hand, radio interference takes over and morphs into the song."
+                : "Standard MindtoneX ringtone — the song plays when the call rings.")
+                .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if !CardSettings.cameraAuthorized {
-                Label("Camera access is off — Perform will use the normal ringtone. Allow it in iPhone Settings → MindtoneX → Camera.", systemImage: "camera.fill")
+            if enabled {
+                VStack(alignment: .leading, spacing: 10) {
+                    InterferenceRingtonePicker(selectionRaw: $ringtoneID)
+                    InterferencePresetPicker(selectionRaw: $presetID)
+                }
+
+                Button {
+                    model.pauseVoiceAndAudioForSetupUI(reason: "interference test")
+                    showTestMode = true
+                } label: {
+                    Label("Open test mode", systemImage: "hand.raised.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .foregroundStyle(OracleTheme.ink)
+                        .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Practice ringtone, open hand, interference, and song")
+
+                Text("Perform: incoming calls use this ringtone until the front camera sees an open hand. Banner call style keeps the camera on; Back Tap or the volume trigger can stand in for the hand.")
                     .font(.caption2)
-                    .foregroundStyle(OracleTheme.coral)
+                    .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                if !CardSettings.cameraAuthorized {
+                    Label("Camera access is off — Perform will use the normal ringtone. Allow it in iPhone Settings → MindtoneX → Camera.", systemImage: "camera.fill")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.coral)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
+        .padding(14)
+        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+        .animation(.easeInOut(duration: 0.2), value: enabled)
         .sheet(isPresented: $showTestMode) {
             NavigationStack {
                 InterferenceTestView()
@@ -63,22 +75,90 @@ struct InterferenceRingtoneSettingsSection: View {
             .environmentObject(model)
         }
     }
+
+    private func modeChip(_ title: String, icon: String, value: Bool) -> some View {
+        let selected = enabled == value
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { enabled = value }
+            dlog("[INTERF] ringtone mode → \(value ? "interference" : "normal")")
+            if value {
+                Task { _ = await CardSettings.requestCameraIfNeeded() }
+            }
+        } label: {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.body.weight(.semibold))
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 6)
+            .foregroundStyle(selected ? OracleTheme.textPrimary : OracleTheme.textSecondary)
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(selected ? OracleTheme.gold.opacity(0.22) : Color.white.opacity(0.05))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(selected ? OracleTheme.gold.opacity(0.85) : OracleTheme.cardBorder, lineWidth: selected ? 1.5 : 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
 }
+
+/// Legacy name — ringtone UI moved to Song card.
+typealias InterferenceRingtoneSettingsSection = SongRingtoneModeBlock
 
 struct InterferenceRingtonePicker: View {
     @Binding var selectionRaw: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Picker("Ringtone", selection: $selectionRaw) {
-                ForEach(InterferenceSettings.Ringtone.allCases) { ringtone in
-                    Text(ringtone.title).tag(ringtone.rawValue)
-                }
+        Picker("Ringtone", selection: $selectionRaw) {
+            ForEach(InterferenceSettings.Ringtone.allCases) { ringtone in
+                Text(ringtone.title).tag(ringtone.rawValue)
             }
-            .pickerStyle(.segmented)
-            Text("Ringtone 1 is the default.")
-                .font(.caption2)
-                .foregroundStyle(OracleTheme.textSecondary)
+        }
+        .pickerStyle(.segmented)
+    }
+}
+
+struct InterferencePresetPicker: View {
+    @Binding var selectionRaw: String
+
+    private var available: [InterferenceSettings.InterferencePreset] {
+        InterferenceSettings.bundledPresets
+    }
+
+    var body: some View {
+        if !available.isEmpty {
+            HStack(spacing: 8) {
+                Text("Interference sound")
+                    .font(.subheadline)
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Spacer(minLength: 8)
+                Picker("Interference sound", selection: $selectionRaw) {
+                    ForEach(available) { preset in
+                        Text(preset.title).tag(preset.rawValue)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .tint(OracleTheme.gold)
+            }
+            .onAppear { syncSelection() }
+            .onChange(of: selectionRaw) { _, _ in syncSelection() }
+        }
+    }
+
+    private func syncSelection() {
+        let resolved = InterferenceSettings.resolvedPreset(storedRaw: selectionRaw)
+        if selectionRaw != resolved.rawValue {
+            selectionRaw = resolved.rawValue
         }
     }
 }
@@ -90,6 +170,8 @@ struct InterferenceTestView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(InterferenceSettings.Key.ringtoneID) private var ringtoneID = InterferenceSettings.Ringtone.defaultValue.rawValue
+    @AppStorage(InterferenceSettings.Key.presetID) private var presetID = InterferenceSettings.InterferencePreset.defaultValue.rawValue
+    @AppStorage(Prefs.Key.storeCountry) private var storeCountry = ""
     @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
     @StateObject private var test = InterferenceTestController()
 
@@ -101,6 +183,10 @@ struct InterferenceTestView: View {
 
     private var ringtone: InterferenceSettings.Ringtone {
         InterferenceSettings.Ringtone(rawValue: ringtoneID) ?? InterferenceSettings.Ringtone.defaultValue
+    }
+
+    private var preset: InterferenceSettings.InterferencePreset {
+        InterferenceSettings.resolvedPreset(storedRaw: presetID)
     }
 
     var body: some View {
@@ -124,9 +210,20 @@ struct InterferenceTestView: View {
                     .opacity(test.phase.isBusy ? 0.5 : 1)
                 }
 
-                block(number: 2, title: "Ringtone") {
-                    InterferenceRingtonePicker(selectionRaw: $ringtoneID)
-                        .disabled(test.phase.isBusy)
+                block(number: 2, title: "Sound") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        InterferenceRingtonePicker(selectionRaw: $ringtoneID)
+                        InterferencePresetPicker(selectionRaw: $presetID)
+                    }
+                    .disabled(test.phase.isBusy)
+                    .opacity(test.phase.isBusy ? 0.5 : 1)
+                }
+
+                block(number: 3, title: "Catalog") {
+                    Text("Storefront: **\(SongStorefront.effectiveCode(stored: storeCountry))** · change under Home › Song › Catalog & ringtone")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 controls
@@ -247,7 +344,7 @@ struct InterferenceTestView: View {
             VStack(alignment: .leading, spacing: 8) {
                 stepRow(1, "Playing ringtone", detail: ringtone.title)
                 stepRow(2, "Hand detected", detail: test.handDetectedAfter.map { String(format: "after %.1f s", $0) })
-                stepRow(3, "Interference", detail: nil)
+                stepRow(3, "Interference", detail: preset.title)
                 stepRow(4, "Playing song", detail: model.selected.map { $0.title })
             }
         }
