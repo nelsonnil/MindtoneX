@@ -220,6 +220,8 @@ enum SpectatorContactFetch {
     struct RecentsCardSeed {
         var givenName = ""
         var familyName = ""
+        /// Written in the same add request so the new card never exists without its photo.
+        var imageData: Data?
     }
 
     enum RecentsNotice {
@@ -410,8 +412,12 @@ enum SpectatorContactFetch {
         card.phoneNumbers = [
             CNLabeledValue(label: CNLabelPhoneNumberMobile, value: CNPhoneNumber(stringValue: "+\(phoneDigits)")),
         ]
+        if let imageData = seed.imageData {
+            card.imageData = imageData
+        }
+        let container = store.defaultContainerIdentifier()
         let save = CNSaveRequest()
-        save.add(card, toContainerWithIdentifier: nil)
+        save.add(card, toContainerWithIdentifier: container)
         do {
             try store.execute(save)
         } catch {
@@ -419,7 +425,10 @@ enum SpectatorContactFetch {
             throw error
         }
         let label = self.displayName(of: card)
-        log?("created card from Recents · «\(label)» · +\(phoneDigits) · id=\(card.identifier.prefix(16))")
+        let photo = seed.imageData.map { " · photo \($0.count)B" } ?? ""
+        log?(
+            "created card from Recents · «\(label)» · +\(phoneDigits) · id=\(card.identifier.prefix(16)) · container=\(container.prefix(12))\(photo)"
+        )
         RecentsNotice.record(identifier: card.identifier, name: label)
         return (try? unifiedContact(store: store, identifier: card.identifier, keysToFetch: keys)) ?? card
     }

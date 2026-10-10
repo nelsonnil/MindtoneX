@@ -91,7 +91,13 @@ enum AlbumArtContactService {
                     )
                 }
                 albumArtLog("save ok · updated \(applied.count) contact(s)")
-                var msg = applied.count == 1 ? "Contact photo updated." : "Updated \(applied.count) contact photo(s)."
+                if applied.unverifiedCount > 0 {
+                    return finishTestApply(
+                        .failure("Saved, but iOS did not keep the photo on \(applied.unverifiedCount) card(s) — send the log."),
+                        trackLabel: trackLabel
+                    )
+                }
+                var msg = applied.count == 1 ? "Contact photo updated." : "Updated \(applied.count) linked contact photo(s)."
                 if let created = applied.createdFromRecentsName {
                     msg = "\(SpectatorContactFetch.RecentsNotice.message(name: created)) \(msg)"
                 }
@@ -309,42 +315,41 @@ enum AlbumArtContactService {
         )
     }
 
+    /// iTunes (`…/100x100bb.jpg`) and Deezer (`…/250x250-000000-80-0-0.jpg`) serve any size from the same path.
     private static func upgradedArtworkURL(_ url: URL) -> URL {
-        var raw = url.absoluteString
-        if raw.contains("100x100bb") {
-            raw = raw.replacingOccurrences(of: "100x100bb", with: "600x600bb")
-        } else if raw.contains("100x100") {
-            raw = raw.replacingOccurrences(of: "100x100", with: "600x600")
-        }
-        return URL(string: raw) ?? url
+        let raw = url.absoluteString
+        let upgraded = raw.replacingOccurrences(
+            of: #"(?<=/)\d{2,4}x\d{2,4}(?=bb|-\d)"#,
+            with: "1000x1000",
+            options: .regularExpression
+        )
+        return URL(string: upgraded) ?? url
     }
 
-    private static func centerCroppedSquareJPEGWithSide(_ image: UIImage, maxSide: CGFloat = 600) -> (Data, Int)? {
-        let image = normalizedUIImage(image)
-        let size = image.size
-        guard size.width > 0, size.height > 0 else { return nil }
-        let cropSide = min(size.width, size.height)
-        let originX = (size.width - cropSide) / 2
-        let originY = (size.height - cropSide) / 2
+    /// Square JPEG in pixels (renderer scale 1): the full-screen contact card needs a full image ≥ 600px, not just a thumbnail.
+    private static func centerCroppedSquareJPEGWithSide(
+        _ image: UIImage,
+        minSide: CGFloat = 600,
+        maxSide: CGFloat = 800
+    ) -> (Data, Int)? {
+        guard let cgImage = normalizedUIImage(image).cgImage else { return nil }
+        let width = CGFloat(cgImage.width)
+        let height = CGFloat(cgImage.height)
+        guard width > 0, height > 0 else { return nil }
+        let cropSide = min(width, height)
+        let cropRect = CGRect(x: ((width - cropSide) / 2).rounded(.down), y: ((height - cropSide) / 2).rounded(.down), width: cropSide, height: cropSide)
+        guard let croppedCG = cgImage.cropping(to: cropRect) else { return nil }
 
-        let cropRenderer = UIGraphicsImageRenderer(size: CGSize(width: cropSide, height: cropSide))
-        let cropped = cropRenderer.image { _ in
-            image.draw(in: CGRect(x: -originX, y: -originY, width: size.width, height: size.height))
+        let targetSide = min(maxSide, max(minSide, cropSide)).rounded()
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: targetSide, height: targetSide), format: format)
+        let scaled = renderer.image { _ in
+            UIImage(cgImage: croppedCG).draw(in: CGRect(x: 0, y: 0, width: targetSide, height: targetSide))
         }
-
-        let targetSide = min(maxSide, max(cropped.size.width, cropped.size.height))
-        let scaled: UIImage
-        if targetSide < max(cropped.size.width, cropped.size.height) {
-            let scaleRenderer = UIGraphicsImageRenderer(size: CGSize(width: targetSide, height: targetSide))
-            scaled = scaleRenderer.image { _ in
-                cropped.draw(in: CGRect(origin: .zero, size: CGSize(width: targetSide, height: targetSide)))
-            }
-        } else {
-            scaled = cropped
-        }
-        guard let jpeg = jpegDataForContact(scaled, maxBytes: 280_000) else { return nil }
-        let sidePx = Int(max(scaled.size.width, scaled.size.height).rounded())
-        return (jpeg, sidePx)
+        guard let jpeg = jpegDataForContact(scaled, maxBytes: 200_000) else { return nil }
+        return (jpeg, Int(targetSide))
     }
 
     private static func normalizedUIImage(_ image: UIImage) -> UIImage {
@@ -407,7 +412,21 @@ enum AlbumArtContactService {
     private struct ApplyResult {
         let count: Int
         let createdFromRecentsName: String?
+        /// Cards whose photo was still missing after save + one retry.
+        var unverifiedCount = 0
     }
+
+    private static let imageKeys: [CNKeyDescriptor] = [
+        CNContactIdentifierKey as CNKeyDescriptor,
+        CNContactImageDataKey as CNKeyDescriptor,
+        CNContactImageDataAvailableKey as CNKeyDescriptor,
+    ]
+
+    private static let rawCardKeys: [CNKeyDescriptor] = imageKeys + [
+        CNContactGivenNameKey as CNKeyDescriptor,
+        CNContactFamilyNameKey as CNKeyDescriptor,
+        CNContactPhoneNumbersKey as CNKeyDescriptor,
+    ]
 
     /// Runs on `SpectatorContactFetch.workQueue`.
     private static func applyImageData(
@@ -418,19 +437,14 @@ enum AlbumArtContactService {
         fallbackPhoneDigits: [String],
         reason: String
     ) throws -> ApplyResult {
-        let keys: [CNKeyDescriptor] = [
-            CNContactIdentifierKey as CNKeyDescriptor,
-            CNContactImageDataKey as CNKeyDescriptor,
-            CNContactImageDataAvailableKey as CNKeyDescriptor,
-        ]
         let resolution = try SpectatorContactFetch.resolveContact(
             store: store,
             identifier: contactIdentifier,
             phoneDigits: phoneDigits,
             displayName: displayName,
             fallbackPhoneDigits: fallbackPhoneDigits,
-            keysToFetch: keys,
-            createFromRecents: SpectatorContactFetch.RecentsCardSeed(),
+            keysToFetch: imageKeys,
+            createFromRecents: SpectatorContactFetch.RecentsCardSeed(imageData: jpeg),
             log: { albumArtLog("resolve · \($0)") }
         )
         let existing = resolution.contact
@@ -451,22 +465,197 @@ enum AlbumArtContactService {
                 persistResolvedIdentifier(existing.identifier, replacing: contactIdentifier, phoneE164: phone)
             }
         }
-        let had = existing.imageDataAvailable && existing.imageData != nil
-        let restoreEntries = [
-            AlbumArtContactRestoreEntry(
-                identifier: existing.identifier,
-                previousImageData: had ? existing.imageData : nil,
-                hadImage: had,
-                createdForShow: false
-            ),
-        ]
-        let mutable = existing.mutableCopy() as! CNMutableContact
-        mutable.imageData = jpeg
+        var phones: [String] = []
+        let cardPhones = existing.isKeyAvailable(CNContactPhoneNumbersKey) ? existing.phoneNumbers.map(\.value.stringValue) : []
+        for raw in [resolution.matchedPhoneDigits, phoneDigits] + fallbackPhoneDigits + cardPhones {
+            let digits = WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: raw)
+            if digits.count >= 7, !phones.contains(digits) { phones.append(digits) }
+        }
+        let linked = linkedRawCards(of: [existing], phones: phones)
+        let targets = linked.isEmpty ? [existing] : linked
+        albumArtLog("targets · \(targets.count) raw card(s) for unified id=\(WordApiInputPanel.truncated(existing.identifier, max: 16)) · phones=\(phones.map { "+\($0)" }.joined(separator: ","))")
+        let written = try writePhoto(
+            jpeg,
+            to: targets,
+            createdIdentifier: resolution.createdFromRecents ? existing.identifier : nil,
+            reason: reason
+        )
+        let failed = verifyPhotos(written, unifiedIdentifiers: [existing.identifier], phones: phones, jpeg: jpeg, reason: reason)
+        return ApplyResult(
+            count: written.count,
+            createdFromRecentsName: resolution.createdFromRecents ? existingName : nil,
+            unverifiedCount: failed
+        )
+    }
+
+    /// Sets `jpeg` on every target card in one save; a card created this run with the photo already in its add request
+    /// is not rewritten but is recorded as photo-less for restore. Returns the identifiers that should now carry the photo.
+    private static func writePhoto(
+        _ jpeg: Data,
+        to targets: [CNContact],
+        createdIdentifier: String?,
+        reason: String
+    ) throws -> [String] {
         let save = CNSaveRequest()
-        save.update(mutable)
-        try executeLogged(save, reason: reason)
+        var pending = 0
+        var restoreEntries: [AlbumArtContactRestoreEntry] = []
+        for card in targets {
+            let isCreated = card.identifier == createdIdentifier
+            let had = !isCreated && card.imageDataAvailable && card.imageData != nil
+            restoreEntries.append(
+                AlbumArtContactRestoreEntry(
+                    identifier: card.identifier,
+                    previousImageData: had ? card.imageData : nil,
+                    hadImage: had,
+                    createdForShow: false
+                )
+            )
+            if isCreated, card.imageDataAvailable, card.imageData != nil { continue }
+            let mutable = card.mutableCopy() as! CNMutableContact
+            mutable.imageData = jpeg
+            save.update(mutable)
+            pending += 1
+        }
+        if pending > 0 {
+            try executeLogged(save, reason: reason)
+        }
         AlbumArtContactRestoreStore.replaceEntries(restoreEntries)
-        return ApplyResult(count: 1, createdFromRecentsName: resolution.createdFromRecents ? existingName : nil)
+        return targets.map(\.identifier)
+    }
+
+    /// Non-unified cards behind `unified` plus every card carrying one of `phones`: Phone → Recents matches one linked
+    /// card for its avatar, but (i) Info opens the unified card, which can show another linked card's (empty) photo.
+    private static func linkedRawCards(of unified: [CNContact], phones: [String]) -> [CNContact] {
+        var seen = Set<String>()
+        var out: [CNContact] = []
+        func add(_ cards: [CNContact]) {
+            for card in cards where seen.insert(card.identifier).inserted { out.append(card) }
+        }
+        add(rawCards(matching: CNContact.predicateForContacts(withIdentifiers: unified.map(\.identifier)), in: store))
+        for digits in phones {
+            add(rawCards(withCanonicalDigits: digits, in: store))
+        }
+        return out
+    }
+
+    private static func rawCards(withCanonicalDigits digits: String, in store: CNContactStore) -> [CNContact] {
+        var candidates = ["+\(digits)", WordApiSettings.nationalNumber(fromCanonical: digits)]
+        if digits.count > 9 { candidates.append(String(digits.suffix(9))) }
+        var seen = Set<String>()
+        var out: [CNContact] = []
+        for candidate in Set(candidates) where candidate.filter(\.isNumber).count >= 7 {
+            let predicate = CNContact.predicateForContacts(matching: CNPhoneNumber(stringValue: candidate))
+            for card in rawCards(matching: predicate, in: store)
+            where seen.insert(card.identifier).inserted
+                && card.phoneNumbers.contains(where: { WordApiContactPhoneParsing.number($0.value.stringValue, matchesCanonical: digits) }) {
+                out.append(card)
+            }
+        }
+        return out
+    }
+
+    private static func rawCards(
+        matching predicate: NSPredicate,
+        keys: [CNKeyDescriptor] = rawCardKeys,
+        in store: CNContactStore
+    ) -> [CNContact] {
+        let request = CNContactFetchRequest(keysToFetch: keys)
+        request.predicate = predicate
+        request.unifyResults = false
+        var out: [CNContact] = []
+        do {
+            try store.enumerateContacts(with: request) { contact, _ in out.append(contact) }
+        } catch {
+            albumArtLog("raw fetch · \(SpectatorContactFetch.errorLogLabel(error))")
+        }
+        return out
+    }
+
+    /// Re-reads each saved card from a fresh store and logs what iOS kept; rewrites missing photos once.
+    /// Returns how many cards still lack a full-size photo.
+    private static func verifyPhotos(
+        _ identifiers: [String],
+        unifiedIdentifiers: [String],
+        phones: [String],
+        jpeg: Data,
+        reason: String
+    ) -> Int {
+        var failed = verifyPass(identifiers, unifiedIdentifiers: unifiedIdentifiers, phones: phones)
+        guard !failed.isEmpty else { return 0 }
+        albumArtLog("verify · retry \(failed.count) card(s) without photo")
+        let stale = rawCards(matching: CNContact.predicateForContacts(withIdentifiers: failed), in: store)
+        let retry = stale.isEmpty
+            ? ((try? store.unifiedContacts(matching: CNContact.predicateForContacts(withIdentifiers: failed), keysToFetch: rawCardKeys)) ?? [])
+            : stale
+        if !retry.isEmpty {
+            let save = CNSaveRequest()
+            for card in retry {
+                let mutable = card.mutableCopy() as! CNMutableContact
+                mutable.imageData = jpeg
+                save.update(mutable)
+            }
+            try? executeLogged(save, reason: "\(reason)-retry")
+        }
+        failed = verifyPass(identifiers, unifiedIdentifiers: unifiedIdentifiers, phones: phones)
+        if !failed.isEmpty {
+            albumArtLog("verify · FAILED · \(failed.count) card(s) still without photo after retry")
+        }
+        return failed.count
+    }
+
+    private static func verifyPass(_ identifiers: [String], unifiedIdentifiers: [String], phones: [String]) -> [String] {
+        let fresh = CNContactStore()
+        let keys = imageKeys + [CNContactThumbnailImageDataKey as CNKeyDescriptor]
+        let defaultContainer = fresh.defaultContainerIdentifier()
+        var failed: [String] = []
+        for id in identifiers {
+            let card = rawCards(matching: CNContact.predicateForContacts(withIdentifiers: [id]), keys: keys, in: fresh).first
+                ?? (try? SpectatorContactFetch.unifiedContact(store: fresh, identifier: id, keysToFetch: keys))
+            guard let card else {
+                albumArtLog("verify · id=\(WordApiInputPanel.truncated(id, max: 16)) · not found on re-fetch")
+                failed.append(id)
+                continue
+            }
+            let container = containerLabel(forContact: id, defaultIdentifier: defaultContainer, in: fresh)
+            albumArtLog("verify · id=\(WordApiInputPanel.truncated(id, max: 16)) · container=\(container) · \(photoLabel(card))")
+            if !card.imageDataAvailable || (card.imageData?.isEmpty ?? true) { failed.append(id) }
+        }
+        for id in unifiedIdentifiers {
+            guard let unified = try? SpectatorContactFetch.unifiedContact(store: fresh, identifier: id, keysToFetch: keys) else { continue }
+            var phoneCounts: [String] = []
+            for digits in phones {
+                let raw = rawCards(withCanonicalDigits: digits, in: fresh).count
+                let predicate = CNContact.predicateForContacts(matching: CNPhoneNumber(stringValue: "+\(digits)"))
+                let unifiedCount = (try? fresh.unifiedContacts(matching: predicate, keysToFetch: [CNContactIdentifierKey as CNKeyDescriptor]).count) ?? 0
+                phoneCounts.append("+\(digits) raw=\(raw) unified=\(unifiedCount)")
+            }
+            albumArtLog(
+                "verify unified · id=\(WordApiInputPanel.truncated(id, max: 16)) · \(photoLabel(unified)) · linked=\(identifiers.count) · \(phoneCounts.joined(separator: " · "))"
+            )
+        }
+        return failed
+    }
+
+    private static func photoLabel(_ card: CNContact) -> String {
+        let thumb = card.isKeyAvailable(CNContactThumbnailImageDataKey) ? (card.thumbnailImageData?.count ?? 0) : -1
+        let full = card.imageData?.count ?? 0
+        let px = card.imageData.flatMap(UIImage.init(data:)).map { " · \(Int($0.size.width * $0.scale))x\(Int($0.size.height * $0.scale))px" } ?? ""
+        return "imageDataAvailable=\(card.imageDataAvailable) thumb=\(thumb)B full=\(full)B\(px)"
+    }
+
+    private static func containerLabel(forContact identifier: String, defaultIdentifier: String, in store: CNContactStore) -> String {
+        let predicate = CNContainer.predicateForContainerOfContact(withIdentifier: identifier)
+        guard let container = (try? store.containers(matching: predicate))?.first else { return "unknown" }
+        let type: String
+        switch container.type {
+        case .local: type = "local"
+        case .exchange: type = "exchange"
+        case .cardDAV: type = "cardDAV"
+        case .unassigned: type = "unassigned"
+        @unknown default: type = "other"
+        }
+        let isDefault = container.identifier == defaultIdentifier ? " default" : ""
+        return "\(WordApiInputPanel.truncated(container.identifier, max: 12)) \(type)\(isDefault)"
     }
 
     private static func executeLogged(_ save: CNSaveRequest, reason: String) throws {
@@ -496,14 +685,9 @@ enum AlbumArtContactService {
 
     /// Runs on `SpectatorContactFetch.workQueue`.
     private static func applyImageData(_ jpeg: Data, phone: String, reason: String) throws -> Int {
-        let keys: [CNKeyDescriptor] = [
-            CNContactIdentifierKey as CNKeyDescriptor,
-            CNContactImageDataKey as CNKeyDescriptor,
-            CNContactImageDataAvailableKey as CNKeyDescriptor,
-        ]
-        let matches = try cards(withPhone: phone, keysToFetch: keys)
-        let save = CNSaveRequest()
-        var restoreEntries: [AlbumArtContactRestoreEntry] = []
+        let matches = try cards(withPhone: phone, keysToFetch: rawCardKeys)
+        let digits = WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: phone)
+        let phones = digits.count >= 7 ? [digits] : []
 
         if matches.isEmpty {
             let contact = CNMutableContact()
@@ -512,38 +696,25 @@ enum AlbumArtContactService {
                 CNLabeledValue(label: CNLabelPhoneNumberMobile, value: CNPhoneNumber(stringValue: phone)),
             ]
             contact.imageData = jpeg
+            let save = CNSaveRequest()
             save.add(contact, toContainerWithIdentifier: store.defaultContainerIdentifier())
             try executeLogged(save, reason: reason)
-            restoreEntries = [
+            AlbumArtContactRestoreStore.replaceEntries([
                 AlbumArtContactRestoreEntry(
                     identifier: contact.identifier,
                     previousImageData: nil,
                     hadImage: false,
                     createdForShow: true
                 ),
-            ]
-            AlbumArtContactRestoreStore.replaceEntries(restoreEntries)
+            ])
+            _ = verifyPhotos([contact.identifier], unifiedIdentifiers: [contact.identifier], phones: phones, jpeg: jpeg, reason: reason)
             return 1
         }
 
-        restoreEntries = matches.map { existing in
-            let had = existing.imageDataAvailable && existing.imageData != nil
-            return AlbumArtContactRestoreEntry(
-                identifier: existing.identifier,
-                previousImageData: had ? existing.imageData : nil,
-                hadImage: had,
-                createdForShow: false
-            )
-        }
-
-        for existing in matches {
-            let mutable = existing.mutableCopy() as! CNMutableContact
-            mutable.imageData = jpeg
-            save.update(mutable)
-        }
-        try executeLogged(save, reason: reason)
-        AlbumArtContactRestoreStore.replaceEntries(restoreEntries)
-        return matches.count
+        let linked = linkedRawCards(of: matches, phones: phones)
+        let written = try writePhoto(jpeg, to: linked.isEmpty ? matches : linked, createdIdentifier: nil, reason: reason)
+        _ = verifyPhotos(written, unifiedIdentifiers: matches.map(\.identifier), phones: phones, jpeg: jpeg, reason: reason)
+        return written.count
     }
 
     @MainActor
@@ -589,7 +760,8 @@ enum AlbumArtContactService {
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactImageDataKey as CNKeyDescriptor,
         ]
-        let contact = try SpectatorContactFetch.unifiedContact(
+        let raw = rawCards(matching: CNContact.predicateForContacts(withIdentifiers: [entry.identifier]), keys: keys, in: store).first
+        let contact = try raw ?? SpectatorContactFetch.unifiedContact(
             store: store,
             identifier: entry.identifier,
             keysToFetch: keys
