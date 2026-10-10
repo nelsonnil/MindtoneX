@@ -2,6 +2,34 @@ import Foundation
 
 /// Full Instructions content — mirrors Home sections (Performance, Song input, Caller name, Feedback, Library).
 enum PerformInstructionsCopy {
+    // MARK: - Guide tabs (Overview map)
+
+    static let guideTabMap: [String] = [
+        "**Overview** — **iPhone setup (Banner calls)**, quick start, Performance settings, During Perform, contact primer, Feedback, Library, log, community.",
+        "**Song** — Camera, Voice, Notes, API, normal vs **Interference ringtone**, **1 or 2 songs**, optional **Use as Ringtone**.",
+        "**Caller name** — word on incoming call, word sources, full **Known vs Unknown** comparison.",
+        "**Album** — cover on contact photo, **Save to Photos**, **Test contact photo**, restore after Perform.",
+        "**Notes** — Contacts **Notes** field, `{word}` marker, word sources (separate from Caller name).",
+    ]
+
+    static let contactSetupOverview: [String] = [
+        "**Song / ringtone** needs **no** contact — use the **Song** tab for inputs and ringtones.",
+        "**Caller name**, **Album artwork**, and **Notes contact** need the spectator’s card **before** callback — pick **Unknown** or **Known** once; **same choice on all three Home cards**.",
+        "Use the mini picker below (mirrors Home). Full **Known vs Unknown** table → **Caller name** tab.",
+    ]
+
+    static let songNoContactNote: [String] = [
+        "Song input, **Interference ringtone**, and **2 songs** work **without** Contacts setup. **Known / Unknown** does not apply here.",
+    ]
+
+    /// Required iPhone setting — show prominently on Overview (not buried in Performance settings).
+    static let iphoneSetupRequired: [String] = [
+        "**Incoming calls = Banner (required):** iPhone **Settings → Phone → Incoming Calls → Banner** — not **Full Screen**. (If you use **FaceTime** for callbacks, also **Settings → FaceTime → Incoming Calls → Banner**.)",
+        "**Why:** MindtoneX keeps your **stage screenshot** and **in-app song playback** while the real call arrives. **Full Screen** takes over the phone, stops the show flow, and breaks **Interference ringtone** (front camera needs the app visible under the call UI).",
+        "**Keep the iPhone unlocked** with MindtoneX in **Perform** — do not switch apps or lock during the routine.",
+        "**Permissions (when you use the feature):** **Contacts** for Caller name / Album / Notes · **Microphone** for Voice · **Camera** for card OCR and Interference — grant in **Settings → MindtoneX** if iOS asks.",
+    ]
+
     // MARK: - Core effect
 
     static let howTheTrickWorks: [String] = [
@@ -20,7 +48,7 @@ enum PerformInstructionsCopy {
         "**Playback volume:** Set the slider to **100%** (or as loud as you need) so the song is audible when the call rings. You can still adjust with the side buttons during Perform.",
         "**Song search storefront:** Same card — **Apple iTunes catalog country**, not app language. **Automatic** uses your iPhone region; tap to search all storefronts (e.g. **SA**, **AE**, **EG**) if the catalog differs. No Apple preview → **US**, then **Deezer**.",
         "**OpenAI API key:** Same card — **one key** for **Song → Voice (AI)** and **Song → Camera** card vision (not two keys). Tap **Test** after pasting. Use the **info** icon for create-key and billing steps on platform.openai.com.",
-        "**Phone → Incoming Calls:** iOS may show a **banner** or **full-screen** incoming UI — MindtoneX works with **either**. Keep **Silent mode** how you prefer; the trick is **in-app playback** when the call arrives, not changing the carrier ringtone unless you choose the optional Share step below.",
+        "**Incoming calls:** Set **Banner** on the iPhone (see **iPhone setup** above) — required for the show. **Silent mode** is your choice; the core effect is **in-app playback** when the call arrives, not changing the carrier ringtone unless you use the optional Share step on the **Song** tab.",
         "Do **not** lock the phone or switch apps during Perform — MindtoneX keeps the screen awake, but leaving the app stops the effect.",
         "**Perform URL scheme:** Home → **Performance settings** → **Copy URL scheme** (`magiccall://start-perform`). Opening that link starts Perform like tapping the Perform button (Shortcuts, NFC, QR).",
     ]
@@ -47,7 +75,7 @@ enum PerformInstructionsCopy {
         "Tap **Perform** on Home. The stage shows your screenshot — **no on-screen controls** for the audience.",
         "Arm song + words using your chosen inputs (same session — they run **in parallel**).",
         "**Caller name (Contacts):** Only when **Show word on incoming call** and **Save locked word as contact name** are ON. Pick **Known** or **Unknown** on the Caller name card (default **Unknown**). **Unknown** → Perform opens the in-app dial first (real outgoing call → save number → stage). **Known** → no dial if you already **Choose contact**; straight to the stage screenshot. **Swipe down with two fingers** on the dial to cancel (same as exiting Perform). With **Camera** song input, media volume resets to about **half** so **volume up** can scan.",
-        "Give your number; when they call back, the app plays the locked song (**song 1** if **2 songs** is on). With **Interference ringtone**, an **open hand** during the ring brings static → song 1; a **second hand** (with **2 songs**) brings song 2. Hang-up = music stops.",
+        "Give your number; when they call back (with **Banner** call style), the app plays the locked song (**song 1** if **2 songs** is on). With **Interference ringtone**, an **open hand** during the ring brings static → song 1; a **second hand** (with **2 songs**) brings song 2. Hang-up = music stops.",
         "**Performer peek (Feedback):** **Hold** your finger on the screen (~instant) to see **Song**, **Caller name**, and **Notes** lines; **release** to hide. Empty fields show **— —**. **ON by default** — tune position, size, and color under **Feedback**.",
         "**Optional real ringtone (manual):** If **Auto-open Share** is **OFF**, after hang-up press **volume down** on the side of the phone once → Share → **Use as Ringtone** (see **Optional: real ringtone** below).",
         "Exit Perform: **two-finger swipe down** from the middle of the screen.",
@@ -75,7 +103,7 @@ enum PerformInstructionsCopy {
         "Song card → **Catalog & ringtone** → **Interference ringtone** (experimental). Pick **Ringtone 1/2** and the **interference sound** (.m4a files in the app bundle).",
         "Flow on the call: **your ringtone** → front camera sees an **open hand** (5 fingers, palm toward the phone) → **radio interference** morphs into **song 1**.",
         "With **2 songs** enabled: after interference finishes and **song 1** plays, the **first ~2 s** of that clean song ignore hand 2; **after 2 s**, an **open hand** → **interference audio 2** → **song 2**.",
-        "**Banner** incoming calls help keep the camera live; **Back Tap** or your **volume trigger** can substitute for the hand in rehearsal.",
+        "Requires **Banner** incoming calls (Overview → **iPhone setup**) so the front camera stays live under the call UI. **Back Tap** or your **volume trigger** can substitute for the hand in rehearsal.",
         "Use **Open test mode** on the same card to practice ringtone, hands, and songs without placing a call.",
         "Allow **Camera** in iOS Settings → MindtoneX — without it, Perform falls back to the **normal ringtone**.",
     ]
