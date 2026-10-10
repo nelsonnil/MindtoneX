@@ -255,7 +255,7 @@ MagicCall/Sources/Perform   Flujo Perform de Share Ringtone y textos "How it wor
 MagicCall/Sources/Intents   App Intents para Toque posterior / botón de Acción
 MagicCall/Sources/Experiments  APIs privadas, CallKit, volumen
 MagicCall/Sources/Interference Tono → mano (cámara frontal) → interferencia → canción (de momento solo modo test)
-MagicCall/Resources/InterferenceRingtone  ringtone1-default / ringtone2-optional / interferencia-radio / interferencia-audio2 (.m4a)
+MagicCall/Resources/InterferenceRingtone  ringtone1-default / ringtone2-optional / interferencia-radio / interferencia-audio2 (.m4a); ringtone2 m4a from `Source/abertura_master_ringtone2.wav`
 docs/                       Informe de investigación
 ```
 
