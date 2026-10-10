@@ -16,6 +16,10 @@ struct AlbumArtContactInputPanel: View {
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    Text("iOS shows this as the round contact photo (Recents, contact card, incoming call). A full-screen **Contact Poster** can’t be set by apps — only manually in Contacts → contact → Contact Photo & Poster.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .tint(OracleTheme.gold)
