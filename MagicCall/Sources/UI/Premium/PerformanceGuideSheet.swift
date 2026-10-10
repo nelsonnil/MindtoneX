@@ -166,6 +166,52 @@ struct PerformanceGuideSheet: View {
                 title: "Known vs Unknown (Contacts)",
                 lines: PerformInstructionsCopy.callerNameKnownUnknown
             )
+
+            callerNameExamples
+        }
+    }
+
+    private var callerNameExamples: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("On iPhone")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(OracleTheme.textPrimary)
+
+            InstructionAnnotatedScreenshot(
+                imageName: InstructionScreenshotAsset.contactDetailFull,
+                callouts: [
+                    InstructionScreenshotCallout(
+                        text: "This is what Caller name changes.",
+                        anchor: CGPoint(x: 0.5, y: 0.278),
+                        placement: .below
+                    ),
+                ]
+            )
+
+            InstructionAnnotatedScreenshot(
+                imageName: InstructionScreenshotAsset.recentsIncoming,
+                caption: "Incoming call banner shows this name and photo at the top.",
+                callouts: [
+                    InstructionScreenshotCallout(
+                        text: "Round photo in banner",
+                        anchor: CGPoint(x: 0.11, y: 0.74),
+                        placement: .trailing
+                    ),
+                    InstructionScreenshotCallout(
+                        text: "Caller name in banner",
+                        anchor: CGPoint(x: 0.42, y: 0.70),
+                        placement: .trailing
+                    ),
+                ]
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
     }
 
@@ -181,6 +227,46 @@ struct PerformanceGuideSheet: View {
             )
 
             GuideContactSetupLink()
+
+            albumArtworkExamples
+        }
+    }
+
+    private var albumArtworkExamples: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("On iPhone")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(OracleTheme.textPrimary)
+
+            InstructionAnnotatedScreenshot(
+                imageName: InstructionScreenshotAsset.contactDetailFull,
+                callouts: [
+                    InstructionScreenshotCallout(
+                        text: "Album artwork → contact photo (shows in call banner circle).",
+                        anchor: CGPoint(x: 0.5, y: 0.195),
+                        placement: .below
+                    ),
+                ]
+            )
+
+            InstructionAnnotatedScreenshot(
+                imageName: InstructionScreenshotAsset.contactDetailNotes,
+                callouts: [
+                    InstructionScreenshotCallout(
+                        text: "Album artwork → contact photo (shows in call banner circle).",
+                        anchor: CGPoint(x: 0.12, y: 0.135),
+                        placement: .trailing
+                    ),
+                ]
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
     }
 
@@ -196,6 +282,35 @@ struct PerformanceGuideSheet: View {
             )
 
             GuideContactSetupLink()
+
+            notesContactExamples
+        }
+    }
+
+    private var notesContactExamples: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("On iPhone")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(OracleTheme.textPrimary)
+
+            InstructionAnnotatedScreenshot(
+                imageName: InstructionScreenshotAsset.contactDetailNotes,
+                callouts: [
+                    InstructionScreenshotCallout(
+                        text: "Your prediction appears here.",
+                        anchor: CGPoint(x: 0.22, y: 0.82),
+                        placement: .above
+                    ),
+                ]
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
     }
 
