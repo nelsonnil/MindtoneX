@@ -197,10 +197,13 @@ struct SpectatorContactSetupSection: View {
     }
 }
 
-/// Home-only "why a contact?" explainer shared by Caller name, Album artwork and Notes contact. Never shown during
-/// Perform: the dial pad must look like the stock Phone app.
+/// "Why a contact?" explainer shared by the Caller name, Album artwork and Notes contact Home cards and their
+/// Instructions (lightbulb) sections. Never shown during Perform: the dial pad must look like the stock Phone app.
 struct SpectatorContactExplainer: View {
+    enum Placement { case homeCard, instructions }
+
     var accent: Color = OracleTheme.gold
+    var placement: Placement = .homeCard
 
     @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
 
@@ -224,13 +227,13 @@ struct SpectatorContactExplainer: View {
 
             HStack(alignment: .top, spacing: 10) {
                 ForEach(WordApiSettings.ContactMode.allCases) { option in
-                    Text(.init(Self.howTo(option)))
+                    Text(.init(howTo(option)))
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .opacity(option == mode ? 1 : 0.55)
-                        .accessibilityLabel("\(option.title): \(Self.howTo(option).replacingOccurrences(of: "**", with: ""))")
+                        .accessibilityLabel("\(option.title): \(howTo(option).replacingOccurrences(of: "**", with: ""))")
                 }
             }
 
@@ -262,10 +265,11 @@ struct SpectatorContactExplainer: View {
         .animation(.easeInOut(duration: 0.2), value: contactModeRaw)
     }
 
-    private static func howTo(_ mode: WordApiSettings.ContactMode) -> String {
-        switch mode {
-        case .unknown: return "Tap **Perform** — a dial pad opens. Call your spectator from it."
-        case .known: return "Pick their contact on this card before the show."
+    private func howTo(_ mode: WordApiSettings.ContactMode) -> String {
+        switch (mode, placement) {
+        case (.unknown, _): return "Tap **Perform** — a dial pad opens. Call your spectator from it."
+        case (.known, .homeCard): return "Pick their contact on this card before the show."
+        case (.known, .instructions): return "Pick their contact on the Home card before the show."
         }
     }
 

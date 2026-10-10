@@ -84,10 +84,21 @@ struct PerformanceGuideSheet: View {
                     lines: PerformInstructionsCopy.callerName
                 )
 
+                SpectatorContactExplainer(accent: OracleTheme.sectionTeal, placement: .instructions)
+
                 InstructionSubsection(
                     title: "Known vs Unknown (Contacts)",
                     lines: PerformInstructionsCopy.callerNameKnownUnknown
                 )
+
+                InstructionSection(
+                    title: "Album artwork",
+                    icon: "music.note.list",
+                    tint: OracleTheme.sectionSlate,
+                    lines: PerformInstructionsCopy.albumArtwork
+                )
+
+                SpectatorContactExplainer(accent: OracleTheme.sectionSlate, placement: .instructions)
 
                 InstructionSection(
                     title: "Notes contact",
@@ -95,6 +106,8 @@ struct PerformanceGuideSheet: View {
                     tint: OracleTheme.sectionTeal,
                     lines: PerformInstructionsCopy.notesContact
                 )
+
+                SpectatorContactExplainer(accent: OracleTheme.sectionTeal, placement: .instructions)
 
                 InstructionSection(
                     title: "Feedback",

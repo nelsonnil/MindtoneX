@@ -155,13 +155,21 @@ enum PerformInstructionsCopy {
         "**Optional backup:** Manual **Call identification** number + **MindtoneX Caller Label** in Phone settings — only if you are **not** using Contacts rename.",
     ]
 
+    // MARK: - Album artwork
+
+    static let albumArtwork: [String] = [
+        "Home → **Album artwork**. Turn on **Album art on contact**: when the song locks during Perform, its cover becomes the spectator’s **contact photo** (the round photo on the incoming call, in Recents and on their card).",
+        "**Same Unknown / Known contact** as **Caller name** and **Notes contact** — change it on any of those cards.",
+        "**Save album art to Photos** is separate and needs no contact.",
+        "Rehearse without Perform: **Test contact photo → Apply to contact now**. **Restore contact photo after Perform** puts the old photo back.",
+    ]
+
     // MARK: - Notes contact
 
     static let notesContact: [String] = [
         "Home → **Notes contact**. Sets the **Contacts → Notes** field on the spectator’s card (preview matches the real call sheet).",
         "**Same Unknown / Known contact** as **Caller name** and **Album artwork** — change it on any of those cards.",
         "**Note text** is empty by default — only what you type is saved. Tap **`{word}`** in the editor to insert the marker where the forced word should go; during the show, **`{word}`** is replaced by the locked **Notes chip** word (Inject / OCR line 3 / Voice).",
-        "**Unknown:** Perform in-app dial (real outgoing call) captures the number before the note can save. **Known:** **Choose contact** on Home — no dial.",
         "Uses its **own** word source — independent from Caller name.",
         "**Camera:** **Line 3** on the card (line 1 = song, line 2 = caller if enabled).",
     ]
