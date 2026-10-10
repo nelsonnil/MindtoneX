@@ -48,7 +48,20 @@ struct PerformanceGuideSheet: View {
 
     private var overviewTab: some View {
         VStack(alignment: .leading, spacing: 22) {
-            InstructionSubsection(title: "Pick a topic", lines: PerformInstructionsCopy.guideTabMap)
+            InstructionSection(
+                title: "Facebook users group",
+                icon: "person.3.fill",
+                tint: OracleTheme.sectionTeal,
+                lines: PerformInstructionsCopy.facebookUsersGroup
+            )
+
+            Link(destination: URL(string: PerformInstructionsCopy.facebookUsersGroupURL)!) {
+                Label("Open Facebook group", systemImage: "arrow.up.forward.app")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.bordered)
+            .tint(OracleTheme.gold)
 
             InstructionSection(
                 title: "iPhone setup (do this first)",
@@ -86,42 +99,6 @@ struct PerformanceGuideSheet: View {
             )
 
             SpectatorContactExplainer(accent: OracleTheme.sectionTeal, placement: .instructions)
-
-            InstructionSection(
-                title: "Feedback",
-                icon: "eye.fill",
-                tint: OracleHomeSection.feedback.accent,
-                lines: PerformInstructionsCopy.feedback
-            )
-
-            InstructionSection(
-                title: "Library",
-                icon: "books.vertical.fill",
-                tint: OracleTheme.textSecondary,
-                lines: PerformInstructionsCopy.library
-            )
-
-            InstructionSection(
-                title: "Perform log",
-                icon: "list.bullet.rectangle",
-                tint: OracleTheme.textSecondary,
-                lines: PerformInstructionsCopy.performLog
-            )
-
-            InstructionSection(
-                title: "Facebook users group",
-                icon: "person.3.fill",
-                tint: OracleTheme.sectionTeal,
-                lines: PerformInstructionsCopy.facebookUsersGroup
-            )
-
-            Link(destination: URL(string: PerformInstructionsCopy.facebookUsersGroupURL)!) {
-                Label("Open Facebook group", systemImage: "arrow.up.forward.app")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.bordered)
-            .tint(OracleTheme.gold)
 
             performExitHint
         }

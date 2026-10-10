@@ -1,17 +1,7 @@
 import Foundation
 
-/// Full Instructions content — mirrors Home sections (Performance, Song input, Caller name, Feedback, Library).
+/// Full Instructions content — mirrors Home setup sections (Performance, Song input, Caller name, community).
 enum PerformInstructionsCopy {
-    // MARK: - Guide tabs (Overview map)
-
-    static let guideTabMap: [String] = [
-        "**Overview** — **iPhone setup (Banner + ring time)**, quick start, Performance settings, During Perform, contact primer, Feedback, Library, log, community.",
-        "**Song** — Camera, Voice, Notes, API, normal vs **Interference ringtone**, **1 or 2 songs**, optional **Use as Ringtone**.",
-        "**Caller name** — word on incoming call, word sources, full **Known vs Unknown** comparison.",
-        "**Album** — cover on contact photo, **Save to Photos**, restore after Perform.",
-        "**Notes** — Contacts **Notes** field, `{word}` marker, word sources (separate from Caller name).",
-    ]
-
     static let contactSetupOverview: [String] = [
         "**Song / ringtone** needs **no** contact — use the **Song** tab for inputs and ringtones.",
         "**Caller name**, **Album artwork**, and **Notes contact** need the spectator’s card **before** callback — pick **Unknown** or **Known** once; **same choice on all three Home cards**.",
@@ -149,7 +139,6 @@ enum PerformInstructionsCopy {
         "**Example A:** Song = **Voice**, Caller = **Inject**, Notes word = **Inject** (different IDs).",
         "**Example B:** Song = **Camera** (line 1), Caller = **Camera** (line 2), Notes = **Camera** (line 3) — one volume scan.",
         "**Example C:** Song = **Voice**, Caller = **Voice**, Notes = **Voice** — one conversation, three AI prompts.",
-        "Open **Perform log** on Home after a run to see **Inputs** and **Recognized** lines for debugging.",
     ]
 
     // MARK: - Caller name
@@ -201,30 +190,6 @@ enum PerformInstructionsCopy {
         "**Note text** is empty by default — only what you type is saved. Tap **`{word}`** in the editor to insert the marker where the forced word should go; during the show, **`{word}`** is replaced by the locked **Notes chip** word (Inject / OCR line 3 / Voice).",
         "Uses its **own** word source — independent from Caller name.",
         "**Camera:** **Line 3** on the card (line 1 = song, line 2 = caller if enabled).",
-    ]
-
-    // MARK: - Feedback
-
-    static let feedback: [String] = [
-        "Home → **Feedback** (optional performer cues).",
-        "**Hold-to-peek (default ON):** While your finger stays on the screen, you see live **Song** (or **Song 1** / **Song 2** when **2 songs** is enabled), **Caller name** (if armed), and **Notes** (if configured). Drag the **preview** to set position; adjust **size** and **color**. Release to hide — the audience still only sees the screenshot.",
-        "**Vibration when song locks:** Two long buzzes so you know the track is ready without looking.",
-        "**Status dot when song ready:** Small dot on the **top-right of the screen** after the song locks (Voice / API / Camera). Toggle color and size to taste.",
-        "Caller name lock uses a **different** vibration pattern (three short taps) when enabled.",
-    ]
-
-    // MARK: - Library
-
-    static let library: [String] = [
-        "**Library** is for **practice and prep**, not the live force.",
-        "**Search song:** Try titles/artists and preview matches — same search as manual pickers.",
-        "**Import audio / favorites / recent:** Reload a track you used before or export **Share as ringtone** from a ready row without entering Perform.",
-        "To force a song **during a show**, use **Song input** (Voice, Camera, etc.) — not Library.",
-    ]
-
-    static let performLog: [String] = [
-        "**Perform log** on Home records each run: which **inputs** were armed and every **Recognized** song/word.",
-        "Use it after rehearsal to confirm Camera lines, API polls, or Voice picks matched what you expected. With **Voice (AI)**, each **OpenAI** line shows the model’s answer and **reasoning**, even when it returns **none**.",
     ]
 
     // MARK: - Community
