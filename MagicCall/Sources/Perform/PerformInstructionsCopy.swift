@@ -5,7 +5,7 @@ enum PerformInstructionsCopy {
     // MARK: - Guide tabs (Overview map)
 
     static let guideTabMap: [String] = [
-        "**Overview** — **iPhone setup (Banner calls)**, quick start, Performance settings, During Perform, contact primer, Feedback, Library, log, community.",
+        "**Overview** — **iPhone setup (Banner + ring time)**, quick start, Performance settings, During Perform, contact primer, Feedback, Library, log, community.",
         "**Song** — Camera, Voice, Notes, API, normal vs **Interference ringtone**, **1 or 2 songs**, optional **Use as Ringtone**.",
         "**Caller name** — word on incoming call, word sources, full **Known vs Unknown** comparison.",
         "**Album** — cover on contact photo, **Save to Photos**, **Test contact photo**, restore after Perform.",
@@ -26,6 +26,7 @@ enum PerformInstructionsCopy {
     static let iphoneSetupRequired: [String] = [
         "**Incoming calls = Banner (required):** iPhone **Settings → Phone → Incoming Calls → Banner** — not **Full Screen**. (If you use **FaceTime** for callbacks, also **Settings → FaceTime → Incoming Calls → Banner**.)",
         "**Why:** MindtoneX keeps your **stage screenshot** and **in-app song playback** while the real call arrives. **Full Screen** takes over the phone, stops the show flow, and breaks **Interference ringtone** (front camera needs the app visible under the call UI).",
+        "**Voicemail / ring time:** Turn **voicemail off** or set **more rings before pickup** (carrier settings, Phone → Voicemail, or your carrier’s app/code). If the call jumps to mailbox too fast, the audience may never hear the **in-app song** or **Interference** reveal — you need enough ring time while the banner is showing.",
         "**Keep the iPhone unlocked** with MindtoneX in **Perform** — do not switch apps or lock during the routine.",
         "**Permissions (when you use the feature):** **Contacts** for Caller name / Album / Notes · **Microphone** for Voice · **Camera** for card OCR and Interference — grant in **Settings → MindtoneX** if iOS asks.",
     ]
