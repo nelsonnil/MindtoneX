@@ -66,6 +66,7 @@ enum WordApiContactPerformGate {
         guard outgoingCallUUID == nil || outgoingCallUUID == uuid else { return }
         guard !dialedPhoneDigits.isEmpty else { return }
         WordApiSettings.setLastDialedPhoneDigits(dialedPhoneDigits)
+        AlbumArtContactService.spectatorNumberSaved()
         awaitingOutgoingEnd = false
         outgoingCallUUID = nil
         dlog("[CONTACT] outgoing ended · saved identification \(dialedPhoneDigits)")
@@ -82,6 +83,7 @@ enum WordApiContactPerformGate {
             return
         }
         WordApiSettings.setLastDialedPhoneDigits(WordApiSettings.fallbackPhoneDigits)
+        AlbumArtContactService.spectatorNumberSaved()
         finishPendingPerform()
     }
 

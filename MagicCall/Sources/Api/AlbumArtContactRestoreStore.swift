@@ -30,6 +30,15 @@ enum AlbumArtContactRestoreStore {
         }
     }
 
+    /// First snapshot per card wins: a second apply in the same session must not record album art as the "previous" photo.
+    static func mergeEntries(_ list: [AlbumArtContactRestoreEntry]) {
+        var merged = entries
+        for entry in list where !merged.contains(where: { $0.identifier == entry.identifier }) {
+            merged.append(entry)
+        }
+        replaceEntries(merged)
+    }
+
     static func clear() {
         UserDefaults.standard.removeObject(forKey: key)
     }

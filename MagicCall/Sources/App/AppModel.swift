@@ -398,6 +398,7 @@ final class AppModel: ObservableObject {
             dlog("No se puede armar: no hay canción lista")
             return
         }
+        AlbumArtContactService.performStarted()
         do {
             try audio.configureSession(preferIPhoneSpeaker: true)
         } catch {
@@ -432,6 +433,10 @@ final class AppModel: ObservableObject {
         CallDirectorySync.syncPerformArmed(true, reason: "arm")
         startWordApiIfNeeded(context: .perform)
         startNotesContactWordIfNeeded(context: .perform)
+        if !findsSongDuringPerform {
+            // Manual has no lock event: the Home song is the locked song from the moment Perform arms.
+            albumArtOnSongLockIfEnabled(source: "Manual")
+        }
         PerformUserLog.shared.beginSession(inputLabel: PerformLogReporter.sessionTitle())
         PerformLogReporter.logConfiguredInputs()
         CallDirectorySync.reportPerformReadiness()
@@ -472,6 +477,7 @@ final class AppModel: ObservableObject {
         SongLibraryStore.shared.logRecentDisplayMerge(context: "disarm")
         PerformLogReporter.logRecapOnDisarm()
         PerformUserLog.shared.endSession()
+        AlbumArtContactService.performEnded(reason: "disarm")
         AlbumArtContactService.restoreContactsAfterPerform(reason: "Perform disarm")
         SpectatorWordContactService.restoreContactsAfterPerform(reason: "Perform disarm")
         dlog("══ DESARMADO ══")
@@ -507,12 +513,18 @@ final class AppModel: ObservableObject {
         voicePerformTask = Task { await VoiceSongSession.shared.start(context: .perform) }
     }
 
-    /// Album artwork on song lock or Home test apply — survives home idle audio pauses.
+    /// Album artwork on Perform song lock — survives home idle audio pauses; a newer lock replaces it.
     func runAlbumArtContactWork(_ work: @escaping @MainActor () async -> Void) {
         albumArtContactWorkTask?.cancel()
         albumArtContactWorkTask = Task(priority: .userInitiated) { @MainActor in
             await work()
         }
+    }
+
+    /// Perform disarm only — never from idle/scene pauses.
+    func cancelAlbumArtContactWork() {
+        albumArtContactWorkTask?.cancel()
+        albumArtContactWorkTask = nil
     }
 
     /// Home **Apply to contact now** — not tied to SwiftUI button `Task` (sheet dismiss won't cancel).
@@ -806,6 +818,7 @@ final class AppModel: ObservableObject {
             callSignalActive = true
             hadCallWhileArmed = true
             PerformUserLog.shared.log("Incoming call detected")
+            AlbumArtContactService.notePerformIncomingCall(source: "CXCall")
             VoiceSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             NotesSongSession.shared.callArrived(source: "CXCallObserver.incoming")
             ApiSongSession.shared.callArrived(source: "CXCallObserver.incoming")
@@ -909,6 +922,7 @@ final class AppModel: ObservableObject {
             audio.markStandbyAfterInterruption()
             callSignalActive = true
             incomingDetectedAt = CACurrentMediaTime()
+            AlbumArtContactService.notePerformIncomingCall(source: "audio interruption")
             attemptAutoTrigger(source: "interruption.began")
         case .ended:
             let optRaw = n.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0

@@ -224,6 +224,7 @@ extension AppModel {
         }
     }
 
+    /// Spectators = 2: always song 1 (`selected`, the song the call plays first); song 2 never reaches the contact photo.
     func albumArtOnSongLockIfEnabled(source: String) {
         guard AlbumArtContactSettings.anyOutputEnabled, isArmed else { return }
         if source.localizedCaseInsensitiveContains("song 2") { return }

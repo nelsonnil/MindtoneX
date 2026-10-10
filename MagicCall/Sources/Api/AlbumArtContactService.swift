@@ -1,6 +1,7 @@
 import Contacts
 import Foundation
 import Photos
+import QuartzCore
 import UIKit
 
 /// Outcome for Home **Test contact photo** (and other user-visible apply attempts).
@@ -29,23 +30,132 @@ enum AlbumArtContactService {
         return URLSession(configuration: config)
     }()
 
+    // MARK: - Perform session
+
+    private struct PerformLock {
+        let track: PreviewTrack
+        let reason: String
+        let lockedAt: CFTimeInterval
+    }
+
+    @MainActor private static var performGeneration = 0
+    @MainActor private static var performTrackID: String?
+    @MainActor private static var performLockedAt: CFTimeInterval?
+    @MainActor private static var performSavedAt: CFTimeInterval?
+    @MainActor private static var performRingAt: CFTimeInterval?
+    /// Unknown lock that arrived before the dialed number was saved; applied by `spectatorNumberSaved()`.
+    @MainActor private static var pendingUnknownLock: PerformLock?
+    @MainActor private static var spectatorNumberSavedAt: CFTimeInterval?
+
+    @MainActor
+    static func performStarted() {
+        performGeneration += 1
+        performTrackID = nil
+        performLockedAt = nil
+        performSavedAt = nil
+        performRingAt = nil
+        pendingUnknownLock = nil
+    }
+
+    /// Perform disarm: a download still running is cancelled; a save already on the Contacts queue restores itself.
+    @MainActor
+    static func performEnded(reason: String) {
+        if AlbumArtContactSettings.enabled, performLockedAt != nil, performSavedAt == nil {
+            albumArtLog("perform end · \(reason) · apply still in flight → cancelled")
+        }
+        performStarted()
+        AppModel.shared.cancelAlbumArtContactWork()
+    }
+
+    /// Unknown: the Perform dial saved the spectator number.
+    @MainActor
+    static func spectatorNumberSaved() {
+        spectatorNumberSavedAt = CACurrentMediaTime()
+        guard let pending = pendingUnknownLock else { return }
+        pendingUnknownLock = nil
+        guard AppModel.shared.isArmed else { return }
+        albumArtLog("perform order · number saved \(ms(since: pending.lockedAt))ms after lock → applying now")
+        startPerformApply(pending)
+    }
+
+    /// Every Perform song-lock input (Voice, Notes, API, Camera, Manual at arm) lands here; in 2-song mode only song 1
+    /// (the Home slot the call plays first) reaches this.
     @MainActor
     static func processOnSongLock(track: PreviewTrack, reason: String) {
         guard AlbumArtContactSettings.anyOutputEnabled else { return }
+        let label = WordApiInputPanel.truncated("\(track.title) — \(track.artist)", max: 40)
         guard track.artworkURL != nil else {
-            dlogDebug("[ALBUM-ART] skip (\(reason)): no artwork URL · \(track.title)")
+            albumArtLog("perform skip · \(reason) · no artwork URL · «\(label)»")
             return
         }
-        let trackLabel = "\(track.title) — \(track.artist)"
-        AppModel.shared.runAlbumArtContactWork {
-            await processArtwork(for: track, trackLabel: trackLabel, reason: reason)
+        if performTrackID == track.id {
+            albumArtLog("perform skip · \(reason) · «\(label)» already applied this Perform")
+            return
+        }
+        let lock = PerformLock(track: track, reason: reason, lockedAt: CACurrentMediaTime())
+        performTrackID = track.id
+        performLockedAt = lock.lockedAt
+        performSavedAt = nil
+        let outputs = "contact=\(AlbumArtContactSettings.enabled ? "on" : "off") photos=\(AlbumArtContactSettings.saveToPhotosEnabled ? "on" : "off")"
+        albumArtLog("perform lock · «\(label)» · via \(reason) · \(performTargetLabel()) · \(outputs)")
+        if AlbumArtContactSettings.enabled, WordApiSettings.contactMode == .unknown {
+            guard WordApiSettings.spectatorContactPhoneE164String() != nil else {
+                pendingUnknownLock = lock
+                albumArtLog("perform wait · Unknown has no dialed number yet → applies once the dial saves it")
+                return
+            }
+            if let savedAt = spectatorNumberSavedAt {
+                albumArtLog("perform order · dial saved \(ms(since: savedAt))ms before lock ✓")
+            }
+        }
+        startPerformApply(lock)
+    }
+
+    /// Incoming call while armed: did the photo land before iOS read the card for this ring?
+    @MainActor
+    static func notePerformIncomingCall(source: String) {
+        guard AlbumArtContactSettings.enabled else { return }
+        let now = CACurrentMediaTime()
+        if let ringAt = performRingAt, now - ringAt < 5 { return }
+        performRingAt = now
+        if let savedAt = performSavedAt {
+            albumArtLog("perform call · \(source) · art saved \(ms(from: savedAt, to: now))ms before ring ✓")
+        } else if let lockedAt = performLockedAt {
+            albumArtLog("perform call · \(source) · ⚠ ring before art saved (lock \(ms(from: lockedAt, to: now))ms ago) → this ring may show the old photo")
+        } else if pendingUnknownLock != nil {
+            albumArtLog("perform call · \(source) · ⚠ ring while waiting for the dialed number → no art on this ring")
+        } else {
+            albumArtLog("perform call · \(source) · no song locked yet → no art on this ring")
         }
     }
 
-    /// Backward-compatible entry for older call sites.
     @MainActor
-    static func applyOnSongLock(track: PreviewTrack, reason: String) {
-        processOnSongLock(track: track, reason: reason)
+    private static func performTargetLabel() -> String {
+        switch WordApiSettings.contactMode {
+        case .known:
+            guard WordApiSettings.hasKnownContactSelected else { return "Known · no contact picked" }
+            let phone = WordApiSettings.knownContactPhoneDigits
+            return "Known «\(WordApiInputPanel.truncated(WordApiSettings.knownContactDisplayName, max: 24))» · phone=\(phone.isEmpty ? "none" : "+\(phone)")"
+        case .unknown:
+            let digits = WordApiSettings.spectatorContactPhoneDigitsRaw()
+            return digits.isEmpty ? "Unknown · no number" : "Unknown +\(digits)"
+        }
+    }
+
+    @MainActor
+    private static func startPerformApply(_ lock: PerformLock) {
+        let generation = performGeneration
+        AppModel.shared.runAlbumArtContactWork {
+            await processPerformArtwork(lock, generation: generation)
+        }
+    }
+
+    private static func ms(since start: CFTimeInterval) -> Int {
+        ms(from: start, to: CACurrentMediaTime())
+    }
+
+    private static func ms(from start: CFTimeInterval, to end: CFTimeInterval) -> Int {
+        Int(((end - start) * 1000).rounded())
     }
 
     /// Home test lab — same download, crop, and Contacts save as song lock (no Perform required).
@@ -69,7 +179,7 @@ enum AlbumArtContactService {
             return finishTestApply(.failure("No artwork for this track."), trackLabel: trackLabel)
         }
         do {
-            let jpeg = try await fetchSquareJPEGForTest(track: track)
+            let jpeg = try await fetchSquareJPEG(for: track, reason: "test")
             guard await ensureContactsAccess(reason: "test") else {
                 albumArtLog("save skipped · Contacts access denied")
                 return finishTestApply(
@@ -78,7 +188,7 @@ enum AlbumArtContactService {
                 )
             }
             let fallbackPhones = storedPhoneFallbacks(identifier: contactIdentifier, displayName: contactDisplayName)
-            let phoneDigits = healedPhoneDigits(contactPhoneDigits, identifier: contactIdentifier, fallbacks: fallbackPhones)
+            let phoneDigits = healedPhoneDigits(contactPhoneDigits, identifier: contactIdentifier, fallbacks: fallbackPhones, reason: "test")
             do {
                 let applied = try await SpectatorContactFetch.run {
                     try applyImageData(
@@ -133,19 +243,6 @@ enum AlbumArtContactService {
         }
     }
 
-    private static func fetchSquareJPEGForTest(track: PreviewTrack) async throws -> Data {
-        guard let url = track.artworkURL else { throw AlbumArtContactError.noArtworkURL }
-        let fetchURL = upgradedArtworkURL(url)
-        let (data, _) = try await session.data(from: fetchURL)
-        albumArtLog("download · \(data.count) bytes")
-        guard let image = UIImage(data: data) else { throw AlbumArtContactError.invalidImageData }
-        guard let (jpeg, sidePx) = centerCroppedSquareJPEGWithSide(image) else {
-            throw AlbumArtContactError.cropFailed
-        }
-        albumArtLog("crop · \(jpeg.count) bytes JPEG · \(sidePx)px")
-        return jpeg
-    }
-
     @MainActor
     private static func finishTestApply(_ outcome: AlbumArtContactApplyOutcome, trackLabel: String) -> AlbumArtContactApplyOutcome {
         switch outcome {
@@ -159,42 +256,99 @@ enum AlbumArtContactService {
         return outcome
     }
 
+    /// Reverts every card album art touched (test + Perform) to its first recorded photo. Cards created from a Recents
+    /// pick stay (photo cleared); only Unknown show-only cards are deleted. Runs as one block on the Contacts queue so
+    /// a newer apply cannot interleave or have its snapshots wiped.
     @MainActor
     static func restoreContactsAfterPerform(reason: String) {
+        guard !AppModel.shared.isArmed else { return }
         let snapshots = AlbumArtContactRestoreStore.entries
         guard !snapshots.isEmpty else { return }
+        AlbumArtContactRestoreStore.clear()
 
         guard WordApiSettings.restoreKnownNameOnSettingsExit else {
-            AlbumArtContactRestoreStore.clear()
+            albumArtLog("perform restore off · \(snapshots.count) card(s) keep album art (\(reason))")
             return
         }
-
-        Task {
-            await runRestoreSnapshots(snapshots, reason: reason)
+        let canWrite: Bool
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized, .limited: canWrite = true
+        default: canWrite = false
+        }
+        guard canWrite else {
+            albumArtLog("perform restore skipped · Contacts \(contactsAuthorizationLabel()) (\(reason))")
+            return
+        }
+        SpectatorContactFetch.workQueue.async {
+            var restored = 0
+            var deleted = 0
+            var failed = 0
+            for entry in snapshots {
+                do {
+                    if entry.createdForShow {
+                        try deleteContact(identifier: entry.identifier)
+                        deleted += 1
+                    } else {
+                        try restoreImage(entry)
+                        restored += 1
+                    }
+                } catch {
+                    failed += 1
+                    albumArtLog("perform restore · id=\(WordApiInputPanel.truncated(entry.identifier, max: 16)) failed · \(SpectatorContactFetch.errorLogLabel(error))")
+                }
+            }
+            albumArtLog("perform restore · \(reason) · \(restored) photo(s) restored · \(deleted) show card(s) deleted · \(failed) failed")
+            guard restored + deleted > 0 else { return }
+            DispatchQueue.main.async {
+                PerformUserLog.shared.log("Album art restored · \(restored + deleted) contact photo(s)")
+            }
         }
     }
 
     // MARK: - Private
 
+    /// Contact photo first (the incoming call reads it), then Photos.
     @MainActor
-    private static func processArtwork(for track: PreviewTrack, trackLabel: String, reason: String) async {
+    private static func processPerformArtwork(_ lock: PerformLock, generation: Int) async {
+        let jpeg: Data
         do {
-            let jpeg = try await fetchSquareJPEG(for: track, reason: reason)
-            if AlbumArtContactSettings.saveToPhotosEnabled {
-                await saveToPhotoLibrary(jpeg: jpeg, trackLabel: trackLabel, reason: reason)
-            }
-            if AlbumArtContactSettings.enabled {
-                await applyContactArtwork(jpeg: jpeg, trackLabel: trackLabel, reason: reason)
-            }
-        } catch AlbumArtContactError.noArtworkURL {
-            dlogDebug("[ALBUM-ART] skip (\(reason)): no artwork URL · \(trackLabel)")
-        } catch AlbumArtContactError.invalidImageData {
-            dlogDebug("[ALBUM-ART] skip (\(reason)): invalid image data")
-        } catch AlbumArtContactError.cropFailed {
-            dlogDebug("[ALBUM-ART] skip (\(reason)): crop failed")
+            jpeg = try await fetchSquareJPEG(for: lock.track, reason: lock.reason)
+        } catch let err as URLError where err.code == .cancelled {
+            albumArtLog("perform abort · download cancelled (newer lock or Perform ended)")
+            return
+        } catch is CancellationError {
+            albumArtLog("perform abort · download cancelled (newer lock or Perform ended)")
+            return
+        } catch let err as AlbumArtContactError {
+            albumArtLog("perform failed · \(err.userMessage)")
+            PerformUserLog.shared.log("Album art · \(err.userMessage)")
+            allowRetry(lock, generation: generation)
+            return
         } catch {
-            dlog("✗ [ALBUM-ART] download (\(reason)): \(SpectatorContactFetch.userFacingMessage(for: error))")
+            let msg = SpectatorContactFetch.userFacingMessage(for: error)
+            albumArtLog("perform failed · download · \(msg)")
+            PerformUserLog.shared.log("Album art download failed · \(msg)")
+            allowRetry(lock, generation: generation)
+            return
         }
+        guard !Task.isCancelled, generation == performGeneration else {
+            albumArtLog("perform abort · superseded before save")
+            return
+        }
+        if AlbumArtContactSettings.enabled {
+            await applyPerformContactArtwork(jpeg: jpeg, lock: lock, generation: generation)
+        }
+        if AlbumArtContactSettings.saveToPhotosEnabled {
+            await saveToPhotoLibrary(jpeg: jpeg, trackLabel: "\(lock.track.title) — \(lock.track.artist)", reason: lock.reason)
+        }
+    }
+
+    /// A failed apply must not block the same song locking again in this Perform.
+    @MainActor
+    private static func allowRetry(_ lock: PerformLock, generation: Int) {
+        guard generation == performGeneration, performTrackID == lock.track.id else { return }
+        performTrackID = nil
+        performLockedAt = nil
     }
 
     private enum AlbumArtContactError: Error {
@@ -213,25 +367,37 @@ enum AlbumArtContactService {
         }
     }
 
+    /// Shared by test and Perform: 1000px artwork → center-cropped square JPEG.
     private static func fetchSquareJPEG(for track: PreviewTrack, reason: String) async throws -> Data {
         guard let url = track.artworkURL else { throw AlbumArtContactError.noArtworkURL }
         let fetchURL = upgradedArtworkURL(url)
+        let t0 = CACurrentMediaTime()
         let (data, _) = try await session.data(from: fetchURL)
+        stepLog(reason, "download · \(data.count) bytes · \(ms(since: t0))ms")
         guard let image = UIImage(data: data) else { throw AlbumArtContactError.invalidImageData }
-        guard let (jpeg, _) = centerCroppedSquareJPEGWithSide(image) else { throw AlbumArtContactError.cropFailed }
+        guard let (jpeg, sidePx) = centerCroppedSquareJPEGWithSide(image) else {
+            throw AlbumArtContactError.cropFailed
+        }
+        stepLog(reason, "crop · \(jpeg.count) bytes JPEG · \(sidePx)px")
         return jpeg
     }
 
+    /// Known: same resolve → linked cards → verify as the Home test button. Unknown: cards carrying the dialed number.
     @MainActor
-    private static func applyContactArtwork(jpeg: Data, trackLabel: String, reason: String) async {
-        guard await ensureContactsAccess(reason: reason) else { return }
+    private static func applyPerformContactArtwork(jpeg: Data, lock: PerformLock, generation: Int) async {
+        let reason = lock.reason
+        guard await ensureContactsAccess(reason: reason) else {
+            albumArtLog("perform failed · Contacts access \(contactsAuthorizationLabel())")
+            return
+        }
+        let trackLabel = "\(lock.track.title) — \(lock.track.artist)"
         do {
-            let count: Int
+            let applied: ApplyResult
             if WordApiSettings.contactMode == .known, let id = WordApiSettings.knownContactIdentifier {
                 let displayName = WordApiSettings.knownContactDisplayName
                 let fallbackPhones = storedPhoneFallbacks(identifier: id, displayName: displayName)
-                let phoneDigits = healedPhoneDigits(WordApiSettings.knownContactPhoneDigits, identifier: id, fallbacks: fallbackPhones)
-                let applied = try await SpectatorContactFetch.run {
+                let phoneDigits = healedPhoneDigits(WordApiSettings.knownContactPhoneDigits, identifier: id, fallbacks: fallbackPhones, reason: reason)
+                applied = try await SpectatorContactFetch.run {
                     try applyImageData(
                         jpeg,
                         contactIdentifier: id,
@@ -241,25 +407,37 @@ enum AlbumArtContactService {
                         reason: reason
                     )
                 }
-                count = applied.count
                 if let created = applied.createdFromRecentsName {
                     PerformUserLog.shared.log(SpectatorContactFetch.RecentsNotice.message(name: created))
                 }
             } else if let phone = WordApiSettings.spectatorContactPhoneE164String() {
-                count = try await SpectatorContactFetch.run { try applyImageData(jpeg, phone: phone, reason: reason) }
+                applied = try await SpectatorContactFetch.run { try applyImageData(jpeg, phone: phone, reason: reason) }
             } else {
-                dlogDebug("[ALBUM-ART] skip (\(reason)): no spectator phone — dial or pick contact first")
+                albumArtLog("perform skip · no spectator phone — dial (Unknown) or pick a contact (Known)")
                 PerformUserLog.shared.log("Album art · no phone yet · dial or choose contact on Album art card")
                 return
             }
-            dlogDebug("[ALBUM-ART] contact «\(trackLabel)» → \(count) card(s) (\(reason))")
-            PerformUserLog.shared.log("Album art on contact · \(count) card(s) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
+            let savedAt = CACurrentMediaTime()
+            let current = generation == performGeneration
+            if current { performSavedAt = savedAt }
+            let check = applied.unverifiedCount > 0 ? "⚠ \(applied.unverifiedCount) unverified" : "verified"
+            let lateNote = current && performRingAt.map { $0 < savedAt } == true ? " · ⚠ after ring started" : ""
+            albumArtLog("perform apply · lock→saved \(ms(from: lock.lockedAt, to: savedAt))ms · \(applied.count) card(s) · \(check)\(lateNote)")
+            PerformUserLog.shared.log("Album art on contact · \(applied.count) card(s) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
+            if !AppModel.shared.isArmed {
+                albumArtLog("perform end · saved after disarm → restoring now")
+                restoreContactsAfterPerform(reason: "save finished after disarm")
+            }
         } catch {
-            albumArtLog("song-lock save failed (\(reason)) · \(SpectatorContactFetch.errorLogLabel(error)) · auth=\(contactsAuthorizationLabel())")
-            let msg = SpectatorContactFetch.saveFailureMessage(for: error)
-            dlog("✗ [ALBUM-ART] contact save (\(reason)): \(msg)")
-            PerformUserLog.shared.log("Album art on contact failed · \(msg)")
+            allowRetry(lock, generation: generation)
+            albumArtLog("perform failed · save · \(SpectatorContactFetch.errorLogLabel(error)) · auth=\(contactsAuthorizationLabel())")
+            PerformUserLog.shared.log("Album art on contact failed · \(SpectatorContactFetch.saveFailureMessage(for: error))")
         }
+    }
+
+    /// Perform steps carry the `perform` prefix so one show reads as one block in the log.
+    private static func stepLog(_ reason: String, _ message: String) {
+        albumArtLog(reason.hasPrefix("test") ? message : "perform \(message)")
     }
 
     @MainActor
@@ -397,7 +575,7 @@ enum AlbumArtContactService {
     /// Picks made before phones were persisted have an empty phone; reuse the matching Known/test phone and save it
     /// on the stored pick so later launches start with it.
     @MainActor
-    private static func healedPhoneDigits(_ phoneDigits: String, identifier: String, fallbacks: [String]) -> String {
+    private static func healedPhoneDigits(_ phoneDigits: String, identifier: String, fallbacks: [String], reason: String) -> String {
         guard phoneDigits.count < 7, let healed = fallbacks.first else { return phoneDigits }
         if WordApiSettings.knownContactIdentifier == identifier, WordApiSettings.knownContactPhoneDigits.count < 7 {
             WordApiSettings.updateKnownContactPhoneDigits(healed)
@@ -405,7 +583,7 @@ enum AlbumArtContactService {
         if AlbumArtContactSettings.testContactIdentifier == identifier, AlbumArtContactSettings.testContactPhoneDigits.count < 7 {
             AlbumArtContactSettings.updateTestContactPhoneDigits(healed)
         }
-        albumArtLog("phone healed from stored pick · +\(healed)")
+        stepLog(reason, "phone healed from stored pick · +\(healed)")
         return healed
     }
 
@@ -445,19 +623,20 @@ enum AlbumArtContactService {
             fallbackPhoneDigits: fallbackPhoneDigits,
             keysToFetch: imageKeys,
             createFromRecents: SpectatorContactFetch.RecentsCardSeed(imageData: jpeg),
-            log: { albumArtLog("resolve · \($0)") }
+            log: { stepLog(reason, "resolve · \($0)") }
         )
         let existing = resolution.contact
         let existingName = SpectatorContactFetch.displayName(of: existing)
         let resolvedLabel = "«\(WordApiInputPanel.truncated(existingName, max: 24))» · id=\(WordApiInputPanel.truncated(existing.identifier, max: 16))"
         if resolution.createdFromRecents {
-            albumArtLog("created real card from Recents · «\(existingName)» · +\(resolution.matchedPhoneDigits)")
+            stepLog(reason, "created real card from Recents · «\(existingName)» · +\(resolution.matchedPhoneDigits)")
         } else if resolution.resolvedByPhone {
-            albumArtLog(
+            stepLog(
+                reason,
                 "re-resolved by phone · +\(resolution.matchedPhoneDigits) · \(resolution.phoneMatchCount) match(es) · \(resolvedLabel)"
             )
         } else if resolution.resolvedByName {
-            albumArtLog("re-resolved by name · \(resolvedLabel)")
+            stepLog(reason, "re-resolved by name · \(resolvedLabel)")
         }
         if existing.identifier != contactIdentifier {
             let phone = WordApiContactPhoneParsing.e164(from: existing)
@@ -473,7 +652,7 @@ enum AlbumArtContactService {
         }
         let linked = linkedRawCards(of: [existing], phones: phones)
         let targets = linked.isEmpty ? [existing] : linked
-        albumArtLog("targets · \(targets.count) raw card(s) for unified id=\(WordApiInputPanel.truncated(existing.identifier, max: 16)) · phones=\(phones.map { "+\($0)" }.joined(separator: ","))")
+        stepLog(reason, "targets · \(targets.count) raw card(s) for unified id=\(WordApiInputPanel.truncated(existing.identifier, max: 16)) · phones=\(phones.map { "+\($0)" }.joined(separator: ","))")
         let written = try writePhoto(
             jpeg,
             to: targets,
@@ -519,7 +698,7 @@ enum AlbumArtContactService {
         if pending > 0 {
             try executeLogged(save, reason: reason)
         }
-        AlbumArtContactRestoreStore.replaceEntries(restoreEntries)
+        AlbumArtContactRestoreStore.mergeEntries(restoreEntries)
         return targets.map(\.identifier)
     }
 
@@ -580,9 +759,9 @@ enum AlbumArtContactService {
         jpeg: Data,
         reason: String
     ) -> Int {
-        var failed = verifyPass(identifiers, unifiedIdentifiers: unifiedIdentifiers, phones: phones)
+        var failed = verifyPass(identifiers, unifiedIdentifiers: unifiedIdentifiers, phones: phones, reason: reason)
         guard !failed.isEmpty else { return 0 }
-        albumArtLog("verify · retry \(failed.count) card(s) without photo")
+        stepLog(reason, "verify · retry \(failed.count) card(s) without photo")
         let stale = rawCards(matching: CNContact.predicateForContacts(withIdentifiers: failed), in: store)
         let retry = stale.isEmpty
             ? ((try? store.unifiedContacts(matching: CNContact.predicateForContacts(withIdentifiers: failed), keysToFetch: rawCardKeys)) ?? [])
@@ -596,32 +775,41 @@ enum AlbumArtContactService {
             }
             try? executeLogged(save, reason: "\(reason)-retry")
         }
-        failed = verifyPass(identifiers, unifiedIdentifiers: unifiedIdentifiers, phones: phones)
+        failed = verifyPass(identifiers, unifiedIdentifiers: unifiedIdentifiers, phones: phones, reason: reason)
         if !failed.isEmpty {
-            albumArtLog("verify · FAILED · \(failed.count) card(s) still without photo after retry")
+            stepLog(reason, "verify · FAILED · \(failed.count) card(s) still without photo after retry")
         }
         return failed.count
     }
 
-    private static func verifyPass(_ identifiers: [String], unifiedIdentifiers: [String], phones: [String]) -> [String] {
+    /// Test logs every card; Perform logs one summary line per pass.
+    private static func verifyPass(_ identifiers: [String], unifiedIdentifiers: [String], phones: [String], reason: String) -> [String] {
+        let concise = reason != "test"
         let fresh = CNContactStore()
         let keys = imageKeys + [CNContactThumbnailImageDataKey as CNKeyDescriptor]
         let defaultContainer = fresh.defaultContainerIdentifier()
         var failed: [String] = []
+        var unifiedMarks: [String] = []
+        func hasPhoto(_ card: CNContact) -> Bool { card.imageDataAvailable && !(card.imageData?.isEmpty ?? true) }
         for id in identifiers {
             let card = rawCards(matching: CNContact.predicateForContacts(withIdentifiers: [id]), keys: keys, in: fresh).first
                 ?? (try? SpectatorContactFetch.unifiedContact(store: fresh, identifier: id, keysToFetch: keys))
             guard let card else {
-                albumArtLog("verify · id=\(WordApiInputPanel.truncated(id, max: 16)) · not found on re-fetch")
+                stepLog(reason, "verify · id=\(WordApiInputPanel.truncated(id, max: 16)) · not found on re-fetch")
                 failed.append(id)
                 continue
             }
+            if !hasPhoto(card) { failed.append(id) }
+            guard !concise else { continue }
             let container = containerLabel(forContact: id, defaultIdentifier: defaultContainer, in: fresh)
             albumArtLog("verify · id=\(WordApiInputPanel.truncated(id, max: 16)) · container=\(container) · \(photoLabel(card))")
-            if !card.imageDataAvailable || (card.imageData?.isEmpty ?? true) { failed.append(id) }
         }
         for id in unifiedIdentifiers {
             guard let unified = try? SpectatorContactFetch.unifiedContact(store: fresh, identifier: id, keysToFetch: keys) else { continue }
+            if concise {
+                unifiedMarks.append(hasPhoto(unified) ? "✓" : "✗")
+                continue
+            }
             var phoneCounts: [String] = []
             for digits in phones {
                 let raw = rawCards(withCanonicalDigits: digits, in: fresh).count
@@ -632,6 +820,10 @@ enum AlbumArtContactService {
             albumArtLog(
                 "verify unified · id=\(WordApiInputPanel.truncated(id, max: 16)) · \(photoLabel(unified)) · linked=\(identifiers.count) · \(phoneCounts.joined(separator: " · "))"
             )
+        }
+        if concise {
+            let ok = identifiers.count - failed.count
+            stepLog(reason, "verify · \(ok)/\(identifiers.count) card(s) with photo · unified photo=\(unifiedMarks.isEmpty ? "?" : unifiedMarks.joined(separator: ","))")
         }
         return failed
     }
@@ -662,7 +854,7 @@ enum AlbumArtContactService {
         do {
             try store.execute(save)
         } catch {
-            albumArtLog("CNSaveRequest failed (\(reason)) · \(SpectatorContactFetch.errorLogLabel(error))")
+            stepLog(reason, "CNSaveRequest failed (\(reason)) · \(SpectatorContactFetch.errorLogLabel(error))")
             throw error
         }
     }
@@ -683,13 +875,16 @@ enum AlbumArtContactService {
         }
     }
 
-    /// Runs on `SpectatorContactFetch.workQueue`.
-    private static func applyImageData(_ jpeg: Data, phone: String, reason: String) throws -> Int {
+    /// Unknown (dialed number) or Known without a stored id. Runs on `SpectatorContactFetch.workQueue`, the same serial
+    /// queue as the caller-name upsert, so whichever runs second sees the other's card instead of adding a duplicate.
+    private static func applyImageData(_ jpeg: Data, phone: String, reason: String) throws -> ApplyResult {
         let matches = try cards(withPhone: phone, keysToFetch: rawCardKeys)
         let digits = WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: phone)
         let phones = digits.count >= 7 ? [digits] : []
+        let linked = linkedRawCards(of: matches, phones: phones)
+        let targets = linked.isEmpty ? matches : linked
 
-        if matches.isEmpty {
+        if targets.isEmpty {
             let contact = CNMutableContact()
             contact.givenName = "MindtoneX"
             contact.phoneNumbers = [
@@ -699,7 +894,8 @@ enum AlbumArtContactService {
             let save = CNSaveRequest()
             save.add(contact, toContainerWithIdentifier: store.defaultContainerIdentifier())
             try executeLogged(save, reason: reason)
-            AlbumArtContactRestoreStore.replaceEntries([
+            stepLog(reason, "card · none had \(phone) → created show card id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))")
+            AlbumArtContactRestoreStore.mergeEntries([
                 AlbumArtContactRestoreEntry(
                     identifier: contact.identifier,
                     previousImageData: nil,
@@ -707,39 +903,14 @@ enum AlbumArtContactService {
                     createdForShow: true
                 ),
             ])
-            _ = verifyPhotos([contact.identifier], unifiedIdentifiers: [contact.identifier], phones: phones, jpeg: jpeg, reason: reason)
-            return 1
+            let failed = verifyPhotos([contact.identifier], unifiedIdentifiers: [contact.identifier], phones: phones, jpeg: jpeg, reason: reason)
+            return ApplyResult(count: 1, createdFromRecentsName: nil, unverifiedCount: failed)
         }
 
-        let linked = linkedRawCards(of: matches, phones: phones)
-        let written = try writePhoto(jpeg, to: linked.isEmpty ? matches : linked, createdIdentifier: nil, reason: reason)
-        _ = verifyPhotos(written, unifiedIdentifiers: matches.map(\.identifier), phones: phones, jpeg: jpeg, reason: reason)
-        return written.count
-    }
-
-    @MainActor
-    private static func runRestoreSnapshots(_ snapshots: [AlbumArtContactRestoreEntry], reason: String) async {
-        guard await ensureContactsAccess(reason: reason) else { return }
-        var restored = 0
-        for entry in snapshots {
-            do {
-                try await SpectatorContactFetch.run {
-                    if entry.createdForShow {
-                        try deleteContact(identifier: entry.identifier)
-                    } else {
-                        try restoreImage(entry)
-                    }
-                }
-                restored += 1
-            } catch {
-                dlog("✗ [ALBUM-ART] restore \(entry.identifier) (\(reason)): \(error.localizedDescription)")
-            }
-        }
-        AlbumArtContactRestoreStore.clear()
-        if restored > 0 {
-            dlogDebug("[ALBUM-ART] restore (\(reason)) · \(restored) card(s)")
-            PerformUserLog.shared.log("Album art restored · \(restored) contact photo(s)")
-        }
+        stepLog(reason, "card · \(targets.count) raw card(s) already carry \(phone) (\(matches.count) unified)")
+        let written = try writePhoto(jpeg, to: targets, createdIdentifier: nil, reason: reason)
+        let failed = verifyPhotos(written, unifiedIdentifiers: matches.map(\.identifier), phones: phones, jpeg: jpeg, reason: reason)
+        return ApplyResult(count: written.count, createdFromRecentsName: nil, unverifiedCount: failed)
     }
 
     private static func deleteContact(identifier: String) throws {
