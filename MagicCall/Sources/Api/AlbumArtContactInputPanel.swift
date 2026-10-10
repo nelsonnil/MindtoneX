@@ -3,6 +3,7 @@ import SwiftUI
 struct AlbumArtContactInputPanel: View {
     @AppStorage(AlbumArtContactSettings.Key.enabled) private var albumArtOnContact = false
     @AppStorage(AlbumArtContactSettings.Key.saveToPhotos) private var saveAlbumArtToPhotos = false
+    @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -40,6 +41,7 @@ struct AlbumArtContactInputPanel: View {
 
             if albumArtOnContact {
                 contactSetupCard
+                AlbumArtContactTestSection(contactModeRaw: contactModeRaw)
             }
         }
     }
@@ -56,6 +58,168 @@ struct AlbumArtContactInputPanel: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
+    }
+}
+
+// MARK: - Test contact photo
+
+private struct AlbumArtContactTestSection: View {
+    @EnvironmentObject private var model: AppModel
+    let contactModeRaw: String
+
+    @State private var testTrack: PreviewTrack?
+    @State private var testContactIdentifier: String?
+    @State private var testContactDisplayName: String?
+    @State private var applyOutcome: AlbumArtContactApplyOutcome?
+    @State private var isApplying = false
+    @State private var showTestContactPicker = false
+
+    private var contactMode: WordApiSettings.ContactMode {
+        WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
+    }
+
+    private var resolvedContactIdentifier: String? {
+        if contactMode == .known, WordApiSettings.hasKnownContactSelected {
+            return WordApiSettings.knownContactIdentifier
+        }
+        return testContactIdentifier
+    }
+
+    private var resolvedContactLabel: String? {
+        if contactMode == .known, WordApiSettings.hasKnownContactSelected {
+            return WordApiSettings.knownContactDisplayName
+        }
+        return testContactDisplayName
+    }
+
+    private var needsTestContactPick: Bool {
+        resolvedContactIdentifier == nil
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Test contact photo")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+
+            Text("Try album art on a contact without Perform — same crop and JPEG save as song lock.")
+                .font(.caption2)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            contactTargetRow
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Pick a song")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textSecondary)
+                LibrarySongSearchBlock(
+                    pickedTrackID: testTrack?.id,
+                    onPick: { testTrack = $0; applyOutcome = nil },
+                    resultsPresentation: .sheet
+                )
+                if let track = testTrack {
+                    Text("Selected · \(track.title) — \(track.artist)")
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textPrimary)
+                        .lineLimit(2)
+                }
+            }
+
+            Button {
+                Task { await applyNow() }
+            } label: {
+                Group {
+                    if isApplying {
+                        ProgressView()
+                            .tint(OracleTheme.ink)
+                    } else {
+                        Text("Apply to contact now")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(OracleTheme.ink)
+                .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(isApplying || testTrack == nil || needsTestContactPick)
+
+            if let applyOutcome {
+                Label(
+                    applyOutcome.message,
+                    systemImage: applyOutcome.isSuccess ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                )
+                .font(.caption)
+                .foregroundStyle(applyOutcome.isSuccess ? OracleTheme.sectionTeal : OracleTheme.coral)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+        }
+        .sheet(isPresented: $showTestContactPicker) {
+            WordApiKnownContactPicker(
+                onPick: { contact in
+                    showTestContactPicker = false
+                    testContactIdentifier = contact.identifier
+                    let name = [contact.givenName, contact.familyName]
+                        .filter { !$0.isEmpty }
+                        .joined(separator: " ")
+                    testContactDisplayName = name.isEmpty ? "Contact" : name
+                    applyOutcome = nil
+                },
+                onCancel: { showTestContactPicker = false }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var contactTargetRow: some View {
+        if let label = resolvedContactLabel, resolvedContactIdentifier != nil {
+            Label(label, systemImage: "person.crop.circle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(OracleTheme.gold)
+            if contactMode == .known, WordApiSettings.hasKnownContactSelected {
+                Text("Using your shared Known contact.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            } else {
+                Text("Test-only contact (does not change Home Known/Unknown mode).")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
+        } else {
+            Text("Switch to **Known** and choose a contact above, or pick a contact here for this test only.")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.coral)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                showTestContactPicker = true
+            } label: {
+                Label("Pick contact for test", systemImage: "person.crop.circle.badge.plus")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(OracleTheme.gold)
+        }
+    }
+
+    @MainActor
+    private func applyNow() async {
+        guard let track = testTrack else { return }
+        guard let contactID = resolvedContactIdentifier else { return }
+        applyOutcome = nil
+        isApplying = true
+        defer { isApplying = false }
+        model.pauseVoiceAndAudioForSetupUI(reason: "album art contact test")
+        applyOutcome = await AlbumArtContactService.applyTestContactPhoto(track: track, contactIdentifier: contactID)
     }
 }
 

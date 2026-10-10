@@ -3,6 +3,23 @@ import Foundation
 import Photos
 import UIKit
 
+/// Outcome for Home **Test contact photo** (and other user-visible apply attempts).
+enum AlbumArtContactApplyOutcome: Equatable {
+    case success(String)
+    case failure(String)
+
+    var message: String {
+        switch self {
+        case .success(let text), .failure(let text): return text
+        }
+    }
+
+    var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
+    }
+}
+
 /// Album artwork on song lock — contact photo and/or Photo Library (shared download + crop).
 enum AlbumArtContactService {
     private static let store = CNContactStore()
@@ -31,6 +48,33 @@ enum AlbumArtContactService {
         processOnSongLock(track: track, reason: reason)
     }
 
+    /// Home test lab — same download, crop, and Contacts save as song lock (no Perform required).
+    @MainActor
+    static func applyTestContactPhoto(track: PreviewTrack, contactIdentifier: String) async -> AlbumArtContactApplyOutcome {
+        let trackLabel = "\(track.title) — \(track.artist)"
+        guard track.artworkURL != nil else {
+            return .failure("No artwork for this track.")
+        }
+        do {
+            let jpeg = try await fetchSquareJPEG(for: track, reason: "test")
+            guard await ensureContactsAccess(reason: "test") else {
+                return .failure("Contacts access denied — enable in Settings → MindtoneX → Contacts.")
+            }
+            let count = try applyImageData(jpeg, contactIdentifier: contactIdentifier, reason: "test")
+            let msg = count == 1 ? "Contact photo updated." : "Updated \(count) contact photo(s)."
+            PerformUserLog.shared.log("Album art test · \(msg) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
+            return .success(msg)
+        } catch let err as AlbumArtContactError {
+            let msg = err.userMessage
+            PerformUserLog.shared.log("Album art test failed · \(msg)")
+            return .failure(msg)
+        } catch {
+            let msg = error.localizedDescription
+            PerformUserLog.shared.log("Album art test failed · \(msg)")
+            return .failure(msg)
+        }
+    }
+
     @MainActor
     static func restoreContactsAfterPerform(reason: String) {
         let snapshots = AlbumArtContactRestoreStore.entries
@@ -50,40 +94,64 @@ enum AlbumArtContactService {
 
     @MainActor
     private static func processArtwork(for track: PreviewTrack, trackLabel: String, reason: String) async {
-        guard let url = track.artworkURL else { return }
-        let fetchURL = upgradedArtworkURL(url)
         do {
-            let (data, _) = try await session.data(from: fetchURL)
-            guard let image = UIImage(data: data) else {
-                dlog("[ALBUM-ART] skip (\(reason)): invalid image data")
-                return
-            }
-            guard let jpeg = centerCroppedSquareJPEG(image) else {
-                dlog("[ALBUM-ART] skip (\(reason)): crop failed")
-                return
-            }
-
+            let jpeg = try await fetchSquareJPEG(for: track, reason: reason)
             if AlbumArtContactSettings.saveToPhotosEnabled {
                 await saveToPhotoLibrary(jpeg: jpeg, trackLabel: trackLabel, reason: reason)
             }
             if AlbumArtContactSettings.enabled {
                 await applyContactArtwork(jpeg: jpeg, trackLabel: trackLabel, reason: reason)
             }
+        } catch AlbumArtContactError.noArtworkURL {
+            dlog("[ALBUM-ART] skip (\(reason)): no artwork URL · \(trackLabel)")
+        } catch AlbumArtContactError.invalidImageData {
+            dlog("[ALBUM-ART] skip (\(reason)): invalid image data")
+        } catch AlbumArtContactError.cropFailed {
+            dlog("[ALBUM-ART] skip (\(reason)): crop failed")
         } catch {
             dlog("✗ [ALBUM-ART] download (\(reason)): \(error.localizedDescription)")
         }
     }
 
+    private enum AlbumArtContactError: Error {
+        case noArtworkURL
+        case invalidImageData
+        case cropFailed
+        case noContactTarget
+
+        var userMessage: String {
+            switch self {
+            case .noArtworkURL: return "No artwork for this track."
+            case .invalidImageData: return "Downloaded artwork could not be read as an image."
+            case .cropFailed: return "Could not crop artwork to a square."
+            case .noContactTarget: return "No contact selected for test."
+            }
+        }
+    }
+
+    private static func fetchSquareJPEG(for track: PreviewTrack, reason: String) async throws -> Data {
+        guard let url = track.artworkURL else { throw AlbumArtContactError.noArtworkURL }
+        let fetchURL = upgradedArtworkURL(url)
+        let (data, _) = try await session.data(from: fetchURL)
+        guard let image = UIImage(data: data) else { throw AlbumArtContactError.invalidImageData }
+        guard let jpeg = centerCroppedSquareJPEG(image) else { throw AlbumArtContactError.cropFailed }
+        return jpeg
+    }
+
     @MainActor
     private static func applyContactArtwork(jpeg: Data, trackLabel: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
-        guard let phone = WordApiSettings.spectatorContactPhoneE164String() else {
-            dlog("[ALBUM-ART] skip (\(reason)): no spectator phone — dial or pick contact first")
-            PerformUserLog.shared.log("Album art · no phone yet · dial or choose contact on Album art card")
-            return
-        }
         do {
-            let count = try applyImageData(jpeg, phone: phone, reason: reason)
+            let count: Int
+            if WordApiSettings.contactMode == .known, let id = WordApiSettings.knownContactIdentifier {
+                count = try applyImageData(jpeg, contactIdentifier: id, reason: reason)
+            } else if let phone = WordApiSettings.spectatorContactPhoneE164String() {
+                count = try applyImageData(jpeg, phone: phone, reason: reason)
+            } else {
+                dlog("[ALBUM-ART] skip (\(reason)): no spectator phone — dial or pick contact first")
+                PerformUserLog.shared.log("Album art · no phone yet · dial or choose contact on Album art card")
+                return
+            }
             dlog("[ALBUM-ART] contact «\(trackLabel)» → \(count) card(s) (\(reason))")
             PerformUserLog.shared.log("Album art on contact · \(count) card(s) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
         } catch {
@@ -155,24 +223,67 @@ enum AlbumArtContactService {
         return URL(string: raw) ?? url
     }
 
-    private static func centerCroppedSquareJPEG(_ image: UIImage, side: CGFloat = 600) -> Data? {
-        let scale = image.scale
-        guard let cg = image.cgImage else { return nil }
-        let w = CGFloat(cg.width)
-        let h = CGFloat(cg.height)
-        let cropSide = min(w, h)
-        let originX = (w - cropSide) / 2
-        let originY = (h - cropSide) / 2
-        guard let cropped = cg.cropping(to: CGRect(x: originX, y: originY, width: cropSide, height: cropSide)) else {
-            return nil
+    private static func centerCroppedSquareJPEG(_ image: UIImage, maxSide: CGFloat = 600) -> Data? {
+        let size = image.size
+        guard size.width > 0, size.height > 0 else { return nil }
+        let cropSide = min(size.width, size.height)
+        let originX = (size.width - cropSide) / 2
+        let originY = (size.height - cropSide) / 2
+
+        let cropRenderer = UIGraphicsImageRenderer(size: CGSize(width: cropSide, height: cropSide))
+        let cropped = cropRenderer.image { _ in
+            image.draw(in: CGRect(x: -originX, y: -originY, width: size.width, height: size.height))
         }
-        let square = UIImage(cgImage: cropped, scale: scale, orientation: image.imageOrientation)
-        let targetSide = min(side, max(square.size.width, square.size.height))
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: targetSide, height: targetSide))
-        let rendered = renderer.image { _ in
-            square.draw(in: CGRect(origin: .zero, size: CGSize(width: targetSide, height: targetSide)))
+
+        let targetSide = min(maxSide, max(cropped.size.width, cropped.size.height))
+        let scaled: UIImage
+        if targetSide < max(cropped.size.width, cropped.size.height) {
+            let scaleRenderer = UIGraphicsImageRenderer(size: CGSize(width: targetSide, height: targetSide))
+            scaled = scaleRenderer.image { _ in
+                cropped.draw(in: CGRect(origin: .zero, size: CGSize(width: targetSide, height: targetSide)))
+            }
+        } else {
+            scaled = cropped
         }
-        return rendered.jpegData(compressionQuality: 0.92)
+        return jpegDataForContact(scaled, maxBytes: 280_000)
+    }
+
+    /// Contacts expects JPEG; keep under a practical size limit.
+    private static func jpegDataForContact(_ image: UIImage, maxBytes: Int) -> Data? {
+        var quality: CGFloat = 0.92
+        var best: Data?
+        while quality >= 0.45 {
+            if let data = image.jpegData(compressionQuality: quality) {
+                best = data
+                if data.count <= maxBytes { return data }
+            }
+            quality -= 0.12
+        }
+        return best
+    }
+
+    private static func applyImageData(_ jpeg: Data, contactIdentifier: String, reason: String) throws -> Int {
+        let keys: [CNKeyDescriptor] = [
+            CNContactIdentifierKey as CNKeyDescriptor,
+            CNContactImageDataKey as CNKeyDescriptor,
+        ]
+        let existing = try store.unifiedContact(withIdentifier: contactIdentifier, keysToFetch: keys)
+        let had = existing.imageDataAvailable && existing.imageData != nil
+        let restoreEntries = [
+            AlbumArtContactRestoreEntry(
+                identifier: existing.identifier,
+                previousImageData: had ? existing.imageData : nil,
+                hadImage: had,
+                createdForShow: false
+            ),
+        ]
+        let mutable = existing.mutableCopy() as! CNMutableContact
+        mutable.imageData = jpeg
+        let save = CNSaveRequest()
+        save.update(mutable)
+        try store.execute(save)
+        AlbumArtContactRestoreStore.replaceEntries(restoreEntries)
+        return 1
     }
 
     private static func applyImageData(_ jpeg: Data, phone: String, reason: String) throws -> Int {
