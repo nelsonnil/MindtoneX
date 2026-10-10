@@ -62,8 +62,16 @@ struct SpectatorContactSetupSection: View {
 
     @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
     @AppStorage(WordApiSettings.Key.restoreKnownNameOnSettingsExit) private var restoreAfterPerform = true
+    @AppStorage(WordApiSettings.Key.knownContactIdentifier) private var knownContactIdentifier = ""
+    @AppStorage(WordApiSettings.Key.knownContactPhoneDigits) private var knownContactPhoneDigits = ""
+    @AppStorage(SpectatorContactFetch.RecentsNotice.identifierKey) private var recentsCreatedIdentifier = ""
 
     @State private var showContactPicker = false
+
+    private var recentsNotice: String? {
+        guard !recentsCreatedIdentifier.isEmpty else { return nil }
+        return SpectatorContactFetch.RecentsNotice.message(forIdentifier: knownContactIdentifier)
+    }
 
     private var contactMode: WordApiSettings.ContactMode {
         WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
@@ -138,9 +146,15 @@ struct SpectatorContactSetupSection: View {
                 Label(WordApiSettings.knownContactDisplayName, systemImage: "person.crop.circle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(accent)
-                Text("Phone · +\(WordApiSettings.knownContactPhoneDigits)")
+                Text("Phone · +\(knownContactPhoneDigits)")
                     .font(.caption.monospaced())
                     .foregroundStyle(OracleTheme.textSecondary)
+                if let recentsNotice {
+                    Label(recentsNotice, systemImage: "person.crop.circle.badge.checkmark")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.sectionTeal)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Text("Perform goes straight to the stage screenshot — no dial.")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)

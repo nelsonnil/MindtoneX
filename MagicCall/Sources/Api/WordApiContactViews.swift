@@ -54,6 +54,8 @@ struct WordApiPickedContact {
     let contact: CNContact
     let phoneE164: String?
     let displayName: String
+    /// The pick was a Siri/Recents suggestion with no saved card, so MindtoneX added one.
+    var createdFromRecents = false
 }
 
 struct WordApiKnownContactPicker: UIViewControllerRepresentable {
@@ -92,6 +94,10 @@ struct WordApiKnownContactPicker: UIViewControllerRepresentable {
 
         private static func resolvePick(_ contact: CNContact, pickerPhone: String?, pickerName: String) -> WordApiPickedContact {
             let idSnippet = WordApiInputPanel.truncated(contact.identifier, max: 16)
+            let seed = SpectatorContactFetch.RecentsCardSeed(
+                givenName: contact.isKeyAvailable(CNContactGivenNameKey) ? contact.givenName : "",
+                familyName: contact.isKeyAvailable(CNContactFamilyNameKey) ? contact.familyName : ""
+            )
             do {
                 let resolved = try SpectatorContactFetch.resolveContact(
                     store: SpectatorContactFetch.sharedStore,
@@ -99,6 +105,7 @@ struct WordApiKnownContactPicker: UIViewControllerRepresentable {
                     phoneDigits: pickerPhone,
                     displayName: pickerName,
                     keysToFetch: [],
+                    createFromRecents: seed,
                     log: { contactLog("picker · \($0)") }
                 )
                 let unified = resolved.contact
@@ -107,8 +114,17 @@ struct WordApiKnownContactPicker: UIViewControllerRepresentable {
                 }
                 let phone = pickerPhone ?? WordApiContactPhoneParsing.e164(from: unified)
                 let name = SpectatorContactFetch.displayName(of: unified)
-                contactLog("picker · «\(name.isEmpty ? pickerName : name)» · phone=\(phone ?? "none")")
-                return WordApiPickedContact(contact: unified, phoneE164: phone, displayName: name.isEmpty ? pickerName : name)
+                let label = name.isEmpty ? pickerName : name
+                if resolved.createdFromRecents {
+                    contactLog("picker · created real card from Recents · «\(label)» · +\(resolved.matchedPhoneDigits)")
+                }
+                contactLog("picker · «\(label)» · phone=\(phone ?? "none")")
+                return WordApiPickedContact(
+                    contact: unified,
+                    phoneE164: phone,
+                    displayName: label,
+                    createdFromRecents: resolved.createdFromRecents
+                )
             } catch {
                 contactLog("picker · unified lookup failed · id=\(idSnippet) · \(SpectatorContactFetch.errorLogLabel(error)) · phone=\(pickerPhone ?? "none")")
                 return WordApiPickedContact(contact: contact, phoneE164: pickerPhone, displayName: pickerName)
@@ -193,9 +209,55 @@ enum SpectatorContactFetch {
         let contact: CNContact
         let resolvedByPhone: Bool
         let phoneMatchCount: Int
-        /// Canonical digits that produced the match (empty when resolved by id or name).
+        /// Canonical digits that produced the match (empty when resolved by id or name); the created card's number when `createdFromRecents`.
         let matchedPhoneDigits: String
         let resolvedByName: Bool
+        /// No unified card existed for a `CNCoreRecents…` pick, so a real card was added with the picker name + phone.
+        var createdFromRecents = false
+    }
+
+    /// Optional seed for `resolveContact(createFromRecents:)`; names fall back to `displayName` when empty.
+    struct RecentsCardSeed {
+        var givenName = ""
+        var familyName = ""
+    }
+
+    enum RecentsNotice {
+        static let identifierKey = "contacts.recentsCreated.identifier"
+        static let nameKey = "contacts.recentsCreated.name"
+
+        static func message(name: String) -> String {
+            "Created a contact card for «\(name)» (it was only a Recents suggestion)."
+        }
+
+        /// Message for the card currently linked as `identifier`, if MindtoneX created it from a Recents pick.
+        static func message(forIdentifier identifier: String?) -> String? {
+            let d = UserDefaults.standard
+            guard let identifier, !identifier.isEmpty,
+                  d.string(forKey: identifierKey) == identifier,
+                  let name = d.string(forKey: nameKey), !name.isEmpty
+            else { return nil }
+            return message(name: name)
+        }
+
+        fileprivate static func record(identifier: String, name: String) {
+            DispatchQueue.main.async {
+                UserDefaults.standard.set(identifier, forKey: identifierKey)
+                UserDefaults.standard.set(name, forKey: nameKey)
+            }
+        }
+    }
+
+    /// Case-, accent- and width-insensitive, trimmed, single-spaced (`papa` == `Papá` == ` PAPA `).
+    static func normalizedName(_ raw: String) -> String {
+        raw.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+    }
+
+    static func namesMatch(_ lhs: String, _ rhs: String) -> Bool {
+        let left = normalizedName(lhs)
+        return !left.isEmpty && left == normalizedName(rhs)
     }
 
     /// Picker / Siri-suggestion ids (`CNCoreRecentsCoordinator…`) are not unified-store records and fail `CNSaveRequest.update`.
@@ -235,7 +297,8 @@ enum SpectatorContactFetch {
     ]
 
     /// Unified store card for save: durable id first; phone fallback whenever the id is `CNCoreRecents…` or returns no card
-    /// (`phoneDigits`, then `fallbackPhoneDigits`); exact display name last. Call on `workQueue`.
+    /// (`phoneDigits`, then `fallbackPhoneDigits`); accent/case-insensitive display name last. With `createFromRecents`, a
+    /// `CNCoreRecents…` id that matches no card becomes a new real card (name + first phone). Call on `workQueue`.
     static func resolveContact(
         store: CNContactStore,
         identifier: String?,
@@ -243,6 +306,7 @@ enum SpectatorContactFetch {
         displayName: String?,
         fallbackPhoneDigits: [String] = [],
         keysToFetch: [CNKeyDescriptor],
+        createFromRecents: RecentsCardSeed? = nil,
         log: ((String) -> Void)? = nil
     ) throws -> Resolution {
         let keys = keysToFetch + matchKeys
@@ -274,13 +338,32 @@ enum SpectatorContactFetch {
             return Resolution(contact: pick, resolvedByPhone: true, phoneMatchCount: matches.count, matchedPhoneDigits: digits, resolvedByName: false)
         }
 
-        if let byName = try contactByExactName(displayName, store: store, keysToFetch: keys, log: log) {
+        if let byName = try contactByName(displayName, store: store, keysToFetch: keys, log: log) {
             return Resolution(contact: byName, resolvedByPhone: false, phoneMatchCount: 0, matchedPhoneDigits: "", resolvedByName: true)
+        }
+        if transient, let seed = createFromRecents, let digits = phones.first {
+            let created = try createCardFromRecents(
+                store: store,
+                seed: seed,
+                displayName: displayName ?? "",
+                phoneDigits: digits,
+                keysToFetch: keys,
+                log: log
+            )
+            return Resolution(
+                contact: created,
+                resolvedByPhone: false,
+                phoneMatchCount: 0,
+                matchedPhoneDigits: digits,
+                resolvedByName: false,
+                createdFromRecents: true
+            )
         }
         throw (transient && phones.isEmpty) ? Error.transientIdentifier : Error.notAccessible
     }
 
-    /// Known-mode card from saved settings; persists the unified id when re-resolved by phone. Call on `workQueue`.
+    /// Known-mode card from saved settings; persists the unified id (and phone when missing) when re-resolved or created
+    /// from a Recents pick. Call on `workQueue`.
     static func resolveKnownContact(
         store: CNContactStore,
         keysToFetch: [CNKeyDescriptor],
@@ -293,12 +376,52 @@ enum SpectatorContactFetch {
             phoneDigits: WordApiSettings.knownContactPhoneDigits,
             displayName: WordApiSettings.knownContactDisplayName,
             keysToFetch: keysToFetch,
+            createFromRecents: RecentsCardSeed(givenName: WordApiSettings.knownContactOriginalGivenName),
             log: log
         )
         if resolution.contact.identifier != stored {
             WordApiSettings.updateKnownContactIdentifier(resolution.contact.identifier)
+            if WordApiSettings.knownContactPhoneDigits.count < 7,
+               let phone = WordApiContactPhoneParsing.e164(from: resolution.contact) {
+                WordApiSettings.updateKnownContactPhoneDigits(phone)
+            }
         }
         return resolution
+    }
+
+    private static func createCardFromRecents(
+        store: CNContactStore,
+        seed: RecentsCardSeed,
+        displayName: String,
+        phoneDigits: String,
+        keysToFetch keys: [CNKeyDescriptor],
+        log: ((String) -> Void)?
+    ) throws -> CNContact {
+        let card = CNMutableContact()
+        let given = seed.givenName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let family = seed.familyName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if given.isEmpty && family.isEmpty {
+            let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+            card.givenName = name.isEmpty ? "+\(phoneDigits)" : name
+        } else {
+            card.givenName = given
+            card.familyName = family
+        }
+        card.phoneNumbers = [
+            CNLabeledValue(label: CNLabelPhoneNumberMobile, value: CNPhoneNumber(stringValue: "+\(phoneDigits)")),
+        ]
+        let save = CNSaveRequest()
+        save.add(card, toContainerWithIdentifier: nil)
+        do {
+            try store.execute(save)
+        } catch {
+            log?("create from Recents failed · \(errorLogLabel(error))")
+            throw error
+        }
+        let label = self.displayName(of: card)
+        log?("created card from Recents · «\(label)» · +\(phoneDigits) · id=\(card.identifier.prefix(16))")
+        RecentsNotice.record(identifier: card.identifier, name: label)
+        return (try? unifiedContact(store: store, identifier: card.identifier, keysToFetch: keys)) ?? card
     }
 
     private static func contacts(
@@ -347,20 +470,39 @@ enum SpectatorContactFetch {
         return found
     }
 
-    private static func contactByExactName(
+    /// Unique card with a phone whose display name matches accent/case-insensitively. The name predicate is not
+    /// diacritic-insensitive, so an empty predicate result falls back to a full scan.
+    private static func contactByName(
         _ displayName: String?,
         store: CNContactStore,
         keysToFetch keys: [CNKeyDescriptor],
         log: ((String) -> Void)?
     ) throws -> CNContact? {
-        let wanted = (displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let raw = (displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let wanted = normalizedName(raw)
         guard !wanted.isEmpty else { return nil }
-        let candidates = try store.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: wanted), keysToFetch: keys)
-        let exact = candidates.filter {
-            self.displayName(of: $0).caseInsensitiveCompare(wanted) == .orderedSame && !$0.phoneNumbers.isEmpty
+        func matches(_ contact: CNContact) -> Bool {
+            !contact.phoneNumbers.isEmpty && normalizedName(self.displayName(of: contact)) == wanted
         }
-        log?("name fallback · «\(wanted)» · \(exact.count) exact match(es)")
-        return exact.count == 1 ? exact[0] : nil
+        var found: [CNContact] = []
+        do {
+            found = try store.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: raw), keysToFetch: keys)
+                .filter(matches)
+        } catch {
+            log?("name predicate · \(errorLogLabel(error))")
+        }
+        if found.isEmpty {
+            var scanned = 0
+            let request = CNContactFetchRequest(keysToFetch: keys)
+            request.unifyResults = true
+            try store.enumerateContacts(with: request) { contact, _ in
+                scanned += 1
+                if matches(contact) { found.append(contact) }
+            }
+            log?("name fallback · enumerate · scanned \(scanned) card(s)")
+        }
+        log?("name fallback · «\(raw)» · \(found.count) match(es) (accent/case-insensitive)")
+        return found.count == 1 ? found[0] : nil
     }
 
     private static func bestMatch(_ matches: [CNContact], identifier: String, displayName: String?) -> CNContact {
@@ -368,14 +510,12 @@ enum SpectatorContactFetch {
         if !identifier.isEmpty, let byID = matches.first(where: { $0.identifier == identifier }) {
             return byID
         }
-        let wanted = (displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if !wanted.isEmpty {
-            if let exact = matches.first(where: { self.displayName(of: $0).caseInsensitiveCompare(wanted) == .orderedSame }) {
+        let wanted = displayName ?? ""
+        if !normalizedName(wanted).isEmpty {
+            if let exact = matches.first(where: { namesMatch(self.displayName(of: $0), wanted) }) {
                 return exact
             }
-            if let given = matches.first(where: {
-                $0.givenName.trimmingCharacters(in: .whitespacesAndNewlines).caseInsensitiveCompare(wanted) == .orderedSame
-            }) {
+            if let given = matches.first(where: { namesMatch($0.givenName, wanted) }) {
                 return given
             }
         }

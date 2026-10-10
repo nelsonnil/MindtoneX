@@ -70,6 +70,9 @@ private struct AlbumArtContactTestSection: View {
     @State private var testTrack: PreviewTrack?
     @AppStorage(AlbumArtContactSettings.Key.testContactIdentifier) private var testContactIdentifier = ""
     @AppStorage(AlbumArtContactSettings.Key.testContactDisplayName) private var testContactDisplayName = ""
+    @AppStorage(AlbumArtContactSettings.Key.testContactPhoneDigits) private var testContactPhoneDigits = ""
+    @AppStorage(WordApiSettings.Key.knownContactIdentifier) private var knownContactIdentifier = ""
+    @AppStorage(SpectatorContactFetch.RecentsNotice.identifierKey) private var recentsCreatedIdentifier = ""
     @State private var applyOutcome: AlbumArtContactApplyOutcome?
     @State private var isApplying = false
     @State private var showTestContactPicker = false
@@ -90,7 +93,16 @@ private struct AlbumArtContactTestSection: View {
         if contactMode == .known, WordApiSettings.hasKnownContactSelected {
             return WordApiSettings.knownContactPhoneDigits
         }
-        return AlbumArtContactSettings.testContactPhoneDigits
+        return testContactPhoneDigits.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var usesKnownContact: Bool {
+        contactMode == .known && WordApiSettings.hasKnownContactSelected
+    }
+
+    private var recentsNotice: String? {
+        guard !recentsCreatedIdentifier.isEmpty else { return nil }
+        return SpectatorContactFetch.RecentsNotice.message(forIdentifier: resolvedContactIdentifier)
     }
 
     private var resolvedContactLabel: String? {
@@ -185,6 +197,9 @@ private struct AlbumArtContactTestSection: View {
                     albumArtLog(
                         "test contact picked «\(label)» · phone=\(picked.phoneE164 ?? "none") · id=\(WordApiInputPanel.truncated(picked.contact.identifier, max: 16))"
                     )
+                    if picked.createdFromRecents {
+                        albumArtLog("created real card from Recents · «\(label)» · \(picked.phoneE164 ?? "no phone")")
+                    }
                     testContactIdentifier = picked.contact.identifier
                     testContactDisplayName = label
                     applyOutcome = nil
@@ -200,7 +215,17 @@ private struct AlbumArtContactTestSection: View {
             Label(label, systemImage: "person.crop.circle.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(OracleTheme.gold)
-            if contactMode == .known, WordApiSettings.hasKnownContactSelected {
+            let phone = resolvedContactPhoneDigits
+            Text(phone.isEmpty ? "Phone · none saved — re-pick to store it" : "Phone · +\(phone)")
+                .font(.caption.monospaced())
+                .foregroundStyle(phone.isEmpty ? OracleTheme.coral : OracleTheme.textSecondary)
+            if let recentsNotice {
+                Label(recentsNotice, systemImage: "person.crop.circle.badge.checkmark")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.sectionTeal)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if usesKnownContact {
                 Text("Using your shared Known contact.")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
@@ -208,6 +233,14 @@ private struct AlbumArtContactTestSection: View {
                 Text("Test-only contact (does not change Home Known/Unknown mode).")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
+                Button {
+                    showTestContactPicker = true
+                } label: {
+                    Label("Change test contact", systemImage: "person.crop.circle.badge.plus")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(OracleTheme.gold)
             }
         } else {
             Text("Switch to **Known** and choose a contact above, or pick a contact here for this test only.")

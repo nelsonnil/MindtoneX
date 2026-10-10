@@ -46,6 +46,9 @@ enum SpectatorWordContactService {
         contactLog(
             "known picked «\(label)» · phone=+\(WordApiSettings.knownContactPhoneDigits) · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))"
         )
+        if picked.createdFromRecents {
+            PerformUserLog.shared.log(SpectatorContactFetch.RecentsNotice.message(name: label))
+        }
     }
 
     /// Reverts Contacts changed at word lock (Perform disarm / settings dismiss).
@@ -73,6 +76,9 @@ enum SpectatorWordContactService {
         do {
             let outcome = try await SpectatorContactFetch.run { try renameKnownContactGivenName(identifier: identifier, word: word) }
             WordApiSettings.setKnownContactRenamedForShow(WordApiContactRestoreStore.hasPendingRestore)
+            if let created = outcome.createdFromRecentsName {
+                PerformUserLog.shared.log(SpectatorContactFetch.RecentsNotice.message(name: created))
+            }
             dlogDebug("[CONTACT] renamed known → «\(word)» (\(reason)) · \(outcome.debugSummary)")
             PerformUserLog.shared.log("Contact renamed · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
         } catch {
@@ -204,6 +210,7 @@ enum SpectatorWordContactService {
         /// Cards with the spectator number that keep their own name; iOS may show any of them.
         var otherCardsWithNumber: Int
         var limitedAccess: Bool
+        var createdFromRecentsName: String?
 
         var warnings: String {
             var parts: [String] = []
@@ -318,7 +325,9 @@ enum SpectatorWordContactService {
             log: { contactLog("known resolve · \($0)") }
         )
         let contact = resolution.contact
-        if resolution.resolvedByPhone {
+        if resolution.createdFromRecents {
+            contactLog("known · created real card from Recents · «\(SpectatorContactFetch.displayName(of: contact))» · +\(resolution.matchedPhoneDigits)")
+        } else if resolution.resolvedByPhone {
             contactLog("known re-resolved by phone · +\(resolution.matchedPhoneDigits) · \(resolution.phoneMatchCount) match(es) · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))")
         }
         WordApiContactRestoreStore.replaceEntries([
@@ -338,7 +347,11 @@ enum SpectatorWordContactService {
             let sharing = (try? cards(withPhone: phone, keysToFetch: [CNContactIdentifierKey as CNKeyDescriptor])) ?? []
             others = sharing.filter { $0.identifier != contact.identifier }.count
         }
-        return outcome(for: mutable, cardsRenamed: 1, otherCardsWithNumber: others, fallback: word)
+        var result = outcome(for: mutable, cardsRenamed: 1, otherCardsWithNumber: others, fallback: word)
+        if resolution.createdFromRecents {
+            result.createdFromRecentsName = SpectatorContactFetch.displayName(of: contact)
+        }
+        return result
     }
 
     private static func deleteContact(identifier: String) throws {

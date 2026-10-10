@@ -78,19 +78,23 @@ enum AlbumArtContactService {
                 )
             }
             let fallbackPhones = storedPhoneFallbacks(identifier: contactIdentifier, displayName: contactDisplayName)
+            let phoneDigits = healedPhoneDigits(contactPhoneDigits, identifier: contactIdentifier, fallbacks: fallbackPhones)
             do {
-                let count = try await SpectatorContactFetch.run {
+                let applied = try await SpectatorContactFetch.run {
                     try applyImageData(
                         jpeg,
                         contactIdentifier: contactIdentifier,
-                        phoneDigits: contactPhoneDigits,
+                        phoneDigits: phoneDigits,
                         displayName: contactDisplayName,
                         fallbackPhoneDigits: fallbackPhones,
                         reason: "test"
                     )
                 }
-                albumArtLog("save ok · updated \(count) contact(s)")
-                let msg = count == 1 ? "Contact photo updated." : "Updated \(count) contact photo(s)."
+                albumArtLog("save ok · updated \(applied.count) contact(s)")
+                var msg = applied.count == 1 ? "Contact photo updated." : "Updated \(applied.count) contact photo(s)."
+                if let created = applied.createdFromRecentsName {
+                    msg = "\(SpectatorContactFetch.RecentsNotice.message(name: created)) \(msg)"
+                }
                 return finishTestApply(.success(msg), trackLabel: trackLabel)
             } catch {
                 albumArtLog("save failed · \(SpectatorContactFetch.errorLogLabel(error)) · auth=\(contactsAuthorizationLabel())")
@@ -218,10 +222,10 @@ enum AlbumArtContactService {
         do {
             let count: Int
             if WordApiSettings.contactMode == .known, let id = WordApiSettings.knownContactIdentifier {
-                let phoneDigits = WordApiSettings.knownContactPhoneDigits
                 let displayName = WordApiSettings.knownContactDisplayName
                 let fallbackPhones = storedPhoneFallbacks(identifier: id, displayName: displayName)
-                count = try await SpectatorContactFetch.run {
+                let phoneDigits = healedPhoneDigits(WordApiSettings.knownContactPhoneDigits, identifier: id, fallbacks: fallbackPhones)
+                let applied = try await SpectatorContactFetch.run {
                     try applyImageData(
                         jpeg,
                         contactIdentifier: id,
@@ -230,6 +234,10 @@ enum AlbumArtContactService {
                         fallbackPhoneDigits: fallbackPhones,
                         reason: reason
                     )
+                }
+                count = applied.count
+                if let created = applied.createdFromRecentsName {
+                    PerformUserLog.shared.log(SpectatorContactFetch.RecentsNotice.message(name: created))
                 }
             } else if let phone = WordApiSettings.spectatorContactPhoneE164String() {
                 count = try await SpectatorContactFetch.run { try applyImageData(jpeg, phone: phone, reason: reason) }
@@ -368,9 +376,8 @@ enum AlbumArtContactService {
     private static func storedPhoneFallbacks(identifier: String, displayName: String) -> [String] {
         func sameCard(id: String?, name: String?) -> Bool {
             if let id, id == identifier { return true }
-            let wanted = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !wanted.isEmpty, let name else { return false }
-            return name.trimmingCharacters(in: .whitespacesAndNewlines).caseInsensitiveCompare(wanted) == .orderedSame
+            guard let name else { return false }
+            return SpectatorContactFetch.namesMatch(name, displayName)
         }
         var phones: [String] = []
         if sameCard(id: WordApiSettings.knownContactIdentifier, name: WordApiSettings.knownContactDisplayName) {
@@ -382,6 +389,26 @@ enum AlbumArtContactService {
         return phones.filter { $0.count >= 7 }
     }
 
+    /// Picks made before phones were persisted have an empty phone; reuse the matching Known/test phone and save it
+    /// on the stored pick so later launches start with it.
+    @MainActor
+    private static func healedPhoneDigits(_ phoneDigits: String, identifier: String, fallbacks: [String]) -> String {
+        guard phoneDigits.count < 7, let healed = fallbacks.first else { return phoneDigits }
+        if WordApiSettings.knownContactIdentifier == identifier, WordApiSettings.knownContactPhoneDigits.count < 7 {
+            WordApiSettings.updateKnownContactPhoneDigits(healed)
+        }
+        if AlbumArtContactSettings.testContactIdentifier == identifier, AlbumArtContactSettings.testContactPhoneDigits.count < 7 {
+            AlbumArtContactSettings.updateTestContactPhoneDigits(healed)
+        }
+        albumArtLog("phone healed from stored pick · +\(healed)")
+        return healed
+    }
+
+    private struct ApplyResult {
+        let count: Int
+        let createdFromRecentsName: String?
+    }
+
     /// Runs on `SpectatorContactFetch.workQueue`.
     private static func applyImageData(
         _ jpeg: Data,
@@ -390,7 +417,7 @@ enum AlbumArtContactService {
         displayName: String,
         fallbackPhoneDigits: [String],
         reason: String
-    ) throws -> Int {
+    ) throws -> ApplyResult {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactImageDataKey as CNKeyDescriptor,
@@ -403,11 +430,15 @@ enum AlbumArtContactService {
             displayName: displayName,
             fallbackPhoneDigits: fallbackPhoneDigits,
             keysToFetch: keys,
+            createFromRecents: SpectatorContactFetch.RecentsCardSeed(),
             log: { albumArtLog("resolve · \($0)") }
         )
         let existing = resolution.contact
-        let resolvedLabel = "«\(WordApiInputPanel.truncated(SpectatorContactFetch.displayName(of: existing), max: 24))» · id=\(WordApiInputPanel.truncated(existing.identifier, max: 16))"
-        if resolution.resolvedByPhone {
+        let existingName = SpectatorContactFetch.displayName(of: existing)
+        let resolvedLabel = "«\(WordApiInputPanel.truncated(existingName, max: 24))» · id=\(WordApiInputPanel.truncated(existing.identifier, max: 16))"
+        if resolution.createdFromRecents {
+            albumArtLog("created real card from Recents · «\(existingName)» · +\(resolution.matchedPhoneDigits)")
+        } else if resolution.resolvedByPhone {
             albumArtLog(
                 "re-resolved by phone · +\(resolution.matchedPhoneDigits) · \(resolution.phoneMatchCount) match(es) · \(resolvedLabel)"
             )
@@ -435,7 +466,7 @@ enum AlbumArtContactService {
         save.update(mutable)
         try executeLogged(save, reason: reason)
         AlbumArtContactRestoreStore.replaceEntries(restoreEntries)
-        return 1
+        return ApplyResult(count: 1, createdFromRecentsName: resolution.createdFromRecents ? existingName : nil)
     }
 
     private static func executeLogged(_ save: CNSaveRequest, reason: String) throws {

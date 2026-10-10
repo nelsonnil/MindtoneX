@@ -102,6 +102,14 @@ final class WordReadingTests: XCTestCase {
         XCTAssertEqual(WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: "+34 629 81 53 39"), target)
     }
 
+    func testContactNameMatchIgnoresAccentsCaseAndSpacing() {
+        XCTAssertTrue(SpectatorContactFetch.namesMatch("papa", "Papá"))
+        XCTAssertTrue(SpectatorContactFetch.namesMatch("  PAPA ", "papá"))
+        XCTAssertTrue(SpectatorContactFetch.namesMatch("José  María", "jose maria"))
+        XCTAssertFalse(SpectatorContactFetch.namesMatch("papa", "mama"))
+        XCTAssertFalse(SpectatorContactFetch.namesMatch("", ""))
+    }
+
     func testCanonicalPhoneDigitsDropsTrunkZero() {
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("06 12 34 56 78", region: "FR"), "33612345678")
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("030 1234567", region: "DE"), "49301234567")
