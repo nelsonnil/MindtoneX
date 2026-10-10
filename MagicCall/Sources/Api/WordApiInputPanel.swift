@@ -120,6 +120,8 @@ struct WordApiInputPanel: View {
                     showsRestoreToggle: true
                 )
                 .padding(.top, 2)
+            } else {
+                SpectatorContactExplainer()
             }
         }
         .padding(14)
@@ -431,10 +433,12 @@ struct WordApiProviderPicker: View {
 
 struct WordContactModePicker: View {
     @Binding var selection: WordApiSettings.ContactMode
+    /// Small read-only replica for instructions (same look, follows the shared mode).
+    var mini = false
     @Namespace private var selectionNS
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: mini ? 4 : 6) {
             ForEach(WordApiSettings.ContactMode.allCases) { mode in
                 let selected = selection == mode
                 Button {
@@ -442,25 +446,38 @@ struct WordContactModePicker: View {
                         selection = mode
                     }
                 } label: {
-                    VStack(spacing: 6) {
-                        Image(systemName: mode.pickerSymbol)
-                            .font(.system(size: 20, weight: .semibold))
-                            .symbolRenderingMode(.hierarchical)
-                        Text(mode.title)
-                            .font(.subheadline.weight(.bold))
-                        Text(mode.pickerHint)
-                            .font(.caption2.weight(.medium))
-                            .opacity(selected ? 0.9 : 0.55)
+                    Group {
+                        if mini {
+                            HStack(spacing: 5) {
+                                Image(systemName: mode.pickerSymbol)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .symbolRenderingMode(.hierarchical)
+                                Text(mode.title)
+                                    .font(.caption.weight(.bold))
+                            }
+                            .padding(.vertical, 7)
+                        } else {
+                            VStack(spacing: 6) {
+                                Image(systemName: mode.pickerSymbol)
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .symbolRenderingMode(.hierarchical)
+                                Text(mode.title)
+                                    .font(.subheadline.weight(.bold))
+                                Text(mode.pickerHint)
+                                    .font(.caption2.weight(.medium))
+                                    .opacity(selected ? 0.9 : 0.55)
+                            }
+                            .padding(.vertical, 14)
+                        }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
                     .foregroundStyle(selected ? OracleTheme.ink : OracleTheme.textSecondary)
                     .background {
                         if selected {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: mini ? 9 : 14, style: .continuous)
                                 .fill(OracleTheme.goldGradient)
                                 .matchedGeometryEffect(id: "wordContactModeFill", in: selectionNS)
-                                .shadow(color: OracleTheme.gold.opacity(0.32), radius: 8, y: 3)
+                                .shadow(color: OracleTheme.gold.opacity(mini ? 0.2 : 0.32), radius: mini ? 4 : 8, y: mini ? 1 : 3)
                         }
                     }
                 }
@@ -469,13 +486,14 @@ struct WordContactModePicker: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-        .padding(5)
+        .padding(mini ? 3 : 5)
         .background(Color.white.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: mini ? 11 : 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: mini ? 11 : 16, style: .continuous)
                 .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
+        .allowsHitTesting(!mini)
     }
 }
 

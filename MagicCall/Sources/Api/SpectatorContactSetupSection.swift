@@ -6,41 +6,21 @@ enum SpectatorContactHomeCard: String {
     case albumArtwork
     case notesContact
 
-    var syncHint: String {
-        "**Unknown** and **Known** are shared on **Caller name**, **Album artwork**, and **Notes contact** only — not on the Song card. Change mode or contact on any of those three; the others follow."
-    }
-
-    func whyContactNeededParagraph(mode: WordApiSettings.ContactMode) -> String {
-        switch (self, mode) {
-        case (.callerName, .unknown):
-            return "Before they call you back, iOS needs a **Contacts card for their number** so the locked word can show as the caller name. **Unknown:** on **Perform**, MindtoneX shows an in-app Phone dial — you make a **real outgoing call**, the app **saves the number**, and **creates or updates** that contact. **Known:** pick their card below instead."
-        case (.callerName, .known):
-            return "Before they call you back, iOS needs their **Contacts card** so the locked word can replace the name on the incoming call. **Choose contact** below — same person as Album artwork and Notes contact."
-        case (.albumArtwork, .unknown):
-            return "Album art goes on the spectator’s **contact photo** (round image on the incoming call). You need their **Contacts card** first. **Unknown:** capture the number on **Perform** with the in-app dial (real outgoing call) — **no typing a number on Home**. **Known:** pick their card below."
-        case (.albumArtwork, .known):
-            return "Album art is saved to the **contact photo** on the card you pick below — the same contact as Caller name and Notes contact."
-        case (.notesContact, .unknown):
-            return "Your text goes in **Contacts → Notes** on the spectator’s card. You need that **Contacts card** before the callback. **Unknown:** capture the number on **Perform** with the in-app dial (real outgoing call) — **no typing a number on Home**. **Known:** pick their card below."
-        case (.notesContact, .known):
-            return "Your note is saved on the **Contacts card** you pick below — the same contact as Caller name and Album artwork."
-        }
-    }
-
+    /// What happens on the spectator's card when the word / song locks.
     func modeDetailLine(for mode: WordApiSettings.ContactMode) -> String {
         switch (self, mode) {
         case (.callerName, .unknown):
-            return "Perform dial → real call → number saved. When the word locks: create a new contact or update every card with that number — first name becomes the word."
+            return "When the word locks, the card for the number you dialed shows the word as its name."
         case (.callerName, .known):
-            return "Pick their card before Perform. When the word locks: rename **that card only** (first name → word)."
+            return "When the word locks, this card’s first name becomes the word."
         case (.albumArtwork, .unknown):
-            return "Perform dial → real call → number saved. When the track locks: album art is written to that contact’s photo."
+            return "When the song locks, the album cover becomes the photo of the number you dialed."
         case (.albumArtwork, .known):
-            return "Pick their card before Perform. When the track locks: album art is written to **that card’s photo**."
+            return "When the song locks, the album cover becomes this card’s photo."
         case (.notesContact, .unknown):
-            return "Perform dial → real call → number saved. When the Notes chip word locks: your note text is written to **Contacts → Notes** on that number’s card(s)."
+            return "When the word locks, your note goes in **Contacts → Notes** for the number you dialed."
         case (.notesContact, .known):
-            return "Pick their card before Perform. When the Notes chip word locks: your note text is written to **Contacts → Notes** on that card."
+            return "When the word locks, your note goes in **Contacts → Notes** on this card."
         }
     }
 
@@ -57,7 +37,6 @@ enum SpectatorContactHomeCard: String {
 struct SpectatorContactSetupSection: View {
     let card: SpectatorContactHomeCard
     var accent: Color = OracleTheme.gold
-    var showsSyncHint: Bool = true
     var showsRestoreToggle: Bool = false
 
     @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
@@ -89,18 +68,7 @@ struct SpectatorContactSetupSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if showsSyncHint {
-                Text(.init(card.syncHint))
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Text(card.whyContactNeededParagraph(mode: contactMode))
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .animation(.easeInOut(duration: 0.2), value: contactModeRaw)
+            SpectatorContactExplainer(accent: accent)
 
             Text(card.modeSectionTitle)
                 .font(.caption.weight(.semibold))
@@ -108,7 +76,7 @@ struct SpectatorContactSetupSection: View {
 
             WordContactModePicker(selection: contactModeBinding)
 
-            Text(card.modeDetailLine(for: contactMode))
+            Text(.init(card.modeDetailLine(for: contactMode)))
                 .font(.caption2)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -155,7 +123,7 @@ struct SpectatorContactSetupSection: View {
                         .foregroundStyle(OracleTheme.sectionTeal)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Text("Perform goes straight to the stage screenshot — no dial.")
+                Text("Perform goes straight to the stage — no dial pad.")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
             } else {
@@ -180,16 +148,12 @@ struct SpectatorContactSetupSection: View {
 
     private var unknownContactBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("On Perform: in-app **Phone-style dial** → **real outgoing call** → when the call **ends**, MindtoneX saves the number and continues to the stage.")
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
             if !WordApiSettings.lastDialedPhoneDigits.isEmpty {
                 Text("Last dialed · +\(WordApiSettings.lastDialedPhoneDigits)")
                     .font(.caption.monospaced())
                     .foregroundStyle(OracleTheme.textSecondary)
             } else {
-                Text("No number saved yet — Perform opens the dial first.")
+                Text("No number yet — you’ll dial it when you tap Perform.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
             }
@@ -229,6 +193,92 @@ struct SpectatorContactSetupSection: View {
             return "When you leave Perform or close settings, revert the contact photo MindtoneX changed when album art was saved."
         case .callerName, .notesContact:
             return "When you exit Perform, revert Contacts changed at word lock (or delete a contact created for the show)."
+        }
+    }
+}
+
+/// Home-only "why a contact?" explainer shared by Caller name, Album artwork and Notes contact. Never shown during
+/// Perform: the dial pad must look like the stock Phone app.
+struct SpectatorContactExplainer: View {
+    var accent: Color = OracleTheme.gold
+
+    @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
+
+    private var mode: WordApiSettings.ContactMode {
+        WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            row(
+                icon: "music.note",
+                text: "**Song / ringtone** works on its own — no contact needed."
+            )
+            row(
+                icon: "person.crop.circle.badge.exclamationmark",
+                text: "**Caller name, Album artwork, Notes** need the spectator’s contact card **before** they call you. Two ways:"
+            )
+
+            WordContactModePicker(selection: .constant(mode), mini: true)
+                .accessibilityHidden(true)
+
+            HStack(alignment: .top, spacing: 10) {
+                ForEach(WordApiSettings.ContactMode.allCases) { option in
+                    Text(.init(Self.howTo(option)))
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                        .opacity(option == mode ? 1 : 0.55)
+                        .accessibilityLabel("\(option.title): \(Self.howTo(option).replacingOccurrences(of: "**", with: ""))")
+                }
+            }
+
+            Label {
+                Text("Say: *“I’m calling so you can call me back at the end of the show.”* MindtoneX saves the number and creates their card.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "quote.bubble.fill")
+                    .font(.caption)
+                    .foregroundStyle(accent)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .opacity(mode == .unknown ? 1 : 0.55)
+
+            Text("Same choice on all three cards.")
+                .font(.caption2)
+                .foregroundStyle(OracleTheme.textSecondary)
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(OracleTheme.cardBorder, lineWidth: 0.5)
+        }
+        .animation(.easeInOut(duration: 0.2), value: contactModeRaw)
+    }
+
+    private static func howTo(_ mode: WordApiSettings.ContactMode) -> String {
+        switch mode {
+        case .unknown: return "Tap **Perform** — a dial pad opens. Call your spectator from it."
+        case .known: return "Pick their contact on this card before the show."
+        }
+    }
+
+    private func row(icon: String, text: String) -> some View {
+        Label {
+            Text(.init(text))
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(accent)
         }
     }
 }

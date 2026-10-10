@@ -46,6 +46,8 @@ struct AlbumArtContactInputPanel: View {
             if albumArtOnContact {
                 contactSetupCard
                 AlbumArtContactTestSection(contactModeRaw: contactModeRaw)
+            } else {
+                SpectatorContactExplainer()
             }
         }
     }
