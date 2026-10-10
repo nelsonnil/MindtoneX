@@ -8,7 +8,7 @@ enum PerformInstructionsCopy {
         "**Overview** — **iPhone setup (Banner + ring time)**, quick start, Performance settings, During Perform, contact primer, Feedback, Library, log, community.",
         "**Song** — Camera, Voice, Notes, API, normal vs **Interference ringtone**, **1 or 2 songs**, optional **Use as Ringtone**.",
         "**Caller name** — word on incoming call, word sources, full **Known vs Unknown** comparison.",
-        "**Album** — cover on contact photo, **Save to Photos**, **Test contact photo**, restore after Perform.",
+        "**Album** — cover on contact photo, **Save to Photos**, restore after Perform.",
         "**Notes** — Contacts **Notes** field, `{word}` marker, word sources (separate from Caller name).",
     ]
 
@@ -190,7 +190,7 @@ enum PerformInstructionsCopy {
         "Home → **Album artwork**. Turn on **Album art on contact**: when the song locks during Perform, its cover becomes the spectator’s **contact photo** (the round photo on the incoming call, in Recents and on their card).",
         "**Same Unknown / Known contact** as **Caller name** and **Notes contact** — change it on any of those cards.",
         "**Save album art to Photos** is separate and needs no contact.",
-        "Rehearse without Perform: **Test contact photo → Apply to contact now**. **Restore contact photo after Perform** puts the old photo back.",
+        "**Restore contact photo after Perform** puts the old photo back when the toggle is on.",
     ]
 
     // MARK: - Notes contact

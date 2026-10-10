@@ -5,9 +5,6 @@ enum AlbumArtContactSettings {
     enum Key {
         static let enabled = "albumArtContact.enabled"
         static let saveToPhotos = "albumArtContact.saveToPhotos"
-        static let testContactIdentifier = "albumArtContact.testContact.identifier"
-        static let testContactDisplayName = "albumArtContact.testContact.displayName"
-        static let testContactPhoneDigits = "albumArtContact.testContact.phoneDigits"
     }
 
     private static var d: UserDefaults { .standard }
@@ -40,39 +37,5 @@ enum AlbumArtContactSettings {
 
     static var anyOutputEnabled: Bool {
         enabled || saveToPhotosEnabled
-    }
-
-    static var testContactIdentifier: String? {
-        let id = d.string(forKey: Key.testContactIdentifier)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return id.isEmpty ? nil : id
-    }
-
-    static var testContactDisplayName: String? {
-        let name = d.string(forKey: Key.testContactDisplayName)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return name.isEmpty ? nil : name
-    }
-
-    static var testContactPhoneDigits: String {
-        d.string(forKey: Key.testContactPhoneDigits)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-    }
-
-    static func saveTestContactSelection(identifier: String, displayName: String, phoneDigits: String) {
-        d.set(identifier, forKey: Key.testContactIdentifier)
-        d.set(displayName, forKey: Key.testContactDisplayName)
-        d.set(WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: phoneDigits), forKey: Key.testContactPhoneDigits)
-    }
-
-    static func updateTestContactIdentifier(_ identifier: String) {
-        d.set(identifier, forKey: Key.testContactIdentifier)
-    }
-
-    static func updateTestContactPhoneDigits(_ phone: String) {
-        d.set(WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: phone), forKey: Key.testContactPhoneDigits)
-    }
-
-    static func clearTestContactSelection() {
-        d.removeObject(forKey: Key.testContactIdentifier)
-        d.removeObject(forKey: Key.testContactDisplayName)
-        d.removeObject(forKey: Key.testContactPhoneDigits)
     }
 }

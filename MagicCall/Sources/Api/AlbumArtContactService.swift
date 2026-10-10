@@ -4,23 +4,6 @@ import Photos
 import QuartzCore
 import UIKit
 
-/// Outcome for Home **Test contact photo** (and other user-visible apply attempts).
-enum AlbumArtContactApplyOutcome: Equatable {
-    case success(String)
-    case failure(String)
-
-    var message: String {
-        switch self {
-        case .success(let text), .failure(let text): return text
-        }
-    }
-
-    var isSuccess: Bool {
-        if case .success = self { return true }
-        return false
-    }
-}
-
 /// Album artwork on song lock — contact photo and/or Photo Library (shared download + crop).
 enum AlbumArtContactService {
     private static let store = CNContactStore()
@@ -158,80 +141,6 @@ enum AlbumArtContactService {
         Int(((end - start) * 1000).rounded())
     }
 
-    /// Home test lab — same download, crop, and Contacts save as song lock (no Perform required).
-    @MainActor
-    static func applyTestContactPhoto(
-        track: PreviewTrack,
-        contactIdentifier: String,
-        contactPhoneDigits: String,
-        contactDisplayName: String
-    ) async -> AlbumArtContactApplyOutcome {
-        let trackLabel = "\(track.title) — \(track.artist)"
-        let idSnippet = WordApiInputPanel.truncated(contactIdentifier, max: 16)
-        let phoneLabel = contactPhoneDigits.isEmpty ? "none" : "+\(contactPhoneDigits)"
-        albumArtLog(
-            "contact · id=\(idSnippet) · name=\(WordApiInputPanel.truncated(contactDisplayName, max: 24)) · phone=\(phoneLabel) · auth=\(contactsAuthorizationLabel())"
-        )
-        if let url = track.artworkURL {
-            albumArtLog("artwork URL · \(url.absoluteString)")
-        } else {
-            albumArtLog("artwork URL · nil")
-            return finishTestApply(.failure("No artwork for this track."), trackLabel: trackLabel)
-        }
-        do {
-            let jpeg = try await fetchSquareJPEG(for: track, reason: "test")
-            guard await ensureContactsAccess(reason: "test") else {
-                albumArtLog("save skipped · Contacts access denied")
-                return finishTestApply(
-                    .failure("Contacts access denied — enable in Settings → MindtoneX → Contacts."),
-                    trackLabel: trackLabel
-                )
-            }
-            let fallbackPhones = storedPhoneFallbacks(identifier: contactIdentifier, displayName: contactDisplayName)
-            let phoneDigits = healedPhoneDigits(contactPhoneDigits, identifier: contactIdentifier, fallbacks: fallbackPhones, reason: "test")
-            do {
-                let applied = try await SpectatorContactFetch.run {
-                    try applyImageData(
-                        jpeg,
-                        contactIdentifier: contactIdentifier,
-                        phoneDigits: phoneDigits,
-                        displayName: contactDisplayName,
-                        fallbackPhoneDigits: fallbackPhones,
-                        reason: "test"
-                    )
-                }
-                albumArtLog("save ok · updated \(applied.count) contact(s)")
-                if applied.unverifiedCount > 0 {
-                    return finishTestApply(
-                        .failure("Saved, but iOS did not keep the photo on \(applied.unverifiedCount) card(s) — send the log."),
-                        trackLabel: trackLabel
-                    )
-                }
-                var msg = applied.count == 1 ? "Contact photo updated." : "Updated \(applied.count) linked contact photo(s)."
-                if let created = applied.createdFromRecentsName {
-                    msg = "\(SpectatorContactFetch.RecentsNotice.message(name: created)) \(msg)"
-                }
-                return finishTestApply(.success(msg), trackLabel: trackLabel)
-            } catch {
-                albumArtLog("save failed · \(SpectatorContactFetch.errorLogLabel(error)) · auth=\(contactsAuthorizationLabel())")
-                if SpectatorContactFetch.isFullAccess {
-                    albumArtLog("hint · Full Access but card not saved — suggest Limited Access + re-pick")
-                }
-                return finishTestApply(.failure(SpectatorContactFetch.saveFailureMessage(for: error)), trackLabel: trackLabel)
-            }
-        } catch let err as AlbumArtContactError {
-            albumArtLog("failed · \(err.userMessage)")
-            return finishTestApply(.failure(err.userMessage), trackLabel: trackLabel)
-        } catch is CancellationError {
-            albumArtLog("failed · cancelled")
-            return finishTestApply(.failure("Apply was interrupted — try again."), trackLabel: trackLabel)
-        } catch {
-            let msg = SpectatorContactFetch.userFacingMessage(for: error)
-            albumArtLog("failed · \(msg)")
-            return finishTestApply(.failure(msg), trackLabel: trackLabel)
-        }
-    }
-
     private static func contactsAuthorizationLabel() -> String {
         switch CNContactStore.authorizationStatus(for: .contacts) {
         case .notDetermined: return "notDetermined"
@@ -243,20 +152,7 @@ enum AlbumArtContactService {
         }
     }
 
-    @MainActor
-    private static func finishTestApply(_ outcome: AlbumArtContactApplyOutcome, trackLabel: String) -> AlbumArtContactApplyOutcome {
-        switch outcome {
-        case .success(let msg):
-            albumArtLog("done · success · \(msg)")
-            PerformUserLog.shared.log("Album art test · \(msg) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
-        case .failure(let msg):
-            albumArtLog("done · failure · \(msg)")
-            PerformUserLog.shared.log("Album art test failed · \(msg)")
-        }
-        return outcome
-    }
-
-    /// Reverts every card album art touched (test + Perform) to its first recorded photo. Cards created from a Recents
+    /// Reverts every card album art touched during Perform to its first recorded photo. Cards created from a Recents
     /// pick stay (photo cleared); only Unknown show-only cards are deleted. Runs as one block on the Contacts queue so
     /// a newer apply cannot interleave or have its snapshots wiped.
     @MainActor
@@ -362,12 +258,12 @@ enum AlbumArtContactService {
             case .noArtworkURL: return "No artwork for this track."
             case .invalidImageData: return "Downloaded artwork could not be read as an image."
             case .cropFailed: return "Could not crop artwork to a square."
-            case .noContactTarget: return "No contact selected for test."
+            case .noContactTarget: return "No contact selected."
             }
         }
     }
 
-    /// Shared by test and Perform: 1000px artwork → center-cropped square JPEG.
+    /// 1000px artwork → center-cropped square JPEG.
     private static func fetchSquareJPEG(for track: PreviewTrack, reason: String) async throws -> Data {
         guard let url = track.artworkURL else { throw AlbumArtContactError.noArtworkURL }
         let fetchURL = upgradedArtworkURL(url)
@@ -382,7 +278,7 @@ enum AlbumArtContactService {
         return jpeg
     }
 
-    /// Known: same resolve → linked cards → verify as the Home test button. Unknown: cards carrying the dialed number.
+    /// Known: resolve → linked cards → verify. Unknown: cards carrying the dialed number.
     @MainActor
     private static func applyPerformContactArtwork(jpeg: Data, lock: PerformLock, generation: Int) async {
         let reason = lock.reason
@@ -437,7 +333,7 @@ enum AlbumArtContactService {
 
     /// Perform steps carry the `perform` prefix so one show reads as one block in the log.
     private static func stepLog(_ reason: String, _ message: String) {
-        albumArtLog(reason.hasPrefix("test") ? message : "perform \(message)")
+        albumArtLog("perform \(message)")
     }
 
     @MainActor
@@ -554,7 +450,7 @@ enum AlbumArtContactService {
         return best
     }
 
-    /// Known / test-picker phones saved for this same card (matched by id or display name).
+    /// Known contact phone saved for this same card (matched by id or display name).
     @MainActor
     private static func storedPhoneFallbacks(identifier: String, displayName: String) -> [String] {
         func sameCard(id: String?, name: String?) -> Bool {
@@ -566,22 +462,16 @@ enum AlbumArtContactService {
         if sameCard(id: WordApiSettings.knownContactIdentifier, name: WordApiSettings.knownContactDisplayName) {
             phones.append(WordApiSettings.knownContactPhoneDigits)
         }
-        if sameCard(id: AlbumArtContactSettings.testContactIdentifier, name: AlbumArtContactSettings.testContactDisplayName) {
-            phones.append(AlbumArtContactSettings.testContactPhoneDigits)
-        }
         return phones.filter { $0.count >= 7 }
     }
 
-    /// Picks made before phones were persisted have an empty phone; reuse the matching Known/test phone and save it
+    /// Picks made before phones were persisted have an empty phone; reuse the matching Known phone and save it
     /// on the stored pick so later launches start with it.
     @MainActor
     private static func healedPhoneDigits(_ phoneDigits: String, identifier: String, fallbacks: [String], reason: String) -> String {
         guard phoneDigits.count < 7, let healed = fallbacks.first else { return phoneDigits }
         if WordApiSettings.knownContactIdentifier == identifier, WordApiSettings.knownContactPhoneDigits.count < 7 {
             WordApiSettings.updateKnownContactPhoneDigits(healed)
-        }
-        if AlbumArtContactSettings.testContactIdentifier == identifier, AlbumArtContactSettings.testContactPhoneDigits.count < 7 {
-            AlbumArtContactSettings.updateTestContactPhoneDigits(healed)
         }
         stepLog(reason, "phone healed from stored pick · +\(healed)")
         return healed
@@ -782,9 +672,8 @@ enum AlbumArtContactService {
         return failed.count
     }
 
-    /// Test logs every card; Perform logs one summary line per pass.
     private static func verifyPass(_ identifiers: [String], unifiedIdentifiers: [String], phones: [String], reason: String) -> [String] {
-        let concise = reason != "test"
+        let concise = true
         let fresh = CNContactStore()
         let keys = imageKeys + [CNContactThumbnailImageDataKey as CNKeyDescriptor]
         let defaultContainer = fresh.defaultContainerIdentifier()
@@ -865,12 +754,6 @@ enum AlbumArtContactService {
             WordApiSettings.updateKnownContactIdentifier(identifier)
             if let phoneE164, WordApiSettings.knownContactPhoneDigits.count < 7 {
                 WordApiSettings.updateKnownContactPhoneDigits(phoneE164)
-            }
-        }
-        if AlbumArtContactSettings.testContactIdentifier == stale {
-            AlbumArtContactSettings.updateTestContactIdentifier(identifier)
-            if let phoneE164, AlbumArtContactSettings.testContactPhoneDigits.count < 7 {
-                AlbumArtContactSettings.updateTestContactPhoneDigits(phoneE164)
             }
         }
     }
@@ -988,7 +871,6 @@ enum AlbumArtContactService {
     @MainActor
     private static func logContactsDenied(reason: String) {
         dlog("[ALBUM-ART] Contacts denied (\(reason))")
-        guard reason != "test" else { return }
         PerformUserLog.shared.logConnectionIssue(
             "Album art on contact needs Contacts access — enable in Settings to show song artwork on the incoming call."
         )
