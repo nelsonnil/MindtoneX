@@ -104,7 +104,9 @@ final class AppModel: ObservableObject {
         Prefs.registerDefaults()
         VoiceSettings.registerDefaults()
         CardSettings.registerDefaults()
+        #if DEBUG
         DebugLog.shared.logDeviceHeader()
+        #endif
         calls.onEvent = { [weak self] event, call in
             MainActor.assumeIsolated { self?.handle(event, call: call) }
         }

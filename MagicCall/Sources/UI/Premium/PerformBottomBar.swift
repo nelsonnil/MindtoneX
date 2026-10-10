@@ -15,7 +15,9 @@ struct PerformBottomBar: View {
                 title: model.voiceOpenAIPreflightInProgress ? "Checking…" : "Perform",
                 gradient: OracleTheme.goldGradient,
                 disabled: !model.canPerform || model.voiceOpenAIPreflightInProgress,
-                emphasizeReady: model.canPerform && !model.voiceOpenAIPreflightInProgress
+                emphasizeReady: OracleIdleDecorations.animated
+                    && model.canPerform
+                    && !model.voiceOpenAIPreflightInProgress
             ) {
                 model.perform()
             }
@@ -257,7 +259,7 @@ struct ReadinessStatusBar: View {
         HStack(spacing: 8) {
             Image(systemName: current.icon)
                 .font(.caption.weight(.semibold))
-                .symbolEffect(.pulse, isActive: current.tone == .working)
+                .symbolEffect(.pulse, isActive: OracleIdleDecorations.animated && current.tone == .working)
             Text(current.text)
                 .font(.caption.weight(.medium))
                 .lineLimit(1)

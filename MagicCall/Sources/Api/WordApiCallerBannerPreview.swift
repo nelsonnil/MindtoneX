@@ -4,6 +4,8 @@ import SwiftUI
 struct WordApiIncomingCallBannerPreview: View {
     var phoneDigits: String
     var predictionWord: String
+    /// When false, shows a static phone-number frame (no 30 Hz TimelineView / pulsing chrome).
+    var animated: Bool = OracleIdleDecorations.animated
 
     private let cycle: TimeInterval = 5.2
     private let phoneHold: TimeInterval = 2.0
@@ -13,31 +15,40 @@ struct WordApiIncomingCallBannerPreview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             headerRow
-            TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
-                let t = context.date.timeIntervalSinceReferenceDate
-                let phase = cyclePhase(elapsed: t.truncatingRemainder(dividingBy: cycle))
-                VStack(alignment: .leading, spacing: 8) {
-                    banner(for: phase)
-                        .frame(height: 78)
-                    caption(for: phase)
+            if animated {
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
+                    let t = context.date.timeIntervalSinceReferenceDate
+                    let phase = cyclePhase(elapsed: t.truncatingRemainder(dividingBy: cycle))
+                    previewContent(for: phase)
                 }
+            } else {
+                let phase = CyclePhase(kind: .phoneNumber, morphProgress: 0, subtitle: "mobile · incoming")
+                previewContent(for: phase)
             }
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Preview incoming call from phone number to prediction word, banner or full screen")
     }
 
+    private func previewContent(for phase: CyclePhase) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            banner(for: phase)
+                .frame(height: 78)
+            caption(for: phase)
+        }
+    }
+
     private var headerRow: some View {
         HStack(spacing: 8) {
-            PulsingLiveDot()
-            Text("INCOMING CALL · LIVE PREVIEW")
+            PulsingLiveDot(animated: animated)
+            Text(animated ? "INCOMING CALL · LIVE PREVIEW" : "INCOMING CALL · PREVIEW")
                 .font(OracleTheme.techLabel())
                 .foregroundStyle(OracleTheme.gold.opacity(0.92))
             Spacer()
             Image(systemName: "sparkles")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(OracleTheme.indigo.opacity(0.85))
-                .symbolEffect(.pulse, options: .repeating)
+                .modifier(RepeatingPulseSymbolEffect(enabled: animated))
         }
     }
 
@@ -134,12 +145,12 @@ struct WordApiIncomingCallBannerPreview: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(.title3)
                 .foregroundStyle(OracleTheme.gold)
-                .symbolEffect(.bounce, value: phase.wordOpacity > 0.9)
+                .symbolEffect(.bounce, value: animated && phase.wordOpacity > 0.9)
         } else {
             Image(systemName: "phone.arrow.down.left.fill")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(Color.green.opacity(0.9))
-                .symbolEffect(.pulse, options: .repeating)
+                .modifier(RepeatingPulseSymbolEffect(enabled: animated))
         }
     }
 
@@ -220,7 +231,20 @@ struct WordApiIncomingCallBannerPreview: View {
 
 // MARK: - Subviews
 
+private struct RepeatingPulseSymbolEffect: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.symbolEffect(.pulse, options: .repeating)
+        } else {
+            content
+        }
+    }
+}
+
 private struct PulsingLiveDot: View {
+    var animated: Bool
     @State private var pulse = false
 
     var body: some View {
@@ -228,12 +252,15 @@ private struct PulsingLiveDot: View {
             .fill(Color.red)
             .frame(width: 7, height: 7)
             .overlay {
-                Circle()
-                    .stroke(Color.red.opacity(0.45), lineWidth: 2)
-                    .scaleEffect(pulse ? 1.8 : 1)
-                    .opacity(pulse ? 0 : 0.8)
+                if animated {
+                    Circle()
+                        .stroke(Color.red.opacity(0.45), lineWidth: 2)
+                        .scaleEffect(pulse ? 1.8 : 1)
+                        .opacity(pulse ? 0 : 0.8)
+                }
             }
             .onAppear {
+                guard animated else { return }
                 withAnimation(.easeOut(duration: 1.2).repeatForever(autoreverses: false)) {
                     pulse = true
                 }

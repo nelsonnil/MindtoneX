@@ -11,8 +11,6 @@ struct MainShellView: View {
     @State private var activeSheet: OracleSheet?
     @State private var homeAppeared = false
     @AppStorage("ui.performanceGuideOpened") private var performanceGuideOpened = false
-    @State private var instructionsPulse = false
-
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -51,13 +49,8 @@ struct MainShellView: View {
             withAnimation(.spring(response: 0.65, dampingFraction: 0.86)) {
                 homeAppeared = true
             }
-            if !performanceGuideOpened {
-                withAnimation(.easeInOut(duration: 1.05).repeatForever(autoreverses: true)) {
-                    instructionsPulse = true
-                }
-            }
         }
-        .background { OracleAnimatedBackdrop() }
+        .background { OracleAnimatedBackdrop(animated: OracleIdleDecorations.animated) }
         .overlay(alignment: .topTrailing) {
             if model.showsHomePerformSetupChrome {
                 instructionsButton
@@ -134,7 +127,6 @@ struct MainShellView: View {
     private var instructionsButton: some View {
         Button {
             performanceGuideOpened = true
-            instructionsPulse = false
             activeSheet = .performanceGuide
         } label: {
             Image(systemName: "lightbulb.fill")
@@ -147,13 +139,12 @@ struct MainShellView: View {
                         .fill(OracleTheme.goldGradient)
                     if !performanceGuideOpened {
                         Circle()
-                            .strokeBorder(OracleTheme.gold.opacity(instructionsPulse ? 0.95 : 0.35), lineWidth: 2)
-                            .scaleEffect(instructionsPulse ? 1.12 : 1.0)
-                            .opacity(instructionsPulse ? 0.85 : 0.35)
+                            .strokeBorder(OracleTheme.gold.opacity(0.55), lineWidth: 2)
+                            .opacity(0.75)
                     }
                 }
             }
-            .shadow(color: OracleTheme.gold.opacity(instructionsPulse ? 0.55 : 0.28), radius: instructionsPulse ? 14 : 8, y: 4)
+            .shadow(color: OracleTheme.gold.opacity(0.28), radius: 8, y: 4)
             .clipShape(Circle())
             .overlay(alignment: .topTrailing) {
                 if !performanceGuideOpened {
@@ -161,7 +152,6 @@ struct MainShellView: View {
                         .fill(OracleTheme.coral)
                         .frame(width: 9, height: 9)
                         .offset(x: 4, y: -4)
-                        .opacity(instructionsPulse ? 1 : 0.45)
                 }
             }
         }

@@ -1,6 +1,12 @@
 import SwiftUI
 import UIKit
 
+/// Continuous SwiftUI decoration (TimelineView, repeating symbol effects) on Home / Settings.
+/// Off by default — was a major idle heat source on device.
+enum OracleIdleDecorations {
+    static let animated = false
+}
+
 enum OracleTheme {
     // MARK: Typography (confident, product-grade)
 
@@ -153,21 +159,27 @@ struct OracleBackdrop: View {
     }
 }
 
-/// Static backdrop plus subtle ringtone-style ripples (transform/opacity only).
+/// Static backdrop plus optional ringtone-style ripples (transform/opacity only).
 struct OracleAnimatedBackdrop: View {
+    var animated: Bool = OracleIdleDecorations.animated
+
     var body: some View {
         ZStack {
             OracleBackdrop()
-            TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
-                AuroraDriftLayer(date: context.date)
+            if animated {
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
+                    AuroraDriftLayer(date: context.date)
+                }
+                .allowsHitTesting(false)
             }
-            .allowsHitTesting(false)
             TechGridOverlay()
                 .allowsHitTesting(false)
-            TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
-                RingtoneRippleLayer(date: context.date)
+            if animated {
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
+                    RingtoneRippleLayer(date: context.date)
+                }
+                .allowsHitTesting(false)
             }
-            .allowsHitTesting(false)
         }
     }
 }

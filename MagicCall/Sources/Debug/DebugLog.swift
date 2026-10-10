@@ -3,7 +3,13 @@ import QuartzCore
 import UIKit
 
 func dlog(_ message: String, sync: Bool = false) {
+    #if DEBUG
     DebugLog.shared.log(message, sync: sync)
+    #else
+    if message.hasPrefix("✗") {
+        print(message)
+    }
+    #endif
 }
 
 /// Verbose tracing — stripped from Release builds to avoid log heat on device.

@@ -261,7 +261,7 @@ final class InterferenceTestController: ObservableObject {
         cameraLive = false
         waitingForSecondHand = false
         phase = .error(message)
-        dlog("[INTERF] test error · \(message)")
+        dlog("✗ [INTERF] test error · \(message)")
     }
 
     // MARK: Hands
