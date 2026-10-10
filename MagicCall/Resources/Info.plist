@@ -39,6 +39,8 @@
 	<true/>
 	<key>NSContactsUsageDescription</key>
 	<string>When the spectator’s word locks during Perform, MindtoneX can save or rename a contact so the incoming call screen shows the word (Known / Unknown modes on the Word API card). / Cuando la palabra se bloquea en el show, MindtoneX puede guardar o renombrar un contacto para que la llamada entrante muestre la palabra (modos Conocido / Desconocido en la tarjeta Word API).</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>When Save album art to Photos is on, MindtoneX saves the cropped album cover to your Photo Library at song lock (for Shortcuts and lock-screen workflows).</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Card mode uses the camera to read the song title written on a card during your performance. Interference ringtone uses the front camera to detect an open hand. Images are processed on this iPhone and are never saved or uploaded.</string>
 	<key>NSMicrophoneUsageDescription</key>
