@@ -52,7 +52,7 @@ final class NotesSongSession: ObservableObject {
         if SpectatorSettings.isTwo {
             SecondSpectatorSong.shared.beginWaiting(source: "Notes", context: context == .perform ? .perform : .test)
         }
-        dlog("[NOTES] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(NotesSettings.summary())\(SpectatorSettings.isTwo ? " · 2 spectators: line 1 + line 2" : "")")
+        dlog("[NOTES] ▶︎ start (\(context == .perform ? "perform" : "test")) · \(NotesSettings.summary())\(SpectatorSettings.isTwo ? " · 2 songs: line 1 + line 2" : "")")
     }
 
     func reset(reason: String) {

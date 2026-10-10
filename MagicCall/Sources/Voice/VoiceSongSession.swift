@@ -472,14 +472,14 @@ final class VoiceSongSession: ObservableObject {
         dlog("[VOICE] 🔒 song 1 of 2 · \(pick.label) · \(Self.percent(pick.confidence)) · \(reason) · mic stays on for spectator 2 (transcript from line \(secondTranscriptStart))")
         SecondSpectatorSong.shared.beginWaiting(source: "Voice", context: context == .perform ? .perform : .test)
         if context == .perform {
-            PerformanceCues.songLocked(source: "Voice · spectator 1")
+            PerformanceCues.songLocked(source: "Voice · song 1")
             let preview = AppModel.shared.selected?.previewURL.absoluteString
                 ?? AppModel.shared.lastReadyTrack?.previewURL.absoluteString
             SongLibraryStore.shared.commitPerformSnapshot(
                 RecentPerformSnapshot(pick: pick, previewURL: preview)
             )
             AppModel.shared.notePerformDisplayTrack()
-            PerformUserLog.shared.log("Voice · song 1 locked · listening for spectator 2")
+            PerformUserLog.shared.log("Voice · song 1 locked · listening for song 2")
         }
         AppModel.shared.voiceFirstOfTwoLocked(context: context)
     }
@@ -494,9 +494,9 @@ final class VoiceSongSession: ObservableObject {
 
     private var secondSpectatorPromptContext: String? {
         guard let first = lockedPick else { return nil }
-        return "Two spectators. Spectator 1 already chose «\(first.label)» and it is locked. "
-            + "This transcript starts after that lock, when the performer turns to a SECOND spectator. "
-            + "Return only the song the second spectator chooses. Never return «\(first.label)»: "
+        return "Two-song mode. Song 1 «\(first.label)» is already locked. "
+            + "This transcript is only for song 2 — the next distinct title the spectator settles on "
+            + "(same person or a second person). Never return «\(first.label)» again: "
             + "if it is the only song mentioned, return has_song=false."
     }
 

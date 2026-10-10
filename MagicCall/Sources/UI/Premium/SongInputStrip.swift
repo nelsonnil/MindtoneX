@@ -6,8 +6,8 @@ struct SongInputStrip: View {
     @ObservedObject private var api = ApiSongSession.shared
     @ObservedObject private var card = CardSongSession.shared
     @Binding var inputModeRaw: String
-    @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
     @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
+    @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
 
     private let inputColumns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
@@ -17,9 +17,11 @@ struct SongInputStrip: View {
     }
 
     private var songInputSummary: String {
-        let spectators = spectatorCount == 2 ? "2 spectators" : "1 spectator"
-        let ring = interferenceEnabled ? "Interference ringtone" : "Normal ringtone"
-        return "\(inputMode.title) · \(spectators) · \(ring)"
+        if interferenceEnabled {
+            let songs = interferenceSongCount == 2 ? "2 songs" : "1 song"
+            return "\(inputMode.title) · \(songs) · Interference ringtone"
+        }
+        return "\(inputMode.title) · Normal ringtone"
     }
 
     var body: some View {
@@ -56,10 +58,6 @@ struct SongInputStrip: View {
                 }
 
                 if !model.isPerformTrickUIActive {
-                    songCardSubsection("Spectators") {
-                        SpectatorCountBlock(inputMode: inputMode)
-                    }
-
                     songCardSubsection("Catalog & ringtone") {
                         SongCatalogAndRingtoneSection()
                     }

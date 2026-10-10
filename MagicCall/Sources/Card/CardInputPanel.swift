@@ -4,7 +4,10 @@ struct CardInputPanel: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var session = CardSongSession.shared
     @AppStorage(CardSettings.Key.cameraFacing) private var cameraFacingRaw = CardSettings.defaultCameraFacing.rawValue
-    @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
+    @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
+    @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
+
+    private var twoSongsOnCall: Bool { interferenceEnabled && interferenceSongCount == 2 }
 
     private var cameraFacing: Binding<CardSettings.CameraFacing> {
         Binding(
@@ -31,8 +34,8 @@ struct CardInputPanel: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 tipRow("doc.plaintext", "White matte card + thick black marker")
-                if spectatorCount == 2 {
-                    tipRow("person.2.fill", "2 spectators · two clear song titles in ALL CAPS, one per line — top = spectator 1, below = spectator 2")
+                if twoSongsOnCall {
+                    tipRow("music.note.list", "2 songs · two clear titles in ALL CAPS, one per line — top = song 1, below = song 2")
                 } else {
                     tipRow("textformat.size.larger", "ALL CAPS · \(CardOCRLayout.lineAssignmentSummary) (optional SONG:/WORD:/NOTES: labels)")
                 }

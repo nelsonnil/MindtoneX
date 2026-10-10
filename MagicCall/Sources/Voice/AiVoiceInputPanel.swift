@@ -6,8 +6,10 @@ struct AiVoiceInputPanel: View {
     @ObservedObject private var voice = VoiceSongSession.shared
 
     @AppStorage(VoiceSettings.Key.language) private var languageRaw = "en"
-    @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
+    @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
+    @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
 
+    private var twoSongsOnCall: Bool { interferenceEnabled && interferenceSongCount == 2 }
     private var configured: Bool { VoiceSettings.isConfigured }
 
     var body: some View {
@@ -103,7 +105,9 @@ struct AiVoiceInputPanel: View {
                 Spacer()
                 voiceStatusChip
             }
-            Text("Talk like on stage. You’ll see what the app hears and which song it picks. Nothing is shown during Perform.")
+            Text(.init(twoSongsOnCall
+                ? "Talk like on stage. With **2 songs**, slot 1 locks first; the mic keeps listening for song 2 (must be a different title). Nothing is shown during Perform."
+                : "Talk like on stage. You’ll see what the app hears and which song it picks. Nothing is shown during Perform."))
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
 
@@ -284,7 +288,7 @@ struct AiVoiceInputPanel: View {
                     Text("Matching…").font(.caption2).foregroundStyle(OracleTheme.textSecondary)
                 }
             }
-            if spectatorCount == 2 {
+            if twoSongsOnCall {
                 VStack(alignment: .leading, spacing: 8) {
                     spectatorPickRow(1, pick: voice.lockedPick ?? voice.candidate, status: firstSpectatorStatus)
                     spectatorPickRow(2, pick: voice.secondLockedPick ?? voice.secondCandidate, status: secondSpectatorStatus)
@@ -316,7 +320,7 @@ struct AiVoiceInputPanel: View {
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
-    // MARK: Two spectators
+    // MARK: Two songs
 
     private func spectatorPickRow(_ number: Int, pick: SongPick?, status: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -339,13 +343,13 @@ struct AiVoiceInputPanel: View {
 
     private var firstSpectatorStatus: String {
         if voice.lockedPick != nil { return "Locked" }
-        return prepStatus(voice.prep) ?? (voice.isActive ? "Listening for spectator 1…" : "Spectator 1")
+        return prepStatus(voice.prep) ?? (voice.isActive ? "Listening for song 1…" : "Song 1")
     }
 
     private var secondSpectatorStatus: String {
         if voice.secondLockedPick != nil { return "Locked — listening stopped" }
         if voice.listeningForSecondSong {
-            return prepStatus(voice.secondPrep) ?? "Listening for spectator 2…"
+            return prepStatus(voice.secondPrep) ?? "Listening for song 2…"
         }
         return voice.lockedPick == nil ? "Starts after song 1 locks" : "Not locked"
     }

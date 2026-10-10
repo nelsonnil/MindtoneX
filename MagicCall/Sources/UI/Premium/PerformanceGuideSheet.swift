@@ -11,6 +11,21 @@ struct PerformanceGuideSheet: View {
                 guideHero
 
                 InstructionSection(
+                    title: "Facebook users group",
+                    icon: "person.3.fill",
+                    tint: OracleTheme.sectionTeal,
+                    lines: PerformInstructionsCopy.facebookUsersGroup
+                )
+
+                Link(destination: URL(string: PerformInstructionsCopy.facebookUsersGroupURL)!) {
+                    Label("Open Facebook group", systemImage: "arrow.up.forward.app")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.bordered)
+                .tint(OracleTheme.gold)
+
+                InstructionSection(
                     title: "How the trick works",
                     icon: "sparkles",
                     tint: OracleTheme.gold,
@@ -44,6 +59,16 @@ struct PerformanceGuideSheet: View {
                 InstructionSubsection(title: "Voice (AI)", lines: PerformInstructionsCopy.songInputVoice(lockSeconds: Int(VoiceSettings.lockDelay)))
                 InstructionSubsection(title: "Notes", lines: PerformInstructionsCopy.songInputNotes)
                 InstructionSubsection(title: "API", lines: PerformInstructionsCopy.songInputAPI)
+
+                InstructionSubsection(
+                    title: "1 or 2 songs (experimental)",
+                    lines: PerformInstructionsCopy.twoSongsExperimental
+                )
+
+                InstructionSubsection(
+                    title: "Interference ringtone",
+                    lines: PerformInstructionsCopy.interferenceRingtone
+                )
 
                 TipCard(
                     title: "Mix song + caller + Notes",

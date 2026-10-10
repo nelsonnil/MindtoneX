@@ -60,10 +60,10 @@ enum InterferenceSettings {
     static let resourceFolder = "InterferenceRingtone"
     static let interferenceResourceName = "interferencia-radio"
 
-    /// Spectators = 2: the second open hand always uses this file (audio of `interferenciaradio2`).
+    /// Two songs: the second open hand always uses this file (audio of `interferenciaradio2`).
     static let secondHandResourceName = "interferencia-audio2"
-    /// After the first confirmed hand, a second hand only counts from this point (anti double trigger).
-    static let secondHandCooldown: TimeInterval = 2.0
+    /// After song 1 is **clean** (first interference morph finished), ignore hand 2 for this long, then watch.
+    static let secondHandDelayAfterInterference: TimeInterval = 2.0
 
     static var secondHandInterferenceURL: URL? { bundledAudioURL(named: secondHandResourceName) }
 

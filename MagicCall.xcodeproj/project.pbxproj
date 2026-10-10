@@ -93,6 +93,7 @@
 		9BC788D2F180C967FBFF14AB /* MagicIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E48131BF78F88DFF0CB3E192 /* MagicIntents.swift */; };
 		9CAF4275C647D0F5AA7516BE /* WordApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */; };
 		EF187488AA7323B12558F5FD /* CallerNameSetupStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CEDC4E44EB5BD0902967336 /* CallerNameSetupStatusView.swift */; };
+		FACEB001CAFE000000000005 /* SpectatorContactSetupSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FACEB001CAFE000000000006 /* SpectatorContactSetupSection.swift */; };
 		A1527BE9FA2E86C4B75BAB86 /* NotesPerformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C269D939BB5F7D004EF20F /* NotesPerformView.swift */; };
 		A44853952E079252482E4F83 /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA922A0D263D3309553D389 /* Prefs.swift */; };
 		A4614B1A536192430CFD5A9C /* StageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3305BEFC5DE85E1D1E566060 /* StageView.swift */; };
@@ -275,6 +276,7 @@
 		AAC001CAFE000000000003 /* AlbumArtContactService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtContactService.swift; sourceTree = "<group>"; };
 		AAC001CAFE000000000004 /* AlbumArtContactInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtContactInputPanel.swift; sourceTree = "<group>"; };
 		FACEB001CAFE000000000003 /* SpectatorApiPerformTimingNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorApiPerformTimingNote.swift; sourceTree = "<group>"; };
+		FACEB001CAFE000000000006 /* SpectatorContactSetupSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorContactSetupSection.swift; sourceTree = "<group>"; };
 		97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongPicker.swift; sourceTree = "<group>"; };
 		9B1B8DC27EC42C698E3626F3 /* SongStorefront.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongStorefront.swift; sourceTree = "<group>"; };
 		7A3C5E91B2D4F60817C9E2A4 /* TwoSpectators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoSpectators.swift; sourceTree = "<group>"; };
@@ -461,6 +463,7 @@
 				95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */,
 				FACEB001CAFE000000000001 /* WordApiContactRestoreStore.swift */,
 				FACEB001CAFE000000000003 /* SpectatorApiPerformTimingNote.swift */,
+				FACEB001CAFE000000000006 /* SpectatorContactSetupSection.swift */,
 				9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */,
 				13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */,
 				31C6F9C561E1F5EF11CCEF21 /* WordApiIOSPhoneDialView.swift */,
@@ -939,6 +942,7 @@
 				DB0E5A96FCA973B7D2BCC881 /* WordApiContactShowState.swift in Sources */,
 				FACEB001CAFE000000000002 /* WordApiContactRestoreStore.swift in Sources */,
 				FACEB001CAFE000000000004 /* SpectatorApiPerformTimingNote.swift in Sources */,
+				FACEB001CAFE000000000005 /* SpectatorContactSetupSection.swift in Sources */,
 				79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */,
 				8B702C8C809749F044FCE136 /* WordApiIOSPhoneDialView.swift in Sources */,
 				9CAF4275C647D0F5AA7516BE /* WordApiInputPanel.swift in Sources */,

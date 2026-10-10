@@ -525,7 +525,7 @@ final class CardSongSession: ObservableObject {
         if context == .perform {
             let l1 = firstQueries.first.map { WordApiInputPanel.truncated($0, max: 28) } ?? "—"
             let l2 = secondQueries.first.map { WordApiInputPanel.truncated($0, max: 28) } ?? "—"
-            PerformUserLog.shared.log("Camera · 2 spectators · song 1 «\(l1)» · song 2 «\(l2)»")
+            PerformUserLog.shared.log("Camera · 2 songs · song 1 «\(l1)» · song 2 «\(l2)»")
         }
 
         var songTwoTask: Task<PreviewTrack?, Never>?

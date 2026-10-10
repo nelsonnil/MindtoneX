@@ -7,11 +7,9 @@ struct WordApiInputPanel: View {
     @AppStorage(WordApiSettings.Key.provider) private var providerRaw = WordApiSettings.Provider.inject.rawValue
     @AppStorage(WordApiSettings.Key.saveWordAsContact) private var saveWordAsContact = true
     @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
-    @AppStorage(WordApiSettings.Key.restoreKnownNameOnSettingsExit) private var restoreKnownNameOnSettingsExit = true
     @AppStorage(VoiceSettings.Key.inputMode) private var songInputModeRaw = VoiceSettings.InputMode.manual.rawValue
 
     @State private var showConnectionSheet = false
-    @State private var showHomeContactPicker = false
 
     private var provider: WordApiSettings.Provider { WordApiSettings.Provider(rawValue: providerRaw) ?? .inject }
     private var configured: Bool { WordApiSettings.hasWordEndpoint }
@@ -61,31 +59,10 @@ struct WordApiInputPanel: View {
         .sheet(isPresented: $showConnectionSheet) {
             WordApiSettingsSheet()
         }
-        .sheet(isPresented: $showHomeContactPicker) {
-            WordApiKnownContactPicker(
-                onPick: { contact in
-                    showHomeContactPicker = false
-                    if let e164 = WordApiContactPhoneParsing.e164(from: contact) {
-                        SpectatorWordContactService.recordKnownContactPicked(contact, phoneE164: e164)
-                    }
-                },
-                onCancel: { showHomeContactPicker = false }
-            )
-        }
     }
 
     private var contactMode: WordApiSettings.ContactMode {
         WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
-    }
-
-    private var contactModeBinding: Binding<WordApiSettings.ContactMode> {
-        Binding(
-            get: { WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown },
-            set: { mode in
-                contactModeRaw = mode.rawValue
-                WordApiSettings.setContactMode(mode)
-            }
-        )
     }
 
     private var callerPreviewPhoneDigits: String {
@@ -138,24 +115,11 @@ struct WordApiInputPanel: View {
             }
 
             if saveWordAsContact {
-                Text("How to link the number")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(OracleTheme.textPrimary)
-                    .padding(.top, 2)
-
-                WordContactModePicker(selection: contactModeBinding)
-
-                Text(contactMode.detailLine)
-                    .font(.caption2)
-                    .foregroundStyle(OracleTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .animation(.easeInOut(duration: 0.2), value: contactModeRaw)
-
-                if contactMode == .known {
-                    knownContactBlock
-                } else {
-                    unknownContactBlock
-                }
+                SpectatorContactSetupSection(
+                    card: .callerName,
+                    showsRestoreToggle: true
+                )
+                .padding(.top, 2)
             }
         }
         .padding(14)
@@ -164,75 +128,6 @@ struct WordApiInputPanel: View {
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-        }
-    }
-
-    private var knownContactBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if WordApiSettings.hasKnownContactSelected {
-                Label(WordApiSettings.knownContactDisplayName, systemImage: "person.crop.circle.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(OracleTheme.gold)
-                Text("Phone · +\(WordApiSettings.knownContactPhoneDigits)")
-                    .font(.caption.monospaced())
-                    .foregroundStyle(OracleTheme.textSecondary)
-                Text("Perform goes straight to the stage screenshot — no dial.")
-                    .font(.caption2)
-                    .foregroundStyle(OracleTheme.textSecondary)
-            } else {
-                Text("Choose the spectator’s contact before Perform (or when prompted).")
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.coral)
-            }
-
-            Button {
-                showHomeContactPicker = true
-            } label: {
-                Label(
-                    WordApiSettings.hasKnownContactSelected ? "Change contact" : "Choose contact",
-                    systemImage: "person.crop.circle.badge.plus"
-                )
-                .font(.subheadline.weight(.semibold))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(OracleTheme.gold)
-
-            restoreContactsToggle
-        }
-    }
-
-    private var unknownContactBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("On Perform: in-app Phone-style dial → real outgoing call → arm when that call ends.")
-                .font(.caption)
-                .foregroundStyle(OracleTheme.textSecondary)
-            if !WordApiSettings.lastDialedPhoneDigits.isEmpty {
-                Text("Last dialed · +\(WordApiSettings.lastDialedPhoneDigits)")
-                    .font(.caption.monospaced())
-                    .foregroundStyle(OracleTheme.textSecondary)
-            } else {
-                Text("No number yet — Perform opens the dial first.")
-                    .font(.caption)
-                    .foregroundStyle(OracleTheme.textSecondary)
-            }
-            restoreContactsToggle
-        }
-    }
-
-    private var restoreContactsToggle: some View {
-        Toggle(isOn: $restoreKnownNameOnSettingsExit) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Restore contact names after Perform")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(OracleTheme.textPrimary)
-                Text("When you exit Perform, revert Contacts changed at word lock (or delete a contact created for the show).")
-                    .font(.caption2)
-                    .foregroundStyle(OracleTheme.textSecondary)
-            }
-        }
-        .tint(OracleTheme.gold)
-        .onChange(of: restoreKnownNameOnSettingsExit) { _, on in
-            WordApiSettings.setRestoreKnownNameOnSettingsExit(on)
         }
     }
 

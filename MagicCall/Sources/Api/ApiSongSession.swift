@@ -297,7 +297,7 @@ final class ApiSongSession: ObservableObject {
         dlog("[API] 🔒 locked “\(reading.label)” after \(pollCount) polls\(watchSecond ? " · song 1 of 2, still polling for spectator 2" : "")")
         if context == .perform {
             let snippet = WordApiInputPanel.truncated(reading.label, max: 44)
-            PerformUserLog.shared.log("API · \(provider.title) · locked · «\(snippet)»\(watchSecond ? " · waiting for spectator 2" : "")")
+            PerformUserLog.shared.log("API · \(provider.title) · locked · «\(snippet)»\(watchSecond ? " · waiting for song 2" : "")")
             PerformLogReporter.logRecognition(.song, value: reading.label, via: "API · \(provider.title)")
             PerformanceCues.songLocked(source: "API")
         }
@@ -344,7 +344,7 @@ final class ApiSongSession: ObservableObject {
         if track != nil {
             lockSecond(reading)
         } else if context == .perform {
-            PerformUserLog.shared.log("No song found for “\(reading.label)” (spectator 2)")
+            PerformUserLog.shared.log("No preview for song 2 · “\(reading.label)”")
         }
     }
 

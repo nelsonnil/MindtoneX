@@ -6,6 +6,10 @@ struct ApiInputPanel: View {
     @ObservedObject private var session = ApiSongSession.shared
     @AppStorage(ApiSettings.Key.provider) private var providerRaw = ApiSettings.Provider.inject.rawValue
     @AppStorage(ApiSettings.Key.injectID) private var injectID = ""
+    @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
+    @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
+
+    private var twoSongsOnCall: Bool { interferenceEnabled && interferenceSongCount == 2 }
 
     @State private var showConnectionSheet = false
 
@@ -82,7 +86,9 @@ struct ApiInputPanel: View {
                 }
                 .buttonStyle(.plain)
 
-                Text("On Perform, polls every \(Int(ApiSettings.pollInterval)) s — first reading is the old search, the **next change** is the spectator’s song.")
+                Text(twoSongsOnCall
+                    ? "On Perform, polls every \(Int(ApiSettings.pollInterval)) s — first **new** search locks **song 1**, the next new search locks **song 2**. Calls play song 1; **Interference ringtone** + second hand plays song 2."
+                    : "On Perform, polls every \(Int(ApiSettings.pollInterval)) s — first reading is the old search, the **next change** is their song.")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
             }
@@ -191,7 +197,7 @@ struct ApiInputPanel: View {
             return ("Found “\(label)” — loading preview…", "arrow.down.circle", false)
         case .locked:
             if session.watchingSecondSong {
-                return ("Song 1 locked · waiting for spectator 2’s search in \(provider.title)", "dot.radiowaves.left.and.right", false)
+                return ("Song 1 locked · waiting for song 2’s search in \(provider.title)", "dot.radiowaves.left.and.right", false)
             }
             return nil
         case .failed(let message):

@@ -226,7 +226,7 @@ enum CallDirectorySync {
             if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .unknown {
                 PerformUserLog.shared.log("Caller name: dial the spectator on Perform (Unknown mode) or add a fallback number in Caller name settings.")
             } else if WordApiSettings.saveWordAsContactEnabled, WordApiSettings.contactMode == .known {
-                PerformUserLog.shared.log("Caller name: choose a Known contact on the Caller name card.")
+                PerformUserLog.shared.log("Caller name: choose a Known contact on the Caller name card (Known mode).")
             } else {
                 PerformUserLog.shared.log("Caller name: add the incoming number in Caller name → connection details → Call Identification.")
             }

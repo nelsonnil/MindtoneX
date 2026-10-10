@@ -30,6 +30,9 @@ struct WordApiSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
+                        if provider.showsNetworkPerformTimingNote {
+                            SpectatorApiPerformTimingNote()
+                        }
                     }
                 }
 
@@ -50,50 +53,9 @@ struct WordApiSettingsView: View {
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Optional backup for **Call Directory** when you are not using contact rename, or when Contacts access is denied. With **Save locked word as contact name** on, Known/Unknown on the **Caller name** card picks the number — you usually do not need to type it here.")
+                        Text("Optional backup for **Call Directory** when you are not using contact rename, or when Contacts access is denied. With **Save locked word as contact name** on, **Unknown** mode uses the Perform dial; **Known** uses the contact you picked — you usually do not need to type it here.")
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
-                    }
-                }
-
-                oracleCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        OracleEyebrow(text: "Check")
-                        Button {
-                            Task { await runTest() }
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: "antenna.radiowaves.left.and.right")
-                                    .font(.body.weight(.semibold))
-                                Text(testing ? "Testing…" : "Test connection")
-                                    .font(.subheadline.weight(.semibold))
-                                Spacer()
-                                if testing { ProgressView().tint(OracleTheme.gold) }
-                            }
-                            .foregroundStyle(WordApiSettings.hasWordEndpoint ? OracleTheme.textPrimary : OracleTheme.textSecondary)
-                            .padding(.vertical, 4)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(testing || !WordApiSettings.hasWordEndpoint || provider == .card || provider == .voice)
-
-                        if let testResult {
-                            Text(testResult.text)
-                                .font(.caption)
-                                .foregroundStyle(testResult.ok ? OracleTheme.gold : OracleTheme.coral)
-                                .textSelection(.enabled)
-                        } else if provider == .card {
-                            Text("No network test — run a full **Perform** volume scan with Card song input.")
-                                .font(.caption)
-                                .foregroundStyle(OracleTheme.textSecondary)
-                        } else if provider == .voice {
-                            Text("No network test — use **Voice** song input and the contact-word script during Perform or Voice test.")
-                                .font(.caption)
-                                .foregroundStyle(OracleTheme.textSecondary)
-                        } else {
-                            Text("Reads your word source once and shows the current text.")
-                                .font(.caption)
-                                .foregroundStyle(OracleTheme.textSecondary)
-                        }
                     }
                 }
 
@@ -188,6 +150,7 @@ struct WordApiSettingsView: View {
                         .foregroundStyle(OracleTheme.textSecondary)
                         .textSelection(.enabled)
                 }
+                connectionTestBlock
             }
         }
     }
@@ -198,6 +161,7 @@ struct WordApiSettingsView: View {
                 OracleEyebrow(text: "Elips API URL")
                 oracleField("https://pag.gg/…/api/…", text: $elipsURL)
                     .keyboardType(.URL)
+                connectionTestBlock
             }
         }
     }
@@ -256,6 +220,42 @@ struct WordApiSettingsView: View {
                     .disabled(headerDraft.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
+            oracleCard {
+                connectionTestBlock
+            }
+        }
+    }
+
+    private var connectionTestBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                Task { await runTest() }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.body.weight(.semibold))
+                    Text(testing ? "Testing…" : "Test connection")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    if testing { ProgressView().tint(OracleTheme.gold) }
+                }
+                .foregroundStyle(WordApiSettings.hasWordEndpoint ? OracleTheme.textPrimary : OracleTheme.textSecondary)
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.plain)
+            .disabled(testing || !WordApiSettings.hasWordEndpoint)
+
+            if let testResult {
+                Text(testResult.text)
+                    .font(.caption)
+                    .foregroundStyle(testResult.ok ? OracleTheme.gold : OracleTheme.coral)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Fetches your word source once and shows the label and raw response.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
         }
     }
 
@@ -294,10 +294,11 @@ struct WordApiSettingsView: View {
             let reading = try await WordApiClient.fetch(provider)
             let count = reading.count.map { "count \($0) · " } ?? ""
             let rc = reading.receiveCount.map { "rc \($0) · " } ?? ""
+            let rawSnippet = WordApiInputPanel.truncated(String(reading.raw.prefix(600)), max: 600)
             if reading.hasWord {
-                testResult = (true, "Connected · \(count)\(rc)label “\(WordApiInputPanel.truncated(reading.label, max: 40))”")
+                testResult = (true, "Connected · \(count)\(rc)word “\(WordApiInputPanel.truncated(reading.label, max: 80))”\n\nData:\n\(rawSnippet)")
             } else {
-                testResult = (true, "Connected · \(count)no word yet. Response: \(reading.raw.prefix(200))")
+                testResult = (true, "Connected · \(count)\(rc)no word yet.\n\nData:\n\(rawSnippet)")
             }
             dlog("[WORD] test \(provider.rawValue): \(testResult?.text ?? "")")
         } catch {

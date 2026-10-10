@@ -34,6 +34,10 @@ struct NotesContactConnectionSheet: View {
                             Text(provider.detail)
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if provider.showsNetworkPerformTimingNote {
+                                SpectatorApiPerformTimingNote()
+                            }
                         }
                     }
 

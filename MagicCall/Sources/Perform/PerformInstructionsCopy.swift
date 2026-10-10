@@ -22,6 +22,7 @@ enum PerformInstructionsCopy {
         "**OpenAI API key:** Same card — **one key** for **Song → Voice (AI)** and **Song → Camera** card vision (not two keys). Tap **Test** after pasting. Use the **info** icon for create-key and billing steps on platform.openai.com.",
         "**Phone → Incoming Calls:** iOS may show a **banner** or **full-screen** incoming UI — MindtoneX works with **either**. Keep **Silent mode** how you prefer; the trick is **in-app playback** when the call arrives, not changing the carrier ringtone unless you choose the optional Share step below.",
         "Do **not** lock the phone or switch apps during Perform — MindtoneX keeps the screen awake, but leaving the app stops the effect.",
+        "**Perform URL scheme:** Home → **Performance settings** → **Copy URL scheme** (`magiccall://start-perform`). Opening that link starts Perform like tapping the Perform button (Shortcuts, NFC, QR).",
     ]
 
     static func optionalRealRingtone(autoShareOn: Bool) -> [String] {
@@ -45,8 +46,8 @@ enum PerformInstructionsCopy {
     static let duringPerform: [String] = [
         "Tap **Perform** on Home. The stage shows your screenshot — **no on-screen controls** for the audience.",
         "Arm song + words using your chosen inputs (same session — they run **in parallel**).",
-        "**Unknown contact (Caller name):** Perform may open a **Phone-style dial** inside MindtoneX. Enter their number and tap call — iOS opens the **real Phone app**; when you return, the **stage screenshot** is showing again and the app arms after that outgoing call ends. **Swipe down with two fingers** on the dial to cancel without calling (same as exiting Perform). With **Camera** song input, media volume resets to about **half** so **volume up** can scan (playback boosts again when the song locks).",
-        "Give your number; when they call back, the app plays the locked song. Hang-up = music stops.",
+        "**Caller name (Contacts):** Only when **Show word on incoming call** and **Save locked word as contact name** are ON. Pick **Known** or **Unknown** on the Caller name card (default **Unknown**). **Unknown** → Perform opens the in-app dial first (real outgoing call → save number → stage). **Known** → no dial if you already **Choose contact**; straight to the stage screenshot. **Swipe down with two fingers** on the dial to cancel (same as exiting Perform). With **Camera** song input, media volume resets to about **half** so **volume up** can scan.",
+        "Give your number; when they call back, the app plays the locked song (**song 1** if **2 songs** is on). With **Interference ringtone**, an **open hand** during the ring brings static → song 1; a **second hand** (with **2 songs**) brings song 2. Hang-up = music stops.",
         "**Performer peek (Feedback):** **Hold** your finger on the screen (~instant) to see **Song**, **Caller name**, and **Notes** lines; **release** to hide. Empty fields show **— —**. **ON by default** — tune position, size, and color under **Feedback**.",
         "**Optional real ringtone (manual):** If **Auto-open Share** is **OFF**, after hang-up press **volume down** on the side of the phone once → Share → **Use as Ringtone** (see **Optional: real ringtone** below).",
         "Exit Perform: **two-finger swipe down** from the middle of the screen.",
@@ -56,7 +57,27 @@ enum PerformInstructionsCopy {
 
     static let songInputOverview: [String] = [
         "Pick **one** method for the **song** on the **Song input** card. During Perform, that method finds and **locks** a track before (or as) they call.",
-        "This is separate from **Caller name** and **Notes contact** — you can combine them (example: **Camera** for song + **Voice** for both words).",
+        "**Interference ringtone only:** Under **Catalog & ringtone → Interference ringtone**, choose **1 song** or **2 songs on call**. **Normal ringtone** always plays **one** song (no second hand). Two songs = hand 1 → song 1, hand 2 → song 2 — one spectator can use both hands.",
+        "This is separate from **Caller name** and **Notes contact** — you can combine them (example: **Camera** for song + **Voice** for both words). **Caller name** is a poor fit with **2 songs** — turn it off for a clean routine.",
+    ]
+
+    static let twoSongsExperimental: [String] = [
+        "Toggle **1 song / 2 songs** inside **Interference ringtone** (not available for Normal ringtone).",
+        "**Song 1** lives in the normal slot — **Normal ringtone** incoming calls always play **song 1** only.",
+        "**Song 2** is stored separately (Home shows **Song 2** status when armed). It does **not** replace song 1 on a standard ring.",
+        "**Camera:** two ALL CAPS title lines on one card — **top = song 1**, **bottom = song 2** — one **volume up** scan can read both.",
+        "**Voice:** song 1 locks with the usual delay; the mic **keeps listening** until song 2 locks (same or another person).",
+        "**Notes:** **line 1 = song 1**, **line 2 = song 2** (one title per line).",
+        "**API:** first **new** search after Perform starts → song 1; the **next new** search → song 2; polling stops after song 2 locks.",
+    ]
+
+    static let interferenceRingtone: [String] = [
+        "Song card → **Catalog & ringtone** → **Interference ringtone** (experimental). Pick **Ringtone 1/2** and the **interference sound** (.m4a files in the app bundle).",
+        "Flow on the call: **your ringtone** → front camera sees an **open hand** (5 fingers, palm toward the phone) → **radio interference** morphs into **song 1**.",
+        "With **2 songs** enabled: after interference finishes and **song 1** plays, the **first ~2 s** of that clean song ignore hand 2; **after 2 s**, an **open hand** → **interference audio 2** → **song 2**.",
+        "**Banner** incoming calls help keep the camera live; **Back Tap** or your **volume trigger** can substitute for the hand in rehearsal.",
+        "Use **Open test mode** on the same card to practice ringtone, hands, and songs without placing a call.",
+        "Allow **Camera** in iOS Settings → MindtoneX — without it, Perform falls back to the **normal ringtone**.",
     ]
 
     static var songInputCamera: [String] {
@@ -70,6 +91,7 @@ enum PerformInstructionsCopy {
         } else {
             lines.append("One volume scan can return **song + caller word + Notes word** when those inputs use Camera OCR.")
         }
+        lines.append("**2 songs:** two title lines on the card (top = song 1, bottom = song 2). Pair with **Interference ringtone** for hand 1 → song 1, hand 2 → song 2 on the call.")
         return lines
     }
 
@@ -77,6 +99,7 @@ enum PerformInstructionsCopy {
         [
             "**Voice:** OpenAI key under **Performance settings** (same key as Camera). The mic listens; AI picks the spectator’s **final** song (ignores your examples).",
             "Locks after **\(lockSeconds) s** without a change (adjustable in Voice settings).",
+            "**2 songs:** after song 1 locks, listening **continues** for song 2 (must be a **different** title).",
             "Same mic can run **extra AI prompts** for Caller name and Notes if those cards use **Voice (AI)**.",
         ]
     }
@@ -84,10 +107,12 @@ enum PerformInstructionsCopy {
     static let songInputNotes: [String] = [
         "**Notes:** During Perform a note opens; the app searches the text you prepared (idle timer / Return / checkmark — see Notes controls on Home).",
         "Good when the song is written in Apple Notes instead of spoken or scanned.",
+        "**2 songs:** **line 1 = song 1**, **line 2 = song 2**. The incoming call plays song 1; **Interference ringtone** + second hand plays song 2.",
     ]
 
     static let songInputAPI: [String] = [
         "**API:** Spectator searches in Inject / Elips / your endpoint; MindtoneX polls every \(Int(ApiSettings.pollInterval)) s and locks when their search loads.",
+        "**2 songs:** first **new** search → song 1; **next new** search → song 2. Plain calls play song 1 only.",
         "Song API is **separate** from Caller name / Notes word URLs unless you reuse the same service on purpose.",
     ]
 
@@ -101,28 +126,42 @@ enum PerformInstructionsCopy {
     // MARK: - Caller name
 
     static let callerName: [String] = [
-        "Home → **Caller name**. Turn **Show word on incoming call** **ON** to replace the number with a **word** on the incoming call (**banner or full-screen**). With **Save locked word as contact name** on, MindtoneX updates **Contacts** when the word **locks** (see **Known vs Unknown** below).",
-        "**Inject / Elips / Custom API:** Polls every \(Int(WordApiSettings.pollInterval)) s during Perform. First reading = old word on server; **next change** = spectator’s word → lock.",
-        "**Camera (OCR):** **One word** on the line **under the song** (song may use one or two lines above). Requires Song input = **Camera**.",
-        "**Voice (AI):** Same mic as Song = Voice; ask what word they think you saved as their contact (script on the card).",
+        "Home → **Caller name**. Turn **Show word on incoming call** **ON**. With **Save locked word as contact name** on, pick **Known** or **Unknown** (default **Unknown**) — see the table below.",
+        "When the word **locks** (Inject / Elips / Camera / Voice / etc.), MindtoneX writes **Contacts** so iOS can show that word on the callback. **Restore contact names after Perform** puts cards back how they were.",
+        "**Inject / Elips / Custom API:** Polls every \(Int(WordApiSettings.pollInterval)) s. First reading = old word; **next change** = spectator’s word → lock.",
+        "**Camera (OCR):** One word on the line under the song. **Voice (AI):** same mic script as on the card.",
     ]
 
-    /// Known vs Unknown — how MindtoneX links a phone number to the forced word in Contacts.
+    /// Known vs Unknown — comparison table for Instructions.
     static let callerNameKnownUnknown: [String] = [
-        "**Primary path — Contacts:** Turn **Save locked word as contact name** **ON**, pick **How to link the number** (**Known** or **Unknown**), and allow **Contacts** access. When the word locks, MindtoneX **creates or renames** that contact’s first name.",
-        "**Optional backup only:** If you entered a **Call identification** fallback number in Caller name connection settings, you may enable **Settings → Phone → Call Blocking & Identification → MindtoneX Caller Label** — not required for a normal show.",
-        "**Unknown** (stranger, one-off number): Before the rest of Perform arms, MindtoneX opens the **Phone-style dial inside the app**. Enter their number and tap the **green call button** — iOS places a **real outgoing call** in the Phone app. When you return to MindtoneX, the **stage screenshot** shows again; after that call **ends**, the app **saves their number** and continues Perform. You **must** complete this dial once so the app knows which number to use.",
-        "**Cancel the dial:** **Swipe down with two fingers** anywhere on the dial (same gesture as **Exit Perform** on the stage screenshot). Single-finger taps still dial digits and the green call button. Cancelling exits Perform setup — nothing is saved until an outgoing call completes.",
-        "**Unknown → Contacts:** When the word **locks**, MindtoneX writes the **prediction word** as the contact **first name** for that saved number. **If that phone number is not in Contacts yet** → the app **creates a new contact** (mobile + name + optional Notes). **If a contact with that number already exists** → the app **updates that same card** (replaces **first name** with the word; updates Notes if configured). It does **not** create a duplicate for the same number.",
-        "**Known** (repeat volunteer, friend): Choose **Known** → **Choose contact** and pick their card **before** Perform. When the word locks, MindtoneX **updates that existing contact only** — it **replaces the first name** with the prediction word (same person, same card; **not** a new contact). Optional **Restore original name when leaving Caller name connection** puts their real first name back when you close connection details after the show.",
-        "**Perform log:** **Contact saved** = Unknown create/update · **Contact renamed** = Known first name replaced · **Spectator number saved** = dial step finished · errors explain missing dial or missing contact pick.",
+        "**Known vs Unknown** (requires **Save locked word as contact name** + **Show word on incoming call**):",
+        "",
+        "**When you tap Perform**",
+        "• **Known:** Stage screenshot **immediately** (no dial) if you already tapped **Choose contact**. If not, iOS asks you to pick their card first.",
+        "• **Unknown:** In-app **Phone-style dial** → you place a **real outgoing call** → when it **ends**, MindtoneX saves the number and shows the stage.",
+        "",
+        "**Who / number**",
+        "• **Known:** Friend or family **already in Contacts** — you link **one** contact on the Caller name card.",
+        "• **Unknown:** Stranger or one-off — number comes from the **outgoing call** you just made.",
+        "",
+        "**When the word locks** (before they call you back)",
+        "• **Known:** Renames **that contact only** — first name becomes the word.",
+        "• **Unknown:** Finds **every** contact with that number and renames them, or **creates** a new contact if the number is new.",
+        "",
+        "**After Perform** (toggle **Restore contact names after Perform**)",
+        "• Both modes: revert renamed cards; **delete** contacts MindtoneX created in Unknown mode.",
+        "",
+        "**Cancel Unknown dial:** **Two-finger swipe down** on the dial — same as Exit Perform. No number saved until the outgoing call completes.",
+        "**Optional backup:** Manual **Call identification** number + **MindtoneX Caller Label** in Phone settings — only if you are **not** using Contacts rename.",
     ]
 
     // MARK: - Notes contact
 
     static let notesContact: [String] = [
         "Home → **Notes contact**. Sets the **Contacts → Notes** field on the spectator’s card (preview matches the real call sheet).",
-        "**Note text** is empty by default — only what you type is saved. Tap **`{word}`** in the editor to insert the marker where the forced word should go; during the show, **`{word}`** is replaced by the locked **Notes chip** word (Inject / OCR line 3 / Voice). No separate placeholder field.",
+        "**Same Unknown / Known contact** as **Caller name** and **Album artwork** — change it on any of those cards.",
+        "**Note text** is empty by default — only what you type is saved. Tap **`{word}`** in the editor to insert the marker where the forced word should go; during the show, **`{word}`** is replaced by the locked **Notes chip** word (Inject / OCR line 3 / Voice).",
+        "**Unknown:** Perform in-app dial (real outgoing call) captures the number before the note can save. **Known:** **Choose contact** on Home — no dial.",
         "Uses its **own** word source — independent from Caller name.",
         "**Camera:** **Line 3** on the card (line 1 = song, line 2 = caller if enabled).",
     ]
@@ -131,7 +170,7 @@ enum PerformInstructionsCopy {
 
     static let feedback: [String] = [
         "Home → **Feedback** (optional performer cues).",
-        "**Hold-to-peek (default ON):** While your finger stays on the screen, you see live **Song**, **Caller name** (if armed), and **Notes** (if configured). Drag the **preview** to set position; adjust **size** and **color**. Release to hide — the audience still only sees the screenshot.",
+        "**Hold-to-peek (default ON):** While your finger stays on the screen, you see live **Song** (or **Song 1** / **Song 2** when **2 songs** is enabled), **Caller name** (if armed), and **Notes** (if configured). Drag the **preview** to set position; adjust **size** and **color**. Release to hide — the audience still only sees the screenshot.",
         "**Vibration when song locks:** Two long buzzes so you know the track is ready without looking.",
         "**Status dot when song ready:** Small dot on the **top-right of the screen** after the song locks (Voice / API / Camera). Toggle color and size to taste.",
         "Caller name lock uses a **different** vibration pattern (three short taps) when enabled.",
@@ -149,5 +188,15 @@ enum PerformInstructionsCopy {
     static let performLog: [String] = [
         "**Perform log** on Home records each run: which **inputs** were armed and every **Recognized** song/word.",
         "Use it after rehearsal to confirm Camera lines, API polls, or Voice picks matched what you expected. With **Voice (AI)**, each **OpenAI** line shows the model’s answer and **reasoning**, even when it returns **none**.",
+    ]
+
+    // MARK: - Community
+
+    static let facebookUsersGroupURL = "https://www.facebook.com/share/g/1CGdX4UZcs/?mibextid=wwXIfr"
+
+    static let facebookUsersGroup: [String] = [
+        "Optional: join the **MindtoneX users** Facebook group — tips, questions, and updates from other performers.",
+        "Link: [Open the Facebook group](\(facebookUsersGroupURL))",
+        "If Facebook asks for a group password, enter: **`tone33`**",
     ]
 }

@@ -14,9 +14,7 @@ enum PerformLogReporter {
         PerformUserLog.shared.log("── Inputs this perform ──")
         PerformUserLog.shared.log("Song · \(VoiceSettings.inputMode.title)")
         if SpectatorSettings.isTwo {
-            PerformUserLog.shared.log(InterferenceSettings.enabled
-                ? "Spectators · 2 (experimental) · 1st hand → song 1 · 2nd hand → song 2"
-                : "Spectators · 2 (experimental) · normal ringtone plays song 1 only")
+            PerformUserLog.shared.log("Songs · 2 (experimental) · interference · 1st hand → song 1 · 2nd hand → song 2")
         }
         if InterferenceSettings.enabled {
             let preset = InterferenceSettings.resolvedPreset(

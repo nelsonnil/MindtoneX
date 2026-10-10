@@ -42,10 +42,9 @@ struct NotesContactHomeCard: View {
     }
 
     private var previewPhoneDigits: String {
-        let digits = WordApiSettings.lastDialedPhoneDigits.isEmpty
-            ? WordApiSettings.fallbackPhoneDigits
-            : WordApiSettings.lastDialedPhoneDigits
-        return digits
+        let shared = WordApiSettings.spectatorContactPhoneDigitsRaw()
+        if !shared.isEmpty { return shared }
+        return WordApiSettings.fallbackPhoneDigits
     }
 
     private var previewNotesText: String {
@@ -82,6 +81,19 @@ struct NotesContactHomeCard: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 NotesContactWordInputPanel()
+
+                SpectatorContactSetupSection(
+                    card: .notesContact,
+                    accent: OracleTheme.sectionTeal,
+                    showsRestoreToggle: true
+                )
+                .padding(14)
+                .background(Color.white.opacity(0.04))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
+                }
 
                 NotesContactCallDetailPreview(
                     contactName: previewContactName,

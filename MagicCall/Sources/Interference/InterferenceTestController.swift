@@ -234,7 +234,7 @@ final class InterferenceTestController: ObservableObject {
         ringStartedAt = CACurrentMediaTime()
         phase = .playingRingtone
         if let second {
-            dlog("[INTERF] test playing · 2 spectators · \(ringtone.title) · interference → \(InterferenceSettings.secondHandTitle) · song 1=\(first.title) · song 2=\(second.title)")
+            dlog("[INTERF] test playing · 2 songs · \(ringtone.title) · interference → \(InterferenceSettings.secondHandTitle) · song 1=\(first.title) · song 2=\(second.title)")
         } else {
             dlog("[INTERF] test playing · \(ringtone.title) · song=\(first.title) — \(first.artist)")
         }
@@ -305,7 +305,6 @@ final class InterferenceTestController: ObservableObject {
             fail("iOS stopped the audio just as the hand was detected. Tap Play again.")
             return
         }
-        if twoSpectatorRun { scheduleSecondHandWatch(runID: id) }
     }
 
     private func firstSongBecameClean() {
@@ -316,6 +315,9 @@ final class InterferenceTestController: ObservableObject {
             return
         }
         phase = .playingSong
+        if twoSpectatorRun, !secondHandSeen, !waitingForSecondHand {
+            scheduleSecondHandWatch(runID: runID)
+        }
     }
 
     private func firstSongFinished() {
@@ -328,19 +330,22 @@ final class InterferenceTestController: ObservableObject {
         dlog("[INTERF] song 1 finished · still waiting for hand 2")
     }
 
-    /// The camera comes back after the cooldown; a hand still held from spectator 1 must leave first.
+    /// After song 1 is clean: grace period, then watch for hand 2.
     private func scheduleSecondHandWatch(runID id: Int) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + InterferenceSettings.secondHandCooldown) { [weak self] in
+        let delay = InterferenceSettings.secondHandDelayAfterInterference
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             MainActor.assumeIsolated {
                 guard let self, self.runID == id, self.phase.isBusy, !self.secondHandSeen else { return }
+                guard self.phase == .playingSong || self.waitingForSecondHand else { return }
                 self.armSecondHand()
+                dlog("[INTERF] song 1 clean · after \(String(format: "%.1f", delay)) s · watching for hand 2")
             }
         }
     }
 
     private func armSecondHand() {
         do {
-            try detector.start(requireClearFirst: true)
+            try detector.start(requireClearFirst: false)
         } catch {
             fail("Front camera could not restart for the second hand: \(error.localizedDescription)")
             return

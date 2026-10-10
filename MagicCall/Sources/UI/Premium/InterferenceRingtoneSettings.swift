@@ -8,7 +8,16 @@ struct SongRingtoneModeBlock: View {
     @AppStorage(InterferenceSettings.Key.enabled) private var enabled = false
     @AppStorage(InterferenceSettings.Key.ringtoneID) private var ringtoneID = InterferenceSettings.Ringtone.defaultValue.rawValue
     @AppStorage(InterferenceSettings.Key.presetID) private var presetID = InterferenceSettings.InterferencePreset.defaultValue.rawValue
+    @AppStorage(SpectatorSettings.Key.count) private var songCount = 1
+    @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.card.rawValue
     @State private var showTestMode = false
+
+    private var inputMode: VoiceSettings.InputMode {
+        let mode = VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .card
+        return mode == .manual ? .card : mode
+    }
+
+    private var twoSongsEnabled: Bool { songCount == 2 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -21,14 +30,18 @@ struct SongRingtoneModeBlock: View {
                 modeChip("Interference ringtone", icon: "antenna.radiowaves.left.and.right", value: true)
             }
 
-            Text(enabled
-                ? "Your ringtone plays first. When the front camera sees an open hand, radio interference takes over and morphs into the song."
-                : "Standard MindtoneX ringtone — the song plays when the call rings.")
+            Text(.init(enabled
+                ? (twoSongsEnabled
+                    ? "Your ringtone plays first. **Open hand 1** → interference → **song 1**. After a short pause, **open hand 2** → interference 2 → **song 2**. One spectator can use both hands."
+                    : "Your ringtone plays first. When the front camera sees an open hand, radio interference takes over and morphs into the song.")
+                : "Standard MindtoneX ringtone — **one song** plays when the call rings (no hand gesture)."))
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             if enabled {
+                InterferenceSongCountControls(inputMode: inputMode, songCount: $songCount)
+
                 VStack(alignment: .leading, spacing: 10) {
                     InterferenceRingtonePicker(selectionRaw: $ringtoneID)
                     InterferencePresetPicker(selectionRaw: $presetID)
@@ -48,7 +61,9 @@ struct SongRingtoneModeBlock: View {
                 .buttonStyle(.plain)
                 .accessibilityHint("Practice ringtone, open hand, interference, and song")
 
-                Text("Perform: incoming calls use this ringtone until the front camera sees an open hand. Banner call style keeps the camera on; Back Tap or the volume trigger can stand in for the hand.")
+                Text(.init(twoSongsEnabled
+                    ? "Perform: **hand 1** → interference → song 1; during the **first ~2 s of clean song 1** hand 2 is ignored; **after that**, open hand → interference 2 → song 2."
+                    : "Perform: incoming calls use this ringtone until the front camera sees an open hand. Choose **2 songs** above for a second hand → song 2. Banner call style keeps the camera on; Back Tap or the volume trigger can stand in for the hand."))
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -83,6 +98,9 @@ struct SongRingtoneModeBlock: View {
             dlog("[INTERF] ringtone mode → \(value ? "interference" : "normal")")
             if value {
                 Task { _ = await CardSettings.requestCameraIfNeeded() }
+            } else {
+                if songCount == 2 { songCount = 1 }
+                SecondSpectatorSong.shared.reset(reason: "normal ringtone")
             }
         } label: {
             VStack(spacing: 6) {
@@ -175,10 +193,10 @@ struct InterferenceTestView: View {
     @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
     @StateObject private var test = InterferenceTestController()
 
-    private var twoSpectators: Bool { spectatorCount == 2 }
+    private var twoSongs: Bool { SpectatorSettings.isTwo }
 
     private var songsMissing: Bool {
-        twoSpectators && (test.song1 == nil || test.song2 == nil)
+        twoSongs && (test.song1 == nil || test.song2 == nil)
     }
 
     private var ringtone: InterferenceSettings.Ringtone {
@@ -192,17 +210,24 @@ struct InterferenceTestView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
+                if !twoSongs {
+                    Text(.init("Using **1 song** on Home — the test plays one hand → one song. Set Song → **2 songs** to rehearse hand 2 and song 2."))
+                        .font(.caption)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 statusCard
 
                 if test.phase == .playingRingtone {
                     cameraCard
                 }
 
-                block(number: 1, title: twoSpectators ? "Songs" : "Song") {
+                block(number: 1, title: twoSongs ? "Songs" : "Song") {
                     VStack(alignment: .leading, spacing: 6) {
-                        if twoSpectators { songSlots }
+                        if twoSongs { songSlots }
                         LibrarySongSearchBlock(
-                            pickedTrackID: twoSpectators ? slotTrack(test.pickSlot)?.id : nil,
+                            pickedTrackID: twoSongs ? slotTrack(test.pickSlot)?.id : nil,
                             onPick: songPickHandler,
                             resultsPresentation: .sheet
                         )
@@ -258,15 +283,15 @@ struct InterferenceTestView: View {
         }
     }
 
-    // MARK: Songs (Spectators = 2)
+    // MARK: Two songs
 
     private func slotTrack(_ slot: Int) -> PreviewTrack? {
         slot == 2 ? test.song2 : test.song1
     }
 
-    /// Spectators = 2: matches fill the highlighted slot instead of loading into the Home song.
+    /// Two songs: matches fill the highlighted slot instead of loading into the Home song.
     private var songPickHandler: ((PreviewTrack) -> Void)? {
-        guard twoSpectators else { return nil }
+        guard twoSongs else { return nil }
         let test = self.test
         let model = self.model
         return { track in
@@ -296,7 +321,7 @@ struct InterferenceTestView: View {
                     .frame(width: 20, height: 20)
                     .foregroundStyle(active ? OracleTheme.ink : OracleTheme.textSecondary)
                     .background(active ? OracleTheme.gold : Color.white.opacity(0.08), in: Circle())
-                Text(track.map { "\($0.title) — \($0.artist)" } ?? "Song \(slot) · spectator \(slot)")
+                Text(track.map { "\($0.title) — \($0.artist)" } ?? "Song \(slot) · not picked")
                     .font(.subheadline.weight(track == nil ? .regular : .medium))
                     .foregroundStyle(track == nil ? OracleTheme.textSecondary : OracleTheme.textPrimary)
                     .lineLimit(1)
@@ -364,8 +389,8 @@ struct InterferenceTestView: View {
     }
 
     private var flowLayoutSteps: some View {
-        let steps = twoSpectators ? twoSpectatorFlowSteps : oneSpectatorFlowSteps
-        let active = twoSpectators ? test.phase.twoSpectatorStep : test.phase.step
+        let steps = twoSongs ? twoSongFlowSteps : oneSongFlowSteps
+        let active = twoSongs ? test.phase.twoSpectatorStep : test.phase.step
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 ForEach(steps, id: \.index) { step in
@@ -375,7 +400,7 @@ struct InterferenceTestView: View {
         }
     }
 
-    private var oneSpectatorFlowSteps: [(index: Int, title: String, detail: String?)] {
+    private var oneSongFlowSteps: [(index: Int, title: String, detail: String?)] {
         [
             (1, "Ringtone", ringtone.title),
             (2, "Hand", test.handDetectedAfter.map { String(format: "%.1fs", $0) }),
@@ -384,7 +409,7 @@ struct InterferenceTestView: View {
         ]
     }
 
-    private var twoSpectatorFlowSteps: [(index: Int, title: String, detail: String?)] {
+    private var twoSongFlowSteps: [(index: Int, title: String, detail: String?)] {
         [
             (1, "Ringtone", ringtone.title),
             (2, "Hand 1", test.handDetectedAfter.map { String(format: "%.1fs", $0) }),
@@ -395,7 +420,7 @@ struct InterferenceTestView: View {
     }
 
     private func resolvedSongTitle(for slot: Int) -> String? {
-        if twoSpectators {
+        if twoSongs {
             return slotTrack(slot)?.title
         }
         return model.selected?.title
@@ -430,9 +455,9 @@ struct InterferenceTestView: View {
         case .idle: return "Idle"
         case .starting: return "Starting…"
         case .playingRingtone: return "Playing ringtone"
-        case .handDetected: return twoSpectators ? "Hand 1 detected" : "Hand detected"
+        case .handDetected: return twoSongs ? "Hand 1 detected" : "Hand detected"
         case .interference: return "Interference"
-        case .playingSong: return twoSpectators ? "Playing song 1" : "Playing song"
+        case .playingSong: return twoSongs ? "Playing song 1" : "Playing song"
         case .secondHandDetected: return "Hand 2 detected"
         case .secondInterference: return "Interference 2"
         case .playingSecondSong: return "Playing song 2"
@@ -444,8 +469,8 @@ struct InterferenceTestView: View {
         switch test.phase {
         case .idle:
             if let note = test.note { return note }
-            return twoSpectators
-                ? "Pick Song 1 and Song 2, choose a ringtone, then tap Play."
+            return twoSongs
+                ? "Pick song 1 and song 2, choose a ringtone, then tap Play."
                 : "Pick a song, choose a ringtone, then tap Play."
         case .starting:
             return "Loading sounds and opening the front camera."
@@ -454,11 +479,11 @@ struct InterferenceTestView: View {
         case .handDetected:
             return "Camera off. Interference is coming in."
         case .interference:
-            return twoSpectators
+            return twoSongs
                 ? "Static takes over the ringtone; song 1 comes through like a radio."
                 : "Static takes over the ringtone; the song comes through like a radio."
         case .playingSong:
-            guard twoSpectators else { return "Clean song preview. Tap Stop to reset." }
+            guard twoSongs else { return "Clean song preview. Tap Stop to reset." }
             if test.waitingForSecondHand {
                 let wait = "Waiting for hand 2 · fingers seen: \(test.fingersSeen) / \(HandGestureDetector.requiredFingers)+"
                 return test.note.map { "\($0) \(wait)" } ?? wait

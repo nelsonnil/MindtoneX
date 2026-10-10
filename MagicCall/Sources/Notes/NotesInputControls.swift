@@ -7,13 +7,16 @@ struct NotesInputControls: View {
     @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
     @AppStorage(NotesSettings.Key.searchOnReturn) private var searchOnReturn = true
     @AppStorage(NotesSettings.Key.useAIPicker) private var useAIPicker = true
-    @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
+    @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
+    @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
+
+    private var twoSongsOnCall: Bool { interferenceEnabled && interferenceSongCount == 2 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(spectatorCount == 2
-                ? "Perform opens a blank white note. Spectator 1 writes a song on line 1, spectator 2 on line 2 (one song per line). The incoming call plays song 1."
-                : "Perform opens a blank white note. The spectator writes a song; MindtoneX finds and loads it in the background, then the incoming call plays it.")
+            Text(.init(twoSongsOnCall
+                ? "Perform opens a blank white note. **Line 1 = song 1**, **line 2 = song 2** (one title per line). The incoming call plays song 1. With **Interference ringtone** and **2 songs**, the second open hand during the call plays song 2."
+                : "Perform opens a blank white note. The spectator writes a song; MindtoneX finds and loads it in the background, then the incoming call plays it."))
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

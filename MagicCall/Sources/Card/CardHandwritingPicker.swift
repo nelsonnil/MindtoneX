@@ -396,8 +396,8 @@ enum CardHandwritingPicker {
             : "Notes word: not used (has_notes_word=false, notes_word empty)."
         let instructions = """
         You read a photo of a handwritten performance card (black ink, often ALL CAPS). \
-        TWO spectators each wrote ONE song. \(CardSettings.openAIVisionLanguageRule)
-        The UPPER song belongs to spectator 1 (fields ending in _1); the LOWER song belongs to spectator 2 (fields ending in _2). \
+        TWO song titles on one card (song 1 and song 2). \(CardSettings.openAIVisionLanguageRule)
+        The UPPER line is song 1 (fields ending in _1); the LOWER line is song 2 (fields ending in _2). \
         Usually one line each: a title, sometimes with the artist ("THRILLER - MICHAEL JACKSON"). If one song wraps onto a second line, merge it.
 
         Optional OCR hint, top to bottom (often wrong — do not follow line numbers blindly):

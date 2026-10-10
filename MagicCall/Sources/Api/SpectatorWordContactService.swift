@@ -16,34 +16,18 @@ enum SpectatorWordContactService {
         switch WordApiSettings.contactMode {
         case .unknown:
             guard let phone = WordApiSettings.identificationPhoneE164String() else {
-                dlog("[CONTACT] skip (\(reason)): no phone (unknown mode — dial before Perform)")
+                dlog("[CONTACT] skip (\(reason)): no phone (Unknown — dial before Perform)")
                 PerformUserLog.shared.log("Contact not saved · dial spectator number before Perform (Unknown mode)")
                 return
             }
-            Task { await createUnknownIfNeeded(word: label, phone: phone, reason: reason) }
+            Task { await applyWordToContactsByPhone(word: label, phone: phone, reason: reason) }
         case .known:
             guard let id = WordApiSettings.knownContactIdentifier else {
                 dlog("[CONTACT] skip (\(reason)): no known contact picked")
-                PerformUserLog.shared.log("Contact not renamed · choose a contact on the Word API card (Known mode)")
+                PerformUserLog.shared.log("Contact not renamed · choose a contact on Caller name (Known mode)")
                 return
             }
-            Task { await renameKnownContact(identifier: id, word: label, reason: reason) }
-        }
-    }
-
-    /// Restores the known contact’s original given name (Settings exit / manual cleanup).
-    @MainActor
-    static func restoreKnownContactOriginalName(reason: String) {
-        guard WordApiSettings.saveWordAsContactEnabled else { return }
-        guard WordApiSettings.contactMode == .known else { return }
-        guard WordApiSettings.restoreKnownNameOnSettingsExit else { return }
-        guard WordApiContactShowState.shared.knownContactRenamedForShow else { return }
-        guard let id = WordApiSettings.knownContactIdentifier else { return }
-        let original = WordApiSettings.knownContactOriginalGivenName
-        guard !original.isEmpty else { return }
-
-        Task {
-            await runRestore(identifier: id, givenName: original, reason: reason)
+            Task { await applyWordToKnownContact(identifier: id, word: label, reason: reason) }
         }
     }
 
@@ -61,36 +45,35 @@ enum SpectatorWordContactService {
             phoneDigits: digits,
             originalGivenName: contact.givenName
         )
-        WordApiContactShowState.shared.knownContactRenamedForShow = false
+        WordApiSettings.setKnownContactRenamedForShow(false)
         dlog("[CONTACT] picked «\(label)» · \(phoneE164)")
+    }
+
+    /// Reverts Contacts changed at word lock (Perform disarm / settings dismiss).
+    @MainActor
+    static func restoreContactsAfterPerform(reason: String) {
+        let snapshots = WordApiContactRestoreStore.entries
+        guard !snapshots.isEmpty else { return }
+
+        guard WordApiSettings.saveWordAsContactEnabled, WordApiSettings.restoreKnownNameOnSettingsExit else {
+            WordApiContactRestoreStore.clear()
+            WordApiSettings.setKnownContactRenamedForShow(false)
+            return
+        }
+
+        Task {
+            await runRestoreSnapshots(snapshots, reason: reason)
+        }
     }
 
     // MARK: - Private
 
     @MainActor
-    private static func createUnknownIfNeeded(word: String, phone: String, reason: String) async {
+    private static func applyWordToKnownContact(identifier: String, word: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            let outcome = try upsertUnknown(word: word, phone: phone)
-            dlog("[CONTACT] created/updated unknown «\(word)» → \(phone) (\(reason)) · \(outcome.debugSummary)")
-            PerformUserLog.shared.log("Contact saved · \(phone) · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
-        } catch {
-            dlog("✗ [CONTACT] unknown (\(reason)): \(error.localizedDescription)")
-            PerformUserLog.shared.log("Contact not saved · \(describe(error))")
-            return
-        }
-        let note = performContactNote()
-        if !note.isEmpty {
-            await updateNoteForPhone(phone: phone, note: note, reason: reason)
-        }
-    }
-
-    @MainActor
-    private static func renameKnownContact(identifier: String, word: String, reason: String) async {
-        guard await ensureContactsAccess(reason: reason) else { return }
-        do {
-            let outcome = try renameGivenName(identifier: identifier, word: word)
-            WordApiContactShowState.shared.knownContactRenamedForShow = true
+            let outcome = try renameKnownContactGivenName(identifier: identifier, word: word)
+            WordApiSettings.setKnownContactRenamedForShow(WordApiContactRestoreStore.hasPendingRestore)
             dlog("[CONTACT] renamed known → «\(word)» (\(reason)) · \(outcome.debugSummary)")
             PerformUserLog.shared.log("Contact renamed · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
         } catch {
@@ -101,6 +84,25 @@ enum SpectatorWordContactService {
         let note = performContactNote()
         if !note.isEmpty {
             await updateNoteForKnown(identifier: identifier, note: note, reason: reason)
+        }
+    }
+
+    @MainActor
+    private static func applyWordToContactsByPhone(word: String, phone: String, reason: String) async {
+        guard await ensureContactsAccess(reason: reason) else { return }
+        do {
+            let outcome = try upsertByPhone(word: word, phone: phone)
+            WordApiSettings.setKnownContactRenamedForShow(WordApiContactRestoreStore.hasPendingRestore)
+            dlog("[CONTACT] saved «\(word)» → \(phone) (\(reason)) · \(outcome.debugSummary)")
+            PerformUserLog.shared.log("Contact saved · \(phone) · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
+        } catch {
+            dlog("✗ [CONTACT] save (\(reason)): \(error.localizedDescription)")
+            PerformUserLog.shared.log("Contact not saved · \(describe(error))")
+            return
+        }
+        let note = performContactNote()
+        if !note.isEmpty {
+            await updateNoteForPhone(phone: phone, note: note, reason: reason)
         }
     }
 
@@ -136,15 +138,28 @@ enum SpectatorWordContactService {
     }
 
     @MainActor
-    private static func runRestore(identifier: String, givenName: String, reason: String) async {
+    private static func runRestoreSnapshots(_ snapshots: [WordApiContactRestoreEntry], reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
-        do {
-            try setGivenName(identifier: identifier, givenName: givenName)
-            WordApiContactShowState.shared.knownContactRenamedForShow = false
-            dlog("[CONTACT] restored givenName «\(givenName)» (\(reason))")
-            PerformUserLog.shared.log("Contact name restored · «\(WordApiInputPanel.truncated(givenName, max: 32))»")
-        } catch {
-            dlog("✗ [CONTACT] restore (\(reason)): \(error.localizedDescription)")
+        var restored = 0
+        var deleted = 0
+        for entry in snapshots {
+            do {
+                if entry.createdForShow {
+                    try deleteContact(identifier: entry.identifier)
+                    deleted += 1
+                } else {
+                    try setGivenName(identifier: entry.identifier, givenName: entry.givenName)
+                    restored += 1
+                }
+            } catch {
+                dlog("✗ [CONTACT] restore \(entry.identifier) (\(reason)): \(error.localizedDescription)")
+            }
+        }
+        WordApiContactRestoreStore.clear()
+        WordApiSettings.setKnownContactRenamedForShow(false)
+        if restored + deleted > 0 {
+            dlog("[CONTACT] restore (\(reason)) · \(restored) renamed · \(deleted) deleted")
+            PerformUserLog.shared.log("Contacts restored after Perform · \(restored + deleted) card(s)")
         }
     }
 
@@ -251,7 +266,7 @@ enum SpectatorWordContactService {
         )
     }
 
-    private static func upsertUnknown(word: String, phone: String) throws -> SaveOutcome {
+    private static func upsertByPhone(word: String, phone: String) throws -> SaveOutcome {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
@@ -259,6 +274,7 @@ enum SpectatorWordContactService {
         let matches = try cards(withPhone: phone, keysToFetch: keys)
         let save = CNSaveRequest()
         var saved: [CNMutableContact] = []
+        var restoreEntries: [WordApiContactRestoreEntry] = []
 
         if matches.isEmpty {
             let contact = CNMutableContact()
@@ -267,27 +283,48 @@ enum SpectatorWordContactService {
                 CNLabeledValue(label: CNLabelPhoneNumberMobile, value: CNPhoneNumber(stringValue: phone)),
             ]
             save.add(contact, toContainerWithIdentifier: store.defaultContainerIdentifier())
+            try store.execute(save)
+            restoreEntries = [
+                WordApiContactRestoreEntry(
+                    identifier: contact.identifier,
+                    givenName: "",
+                    createdForShow: true
+                ),
+            ]
             saved = [contact]
         } else {
-            // iOS may show any card that carries the number, so every one of them gets the word.
+            restoreEntries = matches.map {
+                WordApiContactRestoreEntry(
+                    identifier: $0.identifier,
+                    givenName: $0.givenName,
+                    createdForShow: false
+                )
+            }
             for existing in matches {
                 let mutable = existing.mutableCopy() as! CNMutableContact
                 mutable.givenName = word
                 save.update(mutable)
                 saved.append(mutable)
             }
+            try store.execute(save)
         }
-        try store.execute(save)
+        WordApiContactRestoreStore.replaceEntries(restoreEntries)
         return outcome(for: saved[0], cardsRenamed: saved.count, otherCardsWithNumber: 0, fallback: word)
     }
 
-    private static func renameGivenName(identifier: String, word: String) throws -> SaveOutcome {
+    private static func renameKnownContactGivenName(identifier: String, word: String) throws -> SaveOutcome {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
         ] + displayKeys
         let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
-        WordApiSettings.saveKnownContactGivenNameBeforeLock(contact.givenName)
+        WordApiContactRestoreStore.replaceEntries([
+            WordApiContactRestoreEntry(
+                identifier: contact.identifier,
+                givenName: contact.givenName,
+                createdForShow: false
+            ),
+        ])
         let mutable = contact.mutableCopy() as! CNMutableContact
         mutable.givenName = word
         let save = CNSaveRequest()
@@ -299,6 +336,15 @@ enum SpectatorWordContactService {
             others = sharing.filter { $0.identifier != identifier }.count
         }
         return outcome(for: mutable, cardsRenamed: 1, otherCardsWithNumber: others, fallback: word)
+    }
+
+    private static func deleteContact(identifier: String) throws {
+        let keys: [CNKeyDescriptor] = [CNContactIdentifierKey as CNKeyDescriptor]
+        let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
+        let mutable = contact.mutableCopy() as! CNMutableContact
+        let save = CNSaveRequest()
+        save.delete(mutable)
+        try store.execute(save)
     }
 
     /// Call Directory labels only numbers that are **not** in Contacts; warn when Contacts save is off.
@@ -322,7 +368,7 @@ enum SpectatorWordContactService {
     /// Refresh Contacts **Notes** when the Notes chip word locks (template + placeholder).
     @MainActor
     static func applyContactNoteFromSettings(reason: String) {
-        guard WordApiSettings.saveWordAsContactEnabled else { return }
+        guard WordApiSettings.notesContactTargetsCard else { return }
         let note = NotesContactSettings.resolvedContactNote(
             lockedWord: NotesContactWordSession.shared.lockedReading?.label
         )
@@ -330,11 +376,31 @@ enum SpectatorWordContactService {
 
         switch WordApiSettings.contactMode {
         case .unknown:
-            guard let phone = WordApiSettings.identificationPhoneE164String() else { return }
+            guard let phone = WordApiSettings.spectatorContactPhoneE164String() else { return }
             Task { await updateNoteForPhone(phone: phone, note: note, reason: reason) }
         case .known:
             guard let id = WordApiSettings.knownContactIdentifier else { return }
             Task { await updateNoteForKnown(identifier: id, note: note, reason: reason) }
+        }
+    }
+
+    @MainActor
+    private static func updateNoteForKnown(identifier: String, note: String, reason: String) async {
+        guard await ensureContactsAccess(reason: reason) else { return }
+        do {
+            let keys: [CNKeyDescriptor] = [
+                CNContactIdentifierKey as CNKeyDescriptor,
+                CNContactNoteKey as CNKeyDescriptor,
+            ]
+            let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
+            let mutable = contact.mutableCopy() as! CNMutableContact
+            mutable.note = note
+            let save = CNSaveRequest()
+            save.update(mutable)
+            try store.execute(save)
+            dlog("[CONTACT] known note updated (\(reason))")
+        } catch {
+            logNoteSkipped(error, reason: reason)
         }
     }
 
@@ -356,26 +422,6 @@ enum SpectatorWordContactService {
             }
             try store.execute(save)
             dlog("[CONTACT] note updated (\(reason)) · \(note.prefix(40))…")
-        } catch {
-            logNoteSkipped(error, reason: reason)
-        }
-    }
-
-    @MainActor
-    private static func updateNoteForKnown(identifier: String, note: String, reason: String) async {
-        guard await ensureContactsAccess(reason: reason) else { return }
-        do {
-            let keys: [CNKeyDescriptor] = [
-                CNContactIdentifierKey as CNKeyDescriptor,
-                CNContactNoteKey as CNKeyDescriptor,
-            ]
-            let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
-            let mutable = contact.mutableCopy() as! CNMutableContact
-            mutable.note = note
-            let save = CNSaveRequest()
-            save.update(mutable)
-            try store.execute(save)
-            dlog("[CONTACT] known note updated (\(reason))")
         } catch {
             logNoteSkipped(error, reason: reason)
         }

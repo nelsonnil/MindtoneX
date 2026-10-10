@@ -8,7 +8,7 @@ enum WordApiContactPerformGate {
     private static var pendingPerform: (() -> Void)?
 
     static func needsPreparation() -> Bool {
-        guard WordApiSettings.callerLabelEnabled, WordApiSettings.saveWordAsContactEnabled else { return false }
+        guard WordApiSettings.usesSharedSpectatorContact else { return false }
         switch WordApiSettings.contactMode {
         case .unknown:
             return true
@@ -17,8 +17,12 @@ enum WordApiContactPerformGate {
         }
     }
 
-    static func prepareForPerform(presentDial: () -> Void, presentPicker: () -> Void, then: @escaping () -> Void) {
-        guard WordApiSettings.callerLabelEnabled, WordApiSettings.saveWordAsContactEnabled else {
+    static func prepareForPerform(
+        presentDial: () -> Void,
+        presentPicker: () -> Void,
+        then: @escaping () -> Void
+    ) {
+        guard WordApiSettings.usesSharedSpectatorContact else {
             then()
             return
         }
@@ -34,6 +38,10 @@ enum WordApiContactPerformGate {
             pendingPerform = then
             presentDial()
         }
+    }
+
+    static func contactPickedFinishPerform() {
+        finishPendingPerform()
     }
 
     static func cancelPendingPerform() {
@@ -74,10 +82,6 @@ enum WordApiContactPerformGate {
             return
         }
         WordApiSettings.setLastDialedPhoneDigits(WordApiSettings.fallbackPhoneDigits)
-        finishPendingPerform()
-    }
-
-    static func contactPickedFinishPerform() {
         finishPendingPerform()
     }
 

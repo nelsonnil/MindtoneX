@@ -34,6 +34,7 @@ struct ApiSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
+                        SpectatorApiPerformTimingNote()
                     }
                 }
 

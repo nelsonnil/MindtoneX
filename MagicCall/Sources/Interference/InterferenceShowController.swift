@@ -3,7 +3,7 @@ import QuartzCore
 
 /// Perform with Interference ringtone: the incoming call (or a manual trigger) starts the ringtone loop and
 /// the front camera → open hand → interference → song 1. With Spectators = 2 and song 2 ready, a second
-/// hand (after `InterferenceSettings.secondHandCooldown`, previous hand gone) → interference audio 2 → song 2.
+/// hand (≥ `InterferenceSettings.secondHandDelayAfterInterference` after interference 1) → interference audio 2 → song 2.
 /// Owned by `AppModel`; the normal `RingtoneAudioEngine` stays in silent hot standby meanwhile.
 @MainActor
 final class InterferenceShowController: ObservableObject {
@@ -117,8 +117,8 @@ final class InterferenceShowController: ObservableObject {
         ringStartedAt = CACurrentMediaTime()
         phase = .ringing
         startCamera(requireClearFirst: false)
-        let spectators = hasSecondSong ? " · 2 spectators (\(song1.title) / \(song2?.title ?? "?"))" : " · \(song1.title)"
-        PerformUserLog.shared.log("Interference · ringing · \(ringtone.title) · waiting for an open hand\(spectators)")
+        let songs = hasSecondSong ? " · song 1 · \(song1.title) · song 2 · \(song2?.title ?? "?")" : " · \(song1.title)"
+        PerformUserLog.shared.log("Interference · ringing · \(ringtone.title) · waiting for an open hand\(songs)")
         dlog("[INTERF] perform · ringing · \(ringtone.title) · \(preset.title)\(hasSecondSong ? " → \(InterferenceSettings.secondHandTitle)" : "") · \(engine.snapshot())")
         return true
     }
@@ -139,7 +139,7 @@ final class InterferenceShowController: ObservableObject {
             startCamera(requireClearFirst: false)
         } else if waitingForSecondHand || (secondHandWatchDue && phase == .song1 && !secondHandSeen) {
             waitingForSecondHand = true
-            startCamera(requireClearFirst: true)
+            startCamera(requireClearFirst: false)
         }
         dlog("[INTERF] perform · reasserted (\(reason)) · phase=\(phase.rawValue) · \(audio.snapshot())")
         return audio.isRunning
@@ -213,7 +213,6 @@ final class InterferenceShowController: ObservableObject {
         firstHandAt = CACurrentMediaTime()
         phase = .morph1
         PerformUserLog.shared.log("Interference · hand detected after \(String(format: "%.1f", firstHandAt - ringStartedAt)) s (\(source)) → song 1")
-        if hasSecondSong { scheduleSecondHandWatch(runID: id) }
     }
 
     private func firstSongBecameClean() {
@@ -224,17 +223,22 @@ final class InterferenceShowController: ObservableObject {
             return
         }
         phase = .song1
+        if hasSecondSong, !secondHandSeen, !secondHandWatchDue {
+            scheduleSecondHandWatch(runID: runID)
+        }
     }
 
-    /// The camera comes back after the cooldown; a hand still held from spectator 1 must leave first.
+    /// After song 1 is clean: grace period, then camera watches for hand 2 → interference 2.
     private func scheduleSecondHandWatch(runID id: Int) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + InterferenceSettings.secondHandCooldown) { [weak self] in
+        let delay = InterferenceSettings.secondHandDelayAfterInterference
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             MainActor.assumeIsolated {
                 guard let self, self.runID == id, self.isActive, !self.secondHandSeen else { return }
+                guard self.phase == .song1 || self.waitingForSecondHand else { return }
                 self.secondHandWatchDue = true
                 self.waitingForSecondHand = true
-                self.startCamera(requireClearFirst: true)
-                PerformUserLog.shared.log("Interference · watching for hand 2")
+                self.startCamera(requireClearFirst: false)
+                PerformUserLog.shared.log("Interference · song 1 clean · after \(String(format: "%.1f", delay)) s · watching for hand 2")
             }
         }
     }

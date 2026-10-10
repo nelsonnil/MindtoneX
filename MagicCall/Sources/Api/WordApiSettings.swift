@@ -51,17 +51,8 @@ enum WordApiSettings {
 
         var pickerHint: String {
             switch self {
-            case .unknown: return "New number"
-            case .known: return "Pick contact"
-            }
-        }
-
-        var detailLine: String {
-            switch self {
-            case .unknown:
-                return "Dial from the app on Perform (real call) so we learn the number. On lock: new contact if the number is new, or update that number’s existing card — first name becomes the word."
-            case .known:
-                return "Pick their contact before Perform. On lock: update that same card only — replace first name with the word (not a new contact)."
+            case .unknown: return "Dial on Perform"
+            case .known: return "Pick on Home"
             }
         }
     }
@@ -402,17 +393,24 @@ enum WordApiSettings {
     }
 
     static func phoneEntryHint() -> String {
-        switch deviceRegionISO.uppercased() {
-        case "ES":
-            return "Escribe el móvil como en Teléfono (690 808 919). No hace falta +34 ni 034."
-        default:
-            return "Enter the number like your Phone app — country code optional; we use your iPhone region."
-        }
+        "Enter the number like your Phone app — country code optional; MindtoneX uses your iPhone region."
+    }
+
+    /// Notes contact card writes to Contacts when note text is set.
+    static var notesContactTargetsCard: Bool {
+        !NotesContactSettings.storedNoteBody.isEmpty
+    }
+
+    /// Album art, caller-name contact rename, or Notes field — shared Unknown / Known + phone.
+    static var usesSharedSpectatorContact: Bool {
+        (callerLabelEnabled && saveWordAsContactEnabled)
+            || AlbumArtContactSettings.enabled
+            || notesContactTargetsCard
     }
 
     /// Digits used for Call Directory + contact sync (contact modes override manual field when ON).
     static func identificationPhoneDigitsRaw() -> String {
-        if saveWordAsContactEnabled {
+        if usesSharedSpectatorContact {
             switch contactMode {
             case .known:
                 if knownContactPhoneDigits.count >= 7 {
@@ -429,7 +427,7 @@ enum WordApiSettings {
 
     /// Which setting `identificationPhoneDigitsRaw()` used (Perform log).
     static var identificationPhoneSource: String {
-        if saveWordAsContactEnabled {
+        if usesSharedSpectatorContact {
             switch contactMode {
             case .known where knownContactPhoneDigits.count >= 7:
                 return "Known contact «\(knownContactDisplayName)»"

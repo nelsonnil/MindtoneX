@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UIKit
 
 /// Single Performance setup — volume, stage screenshot, auto-share toggle.
 struct PerformanceCard: View {
@@ -68,7 +69,37 @@ struct PerformanceCard: View {
                     }
                 }
                 .tint(OracleTheme.gold)
+
+                performURLSchemeSection
             }
+        }
+    }
+
+    @State private var copiedPerformURL = false
+
+    private var performURLSchemeSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Perform URL scheme")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+            Text("Open this link from Shortcuts, NFC, or a QR code to enter **Perform** (same as tapping Perform on Home).")
+                .font(.caption)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(PerformURLScheme.urlString)
+                .font(.caption.monospaced())
+                .foregroundStyle(OracleTheme.gold.opacity(0.95))
+                .textSelection(.enabled)
+            Button {
+                UIPasteboard.general.string = PerformURLScheme.urlString
+                copiedPerformURL = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedPerformURL = false }
+            } label: {
+                Label(copiedPerformURL ? "Copied" : "Copy URL scheme", systemImage: copiedPerformURL ? "checkmark" : "doc.on.doc")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .tint(OracleTheme.gold)
         }
     }
 

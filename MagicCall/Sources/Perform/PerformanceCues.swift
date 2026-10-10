@@ -215,7 +215,8 @@ struct PerformStageStatusDots: View {
     @ObservedObject private var api = ApiSongSession.shared
     @ObservedObject private var card = CardSongSession.shared
     @ObservedObject private var second = SecondSpectatorSong.shared
-    @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
+    @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
+    @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
     @AppStorage(PerformanceCues.Key.dotEnabled) private var songDotEnabled = false
     @AppStorage(PerformanceCues.Key.dotSize) private var songDotSize = PerformanceCues.defaultDotSize
     @AppStorage(PerformanceCues.Key.dotColor) private var songColorHex = PerformanceCues.defaultDotColor
@@ -223,7 +224,7 @@ struct PerformStageStatusDots: View {
 
     private var songReady: Bool {
         guard model.isArmed, model.loadState == .ready, model.selected != nil else { return false }
-        if spectatorCount == 2, !second.isLocked { return false }
+        if interferenceEnabled, interferenceSongCount == 2, !second.isLocked { return false }
         switch VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual {
         case .aiVoice: return voice.state == .locked
         case .api: return api.state == .locked

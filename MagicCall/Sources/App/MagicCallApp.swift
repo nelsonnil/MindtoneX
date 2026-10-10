@@ -16,6 +16,7 @@ struct MagicCallApp: App {
             .environmentObject(model)
             .environmentObject(DebugLog.shared)
             .onOpenURL { url in
+                if PerformURLScheme.handle(url) { return }
                 if !SilentShortcut.shared.handle(url) { dlog("Open URL ignored: \(url.absoluteString)") }
             }
             .fullScreenCover(isPresented: $model.showingDiscreetRingtonePrep) {

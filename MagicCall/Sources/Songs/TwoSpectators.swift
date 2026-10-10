@@ -2,10 +2,8 @@ import Foundation
 import QuartzCore
 import SwiftUI
 
-/// Experimental two-spectator mode: each spectator names a song. Song 1 keeps the normal slot
-/// (`AppModel.selected`, played by incoming calls exactly as with one spectator); song 2 is looked up
-/// and preloaded by `SecondSpectatorSong` without touching that slot. Today only the interference
-/// test lab plays song 2 (second open hand).
+/// Interference ringtone only: optional second song (second open hand). Stored count lives in UserDefaults;
+/// `isTwo` is false unless **Interference ringtone** is on — normal ringtone always behaves as one song.
 enum SpectatorSettings {
     enum Key {
         static let count = "spectators.count"
@@ -13,10 +11,15 @@ enum SpectatorSettings {
 
     private static var d: UserDefaults { .standard }
 
+    /// User preference (1 or 2) shown in the Interference ringtone block.
     static var count: Int { d.integer(forKey: Key.count) == 2 ? 2 : 1 }
-    static var isTwo: Bool { count == 2 }
 
-    static func summary() -> String { isTwo ? "2 spectators (experimental)" : "1 spectator" }
+    static var isTwo: Bool { InterferenceSettings.enabled && count == 2 }
+
+    static func summary() -> String {
+        guard InterferenceSettings.enabled else { return "1 song" }
+        return count == 2 ? "2 songs (experimental)" : "1 song"
+    }
 }
 
 /// Song chosen by the second spectator (Camera, Voice, Notes or API with Spectators = 2).
@@ -139,7 +142,7 @@ final class SecondSpectatorSong: ObservableObject {
         state = .notFound(firstQuery)
         dlog("[SPECTATOR 2] not found · “\(firstQuery)” · \(source)")
         if context == .perform {
-            PerformUserLog.shared.log("Spectator 2 · no song found for «\(WordApiInputPanel.truncated(firstQuery, max: 40))»")
+            PerformUserLog.shared.log("Song 2 · no preview for «\(WordApiInputPanel.truncated(firstQuery, max: 40))»")
         }
         return nil
     }
@@ -154,7 +157,7 @@ final class SecondSpectatorSong: ObservableObject {
         dlog("[SPECTATOR 2] 🔒 \(label) · \(source)")
         SongLibraryStore.shared.recordRecent(track, reason: "spectator2")
         guard context == .perform else { return }
-        PerformLogReporter.logRecognition(.song, value: label, via: "\(source) · spectator 2")
+        PerformLogReporter.logRecognition(.song, value: label, via: "\(source) · song 2")
         if PerformanceCues.vibrateOnLock {
             if vibrationDelay > 0 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + vibrationDelay) {
@@ -164,7 +167,7 @@ final class SecondSpectatorSong: ObservableObject {
                 PerformanceCues.playSongLockVibration()
             }
         }
-        AppModel.shared.autoShareOnSongLockIfEnabled(source: "\(source) · spectator 2")
+        AppModel.shared.autoShareOnSongLockIfEnabled(source: "\(source) · song 2")
     }
 
     /// Call, trigger, Stop or leaving Perform before song 2 settled. Song 1 is unaffected.
@@ -173,7 +176,7 @@ final class SecondSpectatorSong: ObservableObject {
         generation += 1
         dlog("[SPECTATOR 2] abandoned (\(reason)) · was \(state)")
         if context == .perform {
-            PerformUserLog.shared.log("Spectator 2 · no song locked (\(reason))")
+            PerformUserLog.shared.log("Song 2 · not locked (\(reason))")
         }
         state = .idle
         track = nil
@@ -181,30 +184,42 @@ final class SecondSpectatorSong: ObservableObject {
     }
 }
 
-// MARK: - Song card › Spectators (experimental)
+// MARK: - Interference ringtone › 1 or 2 songs
 
-/// Song card: 1 or 2 spectators. With 2, every input finds a second song; incoming calls still play song 1
-/// and the interference test plays song 2 on the second hand.
-struct SpectatorCountBlock: View {
+/// Toggle inside **Interference ringtone** only. Does not affect Normal ringtone.
+struct InterferenceSongCountControls: View {
     let inputMode: VoiceSettings.InputMode
-    @AppStorage(SpectatorSettings.Key.count) private var spectatorCount = 1
+    @Binding var songCount: Int
     @AppStorage(WordApiSettings.Key.callerLabelEnabled) private var callerLabelEnabled = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                ExperimentalBadge()
+                Text("Songs on call")
+                    .font(.subheadline)
+                    .foregroundStyle(OracleTheme.textPrimary)
                 Spacer(minLength: 8)
-                Picker("Spectators", selection: $spectatorCount) {
-                    Text("1").tag(1)
-                    Text("2").tag(2)
+                Picker("Songs on call", selection: $songCount) {
+                    Text("1 song").tag(1)
+                    Text("2 songs").tag(2)
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 112)
+                .frame(maxWidth: 200)
             }
 
-            if spectatorCount == 2 {
-                Text(Self.howItWorks(for: inputMode))
+            Text(.init("Normal ringtone always plays **one** song. This setting applies only with **Interference ringtone** (hand 1 → song 1; hand 2 → song 2)."))
+                .font(.caption2)
+                .foregroundStyle(OracleTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if songCount == 2 {
+                HStack(spacing: 6) {
+                    ExperimentalBadge()
+                    Text("How inputs find song 2")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textSecondary)
+                }
+                Text(SpectatorCountBlock.howItWorks(for: inputMode))
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -215,34 +230,30 @@ struct SpectatorCountBlock: View {
                 SecondSpectatorSongRow()
             }
         }
-        .padding(14)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
-        }
-        .animation(.easeInOut(duration: 0.2), value: spectatorCount)
-        .onChange(of: spectatorCount) { _, count in
-            SecondSpectatorSong.shared.reset(reason: "spectators → \(count)")
-            dlog("[SPECTATORS] → \(count)\(count == 2 ? " (experimental)" : "")")
+        .animation(.easeInOut(duration: 0.2), value: songCount)
+        .onChange(of: songCount) { _, count in
+            SecondSpectatorSong.shared.reset(reason: "interference songs → \(count)")
+            dlog("[INTERF] songs on call → \(count)")
         }
     }
 
     private var callerNote: String {
         callerLabelEnabled
-            ? "Caller name is on. It is not part of 2-spectator mode: it keeps one phone and one word. Best to turn it off."
-            : "Not for Caller name — keep Caller name off with 2 spectators."
+            ? "Caller name is on. It is not part of 2-song mode: it keeps one phone and one word. Best to turn it off."
+            : "Not for Caller name — keep Caller name off with 2 songs."
     }
+}
 
+enum SpectatorCountBlock {
     static func howItWorks(for mode: VoiceSettings.InputMode) -> String {
-        let after = "With Interference ringtone, the 1st hand brings song 1 and the 2nd hand song 2 (Perform and test). With the normal ringtone, calls play song 1."
+        let after = "Hand 1 → song 1; hand 2 → song 2 on the call (Perform and test mode)."
         switch mode {
         case .card, .manual:
-            return "Camera: two song titles on the card, one per line — top = spectator 1, bottom = spectator 2. One volume-up scan reads both. \(after)"
+            return "Camera: two titles on the card, one per line — top = song 1, bottom = song 2. One volume-up scan reads both. \(after)"
         case .aiVoice:
-            return "Voice: song 1 locks as usual, then the mic keeps listening for spectator 2 and stops after song 2 locks. \(after)"
+            return "Voice: song 1 locks as usual, then the mic keeps listening until song 2 locks. \(after)"
         case .notes:
-            return "Notes: line 1 = spectator 1’s song, line 2 = spectator 2’s song (one song per line). \(after)"
+            return "Notes: line 1 = song 1, line 2 = song 2 (one song per line). \(after)"
         case .api:
             return "API: the first new search is song 1, the next new search is song 2; polling stops after song 2. \(after)"
         }
@@ -289,7 +300,7 @@ struct SecondSpectatorSongRow: View {
     private var detail: String {
         switch second.state {
         case .idle: return second.label ?? "Found on Perform or in a test"
-        case .waiting: return "Waiting for spectator 2…"
+        case .waiting: return "Waiting for song 2…"
         case .searching(let query): return "Searching “\(query)”…"
         case .ready: return second.label ?? "Ready"
         case .locked: return second.label ?? "Locked"
@@ -303,7 +314,7 @@ struct SecondSpectatorSongRow: View {
         case .ready: return "checkmark.circle"
         case .searching: return "magnifyingglass"
         case .notFound: return "exclamationmark.circle"
-        case .idle, .waiting: return "person.2"
+        case .idle, .waiting: return "music.note"
         }
     }
 }
