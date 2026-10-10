@@ -53,12 +53,14 @@ enum AlbumArtContactService {
     static func applyTestContactPhoto(
         track: PreviewTrack,
         contactIdentifier: String,
+        contactPhoneDigits: String,
         contactDisplayName: String
     ) async -> AlbumArtContactApplyOutcome {
         let trackLabel = "\(track.title) — \(track.artist)"
         let idSnippet = WordApiInputPanel.truncated(contactIdentifier, max: 16)
+        let phoneLabel = contactPhoneDigits.isEmpty ? "none" : "+\(contactPhoneDigits)"
         albumArtLog(
-            "contact · id=\(idSnippet) · name=\(WordApiInputPanel.truncated(contactDisplayName, max: 24)) · auth=\(contactsAuthorizationLabel())"
+            "contact · id=\(idSnippet) · name=\(WordApiInputPanel.truncated(contactDisplayName, max: 24)) · phone=\(phoneLabel) · auth=\(contactsAuthorizationLabel())"
         )
         if let url = track.artworkURL {
             albumArtLog("artwork URL · \(url.absoluteString)")
@@ -76,7 +78,13 @@ enum AlbumArtContactService {
                 )
             }
             do {
-                let count = try applyImageData(jpeg, contactIdentifier: contactIdentifier, reason: "test")
+                let count = try applyImageData(
+                    jpeg,
+                    contactIdentifier: contactIdentifier,
+                    phoneDigits: contactPhoneDigits,
+                    displayName: contactDisplayName,
+                    reason: "test"
+                )
                 albumArtLog("save ok · updated \(count) contact(s)")
                 let msg = count == 1 ? "Contact photo updated." : "Updated \(count) contact photo(s)."
                 return finishTestApply(.success(msg), trackLabel: trackLabel)
@@ -207,7 +215,13 @@ enum AlbumArtContactService {
         do {
             let count: Int
             if WordApiSettings.contactMode == .known, let id = WordApiSettings.knownContactIdentifier {
-                count = try applyImageData(jpeg, contactIdentifier: id, reason: reason)
+                count = try applyImageData(
+                    jpeg,
+                    contactIdentifier: id,
+                    phoneDigits: WordApiSettings.knownContactPhoneDigits,
+                    displayName: WordApiSettings.knownContactDisplayName,
+                    reason: reason
+                )
             } else if let phone = WordApiSettings.spectatorContactPhoneE164String() {
                 count = try applyImageData(jpeg, phone: phone, reason: reason)
             } else {
@@ -339,16 +353,32 @@ enum AlbumArtContactService {
         return best
     }
 
-    private static func applyImageData(_ jpeg: Data, contactIdentifier: String, reason: String) throws -> Int {
+    private static func applyImageData(
+        _ jpeg: Data,
+        contactIdentifier: String,
+        phoneDigits: String,
+        displayName: String,
+        reason: String
+    ) throws -> Int {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactImageDataKey as CNKeyDescriptor,
+            CNContactImageDataAvailableKey as CNKeyDescriptor,
         ]
-        let existing = try SpectatorContactFetch.unifiedContact(
+        let resolution = try SpectatorContactFetch.resolveContact(
             store: store,
             identifier: contactIdentifier,
+            phoneDigits: phoneDigits,
+            displayName: displayName,
             keysToFetch: keys
         )
+        let existing = resolution.contact
+        if resolution.resolvedByPhone {
+            albumArtLog(
+                "re-resolved by phone · +\(WordApiSettings.canonicalPhoneDigits(phoneDigits)) · \(resolution.phoneMatchCount) match(es) · «\(WordApiInputPanel.truncated(SpectatorContactFetch.displayName(of: existing), max: 24))» · id=\(WordApiInputPanel.truncated(existing.identifier, max: 16))"
+            )
+            persistResolvedIdentifier(existing.identifier, replacing: contactIdentifier)
+        }
         let had = existing.imageDataAvailable && existing.imageData != nil
         let restoreEntries = [
             AlbumArtContactRestoreEntry(
@@ -367,10 +397,20 @@ enum AlbumArtContactService {
         return 1
     }
 
+    private static func persistResolvedIdentifier(_ identifier: String, replacing stale: String) {
+        if WordApiSettings.knownContactIdentifier == stale {
+            WordApiSettings.updateKnownContactIdentifier(identifier)
+        }
+        if AlbumArtContactSettings.testContactIdentifier == stale {
+            AlbumArtContactSettings.updateTestContactIdentifier(identifier)
+        }
+    }
+
     private static func applyImageData(_ jpeg: Data, phone: String, reason: String) throws -> Int {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactImageDataKey as CNKeyDescriptor,
+            CNContactImageDataAvailableKey as CNKeyDescriptor,
         ]
         let matches = try cards(withPhone: phone, keysToFetch: keys)
         let save = CNSaveRequest()

@@ -245,6 +245,10 @@ enum WordApiSettings {
         d.removeObject(forKey: Key.knownContactGivenNameBeforeLock)
     }
 
+    static func updateKnownContactIdentifier(_ identifier: String) {
+        d.set(identifier, forKey: Key.knownContactIdentifier)
+    }
+
     static func saveKnownContactGivenNameBeforeLock(_ givenName: String) {
         d.set(givenName, forKey: Key.knownContactGivenNameBeforeLock)
     }

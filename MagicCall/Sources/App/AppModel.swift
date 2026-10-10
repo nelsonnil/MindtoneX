@@ -519,6 +519,7 @@ final class AppModel: ObservableObject {
     func runAlbumArtContactTestApply(
         track: PreviewTrack,
         contactIdentifier: String,
+        contactPhoneDigits: String,
         contactDisplayName: String,
         onComplete: @escaping @MainActor (AlbumArtContactApplyOutcome) -> Void
     ) {
@@ -528,6 +529,7 @@ final class AppModel: ObservableObject {
             let outcome = await AlbumArtContactService.applyTestContactPhoto(
                 track: track,
                 contactIdentifier: contactIdentifier,
+                contactPhoneDigits: contactPhoneDigits,
                 contactDisplayName: contactDisplayName
             )
             if Task.isCancelled {

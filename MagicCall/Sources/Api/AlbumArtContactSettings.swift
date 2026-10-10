@@ -7,6 +7,7 @@ enum AlbumArtContactSettings {
         static let saveToPhotos = "albumArtContact.saveToPhotos"
         static let testContactIdentifier = "albumArtContact.testContact.identifier"
         static let testContactDisplayName = "albumArtContact.testContact.displayName"
+        static let testContactPhoneDigits = "albumArtContact.testContact.phoneDigits"
     }
 
     private static var d: UserDefaults { .standard }
@@ -51,13 +52,23 @@ enum AlbumArtContactSettings {
         return name.isEmpty ? nil : name
     }
 
-    static func saveTestContactSelection(identifier: String, displayName: String) {
+    static var testContactPhoneDigits: String {
+        d.string(forKey: Key.testContactPhoneDigits)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    static func saveTestContactSelection(identifier: String, displayName: String, phoneDigits: String) {
         d.set(identifier, forKey: Key.testContactIdentifier)
         d.set(displayName, forKey: Key.testContactDisplayName)
+        d.set(WordApiSettings.canonicalPhoneDigits(phoneDigits), forKey: Key.testContactPhoneDigits)
+    }
+
+    static func updateTestContactIdentifier(_ identifier: String) {
+        d.set(identifier, forKey: Key.testContactIdentifier)
     }
 
     static func clearTestContactSelection() {
         d.removeObject(forKey: Key.testContactIdentifier)
         d.removeObject(forKey: Key.testContactDisplayName)
+        d.removeObject(forKey: Key.testContactPhoneDigits)
     }
 }

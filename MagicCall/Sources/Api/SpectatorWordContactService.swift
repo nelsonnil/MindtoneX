@@ -46,7 +46,7 @@ enum SpectatorWordContactService {
             originalGivenName: contact.givenName
         )
         WordApiSettings.setKnownContactRenamedForShow(false)
-        dlogDebug("[CONTACT] picked «\(label)» · \(phoneE164)")
+        dlogDebug("[CONTACT] picked «\(label)» · \(phoneE164) · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))")
     }
 
     /// Reverts Contacts changed at word lock (Perform disarm / settings dismiss).
@@ -316,11 +316,11 @@ enum SpectatorWordContactService {
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
         ] + displayKeys
-        let contact = try SpectatorContactFetch.unifiedContact(
-            store: store,
-            identifier: identifier,
-            keysToFetch: keys
-        )
+        let resolution = try SpectatorContactFetch.resolveKnownContact(store: store, keysToFetch: keys)
+        let contact = resolution.contact
+        if resolution.resolvedByPhone {
+            dlog("[CONTACT] known re-resolved by phone · \(resolution.phoneMatchCount) match(es) · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))")
+        }
         WordApiContactRestoreStore.replaceEntries([
             WordApiContactRestoreEntry(
                 identifier: contact.identifier,
@@ -336,7 +336,7 @@ enum SpectatorWordContactService {
         var others = 0
         if let phone = WordApiSettings.identificationPhoneE164String() {
             let sharing = (try? cards(withPhone: phone, keysToFetch: [CNContactIdentifierKey as CNKeyDescriptor])) ?? []
-            others = sharing.filter { $0.identifier != identifier }.count
+            others = sharing.filter { $0.identifier != contact.identifier }.count
         }
         return outcome(for: mutable, cardsRenamed: 1, otherCardsWithNumber: others, fallback: word)
     }
@@ -399,11 +399,7 @@ enum SpectatorWordContactService {
                 CNContactIdentifierKey as CNKeyDescriptor,
                 CNContactNoteKey as CNKeyDescriptor,
             ]
-            let contact = try SpectatorContactFetch.unifiedContact(
-                store: store,
-                identifier: identifier,
-                keysToFetch: keys
-            )
+            let contact = try SpectatorContactFetch.resolveKnownContact(store: store, keysToFetch: keys).contact
             let mutable = contact.mutableCopy() as! CNMutableContact
             mutable.note = note
             let save = CNSaveRequest()

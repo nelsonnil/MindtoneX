@@ -86,6 +86,13 @@ private struct AlbumArtContactTestSection: View {
         return id.isEmpty ? nil : id
     }
 
+    private var resolvedContactPhoneDigits: String {
+        if contactMode == .known, WordApiSettings.hasKnownContactSelected {
+            return WordApiSettings.knownContactPhoneDigits
+        }
+        return AlbumArtContactSettings.testContactPhoneDigits
+    }
+
     private var resolvedContactLabel: String? {
         if contactMode == .known, WordApiSettings.hasKnownContactSelected {
             return WordApiSettings.knownContactDisplayName
@@ -175,7 +182,8 @@ private struct AlbumArtContactTestSection: View {
                     let label = name.isEmpty ? "Contact" : name
                     AlbumArtContactSettings.saveTestContactSelection(
                         identifier: contact.identifier,
-                        displayName: label
+                        displayName: label,
+                        phoneDigits: WordApiContactPhoneParsing.e164(from: contact) ?? ""
                     )
                     testContactIdentifier = contact.identifier
                     testContactDisplayName = label
@@ -236,6 +244,7 @@ private struct AlbumArtContactTestSection: View {
         model.runAlbumArtContactTestApply(
             track: track,
             contactIdentifier: contactID,
+            contactPhoneDigits: resolvedContactPhoneDigits,
             contactDisplayName: label
         ) { outcome in
             applyOutcome = outcome
