@@ -22,6 +22,7 @@
 		1050B2B05B2960E836279D3F /* VoiceListenPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6238274795CDF8F6168324 /* VoiceListenPlan.swift */; };
 		128B2FC902A3063C29DBBCAB /* SongPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */; };
 		1382BAB7BC9D069605252703 /* SilentShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266C454CF85DCC717E5765F6 /* SilentShortcut.swift */; };
+		A7C4E9012B8F4D6E9A1C3D5F /* PerformURLScheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D5F0123C904E7F0B2D4E6A /* PerformURLScheme.swift */; };
 		15BFEC09D92D308DEF7D9A54 /* OracleTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260CB39E9363322425A78261 /* OracleTheme.swift */; };
 		18D6532A2C88C55826E76C81 /* ButtonKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101DBA24C3A8A6E5F8FF5942 /* ButtonKeyboard.swift */; };
 		19FF538245C7E267A53BE4E2 /* CallDirectorySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67C120E02A9B4EB6176A78B /* CallDirectorySync.swift */; };
@@ -122,6 +123,12 @@
 		D1B227CCC8CB65C89C798C8C /* CardTextMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA3CF064D7BB09B92C438B8 /* CardTextMapper.swift */; };
 		D62EC45272208FCF763FED85 /* UIIllustrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = A744DA01C5B2EA22A5B55906 /* UIIllustrations.swift */; };
 		DB0E5A96FCA973B7D2BCC881 /* WordApiContactShowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */; };
+		FACEB001CAFE000000000002 /* WordApiContactRestoreStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FACEB001CAFE000000000001 /* WordApiContactRestoreStore.swift */; };
+		AAC001CAFE000000000011 /* AlbumArtContactSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC001CAFE000000000001 /* AlbumArtContactSettings.swift */; };
+		AAC001CAFE000000000012 /* AlbumArtContactRestoreStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC001CAFE000000000002 /* AlbumArtContactRestoreStore.swift */; };
+		AAC001CAFE000000000013 /* AlbumArtContactService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC001CAFE000000000003 /* AlbumArtContactService.swift */; };
+		AAC001CAFE000000000014 /* AlbumArtContactInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC001CAFE000000000004 /* AlbumArtContactInputPanel.swift */; };
+		FACEB001CAFE000000000004 /* SpectatorApiPerformTimingNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = FACEB001CAFE000000000003 /* SpectatorApiPerformTimingNote.swift */; };
 		DC429325C8865E752CF16D7A /* ApiSongReadingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD4759CD5E25C0EC1A7A20C /* ApiSongReadingTests.swift */; };
 		E35A7B10CDB728AE2BBC1BAA /* ApiInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE5A3E186B93A76002301E9 /* ApiInputPanel.swift */; };
 		E6AFD06A3F393638BE5731B6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8A83ABBC42C589B55EA84806 /* PrivacyInfo.xcprivacy */; };
@@ -204,6 +211,7 @@
 		2520D9C08750800C79413F10 /* AppModel+WordContact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+WordContact.swift"; sourceTree = "<group>"; };
 		260CB39E9363322425A78261 /* OracleTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleTheme.swift; sourceTree = "<group>"; };
 		266C454CF85DCC717E5765F6 /* SilentShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentShortcut.swift; sourceTree = "<group>"; };
+		B8D5F0123C904E7F0B2D4E6A /* PerformURLScheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformURLScheme.swift; sourceTree = "<group>"; };
 		270405B2C76043701C1E008B /* RecentPerformSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentPerformSnapshot.swift; sourceTree = "<group>"; };
 		270DC6372BA38BD591C5EEC2 /* PerformUserLogCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformUserLogCard.swift; sourceTree = "<group>"; };
 		27CA62E6FADC4DE40154C670 /* RingtoneExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtoneExporter.swift; sourceTree = "<group>"; };
@@ -261,6 +269,12 @@
 		91D41A8D61B2A2B07AE194DD /* OpenAIHelpSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIHelpSheet.swift; sourceTree = "<group>"; };
 		94C29E2CCBFC1086588445F6 /* PreviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewService.swift; sourceTree = "<group>"; };
 		95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactShowState.swift; sourceTree = "<group>"; };
+		FACEB001CAFE000000000001 /* WordApiContactRestoreStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactRestoreStore.swift; sourceTree = "<group>"; };
+		AAC001CAFE000000000001 /* AlbumArtContactSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtContactSettings.swift; sourceTree = "<group>"; };
+		AAC001CAFE000000000002 /* AlbumArtContactRestoreStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtContactRestoreStore.swift; sourceTree = "<group>"; };
+		AAC001CAFE000000000003 /* AlbumArtContactService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtContactService.swift; sourceTree = "<group>"; };
+		AAC001CAFE000000000004 /* AlbumArtContactInputPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumArtContactInputPanel.swift; sourceTree = "<group>"; };
+		FACEB001CAFE000000000003 /* SpectatorApiPerformTimingNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectatorApiPerformTimingNote.swift; sourceTree = "<group>"; };
 		97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongPicker.swift; sourceTree = "<group>"; };
 		9B1B8DC27EC42C698E3626F3 /* SongStorefront.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongStorefront.swift; sourceTree = "<group>"; };
 		7A3C5E91B2D4F60817C9E2A4 /* TwoSpectators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoSpectators.swift; sourceTree = "<group>"; };
@@ -432,6 +446,10 @@
 		5C6E9CB8B3652B5FFDFC3A9A /* Api */ = {
 			isa = PBXGroup;
 			children = (
+				AAC001CAFE000000000004 /* AlbumArtContactInputPanel.swift */,
+				AAC001CAFE000000000002 /* AlbumArtContactRestoreStore.swift */,
+				AAC001CAFE000000000003 /* AlbumArtContactService.swift */,
+				AAC001CAFE000000000001 /* AlbumArtContactSettings.swift */,
 				2AE5A3E186B93A76002301E9 /* ApiInputPanel.swift */,
 				1B91AE661642AE376E1DD474 /* ApiSettings.swift */,
 				C30B3D15953FEAA8EA8E7828 /* ApiSettingsView.swift */,
@@ -441,6 +459,8 @@
 				9CEDC4E44EB5BD0902967336 /* CallerNameSetupStatusView.swift */,
 				16A81086CD9A3F5AC0BE592E /* WordApiContactPerformGate.swift */,
 				95741E05D5028025CDBF2012 /* WordApiContactShowState.swift */,
+				FACEB001CAFE000000000001 /* WordApiContactRestoreStore.swift */,
+				FACEB001CAFE000000000003 /* SpectatorApiPerformTimingNote.swift */,
 				9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */,
 				13A6FEAE10776B4BF6C6F04A /* WordApiInputPanel.swift */,
 				31C6F9C561E1F5EF11CCEF21 /* WordApiIOSPhoneDialView.swift */,
@@ -556,6 +576,7 @@
 				2B07C8F1B15CD02BBB997F7E /* PerformUserLog.swift */,
 				1DFC03C27AB6139290A4DA80 /* SharePerformFlow.swift */,
 				266C454CF85DCC717E5765F6 /* SilentShortcut.swift */,
+				B8D5F0123C904E7F0B2D4E6A /* PerformURLScheme.swift */,
 				6CD42726122139D6130AD4F8 /* SilentShortcutCard.swift */,
 				82FCB8DF29F7ECE5781B9B78 /* StagePeek.swift */,
 				01662D9A94EC53417CD3ABC7 /* StagePeekFeedbackSection.swift */,
@@ -879,6 +900,7 @@
 				CC20F35DDD0E7784082D0FD7 /* SetupView.swift in Sources */,
 				B2405E6BF1DE51476D97C69F /* SharePerformFlow.swift in Sources */,
 				1382BAB7BC9D069605252703 /* SilentShortcut.swift in Sources */,
+				A7C4E9012B8F4D6E9A1C3D5F /* PerformURLScheme.swift in Sources */,
 				9859991404C830797C7B4062 /* SilentShortcutCard.swift in Sources */,
 				2826965C4287D1C90DFB1C1C /* SilentShortcutStatusRow.swift in Sources */,
 				7BA36D68D4A7708928889CA2 /* SongInputStrip.swift in Sources */,
@@ -889,6 +911,10 @@
 				3A2FD63EC057C245B5A4779C /* SongStorefront.swift in Sources */,
 				3E8B1D07C5A92F4E6D10B7C3 /* TwoSpectators.swift in Sources */,
 				0BD7FF8A0856F253F66D76B1 /* SongStorefrontPickerView.swift in Sources */,
+				AAC001CAFE000000000014 /* AlbumArtContactInputPanel.swift in Sources */,
+				AAC001CAFE000000000012 /* AlbumArtContactRestoreStore.swift in Sources */,
+				AAC001CAFE000000000013 /* AlbumArtContactService.swift in Sources */,
+				AAC001CAFE000000000011 /* AlbumArtContactSettings.swift in Sources */,
 				0C13519901D4C9A57CFA2E01 /* SpectatorWordContactService.swift in Sources */,
 				24E7F1F82A624CBD51EE706F /* SpectatorWordPicker.swift in Sources */,
 				FDBD89E4929DDF8542EDE8AA /* StagePeek.swift in Sources */,
@@ -911,6 +937,8 @@
 				FB47353581316D4966940F55 /* WordApiCarphoneDialHost.swift in Sources */,
 				6DE487B3B435779601483AE7 /* WordApiContactPerformGate.swift in Sources */,
 				DB0E5A96FCA973B7D2BCC881 /* WordApiContactShowState.swift in Sources */,
+				FACEB001CAFE000000000002 /* WordApiContactRestoreStore.swift in Sources */,
+				FACEB001CAFE000000000004 /* SpectatorApiPerformTimingNote.swift in Sources */,
 				79A6D11314BCCBFFEEE06502 /* WordApiContactViews.swift in Sources */,
 				8B702C8C809749F044FCE136 /* WordApiIOSPhoneDialView.swift in Sources */,
 				9CAF4275C647D0F5AA7516BE /* WordApiInputPanel.swift in Sources */,

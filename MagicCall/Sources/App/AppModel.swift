@@ -466,6 +466,8 @@ final class AppModel: ObservableObject {
         SongLibraryStore.shared.logRecentDisplayMerge(context: "disarm")
         PerformLogReporter.logRecapOnDisarm()
         PerformUserLog.shared.endSession()
+        AlbumArtContactService.restoreContactsAfterPerform(reason: "Perform disarm")
+        SpectatorWordContactService.restoreContactsAfterPerform(reason: "Perform disarm")
         dlog("══ DESARMADO ══")
     }
 

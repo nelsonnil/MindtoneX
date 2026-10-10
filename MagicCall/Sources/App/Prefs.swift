@@ -53,6 +53,7 @@ enum Prefs {
             HomeSectionExpandKey.performance: false,
             HomeSectionExpandKey.songInput: false,
             HomeSectionExpandKey.wordApi: false,
+            HomeSectionExpandKey.albumArtContact: false,
             HomeSectionExpandKey.notesContact: false,
             HomeSectionExpandKey.feedback: false,
             HomeSectionExpandKey.library: false,

@@ -24,6 +24,7 @@ enum WordApiSettings {
         static let knownContactDisplayName = "wordApi.knownContact.displayName"
         static let knownContactOriginalGivenName = "wordApi.knownContact.originalGivenName"
         static let knownContactGivenNameBeforeLock = "wordApi.knownContact.givenNameBeforeLock"
+        static let knownContactRenamedForShow = "wordApi.knownContact.renamedForShow"
         static let restoreKnownNameOnSettingsExit = "wordApi.knownContact.restoreOnSettingsExit"
         static let lastDialedPhoneDigits = "wordApi.lastDialedPhoneDigits"
     }
@@ -199,6 +200,8 @@ enum WordApiSettings {
         d.set(mode.rawValue, forKey: Key.contactMode)
     }
 
+    static var effectiveContactMode: ContactMode { contactMode }
+
     static var knownContactIdentifier: String? {
         let id = trimmed(d.string(forKey: Key.knownContactIdentifier))
         return id.isEmpty ? nil : id
@@ -207,6 +210,20 @@ enum WordApiSettings {
     static var knownContactDisplayName: String { trimmed(d.string(forKey: Key.knownContactDisplayName)) }
     static var knownContactPhoneDigits: String { trimmed(d.string(forKey: Key.knownContactPhoneDigits)) }
     static var knownContactOriginalGivenName: String { trimmed(d.string(forKey: Key.knownContactOriginalGivenName)) }
+    /// Given name immediately before the word lock rename (preferred for restore).
+    static var knownContactGivenNameBeforeLock: String? {
+        guard d.object(forKey: Key.knownContactGivenNameBeforeLock) != nil else { return nil }
+        return d.string(forKey: Key.knownContactGivenNameBeforeLock) ?? ""
+    }
+
+    static var knownContactRenamedForShow: Bool {
+        d.bool(forKey: Key.knownContactRenamedForShow)
+    }
+
+    static func setKnownContactRenamedForShow(_ renamed: Bool) {
+        d.set(renamed, forKey: Key.knownContactRenamedForShow)
+    }
+
     static var lastDialedPhoneDigits: String { trimmed(d.string(forKey: Key.lastDialedPhoneDigits)) }
 
     static var hasKnownContactSelected: Bool {
@@ -486,6 +503,28 @@ enum WordApiSettings {
         let field = provider == .custom ? " field=\(customField)" : ""
         let cadence = provider == .card ? "volume-scan" : "every=\(pollInterval)s"
         return "word provider=\(provider.rawValue) url=\(url)\(field) \(cadence)"
+    }
+
+    /// Spectator phone for Contacts features (album art, caller name contact modes) — does not require caller-label toggle.
+    static func spectatorContactPhoneDigitsRaw() -> String {
+        switch contactMode {
+        case .known:
+            if knownContactPhoneDigits.count >= 7 {
+                return canonicalPhoneDigits(knownContactPhoneDigits)
+            }
+        case .unknown:
+            if lastDialedPhoneDigits.count >= 7 {
+                return canonicalPhoneDigits(lastDialedPhoneDigits)
+            }
+        }
+        let fallback = canonicalPhoneDigits(fallbackPhoneDigits)
+        return fallback.count >= 7 ? fallback : ""
+    }
+
+    static func spectatorContactPhoneE164String() -> String? {
+        let digits = spectatorContactPhoneDigitsRaw()
+        guard digits.count >= 7, let value = Int64(digits) else { return nil }
+        return "+\(value)"
     }
 
     /// Parses identification phone into Call Directory numeric form (digits only, no +).

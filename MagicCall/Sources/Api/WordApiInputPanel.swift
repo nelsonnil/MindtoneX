@@ -5,7 +5,6 @@ struct WordApiInputPanel: View {
     @ObservedObject private var session = WordApiSession.shared
     @AppStorage(WordApiSettings.Key.callerLabelEnabled) private var callerLabelEnabled = false
     @AppStorage(WordApiSettings.Key.provider) private var providerRaw = WordApiSettings.Provider.inject.rawValue
-    @AppStorage(WordApiSettings.Key.injectID) private var injectID = ""
     @AppStorage(WordApiSettings.Key.saveWordAsContact) private var saveWordAsContact = true
     @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
     @AppStorage(WordApiSettings.Key.restoreKnownNameOnSettingsExit) private var restoreKnownNameOnSettingsExit = true
@@ -75,8 +74,22 @@ struct WordApiInputPanel: View {
         }
     }
 
+    private var contactMode: WordApiSettings.ContactMode {
+        WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
+    }
+
+    private var contactModeBinding: Binding<WordApiSettings.ContactMode> {
+        Binding(
+            get: { WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown },
+            set: { mode in
+                contactModeRaw = mode.rawValue
+                WordApiSettings.setContactMode(mode)
+            }
+        )
+    }
+
     private var callerPreviewPhoneDigits: String {
-        if WordApiSettings.hasKnownContactSelected {
+        if contactMode == .known, WordApiSettings.hasKnownContactSelected {
             return WordApiSettings.knownContactPhoneDigits
         }
         if !WordApiSettings.lastDialedPhoneDigits.isEmpty {
@@ -90,20 +103,6 @@ struct WordApiInputPanel: View {
         if let locked = session.lockedReading?.label, !locked.isEmpty { return locked }
         if let last = session.lastReading?.label, !last.isEmpty { return last }
         return "ECLIPSE"
-    }
-
-    private var contactMode: WordApiSettings.ContactMode {
-        WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
-    }
-
-    private var contactModeBinding: Binding<WordApiSettings.ContactMode> {
-        Binding(
-            get: { WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown },
-            set: { mode in
-                contactModeRaw = mode.rawValue
-                WordApiSettings.setContactMode(mode)
-            }
-        )
     }
 
     private var wordContactCard: some View {
@@ -177,8 +176,11 @@ struct WordApiInputPanel: View {
                 Text("Phone · +\(WordApiSettings.knownContactPhoneDigits)")
                     .font(.caption.monospaced())
                     .foregroundStyle(OracleTheme.textSecondary)
+                Text("Perform goes straight to the stage screenshot — no dial.")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
             } else {
-                Text("Pick the spectator contact before Perform.")
+                Text("Choose the spectator’s contact before Perform (or when prompted).")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
             }
@@ -195,26 +197,13 @@ struct WordApiInputPanel: View {
             .buttonStyle(.plain)
             .foregroundStyle(OracleTheme.gold)
 
-            Toggle(isOn: $restoreKnownNameOnSettingsExit) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Restore original name when leaving Caller name connection")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(OracleTheme.textPrimary)
-                    Text("After lock, revert this contact’s given name when you close connection details (Known only).")
-                        .font(.caption2)
-                        .foregroundStyle(OracleTheme.textSecondary)
-                }
-            }
-            .tint(OracleTheme.gold)
-            .onChange(of: restoreKnownNameOnSettingsExit) { _, on in
-                WordApiSettings.setRestoreKnownNameOnSettingsExit(on)
-            }
+            restoreContactsToggle
         }
     }
 
     private var unknownContactBlock: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("On Perform: use the in-app Phone-style dial, place a real outgoing call, then arm when that call ends.")
+        VStack(alignment: .leading, spacing: 10) {
+            Text("On Perform: in-app Phone-style dial → real outgoing call → arm when that call ends.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
             if !WordApiSettings.lastDialedPhoneDigits.isEmpty {
@@ -222,10 +211,28 @@ struct WordApiInputPanel: View {
                     .font(.caption.monospaced())
                     .foregroundStyle(OracleTheme.textSecondary)
             } else {
-                Text("No number yet — Perform opens the Phone-style dial first.")
+                Text("No number yet — Perform opens the dial first.")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.textSecondary)
             }
+            restoreContactsToggle
+        }
+    }
+
+    private var restoreContactsToggle: some View {
+        Toggle(isOn: $restoreKnownNameOnSettingsExit) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Restore contact names after Perform")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textPrimary)
+                Text("When you exit Perform, revert Contacts changed at word lock (or delete a contact created for the show).")
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
+        }
+        .tint(OracleTheme.gold)
+        .onChange(of: restoreKnownNameOnSettingsExit) { _, on in
+            WordApiSettings.setRestoreKnownNameOnSettingsExit(on)
         }
     }
 
@@ -257,19 +264,6 @@ struct WordApiInputPanel: View {
                     }
                 } else if provider == .voice {
                     voiceScriptBlock(channel: .callerName)
-                } else if provider == .inject {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Inject ID")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(OracleTheme.textSecondary)
-                        TextField("Paste Inject word API token", text: $injectID)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .font(.subheadline)
-                            .padding(10)
-                            .background(Color.white.opacity(0.06))
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    }
                 }
 
                 if provider != .card && provider != .voice {
@@ -277,10 +271,7 @@ struct WordApiInputPanel: View {
                         showConnectionSheet = true
                     } label: {
                         HStack {
-                            Label(
-                                provider == .inject && !injectID.isEmpty ? "Full setup & test connection" : "Enter connection details",
-                                systemImage: "link.circle.fill"
-                            )
+                            Label("Enter connection details", systemImage: "link.circle.fill")
                             .font(.subheadline.weight(.semibold))
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -291,6 +282,9 @@ struct WordApiInputPanel: View {
                     }
                     .buttonStyle(.plain)
 
+                    Text("Enter connection details to paste your Inject ID, Elips URL, or custom API — then **Test connection** to see live data.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
                     Text("On Perform, polls every \(Int(WordApiSettings.pollInterval)) s — first reading is the old word; the **next change** is the spectator’s word on the incoming call.")
                         .font(.caption2)
                         .foregroundStyle(OracleTheme.textSecondary)
@@ -540,7 +534,7 @@ struct WordApiProviderPicker: View {
 
 // MARK: - Contact mode picker
 
-private struct WordContactModePicker: View {
+struct WordContactModePicker: View {
     @Binding var selection: WordApiSettings.ContactMode
     @Namespace private var selectionNS
 
@@ -659,7 +653,8 @@ struct WordApiSettingsSheet: View {
         }
         .preferredColorScheme(.dark)
         .onDisappear {
-            SpectatorWordContactService.restoreKnownContactOriginalName(reason: "Word API settings dismissed")
+            AlbumArtContactService.restoreContactsAfterPerform(reason: "Caller name connection closed")
+            SpectatorWordContactService.restoreContactsAfterPerform(reason: "Caller name connection closed")
         }
     }
 }
