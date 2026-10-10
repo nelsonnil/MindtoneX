@@ -81,7 +81,11 @@ struct WordApiKnownContactPicker: UIViewControllerRepresentable {
                 CNContactFamilyNameKey as CNKeyDescriptor,
                 CNContactPhoneNumbersKey as CNKeyDescriptor,
             ]
-            if let full = try? store.unifiedContact(withIdentifier: contact.identifier, keysToFetch: keys) {
+            if let full = try? SpectatorContactFetch.unifiedContact(
+                store: store,
+                identifier: contact.identifier,
+                keysToFetch: keys
+            ) {
                 onPick(full)
             } else {
                 onPick(contact)
@@ -100,5 +104,52 @@ enum WordApiContactPhoneParsing {
         let digits = WordApiSettings.canonicalPhoneDigits(raw)
         guard digits.count >= 7 else { return nil }
         return "+\(digits)"
+    }
+}
+
+// MARK: - Fetch / user-facing Contacts errors
+
+enum SpectatorContactFetch {
+    static let notAccessibleMessage =
+        "Contact not accessible — re-pick in Known mode or grant full Contacts access."
+
+    enum Error: Swift.Error {
+        case notAccessible
+    }
+
+    /// Resolves a unified contact by identifier (Limited Contacts on iOS 18+ only returns allowed cards).
+    static func unifiedContact(
+        store: CNContactStore,
+        identifier: String,
+        keysToFetch: [CNKeyDescriptor]
+    ) throws -> CNContact {
+        let trimmed = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw Error.notAccessible }
+        let predicate = CNContact.predicateForContacts(withIdentifiers: [trimmed])
+        if let match = try store.unifiedContacts(matching: predicate, keysToFetch: keysToFetch).first {
+            return match
+        }
+        throw Error.notAccessible
+    }
+
+    static func userFacingMessage(for error: Swift.Error) -> String {
+        if error is Error { return notAccessibleMessage }
+        if let cn = error as? CNError {
+            switch cn.code {
+            case .recordDoesNotExist:
+                return notAccessibleMessage
+            case .authorizationDenied:
+                return "Contacts access denied — enable in Settings → MindtoneX → Contacts."
+            case .communicationError:
+                return "Could not reach Contacts — try again."
+            default:
+                break
+            }
+        }
+        let raw = error.localizedDescription
+        if raw.localizedCaseInsensitiveContains("record does not exist") {
+            return notAccessibleMessage
+        }
+        return raw
     }
 }

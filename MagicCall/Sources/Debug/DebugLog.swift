@@ -6,6 +6,13 @@ func dlog(_ message: String, sync: Bool = false) {
     DebugLog.shared.log(message, sync: sync)
 }
 
+/// Verbose tracing — stripped from Release builds to avoid log heat on device.
+func dlogDebug(_ message: String, sync: Bool = false) {
+    #if DEBUG
+    dlog(message, sync: sync)
+    #endif
+}
+
 final class DebugLog: ObservableObject {
     static let shared = DebugLog()
 

@@ -68,8 +68,8 @@ private struct AlbumArtContactTestSection: View {
     let contactModeRaw: String
 
     @State private var testTrack: PreviewTrack?
-    @State private var testContactIdentifier: String?
-    @State private var testContactDisplayName: String?
+    @AppStorage(AlbumArtContactSettings.Key.testContactIdentifier) private var testContactIdentifier = ""
+    @AppStorage(AlbumArtContactSettings.Key.testContactDisplayName) private var testContactDisplayName = ""
     @State private var applyOutcome: AlbumArtContactApplyOutcome?
     @State private var isApplying = false
     @State private var showTestContactPicker = false
@@ -82,14 +82,16 @@ private struct AlbumArtContactTestSection: View {
         if contactMode == .known, WordApiSettings.hasKnownContactSelected {
             return WordApiSettings.knownContactIdentifier
         }
-        return testContactIdentifier
+        let id = testContactIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        return id.isEmpty ? nil : id
     }
 
     private var resolvedContactLabel: String? {
         if contactMode == .known, WordApiSettings.hasKnownContactSelected {
             return WordApiSettings.knownContactDisplayName
         }
-        return testContactDisplayName
+        let name = testContactDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
     }
 
     private var needsTestContactPick: Bool {
@@ -167,11 +169,16 @@ private struct AlbumArtContactTestSection: View {
             WordApiKnownContactPicker(
                 onPick: { contact in
                     showTestContactPicker = false
-                    testContactIdentifier = contact.identifier
                     let name = [contact.givenName, contact.familyName]
                         .filter { !$0.isEmpty }
                         .joined(separator: " ")
-                    testContactDisplayName = name.isEmpty ? "Contact" : name
+                    let label = name.isEmpty ? "Contact" : name
+                    AlbumArtContactSettings.saveTestContactSelection(
+                        identifier: contact.identifier,
+                        displayName: label
+                    )
+                    testContactIdentifier = contact.identifier
+                    testContactDisplayName = label
                     applyOutcome = nil
                 },
                 onCancel: { showTestContactPicker = false }

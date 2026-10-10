@@ -7,7 +7,7 @@ enum SpectatorWordContactService {
     @MainActor
     static func applyOnWordLock(word: String, reason: String) {
         guard WordApiSettings.saveWordAsContactEnabled else {
-            dlog("[CONTACT] skip (\(reason)): save-word-as-contact off")
+            dlogDebug("[CONTACT] skip (\(reason)): save-word-as-contact off")
             return
         }
         let label = word.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -46,7 +46,7 @@ enum SpectatorWordContactService {
             originalGivenName: contact.givenName
         )
         WordApiSettings.setKnownContactRenamedForShow(false)
-        dlog("[CONTACT] picked «\(label)» · \(phoneE164)")
+        dlogDebug("[CONTACT] picked «\(label)» · \(phoneE164)")
     }
 
     /// Reverts Contacts changed at word lock (Perform disarm / settings dismiss).
@@ -74,7 +74,7 @@ enum SpectatorWordContactService {
         do {
             let outcome = try renameKnownContactGivenName(identifier: identifier, word: word)
             WordApiSettings.setKnownContactRenamedForShow(WordApiContactRestoreStore.hasPendingRestore)
-            dlog("[CONTACT] renamed known → «\(word)» (\(reason)) · \(outcome.debugSummary)")
+            dlogDebug("[CONTACT] renamed known → «\(word)» (\(reason)) · \(outcome.debugSummary)")
             PerformUserLog.shared.log("Contact renamed · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
         } catch {
             dlog("✗ [CONTACT] known rename (\(reason)): \(error.localizedDescription)")
@@ -93,7 +93,7 @@ enum SpectatorWordContactService {
         do {
             let outcome = try upsertByPhone(word: word, phone: phone)
             WordApiSettings.setKnownContactRenamedForShow(WordApiContactRestoreStore.hasPendingRestore)
-            dlog("[CONTACT] saved «\(word)» → \(phone) (\(reason)) · \(outcome.debugSummary)")
+            dlogDebug("[CONTACT] saved «\(word)» → \(phone) (\(reason)) · \(outcome.debugSummary)")
             PerformUserLog.shared.log("Contact saved · \(phone) · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
         } catch {
             dlog("✗ [CONTACT] save (\(reason)): \(error.localizedDescription)")
@@ -120,8 +120,7 @@ enum SpectatorWordContactService {
     }
 
     private static func describe(_ error: Error) -> String {
-        guard let cnError = error as? CNError else { return error.localizedDescription }
-        return "\(error.localizedDescription) (Contacts error \(cnError.code.rawValue))"
+        SpectatorContactFetch.userFacingMessage(for: error)
     }
 
     @MainActor
@@ -317,7 +316,11 @@ enum SpectatorWordContactService {
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
         ] + displayKeys
-        let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
+        let contact = try SpectatorContactFetch.unifiedContact(
+            store: store,
+            identifier: identifier,
+            keysToFetch: keys
+        )
         WordApiContactRestoreStore.replaceEntries([
             WordApiContactRestoreEntry(
                 identifier: contact.identifier,
@@ -340,7 +343,11 @@ enum SpectatorWordContactService {
 
     private static func deleteContact(identifier: String) throws {
         let keys: [CNKeyDescriptor] = [CNContactIdentifierKey as CNKeyDescriptor]
-        let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
+        let contact = try SpectatorContactFetch.unifiedContact(
+            store: store,
+            identifier: identifier,
+            keysToFetch: keys
+        )
         let mutable = contact.mutableCopy() as! CNMutableContact
         let save = CNSaveRequest()
         save.delete(mutable)
@@ -392,7 +399,11 @@ enum SpectatorWordContactService {
                 CNContactIdentifierKey as CNKeyDescriptor,
                 CNContactNoteKey as CNKeyDescriptor,
             ]
-            let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
+            let contact = try SpectatorContactFetch.unifiedContact(
+                store: store,
+                identifier: identifier,
+                keysToFetch: keys
+            )
             let mutable = contact.mutableCopy() as! CNMutableContact
             mutable.note = note
             let save = CNSaveRequest()
@@ -432,7 +443,11 @@ enum SpectatorWordContactService {
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
         ]
-        let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
+        let contact = try SpectatorContactFetch.unifiedContact(
+            store: store,
+            identifier: identifier,
+            keysToFetch: keys
+        )
         let mutable = contact.mutableCopy() as! CNMutableContact
         mutable.givenName = givenName
         let save = CNSaveRequest()

@@ -143,7 +143,7 @@ final class InterferenceAudioEngine {
             object: engine,
             queue: .main
         ) { [weak self] _ in
-            dlog("[INTERF] engine configuration change")
+            dlogDebug("[INTERF] engine configuration change")
             guard let self else { return }
             if self.stage != .idle { self.needsResume = true }
             self.onConfigurationChange?()
@@ -210,7 +210,7 @@ final class InterferenceAudioEngine {
         if let noise2, let file2 {
             summary += " · 2nd hand: interference \(Self.seconds(noise2)) s · song 2 \(Self.seconds(file2)) s"
         }
-        dlog(summary)
+        dlogDebug(summary)
     }
 
     // MARK: Playback
@@ -249,7 +249,7 @@ final class InterferenceAudioEngine {
         scheduleSong(file, on: songPlayer, token: token, isSecond: false)
 
         armSecondStageSilently(token: token)
-        dlog("[INTERF] ringtone looping · route=\(RingtoneAudioEngine.routeDescription())\(hasSecondStage ? " · second hand armed" : "")")
+        dlogDebug("[INTERF] ringtone looping · route=\(RingtoneAudioEngine.routeDescription())\(hasSecondStage ? " · second hand armed" : "")")
     }
 
     /// Starts the fixed-length morph at "now" (the moment the hand was confirmed).
@@ -261,7 +261,7 @@ final class InterferenceAudioEngine {
         onSongFinished: @escaping () -> Void
     ) -> Bool {
         guard engine.isRunning, stage == .ringing else {
-            dlog("[INTERF] transition skipped · engine running=\(engine.isRunning) · stage=\(stage.rawValue)")
+            dlogDebug("[INTERF] transition skipped · engine running=\(engine.isRunning) · stage=\(stage.rawValue)")
             return false
         }
         self.onSongFinished = onSongFinished
@@ -278,7 +278,7 @@ final class InterferenceAudioEngine {
             onSongClean: onSongClean
         )
         stage = .morph1
-        dlog("[INTERF] transition started")
+        dlogDebug("[INTERF] transition started")
         return true
     }
 
@@ -291,11 +291,11 @@ final class InterferenceAudioEngine {
         onSongFinished: @escaping () -> Void
     ) -> Bool {
         guard engine.isRunning, hasSecondStage else {
-            dlog("[INTERF] second transition skipped · engine running=\(engine.isRunning) · stage 2=\(hasSecondStage)")
+            dlogDebug("[INTERF] second transition skipped · engine running=\(engine.isRunning) · stage 2=\(hasSecondStage)")
             return false
         }
         guard morph == nil, !secondMorphStarted, stage == .song1 else {
-            dlog("[INTERF] second transition skipped · stage=\(stage.rawValue)")
+            dlogDebug("[INTERF] second transition skipped · stage=\(stage.rawValue)")
             return false
         }
         secondMorphStarted = true
@@ -313,7 +313,7 @@ final class InterferenceAudioEngine {
             onSongClean: onSongClean
         )
         stage = .morph2
-        dlog("[INTERF] second transition started")
+        dlogDebug("[INTERF] second transition started")
         return true
     }
 
@@ -330,7 +330,7 @@ final class InterferenceAudioEngine {
             return
         case .ringing:
             try startRingtone()
-            dlog("[INTERF] resumed · ringtone")
+            dlogDebug("[INTERF] resumed · ringtone")
         case .morph1, .song1:
             resumeClean(isSecond: false)
         case .morph2, .song2:
@@ -422,7 +422,7 @@ final class InterferenceAudioEngine {
             transitionTimer = nil
             self.morph = nil
             stage = morph.isSecond ? .song2 : .song1
-            dlog("[INTERF] clean song\(morph.isSecond ? " 2" : "")")
+            dlogDebug("[INTERF] clean song\(morph.isSecond ? " 2" : "")")
             let clean = onSongClean
             onSongClean = nil
             clean?()
@@ -472,7 +472,7 @@ final class InterferenceAudioEngine {
         }
         player.play()
         let seconds = Double(frame) / file.processingFormat.sampleRate
-        dlog("[INTERF] resumed · song \(isSecond ? 2 : 1) clean at \(String(format: "%.1f", seconds)) s")
+        dlogDebug("[INTERF] resumed · song \(isSecond ? 2 : 1) clean at \(String(format: "%.1f", seconds)) s")
         pendingClean?()
     }
 
@@ -565,7 +565,7 @@ final class InterferenceAudioEngine {
                     self.loopSong(isSecond: isSecond, token: token)
                     return
                 }
-                dlog("[INTERF] song\(isSecond ? " 2" : "") preview finished")
+                dlogDebug("[INTERF] song\(isSecond ? " 2" : "") preview finished")
                 if isSecond {
                     self.onSecondSongFinished?()
                 } else {
@@ -586,7 +586,7 @@ final class InterferenceAudioEngine {
             songAnchor = (CACurrentMediaTime(), start)
         }
         if !player.isPlaying { player.play() }
-        dlog("[INTERF] song\(isSecond ? " 2" : "") starts over")
+        dlogDebug("[INTERF] song\(isSecond ? " 2" : "") starts over")
     }
 
     // MARK: Helpers

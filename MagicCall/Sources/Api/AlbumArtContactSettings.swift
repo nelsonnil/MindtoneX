@@ -5,6 +5,8 @@ enum AlbumArtContactSettings {
     enum Key {
         static let enabled = "albumArtContact.enabled"
         static let saveToPhotos = "albumArtContact.saveToPhotos"
+        static let testContactIdentifier = "albumArtContact.testContact.identifier"
+        static let testContactDisplayName = "albumArtContact.testContact.displayName"
     }
 
     private static var d: UserDefaults { .standard }
@@ -37,5 +39,25 @@ enum AlbumArtContactSettings {
 
     static var anyOutputEnabled: Bool {
         enabled || saveToPhotosEnabled
+    }
+
+    static var testContactIdentifier: String? {
+        let id = d.string(forKey: Key.testContactIdentifier)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return id.isEmpty ? nil : id
+    }
+
+    static var testContactDisplayName: String? {
+        let name = d.string(forKey: Key.testContactDisplayName)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return name.isEmpty ? nil : name
+    }
+
+    static func saveTestContactSelection(identifier: String, displayName: String) {
+        d.set(identifier, forKey: Key.testContactIdentifier)
+        d.set(displayName, forKey: Key.testContactDisplayName)
+    }
+
+    static func clearTestContactSelection() {
+        d.removeObject(forKey: Key.testContactIdentifier)
+        d.removeObject(forKey: Key.testContactDisplayName)
     }
 }

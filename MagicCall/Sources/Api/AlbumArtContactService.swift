@@ -33,7 +33,7 @@ enum AlbumArtContactService {
     static func processOnSongLock(track: PreviewTrack, reason: String) {
         guard AlbumArtContactSettings.anyOutputEnabled else { return }
         guard track.artworkURL != nil else {
-            dlog("[ALBUM-ART] skip (\(reason)): no artwork URL · \(track.title)")
+            dlogDebug("[ALBUM-ART] skip (\(reason)): no artwork URL · \(track.title)")
             return
         }
         let trackLabel = "\(track.title) — \(track.artist)"
@@ -69,7 +69,7 @@ enum AlbumArtContactService {
             PerformUserLog.shared.log("Album art test failed · \(msg)")
             return .failure(msg)
         } catch {
-            let msg = error.localizedDescription
+            let msg = SpectatorContactFetch.userFacingMessage(for: error)
             PerformUserLog.shared.log("Album art test failed · \(msg)")
             return .failure(msg)
         }
@@ -103,13 +103,13 @@ enum AlbumArtContactService {
                 await applyContactArtwork(jpeg: jpeg, trackLabel: trackLabel, reason: reason)
             }
         } catch AlbumArtContactError.noArtworkURL {
-            dlog("[ALBUM-ART] skip (\(reason)): no artwork URL · \(trackLabel)")
+            dlogDebug("[ALBUM-ART] skip (\(reason)): no artwork URL · \(trackLabel)")
         } catch AlbumArtContactError.invalidImageData {
-            dlog("[ALBUM-ART] skip (\(reason)): invalid image data")
+            dlogDebug("[ALBUM-ART] skip (\(reason)): invalid image data")
         } catch AlbumArtContactError.cropFailed {
-            dlog("[ALBUM-ART] skip (\(reason)): crop failed")
+            dlogDebug("[ALBUM-ART] skip (\(reason)): crop failed")
         } catch {
-            dlog("✗ [ALBUM-ART] download (\(reason)): \(error.localizedDescription)")
+            dlog("✗ [ALBUM-ART] download (\(reason)): \(SpectatorContactFetch.userFacingMessage(for: error))")
         }
     }
 
@@ -127,6 +127,10 @@ enum AlbumArtContactService {
             case .noContactTarget: return "No contact selected for test."
             }
         }
+    }
+
+    private static func contactsUserMessage(for error: Error) -> String {
+        SpectatorContactFetch.userFacingMessage(for: error)
     }
 
     private static func fetchSquareJPEG(for track: PreviewTrack, reason: String) async throws -> Data {
@@ -148,15 +152,16 @@ enum AlbumArtContactService {
             } else if let phone = WordApiSettings.spectatorContactPhoneE164String() {
                 count = try applyImageData(jpeg, phone: phone, reason: reason)
             } else {
-                dlog("[ALBUM-ART] skip (\(reason)): no spectator phone — dial or pick contact first")
+                dlogDebug("[ALBUM-ART] skip (\(reason)): no spectator phone — dial or pick contact first")
                 PerformUserLog.shared.log("Album art · no phone yet · dial or choose contact on Album art card")
                 return
             }
-            dlog("[ALBUM-ART] contact «\(trackLabel)» → \(count) card(s) (\(reason))")
+            dlogDebug("[ALBUM-ART] contact «\(trackLabel)» → \(count) card(s) (\(reason))")
             PerformUserLog.shared.log("Album art on contact · \(count) card(s) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
         } catch {
-            dlog("✗ [ALBUM-ART] contact save (\(reason)): \(error.localizedDescription)")
-            PerformUserLog.shared.log("Album art on contact failed · \(error.localizedDescription)")
+            let msg = contactsUserMessage(for: error)
+            dlog("✗ [ALBUM-ART] contact save (\(reason)): \(msg)")
+            PerformUserLog.shared.log("Album art on contact failed · \(msg)")
         }
     }
 
@@ -170,12 +175,12 @@ enum AlbumArtContactService {
             } completionHandler: { success, error in
                 Task { @MainActor in
                     if success {
-                        dlog("[ALBUM-ART] saved to Photos «\(trackLabel)» (\(reason))")
+                        dlogDebug("[ALBUM-ART] saved to Photos «\(trackLabel)» (\(reason))")
                         PerformUserLog.shared.log(
                             "Album art saved to Photos · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»"
                         )
                     } else {
-                        let message = error?.localizedDescription ?? "unknown error"
+                        let message = error.map { SpectatorContactFetch.userFacingMessage(for: $0) } ?? "Could not save to Photos."
                         dlog("✗ [ALBUM-ART] Photos save (\(reason)): \(message)")
                         PerformUserLog.shared.log("Album art not saved to Photos · \(message)")
                     }
@@ -267,7 +272,11 @@ enum AlbumArtContactService {
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactImageDataKey as CNKeyDescriptor,
         ]
-        let existing = try store.unifiedContact(withIdentifier: contactIdentifier, keysToFetch: keys)
+        let existing = try SpectatorContactFetch.unifiedContact(
+            store: store,
+            identifier: contactIdentifier,
+            keysToFetch: keys
+        )
         let had = existing.imageDataAvailable && existing.imageData != nil
         let restoreEntries = [
             AlbumArtContactRestoreEntry(
@@ -354,14 +363,18 @@ enum AlbumArtContactService {
         }
         AlbumArtContactRestoreStore.clear()
         if restored > 0 {
-            dlog("[ALBUM-ART] restore (\(reason)) · \(restored) card(s)")
+            dlogDebug("[ALBUM-ART] restore (\(reason)) · \(restored) card(s)")
             PerformUserLog.shared.log("Album art restored · \(restored) contact photo(s)")
         }
     }
 
     private static func deleteContact(identifier: String) throws {
         let keys: [CNKeyDescriptor] = [CNContactIdentifierKey as CNKeyDescriptor]
-        let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
+        let contact = try SpectatorContactFetch.unifiedContact(
+            store: store,
+            identifier: identifier,
+            keysToFetch: keys
+        )
         let mutable = contact.mutableCopy() as! CNMutableContact
         let save = CNSaveRequest()
         save.delete(mutable)
@@ -373,7 +386,11 @@ enum AlbumArtContactService {
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactImageDataKey as CNKeyDescriptor,
         ]
-        let contact = try store.unifiedContact(withIdentifier: entry.identifier, keysToFetch: keys)
+        let contact = try SpectatorContactFetch.unifiedContact(
+            store: store,
+            identifier: entry.identifier,
+            keysToFetch: keys
+        )
         let mutable = contact.mutableCopy() as! CNMutableContact
         if entry.hadImage, let data = entry.previousImageData {
             mutable.imageData = data

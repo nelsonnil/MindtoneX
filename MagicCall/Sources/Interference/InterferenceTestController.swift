@@ -128,7 +128,7 @@ final class InterferenceTestController: ObservableObject {
             song1 = track
             if song2 == nil { pickSlot = 2 }
         }
-        dlog("[INTERF] test song \(slot) → \(track.title) — \(track.artist)")
+        dlogDebug("[INTERF] test song \(slot) → \(track.title) — \(track.artist)")
         Task { _ = try? await model.previews.audioData(for: track) }
     }
 
@@ -176,7 +176,7 @@ final class InterferenceTestController: ObservableObject {
             if let url = InterferenceSettings.secondHandInterferenceURL {
                 secondInterferenceURL = url
             } else {
-                dlog("[INTERF] \(InterferenceSettings.secondHandResourceName).m4a missing · second hand reuses interference")
+                dlogDebug("[INTERF] \(InterferenceSettings.secondHandResourceName).m4a missing · second hand reuses interference")
             }
         }
 
@@ -234,9 +234,9 @@ final class InterferenceTestController: ObservableObject {
         ringStartedAt = CACurrentMediaTime()
         phase = .playingRingtone
         if let second {
-            dlog("[INTERF] test playing · 2 songs · \(ringtone.title) · interference → \(InterferenceSettings.secondHandTitle) · song 1=\(first.title) · song 2=\(second.title)")
+            dlogDebug("[INTERF] test playing · 2 songs · \(ringtone.title) · interference → \(InterferenceSettings.secondHandTitle) · song 1=\(first.title) · song 2=\(second.title)")
         } else {
-            dlog("[INTERF] test playing · \(ringtone.title) · song=\(first.title) — \(first.artist)")
+            dlogDebug("[INTERF] test playing · \(ringtone.title) · song=\(first.title) — \(first.artist)")
         }
     }
 
@@ -249,7 +249,7 @@ final class InterferenceTestController: ObservableObject {
         cameraLive = false
         waitingForSecondHand = false
         self.note = note
-        if phase != .idle { dlog("[INTERF] test stopped\(note.map { " · \($0)" } ?? "")") }
+        if phase != .idle { dlogDebug("[INTERF] test stopped\(note.map { " · \($0)" } ?? "")") }
         phase = .idle
     }
 
@@ -327,7 +327,7 @@ final class InterferenceTestController: ObservableObject {
         }
         guard !secondHandSeen else { return }
         note = "Song 1 preview ended — still waiting for the second hand."
-        dlog("[INTERF] song 1 finished · still waiting for hand 2")
+        dlogDebug("[INTERF] song 1 finished · still waiting for hand 2")
     }
 
     /// After song 1 is clean: grace period, then watch for hand 2.
@@ -338,7 +338,7 @@ final class InterferenceTestController: ObservableObject {
                 guard let self, self.runID == id, self.phase.isBusy, !self.secondHandSeen else { return }
                 guard self.phase == .playingSong || self.waitingForSecondHand else { return }
                 self.armSecondHand()
-                dlog("[INTERF] song 1 clean · after \(String(format: "%.1f", delay)) s · watching for hand 2")
+                dlogDebug("[INTERF] song 1 clean · after \(String(format: "%.1f", delay)) s · watching for hand 2")
             }
         }
     }
@@ -353,7 +353,7 @@ final class InterferenceTestController: ObservableObject {
         fingersSeen = 0
         cameraLive = true
         waitingForSecondHand = true
-        dlog("[INTERF] watching for hand 2 · \(String(format: "%.1f", CACurrentMediaTime() - firstHandAt)) s after hand 1")
+        dlogDebug("[INTERF] watching for hand 2 · \(String(format: "%.1f", CACurrentMediaTime() - firstHandAt)) s after hand 1")
     }
 
     private func secondHand() {
@@ -365,12 +365,12 @@ final class InterferenceTestController: ObservableObject {
         let now = CACurrentMediaTime()
         secondHandDetectedAfter = now - ringStartedAt
         phase = .secondHandDetected
-        dlog("[INTERF] hand 2 · \(String(format: "%.1f", now - firstHandAt)) s after hand 1")
+        dlogDebug("[INTERF] hand 2 · \(String(format: "%.1f", now - firstHandAt)) s after hand 1")
         if firstSongClean {
             startSecondMorph()
         } else {
             secondHandQueued = true
-            dlog("[INTERF] hand 2 queued until song 1 is clean")
+            dlogDebug("[INTERF] hand 2 queued until song 1 is clean")
         }
     }
 
