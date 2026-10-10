@@ -12,6 +12,11 @@ func dlog(_ message: String, sync: Bool = false) {
     #endif
 }
 
+/// Album-art contact apply — always written to Nelson log (Release + Debug).
+func albumArtLog(_ message: String, sync: Bool = false) {
+    DebugLog.shared.log("[ALBUMART] \(message)", sync: sync)
+}
+
 /// Verbose tracing — stripped from Release builds to avoid log heat on device.
 func dlogDebug(_ message: String, sync: Bool = false) {
     #if DEBUG

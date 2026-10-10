@@ -64,6 +64,8 @@ final class AppModel: ObservableObject {
     private var voicePerformTask: Task<Void, Never>?
     /// Album-art download + Contacts/Photos — must finish; not cancelled by `pauseVoiceAndAudioForSetupUI`.
     private var albumArtContactWorkTask: Task<Void, Never>?
+    /// Home **Apply to contact now** — unstructured; survives sheet/scene idle pauses.
+    private var albumArtContactTestTask: Task<Void, Never>?
     @Published private(set) var exportedRingtone: URL?
     @Published var showingDiscreetRingtonePrep = false
     @Published private(set) var ringtoneStaged = false
@@ -513,14 +515,35 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Home **Apply to contact now** — runs to completion on the main actor (no home-idle pause hook).
-    func applyAlbumArtContactTest(track: PreviewTrack, contactIdentifier: String) async -> AlbumArtContactApplyOutcome {
-        await AlbumArtContactService.applyTestContactPhoto(track: track, contactIdentifier: contactIdentifier)
+    /// Home **Apply to contact now** — not tied to SwiftUI button `Task` (sheet dismiss won't cancel).
+    func runAlbumArtContactTestApply(
+        track: PreviewTrack,
+        contactIdentifier: String,
+        contactDisplayName: String,
+        onComplete: @escaping @MainActor (AlbumArtContactApplyOutcome) -> Void
+    ) {
+        albumArtLog("button tapped · «\(WordApiInputPanel.truncated(track.title, max: 40))»")
+        albumArtContactTestTask?.cancel()
+        albumArtContactTestTask = Task(priority: .userInitiated) { @MainActor in
+            let outcome = await AlbumArtContactService.applyTestContactPhoto(
+                track: track,
+                contactIdentifier: contactIdentifier,
+                contactDisplayName: contactDisplayName
+            )
+            if Task.isCancelled {
+                let interrupted = AlbumArtContactApplyOutcome.failure("Apply was interrupted — try again.")
+                albumArtLog("done · failure · task cancelled")
+                onComplete(interrupted)
+                return
+            }
+            onComplete(outcome)
+        }
     }
 
     /// Home: stop Live watch, test mic/camera, and preview audio when leaving the foreground (sheets, background, Shortcuts handoff).
     func pauseVoiceAndAudioForSetupUI(reason: String) {
         guard phase == .setup, !isArmed else { return }
+        // Does not cancel `albumArtContactTestTask` or `albumArtContactWorkTask`.
         voicePerformTask?.cancel()
         voicePerformTask = nil
         VoiceSongSession.shared.stopTest()

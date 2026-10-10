@@ -129,7 +129,7 @@ private struct AlbumArtContactTestSection: View {
             }
 
             Button {
-                Task(priority: .userInitiated) { await applyNow() }
+                applyNow()
             } label: {
                 Group {
                     if isApplying {
@@ -219,13 +219,28 @@ private struct AlbumArtContactTestSection: View {
     }
 
     @MainActor
-    private func applyNow() async {
-        guard let track = testTrack else { return }
-        guard let contactID = resolvedContactIdentifier else { return }
+    private func applyNow() {
+        guard let track = testTrack else {
+            albumArtLog("button blocked · no track selected")
+            applyOutcome = .failure("Pick a song first.")
+            return
+        }
+        guard let contactID = resolvedContactIdentifier else {
+            albumArtLog("button blocked · no contact")
+            applyOutcome = .failure("Pick a contact for this test.")
+            return
+        }
+        let label = resolvedContactLabel ?? "Contact"
         applyOutcome = nil
         isApplying = true
-        defer { isApplying = false }
-        applyOutcome = await model.applyAlbumArtContactTest(track: track, contactIdentifier: contactID)
+        model.runAlbumArtContactTestApply(
+            track: track,
+            contactIdentifier: contactID,
+            contactDisplayName: label
+        ) { outcome in
+            applyOutcome = outcome
+            isApplying = false
+        }
     }
 }
 

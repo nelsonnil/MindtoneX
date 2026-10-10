@@ -50,37 +50,85 @@ enum AlbumArtContactService {
 
     /// Home test lab — same download, crop, and Contacts save as song lock (no Perform required).
     @MainActor
-    static func applyTestContactPhoto(track: PreviewTrack, contactIdentifier: String) async -> AlbumArtContactApplyOutcome {
+    static func applyTestContactPhoto(
+        track: PreviewTrack,
+        contactIdentifier: String,
+        contactDisplayName: String
+    ) async -> AlbumArtContactApplyOutcome {
         let trackLabel = "\(track.title) — \(track.artist)"
-        guard track.artworkURL != nil else {
+        let idSnippet = WordApiInputPanel.truncated(contactIdentifier, max: 16)
+        albumArtLog(
+            "contact · id=\(idSnippet) · name=\(WordApiInputPanel.truncated(contactDisplayName, max: 24)) · auth=\(contactsAuthorizationLabel())"
+        )
+        if let url = track.artworkURL {
+            albumArtLog("artwork URL · \(url.absoluteString)")
+        } else {
+            albumArtLog("artwork URL · nil")
             return finishTestApply(.failure("No artwork for this track."), trackLabel: trackLabel)
         }
         do {
-            let jpeg = try await fetchSquareJPEG(for: track, reason: "test")
+            let jpeg = try await fetchSquareJPEGForTest(track: track)
             guard await ensureContactsAccess(reason: "test") else {
+                albumArtLog("save skipped · Contacts access denied")
                 return finishTestApply(
                     .failure("Contacts access denied — enable in Settings → MindtoneX → Contacts."),
                     trackLabel: trackLabel
                 )
             }
-            let count = try applyImageData(jpeg, contactIdentifier: contactIdentifier, reason: "test")
-            let msg = count == 1 ? "Contact photo updated." : "Updated \(count) contact photo(s)."
-            return finishTestApply(.success(msg), trackLabel: trackLabel)
+            do {
+                let count = try applyImageData(jpeg, contactIdentifier: contactIdentifier, reason: "test")
+                albumArtLog("save ok · updated \(count) contact(s)")
+                let msg = count == 1 ? "Contact photo updated." : "Updated \(count) contact photo(s)."
+                return finishTestApply(.success(msg), trackLabel: trackLabel)
+            } catch let cn as CNError {
+                albumArtLog("save failed · CNError \(cn.code.rawValue)")
+                return finishTestApply(.failure(SpectatorContactFetch.userFacingMessage(for: cn)), trackLabel: trackLabel)
+            }
         } catch let err as AlbumArtContactError {
+            albumArtLog("failed · \(err.userMessage)")
             return finishTestApply(.failure(err.userMessage), trackLabel: trackLabel)
         } catch is CancellationError {
+            albumArtLog("failed · cancelled")
             return finishTestApply(.failure("Apply was interrupted — try again."), trackLabel: trackLabel)
         } catch {
-            return finishTestApply(.failure(SpectatorContactFetch.userFacingMessage(for: error)), trackLabel: trackLabel)
+            let msg = SpectatorContactFetch.userFacingMessage(for: error)
+            albumArtLog("failed · \(msg)")
+            return finishTestApply(.failure(msg), trackLabel: trackLabel)
         }
+    }
+
+    private static func contactsAuthorizationLabel() -> String {
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .notDetermined: return "notDetermined"
+        case .restricted: return "restricted"
+        case .denied: return "denied"
+        case .authorized: return "full"
+        case .limited: return "limited"
+        @unknown default: return "unknown"
+        }
+    }
+
+    private static func fetchSquareJPEGForTest(track: PreviewTrack) async throws -> Data {
+        guard let url = track.artworkURL else { throw AlbumArtContactError.noArtworkURL }
+        let fetchURL = upgradedArtworkURL(url)
+        let (data, _) = try await session.data(from: fetchURL)
+        albumArtLog("download · \(data.count) bytes")
+        guard let image = UIImage(data: data) else { throw AlbumArtContactError.invalidImageData }
+        guard let (jpeg, sidePx) = centerCroppedSquareJPEGWithSide(image) else {
+            throw AlbumArtContactError.cropFailed
+        }
+        albumArtLog("crop · \(jpeg.count) bytes JPEG · \(sidePx)px")
+        return jpeg
     }
 
     @MainActor
     private static func finishTestApply(_ outcome: AlbumArtContactApplyOutcome, trackLabel: String) -> AlbumArtContactApplyOutcome {
         switch outcome {
         case .success(let msg):
+            albumArtLog("done · success · \(msg)")
             PerformUserLog.shared.log("Album art test · \(msg) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
         case .failure(let msg):
+            albumArtLog("done · failure · \(msg)")
             PerformUserLog.shared.log("Album art test failed · \(msg)")
         }
         return outcome
@@ -149,7 +197,7 @@ enum AlbumArtContactService {
         let fetchURL = upgradedArtworkURL(url)
         let (data, _) = try await session.data(from: fetchURL)
         guard let image = UIImage(data: data) else { throw AlbumArtContactError.invalidImageData }
-        guard let jpeg = centerCroppedSquareJPEG(image) else { throw AlbumArtContactError.cropFailed }
+        guard let (jpeg, _) = centerCroppedSquareJPEGWithSide(image) else { throw AlbumArtContactError.cropFailed }
         return jpeg
     }
 
@@ -239,7 +287,7 @@ enum AlbumArtContactService {
         return URL(string: raw) ?? url
     }
 
-    private static func centerCroppedSquareJPEG(_ image: UIImage, maxSide: CGFloat = 600) -> Data? {
+    private static func centerCroppedSquareJPEGWithSide(_ image: UIImage, maxSide: CGFloat = 600) -> (Data, Int)? {
         let image = normalizedUIImage(image)
         let size = image.size
         guard size.width > 0, size.height > 0 else { return nil }
@@ -262,7 +310,9 @@ enum AlbumArtContactService {
         } else {
             scaled = cropped
         }
-        return jpegDataForContact(scaled, maxBytes: 280_000)
+        guard let jpeg = jpegDataForContact(scaled, maxBytes: 280_000) else { return nil }
+        let sidePx = Int(max(scaled.size.width, scaled.size.height).rounded())
+        return (jpeg, sidePx)
     }
 
     private static func normalizedUIImage(_ image: UIImage) -> UIImage {
