@@ -129,7 +129,7 @@ private struct AlbumArtContactTestSection: View {
             }
 
             Button {
-                Task { await applyNow() }
+                Task(priority: .userInitiated) { await applyNow() }
             } label: {
                 Group {
                     if isApplying {
@@ -225,8 +225,7 @@ private struct AlbumArtContactTestSection: View {
         applyOutcome = nil
         isApplying = true
         defer { isApplying = false }
-        model.pauseVoiceAndAudioForSetupUI(reason: "album art contact test")
-        applyOutcome = await AlbumArtContactService.applyTestContactPhoto(track: track, contactIdentifier: contactID)
+        applyOutcome = await model.applyAlbumArtContactTest(track: track, contactIdentifier: contactID)
     }
 }
 

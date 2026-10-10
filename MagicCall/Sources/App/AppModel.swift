@@ -62,6 +62,8 @@ final class AppModel: ObservableObject {
     private var currentAudio: (data: Data, hint: String)?
     private var auditionEndWork: DispatchWorkItem?
     private var voicePerformTask: Task<Void, Never>?
+    /// Album-art download + Contacts/Photos — must finish; not cancelled by `pauseVoiceAndAudioForSetupUI`.
+    private var albumArtContactWorkTask: Task<Void, Never>?
     @Published private(set) var exportedRingtone: URL?
     @Published var showingDiscreetRingtonePrep = false
     @Published private(set) var ringtoneStaged = false
@@ -501,6 +503,19 @@ final class AppModel: ObservableObject {
     func scheduleVoicePerformStart() {
         voicePerformTask?.cancel()
         voicePerformTask = Task { await VoiceSongSession.shared.start(context: .perform) }
+    }
+
+    /// Album artwork on song lock or Home test apply — survives home idle audio pauses.
+    func runAlbumArtContactWork(_ work: @escaping @MainActor () async -> Void) {
+        albumArtContactWorkTask?.cancel()
+        albumArtContactWorkTask = Task(priority: .userInitiated) { @MainActor in
+            await work()
+        }
+    }
+
+    /// Home **Apply to contact now** — runs to completion on the main actor (no home-idle pause hook).
+    func applyAlbumArtContactTest(track: PreviewTrack, contactIdentifier: String) async -> AlbumArtContactApplyOutcome {
+        await AlbumArtContactService.applyTestContactPhoto(track: track, contactIdentifier: contactIdentifier)
     }
 
     /// Home: stop Live watch, test mic/camera, and preview audio when leaving the foreground (sheets, background, Shortcuts handoff).

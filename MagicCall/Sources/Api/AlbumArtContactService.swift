@@ -37,7 +37,7 @@ enum AlbumArtContactService {
             return
         }
         let trackLabel = "\(track.title) — \(track.artist)"
-        Task {
+        AppModel.shared.runAlbumArtContactWork {
             await processArtwork(for: track, trackLabel: trackLabel, reason: reason)
         }
     }
@@ -53,26 +53,37 @@ enum AlbumArtContactService {
     static func applyTestContactPhoto(track: PreviewTrack, contactIdentifier: String) async -> AlbumArtContactApplyOutcome {
         let trackLabel = "\(track.title) — \(track.artist)"
         guard track.artworkURL != nil else {
-            return .failure("No artwork for this track.")
+            return finishTestApply(.failure("No artwork for this track."), trackLabel: trackLabel)
         }
         do {
             let jpeg = try await fetchSquareJPEG(for: track, reason: "test")
             guard await ensureContactsAccess(reason: "test") else {
-                return .failure("Contacts access denied — enable in Settings → MindtoneX → Contacts.")
+                return finishTestApply(
+                    .failure("Contacts access denied — enable in Settings → MindtoneX → Contacts."),
+                    trackLabel: trackLabel
+                )
             }
             let count = try applyImageData(jpeg, contactIdentifier: contactIdentifier, reason: "test")
             let msg = count == 1 ? "Contact photo updated." : "Updated \(count) contact photo(s)."
-            PerformUserLog.shared.log("Album art test · \(msg) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
-            return .success(msg)
+            return finishTestApply(.success(msg), trackLabel: trackLabel)
         } catch let err as AlbumArtContactError {
-            let msg = err.userMessage
-            PerformUserLog.shared.log("Album art test failed · \(msg)")
-            return .failure(msg)
+            return finishTestApply(.failure(err.userMessage), trackLabel: trackLabel)
+        } catch is CancellationError {
+            return finishTestApply(.failure("Apply was interrupted — try again."), trackLabel: trackLabel)
         } catch {
-            let msg = SpectatorContactFetch.userFacingMessage(for: error)
-            PerformUserLog.shared.log("Album art test failed · \(msg)")
-            return .failure(msg)
+            return finishTestApply(.failure(SpectatorContactFetch.userFacingMessage(for: error)), trackLabel: trackLabel)
         }
+    }
+
+    @MainActor
+    private static func finishTestApply(_ outcome: AlbumArtContactApplyOutcome, trackLabel: String) -> AlbumArtContactApplyOutcome {
+        switch outcome {
+        case .success(let msg):
+            PerformUserLog.shared.log("Album art test · \(msg) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
+        case .failure(let msg):
+            PerformUserLog.shared.log("Album art test failed · \(msg)")
+        }
+        return outcome
     }
 
     @MainActor
@@ -229,6 +240,7 @@ enum AlbumArtContactService {
     }
 
     private static func centerCroppedSquareJPEG(_ image: UIImage, maxSide: CGFloat = 600) -> Data? {
+        let image = normalizedUIImage(image)
         let size = image.size
         guard size.width > 0, size.height > 0 else { return nil }
         let cropSide = min(size.width, size.height)
@@ -251,6 +263,16 @@ enum AlbumArtContactService {
             scaled = cropped
         }
         return jpegDataForContact(scaled, maxBytes: 280_000)
+    }
+
+    private static func normalizedUIImage(_ image: UIImage) -> UIImage {
+        guard image.imageOrientation != .up else { return image }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = image.scale
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+        }
     }
 
     /// Contacts expects JPEG; keep under a practical size limit.
@@ -442,6 +464,7 @@ enum AlbumArtContactService {
     @MainActor
     private static func logContactsDenied(reason: String) {
         dlog("[ALBUM-ART] Contacts denied (\(reason))")
+        guard reason != "test" else { return }
         PerformUserLog.shared.logConnectionIssue(
             "Album art on contact needs Contacts access — enable in Settings to show song artwork on the incoming call."
         )
