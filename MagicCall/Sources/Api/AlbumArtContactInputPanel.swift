@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct AlbumArtContactInputPanel: View {
-    @AppStorage(AlbumArtContactSettings.Key.enabled) private var albumArtEnabled = false
+    @AppStorage(AlbumArtContactSettings.Key.enabled) private var albumArtOnContact = false
+    @AppStorage(AlbumArtContactSettings.Key.saveToPhotos) private var saveAlbumArtToPhotos = false
     @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
     @AppStorage(WordApiSettings.Key.restoreKnownNameOnSettingsExit) private var restoreAfterPerform = true
 
@@ -24,7 +25,7 @@ struct AlbumArtContactInputPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Toggle(isOn: $albumArtEnabled) {
+            Toggle(isOn: $albumArtOnContact) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Album art on contact")
                         .font(.subheadline.weight(.semibold))
@@ -36,17 +37,33 @@ struct AlbumArtContactInputPanel: View {
                 }
             }
             .tint(OracleTheme.gold)
-            .onChange(of: albumArtEnabled) { _, on in
+            .onChange(of: albumArtOnContact) { _, on in
                 AlbumArtContactSettings.setEnabled(on)
             }
 
-            if albumArtEnabled {
-                setupCard
+            Toggle(isOn: $saveAlbumArtToPhotos) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Save album art to Photos")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    Text("Same square crop at song lock. Saving to your Photo Library helps **lock screen predictions** — you can automate wallpaper from the latest gallery image with Shortcuts.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(OracleTheme.gold)
+            .onChange(of: saveAlbumArtToPhotos) { _, on in
+                AlbumArtContactSettings.setSaveToPhotosEnabled(on)
+            }
+
+            if albumArtOnContact {
+                contactSetupCard
             }
         }
     }
 
-    private var setupCard: some View {
+    private var contactSetupCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Uses the **same phone and contact** as **Caller name** (Known / Unknown). Set it here or on the Caller name card — they stay in sync.")
                 .font(.caption)
@@ -190,23 +207,37 @@ struct AlbumArtContactInputPanel: View {
 }
 
 struct AlbumArtContactHomeCard: View {
-    @AppStorage(AlbumArtContactSettings.Key.enabled) private var albumArtEnabled = false
+    @AppStorage(AlbumArtContactSettings.Key.enabled) private var albumArtOnContact = false
+    @AppStorage(AlbumArtContactSettings.Key.saveToPhotos) private var saveAlbumArtToPhotos = false
     @AppStorage(WordApiSettings.Key.contactMode) private var contactModeRaw = WordApiSettings.ContactMode.unknown.rawValue
 
     private var summary: String {
-        guard albumArtEnabled else { return "Off — incoming call uses the contact’s existing photo" }
+        if !albumArtOnContact && !saveAlbumArtToPhotos {
+            return "Off — no album art saved at song lock"
+        }
+        var parts: [String] = []
+        if albumArtOnContact {
+            parts.append(contactSummary)
+        }
+        if saveAlbumArtToPhotos {
+            parts.append("Photos")
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private var contactSummary: String {
         let mode = WordApiSettings.ContactMode(rawValue: contactModeRaw) ?? .unknown
         switch mode {
         case .known:
             if WordApiSettings.hasKnownContactSelected {
-                return "On · «\(WordApiSettings.knownContactDisplayName)»"
+                return "Contact · «\(WordApiSettings.knownContactDisplayName)»"
             }
-            return "On · Known — pick a contact"
+            return "Contact · pick contact"
         case .unknown:
             if !WordApiSettings.lastDialedPhoneDigits.isEmpty {
-                return "On · +\(WordApiSettings.lastDialedPhoneDigits)"
+                return "Contact · +\(WordApiSettings.lastDialedPhoneDigits)"
             }
-            return "On · Unknown — dial or enter number before Perform"
+            return "Contact · dial or number"
         }
     }
 
@@ -215,7 +246,7 @@ struct AlbumArtContactHomeCard: View {
             expandedKey: HomeSectionExpandKey.albumArtContact,
             accent: OracleTheme.sectionSlate,
             icon: "music.note.list",
-            title: "Album art on contact",
+            title: "Album artwork",
             summary: summary,
             showsRevelationStar: true
         ) {

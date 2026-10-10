@@ -174,7 +174,7 @@ extension AppModel {
         if context == .perform {
             recordRecentLoadedSongIfReady(reason: "voiceDidLock")
             autoShareOnSongLockIfEnabled(source: "Voice")
-            albumArtOnContactIfEnabled(source: "Voice")
+            albumArtOnSongLockIfEnabled(source: "Voice")
         }
     }
 
@@ -185,7 +185,7 @@ extension AppModel {
         if isArmed {
             applyFakePerformMediaVolumeBoost(reason: "songLocked")
         }
-        albumArtOnContactIfEnabled(source: "Voice · song 1")
+        albumArtOnSongLockIfEnabled(source: "Voice · song 1")
     }
 
     func notesSongReady(context: NotesSongSession.Context) {
@@ -195,7 +195,7 @@ extension AppModel {
             applyFakePerformMediaVolumeBoost(reason: "notesReady")
         }
         autoShareOnSongLockIfEnabled(source: "Notes")
-        albumArtOnContactIfEnabled(source: "Notes")
+        albumArtOnSongLockIfEnabled(source: "Notes")
     }
 
     func apiSongLocked(context: ApiSongSession.Context) {
@@ -207,7 +207,7 @@ extension AppModel {
         }
         if context == .perform {
             autoShareOnSongLockIfEnabled(source: "API")
-            albumArtOnContactIfEnabled(source: "API")
+            albumArtOnSongLockIfEnabled(source: "API")
         }
     }
 
@@ -220,15 +220,15 @@ extension AppModel {
         }
         if context == .perform {
             autoShareOnSongLockIfEnabled(source: "Card")
-            albumArtOnContactIfEnabled(source: "Card")
+            albumArtOnSongLockIfEnabled(source: "Card")
         }
     }
 
-    func albumArtOnContactIfEnabled(source: String) {
-        guard AlbumArtContactSettings.enabled, isArmed else { return }
+    func albumArtOnSongLockIfEnabled(source: String) {
+        guard AlbumArtContactSettings.anyOutputEnabled, isArmed else { return }
         if source.localizedCaseInsensitiveContains("song 2") { return }
         guard loadState == .ready, let track = selected ?? lastReadyTrack else { return }
-        AlbumArtContactService.applyOnSongLock(track: track, reason: source)
+        AlbumArtContactService.processOnSongLock(track: track, reason: source)
     }
 
     /// Leaving Perform starts the next performance from zero (no stale song on the next run).

@@ -1,8 +1,9 @@
 import Contacts
 import Foundation
+import Photos
 import UIKit
 
-/// Applies locked song album artwork to the spectator contact (center-cropped for iOS call UI).
+/// Album artwork on song lock — contact photo and/or Photo Library (shared download + crop).
 enum AlbumArtContactService {
     private static let store = CNContactStore()
     private static let session: URLSession = {
@@ -12,15 +13,22 @@ enum AlbumArtContactService {
     }()
 
     @MainActor
-    static func applyOnSongLock(track: PreviewTrack, reason: String) {
-        guard AlbumArtContactSettings.enabled else { return }
-        guard let url = track.artworkURL else {
+    static func processOnSongLock(track: PreviewTrack, reason: String) {
+        guard AlbumArtContactSettings.anyOutputEnabled else { return }
+        guard track.artworkURL != nil else {
             dlog("[ALBUM-ART] skip (\(reason)): no artwork URL · \(track.title)")
             return
         }
+        let trackLabel = "\(track.title) — \(track.artist)"
         Task {
-            await applyArtwork(from: url, trackLabel: "\(track.title) — \(track.artist)", reason: reason)
+            await processArtwork(for: track, trackLabel: trackLabel, reason: reason)
         }
+    }
+
+    /// Backward-compatible entry for older call sites.
+    @MainActor
+    static func applyOnSongLock(track: PreviewTrack, reason: String) {
+        processOnSongLock(track: track, reason: reason)
     }
 
     @MainActor
@@ -41,14 +49,8 @@ enum AlbumArtContactService {
     // MARK: - Private
 
     @MainActor
-    private static func applyArtwork(from url: URL, trackLabel: String, reason: String) async {
-        guard await ensureContactsAccess(reason: reason) else { return }
-        guard let phone = WordApiSettings.spectatorContactPhoneE164String() else {
-            dlog("[ALBUM-ART] skip (\(reason)): no spectator phone — dial or pick contact first")
-            PerformUserLog.shared.log("Album art · no phone yet · dial or choose contact on Album art card")
-            return
-        }
-
+    private static func processArtwork(for track: PreviewTrack, trackLabel: String, reason: String) async {
+        guard let url = track.artworkURL else { return }
         let fetchURL = upgradedArtworkURL(url)
         do {
             let (data, _) = try await session.data(from: fetchURL)
@@ -60,12 +62,87 @@ enum AlbumArtContactService {
                 dlog("[ALBUM-ART] skip (\(reason)): crop failed")
                 return
             }
-            let count = try applyImageData(jpeg, phone: phone, reason: reason)
-            dlog("[ALBUM-ART] applied «\(trackLabel)» → \(count) card(s) (\(reason))")
-            PerformUserLog.shared.log("Album art on contact · \(count) card(s) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
+
+            if AlbumArtContactSettings.saveToPhotosEnabled {
+                await saveToPhotoLibrary(jpeg: jpeg, trackLabel: trackLabel, reason: reason)
+            }
+            if AlbumArtContactSettings.enabled {
+                await applyContactArtwork(jpeg: jpeg, trackLabel: trackLabel, reason: reason)
+            }
         } catch {
             dlog("✗ [ALBUM-ART] download (\(reason)): \(error.localizedDescription)")
         }
+    }
+
+    @MainActor
+    private static func applyContactArtwork(jpeg: Data, trackLabel: String, reason: String) async {
+        guard await ensureContactsAccess(reason: reason) else { return }
+        guard let phone = WordApiSettings.spectatorContactPhoneE164String() else {
+            dlog("[ALBUM-ART] skip (\(reason)): no spectator phone — dial or pick contact first")
+            PerformUserLog.shared.log("Album art · no phone yet · dial or choose contact on Album art card")
+            return
+        }
+        do {
+            let count = try applyImageData(jpeg, phone: phone, reason: reason)
+            dlog("[ALBUM-ART] contact «\(trackLabel)» → \(count) card(s) (\(reason))")
+            PerformUserLog.shared.log("Album art on contact · \(count) card(s) · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»")
+        } catch {
+            dlog("✗ [ALBUM-ART] contact save (\(reason)): \(error.localizedDescription)")
+            PerformUserLog.shared.log("Album art on contact failed · \(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
+    private static func saveToPhotoLibrary(jpeg: Data, trackLabel: String, reason: String) async {
+        guard await ensurePhotoLibraryAddAccess(reason: reason) else { return }
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            PHPhotoLibrary.shared().performChanges {
+                let request = PHAssetCreationRequest.forAsset()
+                request.addResource(with: .photo, data: jpeg, options: nil)
+            } completionHandler: { success, error in
+                Task { @MainActor in
+                    if success {
+                        dlog("[ALBUM-ART] saved to Photos «\(trackLabel)» (\(reason))")
+                        PerformUserLog.shared.log(
+                            "Album art saved to Photos · «\(WordApiInputPanel.truncated(trackLabel, max: 36))»"
+                        )
+                    } else {
+                        let message = error?.localizedDescription ?? "unknown error"
+                        dlog("✗ [ALBUM-ART] Photos save (\(reason)): \(message)")
+                        PerformUserLog.shared.log("Album art not saved to Photos · \(message)")
+                    }
+                    continuation.resume()
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private static func ensurePhotoLibraryAddAccess(reason: String) async -> Bool {
+        let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        switch status {
+        case .authorized, .limited:
+            return true
+        case .notDetermined:
+            let newStatus = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+            if newStatus == .authorized || newStatus == .limited { return true }
+            logPhotosDenied(reason: reason)
+            return false
+        case .denied, .restricted:
+            logPhotosDenied(reason: reason)
+            return false
+        @unknown default:
+            logPhotosDenied(reason: reason)
+            return false
+        }
+    }
+
+    @MainActor
+    private static func logPhotosDenied(reason: String) {
+        dlog("[ALBUM-ART] Photos add denied (\(reason))")
+        PerformUserLog.shared.logConnectionIssue(
+            "Save album art to Photos is on but Photo Library access is off — enable in Settings → MindtoneX → Photos."
+        )
     }
 
     private static func upgradedArtworkURL(_ url: URL) -> URL {
@@ -211,19 +288,19 @@ enum AlbumArtContactService {
         case .authorized, .limited:
             return true
         case .notDetermined:
-            let granted = await requestAccess()
-            if !granted { logDenied(reason: reason) }
+            let granted = await requestContactsAccess()
+            if !granted { logContactsDenied(reason: reason) }
             return granted
         case .denied, .restricted:
-            logDenied(reason: reason)
+            logContactsDenied(reason: reason)
             return false
         @unknown default:
-            logDenied(reason: reason)
+            logContactsDenied(reason: reason)
             return false
         }
     }
 
-    private static func requestAccess() async -> Bool {
+    private static func requestContactsAccess() async -> Bool {
         await withCheckedContinuation { continuation in
             store.requestAccess(for: .contacts) { granted, error in
                 if let error {
@@ -235,10 +312,10 @@ enum AlbumArtContactService {
     }
 
     @MainActor
-    private static func logDenied(reason: String) {
-        dlog("[ALBUM-ART] denied (\(reason))")
+    private static func logContactsDenied(reason: String) {
+        dlog("[ALBUM-ART] Contacts denied (\(reason))")
         PerformUserLog.shared.logConnectionIssue(
-            "Album art needs Contacts access — enable in Settings to show song artwork on the incoming call."
+            "Album art on contact needs Contacts access — enable in Settings to show song artwork on the incoming call."
         )
     }
 }
