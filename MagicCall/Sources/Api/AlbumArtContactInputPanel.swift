@@ -174,18 +174,18 @@ private struct AlbumArtContactTestSection: View {
         }
         .sheet(isPresented: $showTestContactPicker) {
             WordApiKnownContactPicker(
-                onPick: { contact in
+                onPick: { picked in
                     showTestContactPicker = false
-                    let name = [contact.givenName, contact.familyName]
-                        .filter { !$0.isEmpty }
-                        .joined(separator: " ")
-                    let label = name.isEmpty ? "Contact" : name
+                    let label = picked.displayName.isEmpty ? "Contact" : picked.displayName
                     AlbumArtContactSettings.saveTestContactSelection(
-                        identifier: contact.identifier,
+                        identifier: picked.contact.identifier,
                         displayName: label,
-                        phoneDigits: WordApiContactPhoneParsing.e164(from: contact) ?? ""
+                        phoneDigits: picked.phoneE164 ?? ""
                     )
-                    testContactIdentifier = contact.identifier
+                    albumArtLog(
+                        "test contact picked «\(label)» · phone=\(picked.phoneE164 ?? "none") · id=\(WordApiInputPanel.truncated(picked.contact.identifier, max: 16))"
+                    )
+                    testContactIdentifier = picked.contact.identifier
                     testContactDisplayName = label
                     applyOutcome = nil
                 },

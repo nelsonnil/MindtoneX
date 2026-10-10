@@ -93,6 +93,15 @@ final class WordReadingTests: XCTestCase {
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("812 345 678", region: "ES"), "34812345678")
     }
 
+    func testContactNumberMatchesCanonicalAcrossSpellings() {
+        let target = "34629815339"
+        XCTAssertTrue(WordApiContactPhoneParsing.number("+34 629 81 53 39", matchesCanonical: target))
+        XCTAssertTrue(WordApiContactPhoneParsing.number("629 81 53 39", matchesCanonical: target))
+        XCTAssertTrue(WordApiContactPhoneParsing.number("0034629815339", matchesCanonical: target))
+        XCTAssertFalse(WordApiContactPhoneParsing.number("629 81 53 30", matchesCanonical: target))
+        XCTAssertEqual(WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: "+34 629 81 53 39"), target)
+    }
+
     func testCanonicalPhoneDigitsDropsTrunkZero() {
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("06 12 34 56 78", region: "FR"), "33612345678")
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("030 1234567", region: "DE"), "49301234567")

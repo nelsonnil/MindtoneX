@@ -32,21 +32,20 @@ enum SpectatorWordContactService {
     }
 
     @MainActor
-    static func recordKnownContactPicked(_ contact: CNContact, phoneE164: String) {
-        let digits = WordApiSettings.normalizePhoneDigits(phoneE164)
-        let display = [contact.givenName, contact.familyName]
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-        let label = display.isEmpty ? phoneE164 : display
+    static func recordKnownContactPicked(_ picked: WordApiPickedContact, phoneE164: String) {
+        let contact = picked.contact
+        let label = picked.displayName.isEmpty ? phoneE164 : picked.displayName
+        let givenName = contact.isKeyAvailable(CNContactGivenNameKey) ? contact.givenName : ""
         WordApiSettings.saveKnownContactSelection(
             identifier: contact.identifier,
             displayName: label,
-            phoneDigits: digits,
-            originalGivenName: contact.givenName
+            phoneDigits: phoneE164,
+            originalGivenName: givenName
         )
         WordApiSettings.setKnownContactRenamedForShow(false)
-        dlogDebug("[CONTACT] picked «\(label)» · \(phoneE164) · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))")
+        contactLog(
+            "known picked «\(label)» · phone=+\(WordApiSettings.knownContactPhoneDigits) · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))"
+        )
     }
 
     /// Reverts Contacts changed at word lock (Perform disarm / settings dismiss).
@@ -72,13 +71,13 @@ enum SpectatorWordContactService {
     private static func applyWordToKnownContact(identifier: String, word: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            let outcome = try renameKnownContactGivenName(identifier: identifier, word: word)
+            let outcome = try await SpectatorContactFetch.run { try renameKnownContactGivenName(identifier: identifier, word: word) }
             WordApiSettings.setKnownContactRenamedForShow(WordApiContactRestoreStore.hasPendingRestore)
             dlogDebug("[CONTACT] renamed known → «\(word)» (\(reason)) · \(outcome.debugSummary)")
             PerformUserLog.shared.log("Contact renamed · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
         } catch {
-            dlog("✗ [CONTACT] known rename (\(reason)): \(error.localizedDescription)")
-            PerformUserLog.shared.log("Contact not renamed · \(describe(error))")
+            contactLog("✗ known rename (\(reason)) · \(SpectatorContactFetch.errorLogLabel(error))")
+            PerformUserLog.shared.log("Contact not renamed · \(SpectatorContactFetch.saveFailureMessage(for: error))")
             return
         }
         let note = performContactNote()
@@ -91,13 +90,13 @@ enum SpectatorWordContactService {
     private static func applyWordToContactsByPhone(word: String, phone: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
-            let outcome = try upsertByPhone(word: word, phone: phone)
+            let outcome = try await SpectatorContactFetch.run { try upsertByPhone(word: word, phone: phone) }
             WordApiSettings.setKnownContactRenamedForShow(WordApiContactRestoreStore.hasPendingRestore)
             dlogDebug("[CONTACT] saved «\(word)» → \(phone) (\(reason)) · \(outcome.debugSummary)")
             PerformUserLog.shared.log("Contact saved · \(phone) · incoming call will show “\(WordApiInputPanel.truncated(outcome.displayName, max: 40))”\(outcome.warnings)")
         } catch {
-            dlog("✗ [CONTACT] save (\(reason)): \(error.localizedDescription)")
-            PerformUserLog.shared.log("Contact not saved · \(describe(error))")
+            contactLog("✗ save (\(reason)) · \(SpectatorContactFetch.errorLogLabel(error))")
+            PerformUserLog.shared.log("Contact not saved · \(SpectatorContactFetch.saveFailureMessage(for: error))")
             return
         }
         let note = performContactNote()
@@ -117,10 +116,6 @@ enum SpectatorWordContactService {
     /// fetch that asks for the note fails with `unauthorizedKeys`, so notes stay out of the name save.
     private static func isMissingNotesEntitlement(_ error: Error) -> Bool {
         (error as? CNError)?.code == .unauthorizedKeys
-    }
-
-    private static func describe(_ error: Error) -> String {
-        SpectatorContactFetch.userFacingMessage(for: error)
     }
 
     @MainActor
@@ -143,13 +138,14 @@ enum SpectatorWordContactService {
         var deleted = 0
         for entry in snapshots {
             do {
-                if entry.createdForShow {
-                    try deleteContact(identifier: entry.identifier)
-                    deleted += 1
-                } else {
-                    try setGivenName(identifier: entry.identifier, givenName: entry.givenName)
-                    restored += 1
+                try await SpectatorContactFetch.run {
+                    if entry.createdForShow {
+                        try deleteContact(identifier: entry.identifier)
+                    } else {
+                        try setGivenName(identifier: entry.identifier, givenName: entry.givenName)
+                    }
                 }
+                if entry.createdForShow { deleted += 1 } else { restored += 1 }
             } catch {
                 dlog("✗ [CONTACT] restore \(entry.identifier) (\(reason)): \(error.localizedDescription)")
             }
@@ -316,10 +312,14 @@ enum SpectatorWordContactService {
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactGivenNameKey as CNKeyDescriptor,
         ] + displayKeys
-        let resolution = try SpectatorContactFetch.resolveKnownContact(store: store, keysToFetch: keys)
+        let resolution = try SpectatorContactFetch.resolveKnownContact(
+            store: store,
+            keysToFetch: keys,
+            log: { contactLog("known resolve · \($0)") }
+        )
         let contact = resolution.contact
         if resolution.resolvedByPhone {
-            dlog("[CONTACT] known re-resolved by phone · \(resolution.phoneMatchCount) match(es) · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))")
+            contactLog("known re-resolved by phone · +\(resolution.matchedPhoneDigits) · \(resolution.phoneMatchCount) match(es) · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))")
         }
         WordApiContactRestoreStore.replaceEntries([
             WordApiContactRestoreEntry(
@@ -363,7 +363,14 @@ enum SpectatorWordContactService {
             )
             return
         }
-        let matches = (try? cards(withPhone: phone, keysToFetch: displayKeys)) ?? []
+        Task { @MainActor in
+            let matches = (try? await SpectatorContactFetch.run { try cards(withPhone: phone, keysToFetch: displayKeys) }) ?? []
+            logExistingCard(matches, phone: phone)
+        }
+    }
+
+    @MainActor
+    private static func logExistingCard(_ matches: [CNContact], phone: String) {
         guard let first = matches.first else { return }
         let name = outcome(for: first, cardsRenamed: 0, otherCardsWithNumber: matches.count - 1, fallback: phone).displayName
         dlog("[CONTACT] \(phone) already in Contacts as «\(name)» (\(matches.count)) — overrides Call Directory label")
@@ -399,12 +406,14 @@ enum SpectatorWordContactService {
                 CNContactIdentifierKey as CNKeyDescriptor,
                 CNContactNoteKey as CNKeyDescriptor,
             ]
-            let contact = try SpectatorContactFetch.resolveKnownContact(store: store, keysToFetch: keys).contact
-            let mutable = contact.mutableCopy() as! CNMutableContact
-            mutable.note = note
-            let save = CNSaveRequest()
-            save.update(mutable)
-            try store.execute(save)
+            try await SpectatorContactFetch.run {
+                let contact = try SpectatorContactFetch.resolveKnownContact(store: store, keysToFetch: keys).contact
+                let mutable = contact.mutableCopy() as! CNMutableContact
+                mutable.note = note
+                let save = CNSaveRequest()
+                save.update(mutable)
+                try store.execute(save)
+            }
             dlog("[CONTACT] known note updated (\(reason))")
         } catch {
             logNoteSkipped(error, reason: reason)
@@ -419,15 +428,19 @@ enum SpectatorWordContactService {
                 CNContactIdentifierKey as CNKeyDescriptor,
                 CNContactNoteKey as CNKeyDescriptor,
             ]
-            let matches = try cards(withPhone: phone, keysToFetch: keys)
-            guard !matches.isEmpty else { return }
-            let save = CNSaveRequest()
-            for existing in matches {
-                let mutable = existing.mutableCopy() as! CNMutableContact
-                mutable.note = note
-                save.update(mutable)
+            let updated = try await SpectatorContactFetch.run { () -> Int in
+                let matches = try cards(withPhone: phone, keysToFetch: keys)
+                guard !matches.isEmpty else { return 0 }
+                let save = CNSaveRequest()
+                for existing in matches {
+                    let mutable = existing.mutableCopy() as! CNMutableContact
+                    mutable.note = note
+                    save.update(mutable)
+                }
+                try store.execute(save)
+                return matches.count
             }
-            try store.execute(save)
+            guard updated > 0 else { return }
             dlog("[CONTACT] note updated (\(reason)) · \(note.prefix(40))…")
         } catch {
             logNoteSkipped(error, reason: reason)

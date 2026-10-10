@@ -26,14 +26,15 @@ extension AppModel {
         )
     }
 
-    func handleKnownContactPicked(_ contact: CNContact) {
-        guard let e164 = WordApiContactPhoneParsing.e164(from: contact) else {
+    func handleKnownContactPicked(_ picked: WordApiPickedContact) {
+        guard let e164 = picked.phoneE164 else {
+            contactLog("known pick «\(picked.displayName)» rejected · no usable phone")
             PerformUserLog.shared.log("That contact has no usable phone number")
             WordApiContactPerformGate.cancelPendingPerform()
             wordKnownContactPicker = false
             return
         }
-        SpectatorWordContactService.recordKnownContactPicked(contact, phoneE164: e164)
+        SpectatorWordContactService.recordKnownContactPicked(picked, phoneE164: e164)
         wordKnownContactPicker = false
         WordApiContactPerformGate.contactPickedFinishPerform()
     }

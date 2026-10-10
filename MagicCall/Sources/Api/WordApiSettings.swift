@@ -240,13 +240,17 @@ enum WordApiSettings {
     ) {
         d.set(identifier, forKey: Key.knownContactIdentifier)
         d.set(displayName, forKey: Key.knownContactDisplayName)
-        d.set(canonicalPhoneDigits(phoneDigits), forKey: Key.knownContactPhoneDigits)
+        d.set(WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: phoneDigits), forKey: Key.knownContactPhoneDigits)
         d.set(originalGivenName, forKey: Key.knownContactOriginalGivenName)
         d.removeObject(forKey: Key.knownContactGivenNameBeforeLock)
     }
 
     static func updateKnownContactIdentifier(_ identifier: String) {
         d.set(identifier, forKey: Key.knownContactIdentifier)
+    }
+
+    static func updateKnownContactPhoneDigits(_ phone: String) {
+        d.set(WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: phone), forKey: Key.knownContactPhoneDigits)
     }
 
     static func saveKnownContactGivenNameBeforeLock(_ givenName: String) {

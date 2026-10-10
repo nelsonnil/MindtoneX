@@ -118,10 +118,13 @@ struct SpectatorContactSetupSection: View {
         }
         .sheet(isPresented: $showContactPicker) {
             WordApiKnownContactPicker(
-                onPick: { contact in
+                onPick: { picked in
                     showContactPicker = false
-                    if let e164 = WordApiContactPhoneParsing.e164(from: contact) {
-                        SpectatorWordContactService.recordKnownContactPicked(contact, phoneE164: e164)
+                    if let e164 = picked.phoneE164 {
+                        SpectatorWordContactService.recordKnownContactPicked(picked, phoneE164: e164)
+                    } else {
+                        contactLog("known pick «\(picked.displayName)» rejected · no usable phone")
+                        PerformUserLog.shared.log("That contact has no usable phone number")
                     }
                 },
                 onCancel: { showContactPicker = false }

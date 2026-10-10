@@ -49,8 +49,15 @@ struct WordApiSpectatorDialSheet: View {
     }
 }
 
+/// Picker result after unified-store resolution; `phoneE164` is set whenever the card has a usable number.
+struct WordApiPickedContact {
+    let contact: CNContact
+    let phoneE164: String?
+    let displayName: String
+}
+
 struct WordApiKnownContactPicker: UIViewControllerRepresentable {
-    var onPick: (CNContact) -> Void
+    var onPick: (WordApiPickedContact) -> Void
     var onCancel: () -> Void
 
     func makeUIViewController(context: Context) -> CNContactPickerViewController {
@@ -65,33 +72,47 @@ struct WordApiKnownContactPicker: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick, onCancel: onCancel) }
 
     final class Coordinator: NSObject, CNContactPickerDelegate {
-        let onPick: (CNContact) -> Void
+        let onPick: (WordApiPickedContact) -> Void
         let onCancel: () -> Void
 
-        init(onPick: @escaping (CNContact) -> Void, onCancel: @escaping () -> Void) {
+        init(onPick: @escaping (WordApiPickedContact) -> Void, onCancel: @escaping () -> Void) {
             self.onPick = onPick
             self.onCancel = onCancel
         }
 
         func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
-            let phone = WordApiContactPhoneParsing.e164(from: contact)
-            guard let resolved = try? SpectatorContactFetch.resolveContact(
-                store: CNContactStore(),
-                identifier: contact.identifier,
-                phoneDigits: phone,
-                displayName: SpectatorContactFetch.displayName(of: contact),
-                keysToFetch: []
-            ) else {
-                dlog("[CONTACT] picker · unified lookup failed · id=\(WordApiInputPanel.truncated(contact.identifier, max: 16))")
-                onPick(contact)
-                return
+            let pickerPhone = WordApiContactPhoneParsing.e164(from: contact)
+            let pickerName = SpectatorContactFetch.displayName(of: contact)
+            let onPick = self.onPick
+            SpectatorContactFetch.workQueue.async {
+                let picked = Self.resolvePick(contact, pickerPhone: pickerPhone, pickerName: pickerName)
+                DispatchQueue.main.async { onPick(picked) }
             }
-            if resolved.contact.identifier != contact.identifier {
-                dlog(
-                    "[CONTACT] picker · id \(WordApiInputPanel.truncated(contact.identifier, max: 16)) → unified \(WordApiInputPanel.truncated(resolved.contact.identifier, max: 16)) (by phone)"
+        }
+
+        private static func resolvePick(_ contact: CNContact, pickerPhone: String?, pickerName: String) -> WordApiPickedContact {
+            let idSnippet = WordApiInputPanel.truncated(contact.identifier, max: 16)
+            do {
+                let resolved = try SpectatorContactFetch.resolveContact(
+                    store: SpectatorContactFetch.sharedStore,
+                    identifier: contact.identifier,
+                    phoneDigits: pickerPhone,
+                    displayName: pickerName,
+                    keysToFetch: [],
+                    log: { contactLog("picker · \($0)") }
                 )
+                let unified = resolved.contact
+                if unified.identifier != contact.identifier {
+                    contactLog("picker · id \(idSnippet) → unified \(WordApiInputPanel.truncated(unified.identifier, max: 16))")
+                }
+                let phone = pickerPhone ?? WordApiContactPhoneParsing.e164(from: unified)
+                let name = SpectatorContactFetch.displayName(of: unified)
+                contactLog("picker · «\(name.isEmpty ? pickerName : name)» · phone=\(phone ?? "none")")
+                return WordApiPickedContact(contact: unified, phoneE164: phone, displayName: name.isEmpty ? pickerName : name)
+            } catch {
+                contactLog("picker · unified lookup failed · id=\(idSnippet) · \(SpectatorContactFetch.errorLogLabel(error)) · phone=\(pickerPhone ?? "none")")
+                return WordApiPickedContact(contact: contact, phoneE164: pickerPhone, displayName: pickerName)
             }
-            onPick(resolved.contact)
         }
 
         func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
@@ -101,12 +122,45 @@ struct WordApiKnownContactPicker: UIViewControllerRepresentable {
 }
 
 enum WordApiContactPhoneParsing {
+    private static let preferredLabels: [String] = [CNLabelPhoneNumberMobile, CNLabelPhoneNumberiPhone, CNLabelPhoneNumberMain]
+
+    /// First usable number on the card (mobile / iPhone / main preferred), as `+<canonical digits>`.
     static func e164(from contact: CNContact) -> String? {
-        guard contact.isKeyAvailable(CNContactPhoneNumbersKey),
-              let raw = contact.phoneNumbers.first?.value.stringValue else { return nil }
-        let digits = WordApiSettings.canonicalPhoneDigits(raw)
-        guard digits.count >= 7 else { return nil }
-        return "+\(digits)"
+        guard contact.isKeyAvailable(CNContactPhoneNumbersKey) else { return nil }
+        let ranked = contact.phoneNumbers.sorted { lhs, rhs in
+            rank(lhs.label) < rank(rhs.label)
+        }
+        for labeled in ranked {
+            let digits = canonicalDigits(fromContactNumber: labeled.value.stringValue)
+            if digits.count >= 7 { return "+\(digits)" }
+        }
+        return nil
+    }
+
+    private static func rank(_ label: String?) -> Int {
+        guard let label, let index = preferredLabels.firstIndex(of: label) else { return preferredLabels.count }
+        return index
+    }
+
+    /// National card numbers use Settings → Region, then the SIM country when Region would leave them without a country code
+    /// (e.g. Region US + Spanish SIM: «629 81 53 39» → 34629815339).
+    static func canonicalDigits(fromContactNumber raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let digits = WordApiSettings.normalizePhoneDigits(trimmed)
+        if trimmed.hasPrefix("+") || trimmed.hasPrefix("00") { return digits }
+        let primary = WordApiSettings.canonicalPhoneDigits(trimmed)
+        if primary != digits { return primary }
+        let simRegion = WordApiSettings.dialDisplayRegionISO
+        guard simRegion != WordApiSettings.deviceRegionISO else { return primary }
+        return WordApiSettings.canonicalPhoneDigits(trimmed, region: simRegion)
+    }
+
+    /// Same number when canonical forms agree, or the last 9 digits agree (national vs international spellings).
+    static func number(_ raw: String, matchesCanonical target: String) -> Bool {
+        if canonicalDigits(fromContactNumber: raw) == target { return true }
+        let digits = WordApiSettings.normalizePhoneDigits(raw)
+        guard digits.count >= 9, target.count >= 9 else { return false }
+        return digits.suffix(9) == target.suffix(9)
     }
 }
 
@@ -123,10 +177,25 @@ enum SpectatorContactFetch {
         case transientIdentifier
     }
 
+    /// Contacts fetch / `CNSaveRequest` must stay off the main thread (iOS warns and can stall UI).
+    static let workQueue = DispatchQueue(label: "mindtonex.contacts", qos: .userInitiated)
+    static let sharedStore = CNContactStore()
+
+    static func run<T>(_ work: @escaping () throws -> T) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            workQueue.async {
+                continuation.resume(with: Result { try work() })
+            }
+        }
+    }
+
     struct Resolution {
         let contact: CNContact
         let resolvedByPhone: Bool
         let phoneMatchCount: Int
+        /// Canonical digits that produced the match (empty when resolved by id or name).
+        let matchedPhoneDigits: String
+        let resolvedByName: Bool
     }
 
     /// Picker / Siri-suggestion ids (`CNCoreRecentsCoordinator…`) are not unified-store records and fail `CNSaveRequest.update`.
@@ -143,6 +212,21 @@ enum SpectatorContactFetch {
             .joined(separator: " ")
     }
 
+    static var isFullAccess: Bool {
+        CNContactStore.authorizationStatus(for: .contacts) == .authorized
+    }
+
+    static func errorLogLabel(_ error: Swift.Error) -> String {
+        if let cn = error as? CNError {
+            return "CNError \(cn.code.rawValue) (\(cn.code)) · \(cn.localizedDescription)"
+        }
+        if let fetch = error as? Error {
+            return "fetch \(fetch)"
+        }
+        let ns = error as NSError
+        return "\(ns.domain) \(ns.code) · \(ns.localizedDescription)"
+    }
+
     private static let matchKeys: [CNKeyDescriptor] = [
         CNContactIdentifierKey as CNKeyDescriptor,
         CNContactGivenNameKey as CNKeyDescriptor,
@@ -150,40 +234,66 @@ enum SpectatorContactFetch {
         CNContactPhoneNumbersKey as CNKeyDescriptor,
     ]
 
-    /// Unified store card for save: durable id first, else phone (disambiguated by id, then display name).
+    /// Unified store card for save: durable id first; phone fallback whenever the id is `CNCoreRecents…` or returns no card
+    /// (`phoneDigits`, then `fallbackPhoneDigits`); exact display name last. Call on `workQueue`.
     static func resolveContact(
         store: CNContactStore,
         identifier: String?,
         phoneDigits: String?,
         displayName: String?,
-        keysToFetch: [CNKeyDescriptor]
+        fallbackPhoneDigits: [String] = [],
+        keysToFetch: [CNKeyDescriptor],
+        log: ((String) -> Void)? = nil
     ) throws -> Resolution {
         let keys = keysToFetch + matchKeys
         let id = (identifier ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let transient = isTransientIdentifier(id)
-        if !id.isEmpty, !transient,
-           let match = try? unifiedContact(store: store, identifier: id, keysToFetch: keys) {
-            return Resolution(contact: match, resolvedByPhone: false, phoneMatchCount: 0)
+        if !id.isEmpty, !transient {
+            do {
+                let match = try unifiedContact(store: store, identifier: id, keysToFetch: keys)
+                return Resolution(contact: match, resolvedByPhone: false, phoneMatchCount: 0, matchedPhoneDigits: "", resolvedByName: false)
+            } catch {
+                log?("id lookup · 0 cards · \(errorLogLabel(error))")
+            }
+        } else if transient {
+            log?("id is CNCoreRecents (temporary) · phone fallback")
         }
-        let digits = WordApiSettings.canonicalPhoneDigits(phoneDigits ?? "")
-        guard digits.count >= 7 else {
-            throw transient ? Error.transientIdentifier : Error.notAccessible
+
+        var phones: [String] = []
+        for raw in [phoneDigits ?? ""] + fallbackPhoneDigits {
+            let digits = WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: raw)
+            if digits.count >= 7, !phones.contains(digits) { phones.append(digits) }
         }
-        let matches = try contacts(withCanonicalDigits: digits, store: store, keysToFetch: keys)
-        guard !matches.isEmpty else { throw Error.notAccessible }
-        let pick = bestMatch(matches, identifier: id, displayName: displayName)
-        return Resolution(contact: pick, resolvedByPhone: true, phoneMatchCount: matches.count)
+        if phones.isEmpty { log?("phone fallback · no stored phone") }
+
+        for digits in phones {
+            let matches = try contacts(withCanonicalDigits: digits, store: store, keysToFetch: keys, log: log)
+            log?("phone fallback · +\(digits) · \(matches.count) match(es)")
+            guard !matches.isEmpty else { continue }
+            let pick = bestMatch(matches, identifier: id, displayName: displayName)
+            return Resolution(contact: pick, resolvedByPhone: true, phoneMatchCount: matches.count, matchedPhoneDigits: digits, resolvedByName: false)
+        }
+
+        if let byName = try contactByExactName(displayName, store: store, keysToFetch: keys, log: log) {
+            return Resolution(contact: byName, resolvedByPhone: false, phoneMatchCount: 0, matchedPhoneDigits: "", resolvedByName: true)
+        }
+        throw (transient && phones.isEmpty) ? Error.transientIdentifier : Error.notAccessible
     }
 
-    /// Known-mode card from saved settings; persists the unified id when re-resolved by phone.
-    static func resolveKnownContact(store: CNContactStore, keysToFetch: [CNKeyDescriptor]) throws -> Resolution {
+    /// Known-mode card from saved settings; persists the unified id when re-resolved by phone. Call on `workQueue`.
+    static func resolveKnownContact(
+        store: CNContactStore,
+        keysToFetch: [CNKeyDescriptor],
+        log: ((String) -> Void)? = nil
+    ) throws -> Resolution {
         let stored = WordApiSettings.knownContactIdentifier
         let resolution = try resolveContact(
             store: store,
             identifier: stored,
             phoneDigits: WordApiSettings.knownContactPhoneDigits,
             displayName: WordApiSettings.knownContactDisplayName,
-            keysToFetch: keysToFetch
+            keysToFetch: keysToFetch,
+            log: log
         )
         if resolution.contact.identifier != stored {
             WordApiSettings.updateKnownContactIdentifier(resolution.contact.identifier)
@@ -194,35 +304,63 @@ enum SpectatorContactFetch {
     private static func contacts(
         withCanonicalDigits digits: String,
         store: CNContactStore,
-        keysToFetch keys: [CNKeyDescriptor]
+        keysToFetch keys: [CNKeyDescriptor],
+        log: ((String) -> Void)?
     ) throws -> [CNContact] {
-        let region = WordApiSettings.deviceRegionISO
         func hasNumber(_ contact: CNContact) -> Bool {
-            contact.phoneNumbers.contains {
-                WordApiSettings.canonicalPhoneDigits($0.value.stringValue, region: region) == digits
-            }
+            contact.phoneNumbers.contains { WordApiContactPhoneParsing.number($0.value.stringValue, matchesCanonical: digits) }
         }
 
         var seen = Set<String>()
         var found: [CNContact] = []
-        let national = WordApiSettings.nationalNumber(fromCanonical: digits)
-        for candidate in Set(["+\(digits)", national]) where candidate.filter(\.isNumber).count >= 7 {
+        var candidates = ["+\(digits)", WordApiSettings.nationalNumber(fromCanonical: digits)]
+        if digits.count > 9 { candidates.append(String(digits.suffix(9))) }
+        var tried = Set<String>()
+        for candidate in candidates where candidate.filter(\.isNumber).count >= 7 && tried.insert(candidate).inserted {
             let predicate = CNContact.predicateForContacts(matching: CNPhoneNumber(stringValue: candidate))
-            for contact in try store.unifiedContacts(matching: predicate, keysToFetch: keys)
-            where seen.insert(contact.identifier).inserted {
-                found.append(contact)
+            do {
+                for contact in try store.unifiedContacts(matching: predicate, keysToFetch: keys)
+                where seen.insert(contact.identifier).inserted {
+                    found.append(contact)
+                }
+            } catch {
+                log?("phone predicate \(candidate) · \(errorLogLabel(error))")
             }
         }
         let exact = found.filter(hasNumber)
         if !exact.isEmpty { return exact }
         if !found.isEmpty { return found }
 
+        var scanned = 0
         let request = CNContactFetchRequest(keysToFetch: keys)
         request.unifyResults = true
-        try store.enumerateContacts(with: request) { contact, _ in
-            if hasNumber(contact) { found.append(contact) }
+        do {
+            try store.enumerateContacts(with: request) { contact, _ in
+                scanned += 1
+                if hasNumber(contact) { found.append(contact) }
+            }
+        } catch {
+            log?("enumerate · \(errorLogLabel(error))")
+            throw error
         }
+        log?("enumerate · scanned \(scanned) card(s) · \(found.count) with +\(digits)")
         return found
+    }
+
+    private static func contactByExactName(
+        _ displayName: String?,
+        store: CNContactStore,
+        keysToFetch keys: [CNKeyDescriptor],
+        log: ((String) -> Void)?
+    ) throws -> CNContact? {
+        let wanted = (displayName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !wanted.isEmpty else { return nil }
+        let candidates = try store.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: wanted), keysToFetch: keys)
+        let exact = candidates.filter {
+            self.displayName(of: $0).caseInsensitiveCompare(wanted) == .orderedSame && !$0.phoneNumbers.isEmpty
+        }
+        log?("name fallback · «\(wanted)» · \(exact.count) exact match(es)")
+        return exact.count == 1 ? exact[0] : nil
     }
 
     private static func bestMatch(_ matches: [CNContact], identifier: String, displayName: String?) -> CNContact {
@@ -283,5 +421,16 @@ enum SpectatorContactFetch {
             return notAccessibleMessage
         }
         return raw
+    }
+
+    static let limitedAccessHint =
+        "With Full Access iOS still refused this card — try Settings → MindtoneX → Contacts → Limited Access, add the spectator’s contact, then re-pick."
+
+    /// Save/resolve failure text; under Full Access adds the CNError code and a Limited Access suggestion.
+    static func saveFailureMessage(for error: Swift.Error) -> String {
+        let base = userFacingMessage(for: error)
+        guard isFullAccess else { return base }
+        let code = (error as? CNError).map { " (CNError \($0.code.rawValue))" } ?? ""
+        return "\(base)\(code) \(limitedAccessHint)"
     }
 }

@@ -59,11 +59,15 @@ enum AlbumArtContactSettings {
     static func saveTestContactSelection(identifier: String, displayName: String, phoneDigits: String) {
         d.set(identifier, forKey: Key.testContactIdentifier)
         d.set(displayName, forKey: Key.testContactDisplayName)
-        d.set(WordApiSettings.canonicalPhoneDigits(phoneDigits), forKey: Key.testContactPhoneDigits)
+        d.set(WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: phoneDigits), forKey: Key.testContactPhoneDigits)
     }
 
     static func updateTestContactIdentifier(_ identifier: String) {
         d.set(identifier, forKey: Key.testContactIdentifier)
+    }
+
+    static func updateTestContactPhoneDigits(_ phone: String) {
+        d.set(WordApiContactPhoneParsing.canonicalDigits(fromContactNumber: phone), forKey: Key.testContactPhoneDigits)
     }
 
     static func clearTestContactSelection() {
