@@ -141,6 +141,35 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Tries store queries in order (title-only variants, inferred artist, etc.) and loads the top hit.
+    func prepareSongFromQueries(_ rawQueries: [String]) async -> Bool {
+        var seen = Set<String>()
+        let queries = rawQueries.compactMap { raw -> String? in
+            let q = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard q.count >= 2 else { return nil }
+            let key = PreviewService.normalize(q)
+            guard seen.insert(key).inserted else { return nil }
+            return q
+        }
+        guard !queries.isEmpty else { return false }
+        dropPreviewForNewLookup()
+        loadState = .searching
+        let t0 = CACurrentMediaTime()
+        guard let hit = await previews.searchWithQueryVariants(queries) else {
+            query = queries[0]
+            results = []
+            loadState = .failed(PreviewError.noResults(queries[0]).localizedDescription)
+            dlog("✗ Búsqueda (variantes) “\(queries.joined(separator: " · "))”: sin resultados")
+            return false
+        }
+        query = hit.query
+        results = hit.tracks
+        let searchMs = PreviewService.ms(since: t0)
+        dlog("Búsqueda (variantes) → “\(hit.query)” · \(hit.tracks.count) candidatos en \(searchMs) ms. Mejor: \(hit.tracks[0].title) — \(hit.tracks[0].artist) [\(hit.tracks[0].source.rawValue)]")
+        await select(hit.tracks[0], searchMs: searchMs)
+        return loadState == .ready
+    }
+
     func search() async {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return }

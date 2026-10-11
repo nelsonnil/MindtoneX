@@ -541,7 +541,7 @@ final class VoiceSongSession: ObservableObject {
                 guard let self, gen == self.generation, let next = self.pendingSecondPrefetch else { break }
                 self.pendingSecondPrefetch = nil
                 let track = await SecondSpectatorSong.shared.lookup(
-                    queries: [next.searchQuery],
+                    queries: next.allStoreSearchQueries,
                     source: "Voice",
                     context: lookupContext
                 )

@@ -132,4 +132,35 @@ final class WordReadingTests: XCTestCase {
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("06 1234567", region: "IT"), "39061234567")
         XCTAssertEqual(WordApiSettings.canonicalPhoneDigits("987 654 321", region: "PE"), "51987654321")
     }
+
+    func testSongSearchQueriesTitleOnlyIncludesArticleStrip() {
+        let queries = SongSearchQueries.variants(fromRawQuery: "La Gasolina")
+        XCTAssertTrue(queries.contains(where: { $0.caseInsensitiveCompare("La Gasolina") == .orderedSame }))
+        XCTAssertTrue(queries.contains(where: { $0.caseInsensitiveCompare("Gasolina") == .orderedSame }))
+    }
+
+    func testSongPickStoreQueriesTitleWithInferredArtist() {
+        let pick = SongPick(
+            hasSong: true,
+            title: "Gasolina",
+            artist: "Daddy Yankee",
+            searchQuery: "Gasolina Daddy Yankee",
+            confidence: 0.9,
+            reasoning: "fixture"
+        )
+        let all = pick.allStoreSearchQueries
+        XCTAssertTrue(all.contains(where: { ApiJSON.sameText($0, "Gasolina Daddy Yankee") }))
+        XCTAssertTrue(all.contains(where: { ApiJSON.sameText($0, "Gasolina") }))
+    }
+
+    func testPreviewRankPrefersDaddyYankeeGasolinaForTitleOnlyQuery() {
+        let tracks = [
+            PreviewTrack(title: "Gasolina", artist: "Daddy Yankee", album: nil, artworkURL: nil,
+                         previewURL: URL(string: "https://example.com/a.m4a")!, source: .itunes),
+            PreviewTrack(title: "La Gasolina (feat. La Favi)", artist: "Bea Pelea", album: nil, artworkURL: nil,
+                         previewURL: URL(string: "https://example.com/b.m4a")!, source: .itunes),
+        ]
+        let ranked = PreviewService.rank(tracks, for: "La Gasolina")
+        XCTAssertEqual(ranked.first?.artist, "Daddy Yankee")
+    }
 }

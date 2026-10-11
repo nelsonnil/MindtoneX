@@ -169,9 +169,9 @@ final class NotesSongSession: ObservableObject {
                 guard let self, gen == self.generation, let note = self.pendingText else { break }
                 self.pendingText = nil
                 let t0 = CACurrentMediaTime()
-                let query = await Self.resolveQuery(from: note)
+                let queries = await Self.resolveSearchQueries(from: note)
                 guard gen == self.generation else { break }
-                guard let query, !query.isEmpty else {
+                guard !queries.isEmpty else {
                     dlog("[NOTES] no song in note (\(PreviewService.ms(since: t0)) ms)")
                     if !self.isLocked {
                         self.state = .notFound
@@ -181,11 +181,11 @@ final class NotesSongSession: ObservableObject {
                     }
                     continue
                 }
-                self.lastQuery = query
-                let ok = await AppModel.shared.prepareNotesQuery(query)
+                self.lastQuery = queries[0]
+                let ok = await AppModel.shared.prepareNotesQueries(queries)
                 guard gen == self.generation else { break }
                 let track = AppModel.shared.selected.map { "\($0.title) — \($0.artist)" }
-                dlog("[NOTES] search “\(query)” → \(ok ? "ready: \(track ?? "?")" : "not found") (\(PreviewService.ms(since: t0)) ms)")
+                dlog("[NOTES] search “\(queries.joined(separator: " · "))” → \(ok ? "ready: \(track ?? "?")" : "not found") (\(PreviewService.ms(since: t0)) ms)")
                 if ok {
                     self.readyLabel = track
                     if !self.isLocked { self.state = .ready }
@@ -193,7 +193,7 @@ final class NotesSongSession: ObservableObject {
                 } else if !self.isLocked {
                     self.state = .notFound
                     if self.context == .perform {
-                        PerformUserLog.shared.log("Notes · no match for “\(query)”")
+                        PerformUserLog.shared.log("Notes · no match for “\(queries[0])”")
                     }
                 }
             }
@@ -240,11 +240,11 @@ final class NotesSongSession: ObservableObject {
         let gen = generation
         let lookupContext: SecondSpectatorSong.Context = context == .perform ? .perform : .test
         secondSearchTask = Task { [weak self] in
-            let query = await NotesSongSession.resolveQuery(from: line)
+            let queries = await NotesSongSession.resolveSearchQueries(from: line)
             guard let self, gen == self.generation, !Task.isCancelled else { return }
-            guard let query, !query.isEmpty else { return }
+            guard !queries.isEmpty else { return }
             let track = await SecondSpectatorSong.shared.lookup(
-                queries: [query],
+                queries: queries,
                 source: "Notes line 2",
                 context: lookupContext
             )
@@ -252,7 +252,7 @@ final class NotesSongSession: ObservableObject {
             if track != nil {
                 SecondSpectatorSong.shared.confirm(source: "Notes line 2")
             } else if self.context == .perform {
-                PerformUserLog.shared.log("Notes · line 2 · no match for “\(query)”")
+                PerformUserLog.shared.log("Notes · line 2 · no match for “\(queries[0])”")
             }
         }
     }
@@ -270,9 +270,8 @@ final class NotesSongSession: ObservableObject {
         lock(reason: "Share sheet")
     }
 
-    /// AI (when a key is set and allowed) cleans up the note into “title artist”; otherwise the
-    /// note itself is the store query.
-    private static func resolveQuery(from note: String) async -> String? {
+    /// AI (when a key is set and allowed) cleans up the note into title/artist; otherwise the note is the store query.
+    private static func resolveSearchQueries(from note: String) async -> [String] {
         if NotesSettings.aiAvailable, let key = VoiceSettings.apiKey {
             let transcript = "The spectator wrote this in a notes app (typed, not spoken):\n\(note)"
             do {
@@ -280,14 +279,14 @@ final class NotesSongSession: ObservableObject {
                                                        apiKey: key, model: VoiceSettings.pickerModel)
                 if pick.hasSong, !pick.searchQuery.isEmpty {
                     dlog("[NOTES] AI → \(pick.label) · \(VoiceSongSession.percent(pick.confidence)) · \(pick.reasoning)")
-                    return pick.searchQuery
+                    return pick.allStoreSearchQueries
                 }
                 dlog("[NOTES] AI found no song · \(pick.reasoning) — using the note as typed")
             } catch {
                 dlog("✗ [NOTES] AI failed: \(error.localizedDescription) — using the note as typed")
             }
         }
-        return oneLine(note, max: 100)
+        return SongSearchQueries.variants(fromRawQuery: oneLine(note, max: 100))
     }
 
     static func oneLine(_ s: String, max: Int) -> String {

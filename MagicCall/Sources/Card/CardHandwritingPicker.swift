@@ -337,7 +337,7 @@ enum CardHandwritingPicker {
 
         \(CardOCRLayout.openAIVisionRules)
 
-        Fix handwriting/OCR (YOULSELF → Yourself). If unreadable, has_song=false.
+        Fix handwriting/OCR (YOULSELF → Yourself). **Title only** on the card is valid — infer the most famous hit and artist when clear (e.g. LA GASOLINA → Gasolina, Daddy Yankee). If unreadable, has_song=false.
         confidence 0–1. reasoning: one short English sentence (max 25 words).
         """
 

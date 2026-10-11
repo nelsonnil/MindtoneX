@@ -245,16 +245,32 @@ actor PreviewService {
 
     static func rank(_ tracks: [PreviewTrack], for query: String) -> [PreviewTrack] {
         let q = normalize(query)
-        let tokens = Set(q.split(separator: " ").map(String.init).filter { $0.count > 1 })
+        let qStripped = normalize(SongSearchQueries.stripLeadingArticles(query))
+        let articleTokens: Set<String> = ["la", "el", "los", "las", "le", "les", "the", "a", "an", "un", "una", "uno"]
+        func meaningfulTokens(from text: String) -> Set<String> {
+            Set(
+                text.split(separator: " ")
+                    .map(String.init)
+                    .filter { $0.count > 1 && !articleTokens.contains($0.lowercased()) }
+            )
+        }
+        var tokens = meaningfulTokens(from: q)
+        if tokens.isEmpty { tokens = meaningfulTokens(from: qStripped) }
+        let titleOnlyQuery = tokens.count <= 3 && !query.localizedCaseInsensitiveContains(" feat")
         var seen = Set<String>()
         let scored = tracks.enumerated().map { index, track -> (PreviewTrack, Double) in
             let hay = normalize(track.title + " " + track.artist)
             let hits = tokens.filter { hay.contains($0) }.count
-            var score = tokens.isEmpty ? 0 : Double(hits) / Double(tokens.count) * 10
+            var score = tokens.isEmpty ? 0 : Double(hits) / Double(max(tokens.count, 1)) * 10
             let titleNorm = normalize(track.title)
-            if q.contains(titleNorm) { score += 3 }
+            if q.contains(titleNorm) || qStripped.contains(titleNorm) || titleNorm.contains(qStripped) {
+                score += 3
+            }
+            if titleOnlyQuery, titleNorm == qStripped || titleNorm.contains(qStripped), qStripped.count >= 4 {
+                score += 4
+            }
             for w in suspiciousWords where hay.contains(w) && !q.contains(w) { score -= 4 }
-            score -= Double(index) * 0.25
+            score -= Double(index) * 0.35
             if track.source == .deezer { score -= 0.5 }
             return (track, score)
         }

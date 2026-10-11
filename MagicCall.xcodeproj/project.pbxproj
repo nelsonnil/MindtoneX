@@ -51,6 +51,7 @@
 		3990F1E3960F46E9739453B2 /* AppModel+Voice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB5BDB6A1DCECFBD46E5FC1 /* AppModel+Voice.swift */; };
 		3A2FD63EC057C245B5A4779C /* SongStorefront.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1B8DC27EC42C698E3626F3 /* SongStorefront.swift */; };
 		3E8B1D07C5A92F4E6D10B7C3 /* TwoSpectators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3C5E91B2D4F60817C9E2A4 /* TwoSpectators.swift */; };
+		3C4D5E6F708192A3B4C5D6E7 /* SongSearchQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9A2B3C4D5E6F708192A3B4 /* SongSearchQueries.swift */; };
 		3BCE337D4E4DDFFA5142F61D /* NotesContactWordSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = E263FE4707E78890CA7FB0F2 /* NotesContactWordSettings.swift */; };
 		424BC87CA51E4E2654D834A4 /* UnifiedPerformanceModeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAACCE0625539DCCCDBB141A /* UnifiedPerformanceModeCard.swift */; };
 		42C8AEF7433386023083BFCE /* CardOCRLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8E82BCFD38058C2E0B516B /* CardOCRLayout.swift */; };
@@ -280,6 +281,7 @@
 		97FA30F7FC2CD5EE14D65A2F /* SongPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongPicker.swift; sourceTree = "<group>"; };
 		9B1B8DC27EC42C698E3626F3 /* SongStorefront.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongStorefront.swift; sourceTree = "<group>"; };
 		7A3C5E91B2D4F60817C9E2A4 /* TwoSpectators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoSpectators.swift; sourceTree = "<group>"; };
+		7F9A2B3C4D5E6F708192A3B4 /* SongSearchQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSearchQueries.swift; sourceTree = "<group>"; };
 		9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactViews.swift; sourceTree = "<group>"; };
 		9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
 		9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -560,6 +562,7 @@
 			children = (
 				D220719203424E371638A6F3 /* ImportedAudioStore.swift */,
 				94C29E2CCBFC1086588445F6 /* PreviewService.swift */,
+				7F9A2B3C4D5E6F708192A3B4 /* SongSearchQueries.swift */,
 				270405B2C76043701C1E008B /* RecentPerformSnapshot.swift */,
 				47F714394D355E859CF8CEAB /* SongLibraryStore.swift */,
 				9B1B8DC27EC42C698E3626F3 /* SongStorefront.swift */,
@@ -893,6 +896,7 @@
 				CE3E75D32E27336705EE0C54 /* PhoneTabBarView.swift in Sources */,
 				A44853952E079252482E4F83 /* Prefs.swift in Sources */,
 				BEC014E4012EE7481D2D4B24 /* PreviewService.swift in Sources */,
+				3C4D5E6F708192A3B4C5D6E7 /* SongSearchQueries.swift in Sources */,
 				AD247EA0DE5232DC20B60C86 /* PrivateProbes.swift in Sources */,
 				6CC083753E4B6548FDB19A70 /* RecentPerformSnapshot.swift in Sources */,
 				0FC1EC7B4985F1F6545DE135 /* RingtoneAudioEngine.swift in Sources */,

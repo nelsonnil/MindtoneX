@@ -34,8 +34,9 @@ enum CardOCRLayout {
     static var openAIVisionRules: String {
         if songOnlyOnCard {
             return """
-            **Song only:** Read the **entire card** for **title + artist** (OCR line count is irrelevant). One row ("EMINEM - LOSE YOURSELF") or two lines in any order — merge correctly. \
-            Ignore empty space. search_query = "Title Artist". has_caller_word=false, has_notes_word=false always.
+            **Song only:** Read the **entire card** for the song (OCR line count is irrelevant). Title alone is OK — infer the **most famous hit** and main artist when unambiguous (e.g. "GASOLINA" / "LA GASOLINA" → Daddy Yankee — Gasolina). \
+            One row ("EMINEM - LOSE YOURSELF") or two lines in any order — merge correctly. Ignore empty space. \
+            search_query = "Title Artist" when artist is known, else canonical title. has_caller_word=false, has_notes_word=false always.
             """
         }
         var rules = """
@@ -59,7 +60,7 @@ enum CardOCRLayout {
         } else {
             rules += "\n\nNotes word: not used (has_notes_word=false)."
         }
-        rules += "\n\nsearch_query MUST be \"Title Artist\" (e.g. \"Lose Yourself Eminem\"). Never duplicate artist."
+        rules += "\n\nsearch_query = \"Title Artist\" when both are on the card or the hit is famous and unambiguous; title alone is OK (e.g. \"Gasolina\" or \"Gasolina Daddy Yankee\"). Never duplicate artist."
         return rules
     }
 

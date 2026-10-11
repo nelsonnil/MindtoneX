@@ -130,12 +130,16 @@ extension AppModel {
 
     /// Looks up and loads a voice candidate with the normal preview lookup.
     func prepareVoiceCandidate(_ pick: SongPick) async -> Bool {
-        await prepareSongQuery(pick.searchQuery)
+        await prepareSongFromQueries(pick.allStoreSearchQueries)
     }
 
     /// Looks up and loads the song written in Notes with the normal preview lookup.
     func prepareNotesQuery(_ query: String) async -> Bool {
         await prepareSongQuery(query)
+    }
+
+    func prepareNotesQueries(_ queries: [String]) async -> Bool {
+        await prepareSongFromQueries(queries)
     }
 
     /// Looks up and loads the spectator's search read from the API with the normal preview lookup.
@@ -148,12 +152,7 @@ extension AppModel {
     }
 
     private func prepareSongQuery(_ text: String) async -> Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        dropPreviewForNewLookup()
-        query = trimmed
-        await search()
-        guard loadState == .ready else { return false }
-        return true
+        await prepareSongFromQueries(SongSearchQueries.variants(fromRawQuery: text))
     }
 
     func voiceDidLock(context: VoiceSongSession.Context, duringCall: Bool) {
