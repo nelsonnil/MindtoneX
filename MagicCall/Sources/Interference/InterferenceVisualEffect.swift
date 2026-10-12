@@ -123,7 +123,7 @@ extension InterferenceTestController.Phase {
 // MARK: - Flash interference stage preview
 
 /// Opens straight into the ringtone on the stage screenshot; an open hand plays the flash clip with the
-/// rising lens, then the picked song. No controls on screen besides a discreet Done.
+/// rising lens, then the picked song. No controls on screen; two-finger swipe down returns to Settings.
 struct FlashInterferenceStagePreviewSheet: View {
     let song: PreviewTrack
     @EnvironmentObject private var model: AppModel
@@ -149,13 +149,15 @@ struct FlashInterferenceStagePreviewSheet: View {
             )
             .ignoresSafeArea()
 
-            Button("Done") {
-                test.stop()
-                dismiss()
-            }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.white.opacity(0.55))
-            .padding(14)
+            StageGestureLayer(
+                peekHoldEnabled: false,
+                onPeekVisibility: { _ in },
+                onTwoFingerSwipeDown: {
+                    test.stop()
+                    dismiss()
+                }
+            )
+            .ignoresSafeArea()
 
             if case .error(let message) = test.phase {
                 Text(message)
