@@ -75,7 +75,8 @@ final class StageProximityRippleHost: UIView {
             content: contentImage,
             bounds: bounds,
             dialFrame: bounds,
-            isDark: isDarkStage
+            isDark: isDarkStage,
+            dynamicIslandNormalizedY: Self.topStopNormalizedY
         ) else {
             dlogDebug("[INTERF] proximity rise · Metal renderer unavailable")
             return
@@ -124,6 +125,8 @@ final class StageProximityRippleHost: UIView {
         return arrival + (elapsed - collapseStart) / Self.collapseSeconds * (end - arrival)
     }
 
+    /// Where the lens stops and collapses, as a fraction of the screen height from the top.
+    private static let topStopNormalizedY: CGFloat = 0.15
     /// First visible lens frame and the end of the bottom hold in the `.ascent` keys.
     private static let entryTime = 0.3
     private static let holdEnd = 1.2
