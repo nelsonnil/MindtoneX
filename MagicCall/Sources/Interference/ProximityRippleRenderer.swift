@@ -103,18 +103,17 @@ final class ProximityRippleRenderer {
         let dimPeak = isDark ? 0.2 : 0.35
         switch variant {
         case .ascent:
+            // Lens stays on screen for the whole clip and reaches the Dynamic Island only at its end.
             let islandY = Double(dynamicIslandNormalizedY)
-            f.center = CGPoint(
-                x: 0.5,
-                y: k(t, [(0, 1.06), (0.2, 1.06), (3.6, islandY), (5.9, islandY)], true)
-            )
-            f.radius.x = k(t, [(0.15, 0), (0.8, 0.22), (2.8, 0.38), (3.6, 0.42)], true)
-            f.amp.x = k(t, [(0.15, 0), (0.9, 16), (3.2, 18), (4.0, 0)], true)
+            let p = t / 6
+            f.center = CGPoint(x: 0.5, y: k(p, [(0, 1.06), (0.04, 1.02), (0.94, islandY), (1, islandY)], false))
+            f.radius.x = k(p, [(0, 0), (0.12, 0.22), (0.6, 0.36), (0.94, 0.42)], true)
+            f.amp.x = k(p, [(0, 0), (0.12, 16), (0.88, 18), (1, 0)], true)
             f.trail = f.amp.x * 0.6
-            f.rim = k(t, [(0.15, 0), (0.7, 1), (3.4, 1), (4.0, 0)], true)
-            f.glow = k(t, [(0.3, 0), (1.2, 0.75), (3.4, 0.85), (4.0, 0)], true)
-            f.dim = k(t, [(0, 0), (0.9, dimPeak), (4.2, dimPeak), (5.8, 0)], true)
-            f.whiteout = k(t, [(3.5, 0), (4.2, 0.9), (5.9, 0)], true)
+            f.rim = k(p, [(0, 0), (0.1, 1), (0.9, 1), (1, 0)], true)
+            f.glow = k(p, [(0.02, 0), (0.18, 0.75), (0.88, 0.85), (1, 0)], true)
+            f.dim = k(p, [(0, 0), (0.15, dimPeak), (0.88, dimPeak), (1, 0)], true)
+            f.whiteout = k(p, [(0.86, 0), (0.93, 0.6), (1, 0)], true)
             f.hue = t * 0.35
         }
         return f

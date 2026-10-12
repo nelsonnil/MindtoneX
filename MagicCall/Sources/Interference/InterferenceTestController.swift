@@ -145,7 +145,7 @@ final class InterferenceTestController: ObservableObject {
         handDetectedAfter = nil
         secondHandDetectedAfter = nil
         fingersSeen = 0
-        let twoSpectators = SpectatorSettings.isTwo
+        let twoSpectators = overrideSong1 == nil && SpectatorSettings.isTwo
         twoSpectatorRun = twoSpectators
         firstSongClean = false
         secondHandQueued = false

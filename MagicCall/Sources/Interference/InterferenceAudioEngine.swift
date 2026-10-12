@@ -48,6 +48,9 @@ final class InterferenceAudioEngine {
         static let filterOpenEnd: TimeInterval = 3.95
         static let radioHighPassHz: Float = 300
         static let radioLowPassHz: Float = 3400
+        /// Flash: ringtone → flash clip crossfade, and flash tail → song crossfade.
+        static let flashAttack: TimeInterval = 0.35
+        static let flashSongCrossfade: TimeInterval = 0.45
     }
 
     /// Morph ducking + master peak limiter keep the ringtone→interference→song sum clean; ringtone runs at full app gain while looping.
@@ -395,9 +398,6 @@ final class InterferenceAudioEngine {
         incomingStarted = false
         transitionStart = CACurrentMediaTime()
         next.interference.volume = 0
-        if !interferenceLoops, let buffer = bufferForInterferencePlayer(next.interference) {
-            next.interference.scheduleBuffer(buffer, at: nil, options: [], completionHandler: nil)
-        }
         next.interference.play()
         transitionTimer?.invalidate()
         let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in self?.tick() }
@@ -408,6 +408,10 @@ final class InterferenceAudioEngine {
     private func tick() {
         guard engine.isRunning, let morph else { return }
         let t = CACurrentMediaTime() - transitionStart
+        if morphProfile == .flash {
+            tickFlash(morph, t: t)
+            return
+        }
         let ringFadeEnd = scaledT(Timeline.ringtoneFadeEnd)
         let ringStop = scaledT(Timeline.ringtoneStop)
         let staticAttack = scaledT(Timeline.staticAttack)
@@ -457,6 +461,51 @@ final class InterferenceAudioEngine {
             self.morph = nil
             stage = morph.isSecond ? .song2 : .song1
             dlogDebug("[INTERF] clean song\(morph.isSecond ? " 2" : "")")
+            let clean = onSongClean
+            onSongClean = nil
+            clean?()
+        }
+    }
+
+    /// Flash: ringtone crossfades out, the whole flash clip plays at full level, the song crossfades in only at its end.
+    private func tickFlash(_ morph: Morph, t: TimeInterval) {
+        let attack = Timeline.flashAttack
+        let crossfade = min(Timeline.flashSongCrossfade, morphDuration * 0.25)
+        let songIn = morphDuration - crossfade
+        let gain = scaled(morph.isSecond ? Level.interferenceSecond : Level.interference)
+
+        var envelope = Float(min(1, t / attack))
+        if t > songIn { envelope *= Float(max(0, (morphDuration - t) / crossfade)) }
+        morph.interference.volume = gain * envelope
+
+        if t < attack {
+            morph.outgoing.volume = morph.outgoingLevel * Float(1 - t / attack)
+        } else if morph.outgoing.isPlaying {
+            morph.outgoing.stop()
+        }
+
+        if let interferenceStarted = onInterference {
+            onInterference = nil
+            interferenceStarted()
+        }
+
+        if t >= songIn {
+            if !incomingStarted {
+                incomingStarted = true
+                morph.incomingEQ.bypass = true
+                startIncomingSong(isSecond: morph.isSecond, player: morph.incoming)
+            }
+            morph.incoming.volume = cleanSongVolume * Float(min(1, (t - songIn) / crossfade))
+        }
+
+        if t >= morphDuration {
+            morph.interference.stop()
+            morph.incoming.volume = cleanSongVolume
+            transitionTimer?.invalidate()
+            transitionTimer = nil
+            self.morph = nil
+            stage = morph.isSecond ? .song2 : .song1
+            dlogDebug("[INTERF] flash done · clean song\(morph.isSecond ? " 2" : "")")
             let clean = onSongClean
             onSongClean = nil
             clean?()
@@ -544,11 +593,6 @@ final class InterferenceAudioEngine {
             return Float(1 - (t - releaseStart) / (releaseEnd - releaseStart))
         }
         return 0
-    }
-
-    private func bufferForInterferencePlayer(_ player: AVAudioPlayerNode) -> AVAudioPCMBuffer? {
-        if player === static2Player { return static2Buffer }
-        return staticBuffer
     }
 
     private func configureRadioFilter(_ eq: AVAudioUnitEQ) {

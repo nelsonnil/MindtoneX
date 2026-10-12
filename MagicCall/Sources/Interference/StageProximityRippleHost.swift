@@ -1,7 +1,7 @@
 import QuartzCore
 import UIKit
 
-/// Full-screen Cardphone «Proximity Rise» (`.ascent`) over the stage screenshot, timed to interference morph audio.
+/// Full-screen Cardphone «Proximity Rise» (`.ascent`) over the stage screenshot, timed to the flash interference clip.
 final class StageProximityRippleHost: UIView {
     static let shaderDuration: TimeInterval = 6.0
 
@@ -10,6 +10,7 @@ final class StageProximityRippleHost: UIView {
     private var morphStart: CFTimeInterval?
     private var contentImage: CGImage?
     private var isDarkStage = true
+    private var builtSize: CGSize = .zero
     var morphDuration: TimeInterval = InterferenceSettings.flashInterferenceDuration
 
     override init(frame: CGRect) {
@@ -26,23 +27,25 @@ final class StageProximityRippleHost: UIView {
     }
 
     func updateContent(_ image: CGImage?, isDark: Bool) {
+        guard image !== contentImage || isDark != isDarkStage else { return }
         contentImage = image
         isDarkStage = isDark
+        builtSize = .zero
         rebuildRendererIfNeeded()
     }
 
-    /// Starts ascent ripple synced to `InterferenceAudioEngine` morph (~3.95 s → maps to 6 s shader timeline).
+    /// Lens starts at the bottom edge now and reaches the top after `morphDuration`.
     func beginMorph() {
         rebuildRendererIfNeeded()
         morphStart = CACurrentMediaTime()
+        renderer?.render(time: 0)
         startDisplayLink()
     }
 
-    /// Finishes on the clean frame (brief whiteout tail per Cardphone QA).
     func endMorph() {
         morphStart = nil
         stopDisplayLink()
-        renderer?.render(time: 5.9)
+        renderer?.render(time: Self.shaderDuration)
     }
 
     func stopAndClear() {
@@ -55,11 +58,6 @@ final class StageProximityRippleHost: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         rebuildRendererIfNeeded()
-        renderer?.layer.frame = bounds
-        if bounds.width > 0, bounds.height > 0 {
-            let scale = window?.screen.scale ?? UIScreen.main.scale
-            renderer?.layer.drawableSize = CGSize(width: bounds.width * scale, height: bounds.height * scale)
-        }
     }
 
     override func didMoveToWindow() {
@@ -70,27 +68,26 @@ final class StageProximityRippleHost: UIView {
     }
 
     private func rebuildRendererIfNeeded() {
-        guard bounds.width > 1, bounds.height > 1, let contentImage else { return }
-        let islandY = dynamicIslandNormalizedY
+        guard bounds.width > 1, bounds.height > 1, let contentImage, bounds.size != builtSize else { return }
         guard let built = ProximityRippleRenderer(
             variant: .ascent,
             content: contentImage,
             bounds: bounds,
             dialFrame: bounds,
             isDark: isDarkStage,
-            dynamicIslandNormalizedY: islandY
+            dynamicIslandNormalizedY: dynamicIslandNormalizedY
         ) else {
             return
         }
         renderer?.layer.removeFromSuperlayer()
         layer.addSublayer(built.layer)
         renderer = built
-        built.layer.frame = bounds
+        builtSize = bounds.size
     }
 
     private var dynamicIslandNormalizedY: CGFloat {
         guard bounds.height > 0 else { return 0.06 }
-        let topInset = safeAreaInsets.top > 0 ? safeAreaInsets.top : (window?.safeAreaInsets.top ?? 59)
+        let topInset = window?.safeAreaInsets.top ?? 59
         return max(0.04, min(0.12, (topInset * 0.5) / bounds.height))
     }
 
@@ -109,9 +106,8 @@ final class StageProximityRippleHost: UIView {
     @objc private func step() {
         guard let start = morphStart, let renderer else { return }
         let elapsed = CACurrentMediaTime() - start
-        let t = min(Self.shaderDuration, elapsed * (Self.shaderDuration / morphDuration))
-        renderer.render(time: t)
-        if elapsed >= morphDuration + 0.15 {
+        renderer.render(time: min(Self.shaderDuration, elapsed * Self.shaderDuration / morphDuration))
+        if elapsed >= morphDuration {
             endMorph()
         }
     }
