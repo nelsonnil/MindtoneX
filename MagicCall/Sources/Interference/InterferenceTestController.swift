@@ -132,7 +132,12 @@ final class InterferenceTestController: ObservableObject {
         Task { _ = try? await model.previews.audioData(for: track) }
     }
 
-    func play(model: AppModel, ringtone: InterferenceSettings.Ringtone) async {
+    func play(
+        model: AppModel,
+        ringtone: InterferenceSettings.Ringtone,
+        overrideSong1: PreviewTrack? = nil,
+        forcedMode: InterferenceSettings.RingtoneMode? = nil
+    ) async {
         guard !phase.isBusy else { return }
         runID += 1
         let id = runID
@@ -156,6 +161,8 @@ final class InterferenceTestController: ObservableObject {
             }
             first = pick1
             second = pick2
+        } else if let overrideSong1 {
+            first = overrideSong1
         } else {
             guard let track = model.selected, model.loadState == .ready else {
                 fail("No song yet. Search above and tap a match first.")
@@ -163,16 +170,24 @@ final class InterferenceTestController: ObservableObject {
             }
             first = track
         }
+
+        let mode = forcedMode ?? InterferenceSettings.mode
+        guard mode.usesHandFlow else {
+            fail("Turn on Interference or Flash interference ringtone first.")
+            return
+        }
+        let presetRaw = UserDefaults.standard.string(forKey: InterferenceSettings.Key.presetID)
         guard let ringtoneURL = InterferenceSettings.bundledAudioURL(named: ringtone.resourceName) else {
             fail("\(ringtone.title) sound is missing from this build.")
             return
         }
-        guard let interferenceURL = InterferenceSettings.bundledAudioURL(named: InterferenceSettings.interferenceResourceName) else {
+        guard let interferenceURL = InterferenceSettings.interferenceURL(for: mode, presetRaw: presetRaw) else {
             fail("Interference sound is missing from this build.")
             return
         }
+        let morphProfile: InterferenceAudioEngine.MorphProfile = mode == .flashInterference ? .flash : .radio
         var secondInterferenceURL = interferenceURL
-        if twoSpectators {
+        if twoSpectators, mode == .interference {
             if let url = InterferenceSettings.secondHandInterferenceURL {
                 secondInterferenceURL = url
             } else {
@@ -215,7 +230,8 @@ final class InterferenceTestController: ObservableObject {
                 interferenceURL: interferenceURL,
                 songData: songData,
                 songFileTypeHint: first.fileTypeHint,
-                second: secondStage
+                second: secondStage,
+                profile: morphProfile
             )
             try audio.startRingtone()
         } catch {

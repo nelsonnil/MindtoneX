@@ -30,6 +30,7 @@ enum InterferenceStageSnapshot {
 struct InterferenceStageRippleOverlay: View {
     var isMorphing: Bool
     var morphToken: Int
+    var morphDuration: TimeInterval = InterferenceSettings.flashInterferenceDuration
     @AppStorage(StageImageStore.revisionDefaultsKey) private var stageScreenshotRevision = ""
 
     var body: some View {
@@ -37,6 +38,7 @@ struct InterferenceStageRippleOverlay: View {
             InterferenceStageRippleRepresentable(
                 isMorphing: isMorphing,
                 morphToken: morphToken,
+                morphDuration: morphDuration,
                 viewSize: geo.size,
                 screenshotRevision: stageScreenshotRevision
             )
@@ -49,6 +51,7 @@ struct InterferenceStageRippleOverlay: View {
 private struct InterferenceStageRippleRepresentable: UIViewRepresentable {
     let isMorphing: Bool
     let morphToken: Int
+    let morphDuration: TimeInterval
     let viewSize: CGSize
     let screenshotRevision: String
 
@@ -66,6 +69,7 @@ private struct InterferenceStageRippleRepresentable: UIViewRepresentable {
         let isDark = MainActor.assumeIsolated { InterferenceStageSnapshot.isDarkStageScreenshot() }
         uiView.updateContent(image, isDark: isDark)
 
+        uiView.morphDuration = morphDuration
         uiView.alpha = isMorphing ? 1 : 0
         if morphToken != context.coordinator.lastToken {
             context.coordinator.lastToken = morphToken
@@ -102,6 +106,7 @@ extension InterferenceShowController.Phase {
 
 extension InterferenceTestController.Phase {
     var showsProximityRipple: Bool {
+        guard InterferenceSettings.mode.showsProximityRippleOnStage else { return false }
         switch self {
         case .handDetected, .interference, .secondHandDetected, .secondInterference: return true
         default: return false
@@ -109,7 +114,131 @@ extension InterferenceTestController.Phase {
     }
 }
 
-// MARK: - Full-screen rehearsal (no Perform, no phone call)
+// MARK: - Flash interference stage preview (picked song + hand + Proximity Rise)
+
+struct FlashInterferenceStagePreviewSheet: View {
+    let song: PreviewTrack
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
+    @AppStorage(InterferenceSettings.Key.ringtoneID) private var ringtoneID = InterferenceSettings.Ringtone.defaultValue.rawValue
+    @StateObject private var test = InterferenceTestController()
+    @State private var morphToken = 0
+
+    private var ringtone: InterferenceSettings.Ringtone {
+        InterferenceSettings.Ringtone(rawValue: ringtoneID) ?? .ringtone1
+    }
+
+    var body: some View {
+        ZStack {
+            StageBackgroundView(maskStatusBar: maskStatusBar)
+                .ignoresSafeArea()
+
+            InterferenceStageRippleOverlay(
+                isMorphing: test.phase.showsProximityRipple,
+                morphToken: morphToken,
+                morphDuration: InterferenceSettings.flashInterferenceDuration
+            )
+            .ignoresSafeArea()
+
+            VStack {
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        test.stop()
+                        dismiss()
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(12)
+                }
+                Spacer()
+                previewChrome
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 28)
+            }
+        }
+        .persistentSystemOverlays(.hidden)
+        .preferredColorScheme(.dark)
+        .onDisappear { test.stop() }
+        .onChange(of: test.phase) { _, phase in
+            if phase.showsProximityRipple { morphToken += 1 }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background, test.phase.isBusy {
+                test.stop(note: "Stopped because MindtoneX left the screen.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var previewChrome: some View {
+        VStack(spacing: 10) {
+            Text("\(song.title) — \(song.artist)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.85))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+            Text(statusDetail)
+                .font(.caption)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.white.opacity(0.62))
+
+            if test.phase == .idle || test.phase.isError {
+                Button {
+                    Task { await startPreview() }
+                } label: {
+                    Label("Start preview", systemImage: "play.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .foregroundStyle(OracleTheme.ink)
+                        .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            } else if test.phase.isBusy {
+                Button { test.stop() } label: {
+                    Label("Stop", systemImage: "stop.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .foregroundStyle(OracleTheme.textPrimary)
+                        .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var statusDetail: String {
+        if case .error(let message) = test.phase { return message }
+        switch test.phase {
+        case .idle:
+            return "Ringtone \(ringtone.title) → open hand → flash interference (~4 s) + light rising on your stage screenshot → this song."
+        case .playingRingtone:
+            return "Ringtone playing · show an open hand to the front camera."
+        case .handDetected, .interference:
+            return "Flash interference · Proximity Rise in sync with audio."
+        case .playingSong:
+            return "Clean song preview."
+        default:
+            return "Live…"
+        }
+    }
+
+    private func startPreview() async {
+        model.pauseVoiceAndAudioForSetupUI(reason: "flash stage preview")
+        await test.play(
+            model: model,
+            ringtone: ringtone,
+            overrideSong1: song,
+            forcedMode: .flashInterference
+        )
+    }
+}
+
+// MARK: - Legacy rehearsal (unused — Test lab covers Interference mode)
 
 struct InterferenceStageRehearsalSheet: View {
     @EnvironmentObject private var model: AppModel

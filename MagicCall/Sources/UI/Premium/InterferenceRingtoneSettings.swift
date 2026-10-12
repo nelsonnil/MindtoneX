@@ -2,20 +2,25 @@ import AVFoundation
 import SwiftUI
 import UIKit
 
-/// Song card › Ringtone — Normal vs Interference, Ringtone 1 / 2, interference sound, test lab.
+/// Song card › Ringtone — Normal | Interference | Flash interference.
 struct SongRingtoneModeBlock: View {
     @EnvironmentObject private var model: AppModel
-    @AppStorage(InterferenceSettings.Key.enabled) private var enabled = false
+    @AppStorage(InterferenceSettings.Key.mode) private var modeRaw = InterferenceSettings.RingtoneMode.normal.rawValue
     @AppStorage(InterferenceSettings.Key.ringtoneID) private var ringtoneID = InterferenceSettings.Ringtone.defaultValue.rawValue
     @AppStorage(InterferenceSettings.Key.presetID) private var presetID = InterferenceSettings.InterferencePreset.defaultValue.rawValue
     @AppStorage(SpectatorSettings.Key.count) private var songCount = 1
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.card.rawValue
     @State private var showTestMode = false
-    @State private var showStagePreview = false
+    @State private var showFlashStagePreview = false
+    @State private var flashPreviewSong: PreviewTrack?
 
     private var inputMode: VoiceSettings.InputMode {
         let mode = VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .card
         return mode == .manual ? .card : mode
+    }
+
+    private var mode: InterferenceSettings.RingtoneMode {
+        InterferenceSettings.RingtoneMode(rawValue: modeRaw) ?? .normal
     }
 
     private var twoSongsEnabled: Bool { songCount == 2 }
@@ -26,64 +31,62 @@ struct SongRingtoneModeBlock: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(OracleTheme.textPrimary)
 
-            HStack(spacing: 10) {
-                modeChip("Normal ringtone", icon: "bell.fill", value: false)
-                modeChip("Interference ringtone", icon: "antenna.radiowaves.left.and.right", value: true)
+            HStack(spacing: 8) {
+                ForEach(InterferenceSettings.RingtoneMode.allCases) { item in
+                    modeChip(item)
+                }
             }
 
-            Text(.init(enabled
-                ? (twoSongsEnabled
-                    ? "Your ringtone plays first. **Open hand 1** → interference → **song 1**. After a short pause, **open hand 2** → interference 2 → **song 2**. One spectator can use both hands."
-                    : "Your ringtone plays first. When the front camera sees an open hand, radio interference takes over and morphs into the song.")
-                : "Standard MindtoneX ringtone — **one song** plays when the call rings (no hand gesture)."))
+            Text(.init(modeHelp))
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if enabled {
+            if mode.usesHandFlow {
                 InterferenceSongCountControls(inputMode: inputMode, songCount: $songCount)
+                InterferenceRingtonePicker(selectionRaw: $ringtoneID)
+            }
 
+            if mode == .interference {
+                InterferencePresetPicker(selectionRaw: $presetID)
+                Button {
+                    model.pauseVoiceAndAudioForSetupUI(reason: "interference test")
+                    showTestMode = true
+                } label: {
+                    Label("Test lab", systemImage: "hand.raised.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .foregroundStyle(OracleTheme.ink)
+                        .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Practice ringtone, open hand, radio interference, and song")
+            }
+
+            if mode == .flashInterference {
                 VStack(alignment: .leading, spacing: 10) {
-                    InterferenceRingtonePicker(selectionRaw: $ringtoneID)
-                    InterferencePresetPicker(selectionRaw: $presetID)
-                }
-
-                HStack(spacing: 10) {
+                    Text("Stage preview")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                    LibrarySongSearchBlock(
+                        pickedTrackID: flashPreviewSong?.id,
+                        onPick: { flashPreviewSong = $0 },
+                        resultsPresentation: .sheet
+                    )
                     Button {
-                        model.pauseVoiceAndAudioForSetupUI(reason: "interference test")
-                        showTestMode = true
+                        showFlashStagePreview = flashPreviewSong != nil
                     } label: {
-                        Label("Test lab", systemImage: "hand.raised.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .foregroundStyle(OracleTheme.ink)
-                            .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        flashStagePreviewLabel
                     }
                     .buttonStyle(.plain)
-                    .accessibilityHint("Practice ringtone, open hand, interference, and song")
-
-                    Button {
-                        showStagePreview = true
-                    } label: {
-                        Label("Stage preview", systemImage: "photo.on.rectangle.angled")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .foregroundStyle(OracleTheme.textPrimary)
-                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .strokeBorder(OracleTheme.cardBorderHighlight, lineWidth: 1)
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Full-screen stage rehearsal with ringtone, hand, and Proximity Rise visual")
+                    .disabled(flashPreviewSong == nil)
+                    .accessibilityHint("Pick a song above, then preview ringtone, hand, flash sound, and rising light on your stage screenshot")
                 }
+            }
 
-                Text(.init(twoSongsEnabled
-                    ? "Perform: **hand 1** → interference → song 1; during the **first ~2 s of clean song 1** hand 2 is ignored; **after that**, open hand → interference 2 → song 2."
-                    : "Perform: incoming calls use this ringtone until the front camera sees an open hand. Choose **2 songs** above for a second hand → song 2. Banner call style keeps the camera on; Back Tap or the volume trigger can stand in for the hand."))
+            if mode.usesHandFlow {
+                Text(.init(performFootnote))
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -102,25 +105,76 @@ struct SongRingtoneModeBlock: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(OracleTheme.cardBorder, lineWidth: 1)
         }
-        .animation(.easeInOut(duration: 0.2), value: enabled)
+        .animation(.easeInOut(duration: 0.2), value: modeRaw)
         .sheet(isPresented: $showTestMode) {
             NavigationStack {
                 InterferenceTestView()
             }
             .environmentObject(model)
         }
-        .fullScreenCover(isPresented: $showStagePreview) {
-            InterferenceStageRehearsalSheet()
-                .environmentObject(model)
+        .fullScreenCover(isPresented: $showFlashStagePreview) {
+            if let flashPreviewSong {
+                FlashInterferenceStagePreviewSheet(song: flashPreviewSong)
+                    .environmentObject(model)
+            }
         }
     }
 
-    private func modeChip(_ title: String, icon: String, value: Bool) -> some View {
-        let selected = enabled == value
+    private var modeHelp: String {
+        switch mode {
+        case .normal:
+            return "Standard MindtoneX ringtone — **one song** when the call rings (no hand gesture)."
+        case .interference:
+            return twoSongsEnabled
+                ? "Ringtone → **hand 1** → radio interference → **song 1** → **hand 2** → interference 2 → **song 2**."
+                : "Ringtone → open hand → **radio interference** morphs into the song."
+        case .flashInterference:
+            return twoSongsEnabled
+                ? "Ringtone → **hand 1** → **flash interference** (light rises on stage) → song 1 → hand 2 → flash again → song 2."
+                : "Ringtone → open hand → **flash interference** sound while the **Proximity Rise** light crosses your stage screenshot, then the song."
+        }
+    }
+
+    private var flashStagePreviewLabel: some View {
+        let ready = flashPreviewSong != nil
+        return Label("Stage preview", systemImage: "photo.on.rectangle.angled")
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .foregroundStyle(ready ? OracleTheme.ink : OracleTheme.textSecondary)
+            .background {
+                if ready {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(OracleTheme.goldGradient)
+                } else {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.white.opacity(0.06))
+                }
+            }
+    }
+
+    private var performFootnote: String {
+        switch mode {
+        case .normal:
+            return ""
+        case .interference:
+            return twoSongsEnabled
+                ? "Perform: hand 1 → interference → song 1; after ~2 s of clean song 1, hand 2 → interference 2 → song 2."
+                : "Perform: Banner call style keeps the camera on; Back Tap or volume trigger can stand in for the hand."
+        case .flashInterference:
+            return "Perform: same hand flow with **flash** audio (~4 s) and the rising light on the stage wallpaper."
+        }
+    }
+
+    private func modeChip(_ item: InterferenceSettings.RingtoneMode) -> some View {
+        let selected = mode == item
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) { enabled = value }
-            dlog("[INTERF] ringtone mode → \(value ? "interference" : "normal")")
-            if value {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                modeRaw = item.rawValue
+                InterferenceSettings.setMode(item)
+            }
+            dlog("[INTERF] ringtone mode → \(item.rawValue)")
+            if item.usesHandFlow {
                 Task { _ = await CardSettings.requestCameraIfNeeded() }
             } else {
                 if songCount == 2 { songCount = 1 }
@@ -128,16 +182,17 @@ struct SongRingtoneModeBlock: View {
             }
         } label: {
             VStack(spacing: 6) {
-                Image(systemName: icon)
+                Image(systemName: item.chipIcon)
                     .font(.body.weight(.semibold))
-                Text(title)
+                Text(item == .normal ? "Normal" : (item == .interference ? "Interference" : "Flash"))
                     .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 4)
             .foregroundStyle(selected ? OracleTheme.textPrimary : OracleTheme.textSecondary)
             .background {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -149,6 +204,7 @@ struct SongRingtoneModeBlock: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(item.title)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

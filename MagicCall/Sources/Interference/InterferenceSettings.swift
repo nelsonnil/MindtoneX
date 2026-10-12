@@ -5,8 +5,45 @@ import Foundation
 enum InterferenceSettings {
     enum Key {
         static let enabled = "interference.enabled"
+        /// `RingtoneMode` raw value (`normal` | `interference` | `flashInterference`).
+        static let mode = "interference.ringtoneMode"
         static let ringtoneID = "interference.ringtoneID"
         static let presetID = "interference.presetID"
+    }
+
+    /// Home › Song › Ringtone selector.
+    enum RingtoneMode: String, CaseIterable, Identifiable {
+        case normal
+        case interference
+        case flashInterference
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .normal: return "Normal ringtone"
+            case .interference: return "Interference ringtone"
+            case .flashInterference: return "Flash interference"
+            }
+        }
+
+        var chipIcon: String {
+            switch self {
+            case .normal: return "bell.fill"
+            case .interference: return "antenna.radiowaves.left.and.right"
+            case .flashInterference: return "bolt.circle.fill"
+            }
+        }
+
+        /// Ringtone loop → open hand → morph → song (Perform + previews).
+        var usesHandFlow: Bool {
+            switch self {
+            case .normal: return false
+            case .interference, .flashInterference: return true
+            }
+        }
+
+        var showsProximityRippleOnStage: Bool { self == .flashInterference }
     }
 
     enum Ringtone: String, CaseIterable, Identifiable {
@@ -59,6 +96,10 @@ enum InterferenceSettings {
 
     static let resourceFolder = "InterferenceRingtone"
     static let interferenceResourceName = "interferencia-radio"
+    /// Audio from `flashinterference.MOV` (~4 s) — Proximity Rise visual sync target.
+    static let flashInterferenceResourceName = "flashinterference"
+    /// Matches bundled `flashinterference.m4a` (source MOV ~3.994 s).
+    static let flashInterferenceDuration: TimeInterval = 3.994
 
     /// Two songs: the second open hand always uses this file (audio of `interferenciaradio2`).
     static let secondHandResourceName = "interferencia-audio2"
@@ -73,7 +114,40 @@ enum InterferenceSettings {
 
     private static var d: UserDefaults { .standard }
 
-    static var enabled: Bool { d.bool(forKey: Key.enabled) }
+    static var mode: RingtoneMode {
+        if let raw = d.string(forKey: Key.mode), let parsed = RingtoneMode(rawValue: raw) {
+            return parsed
+        }
+        return d.bool(forKey: Key.enabled) ? .interference : .normal
+    }
+
+    static func setMode(_ mode: RingtoneMode) {
+        d.set(mode.rawValue, forKey: Key.mode)
+        d.set(mode.usesHandFlow, forKey: Key.enabled)
+    }
+
+    /// Legacy: hand-flow modes (Interference or Flash interference).
+    static var enabled: Bool { mode.usesHandFlow }
+
+    /// Morph length for stage Proximity Rise (Flash only).
+    static var stageVisualMorphDuration: TimeInterval {
+        mode == .flashInterference ? flashInterferenceDuration : InterferenceAudioEngine.defaultMorphDuration
+    }
+
+    static func interferenceURL(presetRaw: String?) -> URL? {
+        interferenceURL(for: mode, presetRaw: presetRaw)
+    }
+
+    static func interferenceURL(for mode: RingtoneMode, presetRaw: String?) -> URL? {
+        switch mode {
+        case .normal:
+            return nil
+        case .interference:
+            return bundledAudioURL(named: resolvedPreset(storedRaw: presetRaw).resourceName)
+        case .flashInterference:
+            return bundledAudioURL(named: flashInterferenceResourceName)
+        }
+    }
 
     static var ringtone: Ringtone {
         Ringtone(rawValue: d.string(forKey: Key.ringtoneID) ?? "") ?? Ringtone.defaultValue

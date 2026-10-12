@@ -16,7 +16,10 @@ enum PerformLogReporter {
         if SpectatorSettings.isTwo {
             PerformUserLog.shared.log("Songs · 2 (experimental) · interference · 1st hand → song 1 · 2nd hand → song 2")
         }
-        if InterferenceSettings.enabled {
+        switch InterferenceSettings.mode {
+        case .normal:
+            PerformUserLog.shared.log("Ringtone · normal")
+        case .interference:
             let preset = InterferenceSettings.resolvedPreset(
                 storedRaw: UserDefaults.standard.string(forKey: InterferenceSettings.Key.presetID)
             )
@@ -24,8 +27,11 @@ enum PerformLogReporter {
             if SpectatorSettings.isTwo { line += " · 2nd hand \(InterferenceSettings.secondHandTitle)" }
             if !CardSettings.cameraAuthorized { line += " · camera not allowed → normal ringtone" }
             PerformUserLog.shared.log(line)
-        } else {
-            PerformUserLog.shared.log("Ringtone · normal")
+        case .flashInterference:
+            var line = "Ringtone · flash interference · \(InterferenceSettings.ringtone.title) · Proximity Rise on stage"
+            if SpectatorSettings.isTwo { line += " · 2nd hand · same flash clip" }
+            if !CardSettings.cameraAuthorized { line += " · camera not allowed → normal ringtone" }
+            PerformUserLog.shared.log(line)
         }
 
         if WordApiSettings.callerLabelEnabled {

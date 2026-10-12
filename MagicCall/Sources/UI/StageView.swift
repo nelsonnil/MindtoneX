@@ -21,6 +21,7 @@ struct StageView: View {
 
     @State private var peekVisible = false
     @State private var interferenceMorphToken = 0
+    @AppStorage(InterferenceSettings.Key.mode) private var ringtoneModeRaw = InterferenceSettings.RingtoneMode.normal.rawValue
 
     private var hasStageScreenshot: Bool { StageImageStore.hasScreenshot }
 
@@ -54,11 +55,14 @@ struct StageView: View {
             StageBackgroundView(maskStatusBar: maskStatusBar)
                 .ignoresSafeArea()
 
-            InterferenceStageRippleOverlay(
-                isMorphing: interference.phase.showsProximityRipple,
-                morphToken: interferenceMorphToken
-            )
-            .ignoresSafeArea()
+            if (InterferenceSettings.RingtoneMode(rawValue: ringtoneModeRaw) ?? .normal).showsProximityRippleOnStage {
+                InterferenceStageRippleOverlay(
+                    isMorphing: interference.phase.showsProximityRipple,
+                    morphToken: interferenceMorphToken,
+                    morphDuration: InterferenceSettings.flashInterferenceDuration
+                )
+                .ignoresSafeArea()
+            }
 
             StageGestureLayer(
                 peekHoldEnabled: peekEnabled,

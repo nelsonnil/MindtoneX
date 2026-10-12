@@ -61,15 +61,15 @@ final class InterferenceShowController: ObservableObject {
     func start(song1: Song, song2: Song?, configureSession: () throws -> Void) -> Bool {
         stop(reason: "new ring")
         let ringtone = InterferenceSettings.ringtone
-        let preset = InterferenceSettings.resolvedPreset(
-            storedRaw: UserDefaults.standard.string(forKey: InterferenceSettings.Key.presetID)
-        )
+        let mode = InterferenceSettings.mode
+        let presetRaw = UserDefaults.standard.string(forKey: InterferenceSettings.Key.presetID)
         guard let ringtoneURL = InterferenceSettings.bundledAudioURL(named: ringtone.resourceName),
-              let interferenceURL = InterferenceSettings.bundledAudioURL(named: preset.resourceName) else {
+              let interferenceURL = InterferenceSettings.interferenceURL(for: mode, presetRaw: presetRaw) else {
             PerformUserLog.shared.log("Interference · sound files missing from this build · normal ringtone")
-            dlog("[INTERF] perform · missing \(ringtone.resourceName) or \(preset.resourceName) · fallback")
+            dlog("[INTERF] perform · missing ringtone or interference audio · fallback")
             return false
         }
+        let morphProfile: InterferenceAudioEngine.MorphProfile = mode == .flashInterference ? .flash : .radio
         guard CardSettings.cameraAuthorized else {
             PerformUserLog.shared.log("Interference · camera not allowed · normal ringtone (iPhone Settings → MindtoneX → Camera)")
             dlog("[INTERF] perform · camera not authorized · fallback")
@@ -78,8 +78,11 @@ final class InterferenceShowController: ObservableObject {
 
         var secondStage: InterferenceAudioEngine.SecondStage?
         if let song2 {
+            let secondNoise = mode == .flashInterference
+                ? interferenceURL
+                : (InterferenceSettings.secondHandInterferenceURL ?? interferenceURL)
             secondStage = InterferenceAudioEngine.SecondStage(
-                interferenceURL: InterferenceSettings.secondHandInterferenceURL ?? interferenceURL,
+                interferenceURL: secondNoise,
                 songData: song2.data,
                 songFileTypeHint: song2.fileTypeHint
             )
@@ -96,7 +99,8 @@ final class InterferenceShowController: ObservableObject {
                 interferenceURL: interferenceURL,
                 songData: song1.data,
                 songFileTypeHint: song1.fileTypeHint,
-                second: secondStage
+                second: secondStage,
+                profile: morphProfile
             )
             try engine.startRingtone()
         } catch {
@@ -118,8 +122,9 @@ final class InterferenceShowController: ObservableObject {
         phase = .ringing
         startCamera(requireClearFirst: false)
         let songs = hasSecondSong ? " · song 1 · \(song1.title) · song 2 · \(song2?.title ?? "?")" : " · \(song1.title)"
+        let modeLabel = mode == .flashInterference ? "flash interference" : InterferenceSettings.resolvedPreset(storedRaw: presetRaw).title
         PerformUserLog.shared.log("Interference · ringing · \(ringtone.title) · waiting for an open hand\(songs)")
-        dlog("[INTERF] perform · ringing · \(ringtone.title) · \(preset.title)\(hasSecondSong ? " → \(InterferenceSettings.secondHandTitle)" : "") · \(engine.snapshot())")
+        dlog("[INTERF] perform · ringing · \(ringtone.title) · \(modeLabel)\(hasSecondSong ? " → hand 2" : "") · \(engine.snapshot())")
         return true
     }
 

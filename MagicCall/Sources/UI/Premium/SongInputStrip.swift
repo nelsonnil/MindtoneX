@@ -6,7 +6,7 @@ struct SongInputStrip: View {
     @ObservedObject private var api = ApiSongSession.shared
     @ObservedObject private var card = CardSongSession.shared
     @Binding var inputModeRaw: String
-    @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
+    @AppStorage(InterferenceSettings.Key.mode) private var ringtoneModeRaw = InterferenceSettings.RingtoneMode.normal.rawValue
     @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
 
     private let inputColumns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
@@ -17,11 +17,17 @@ struct SongInputStrip: View {
     }
 
     private var songInputSummary: String {
-        if interferenceEnabled {
+        let mode = InterferenceSettings.RingtoneMode(rawValue: ringtoneModeRaw) ?? .normal
+        switch mode {
+        case .normal:
+            return "\(inputMode.title) · Normal ringtone"
+        case .interference:
             let songs = interferenceSongCount == 2 ? "2 songs" : "1 song"
             return "\(inputMode.title) · \(songs) · Interference ringtone"
+        case .flashInterference:
+            let songs = interferenceSongCount == 2 ? "2 songs" : "1 song"
+            return "\(inputMode.title) · \(songs) · Flash interference"
         }
-        return "\(inputMode.title) · Normal ringtone"
     }
 
     var body: some View {

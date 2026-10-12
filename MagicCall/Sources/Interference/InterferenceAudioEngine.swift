@@ -14,6 +14,13 @@ import QuartzCore
 /// `AVAudioEngine` on `interruption.began` and on configuration changes (unlike `AVAudioPlayer`), so
 /// Perform calls `resume()` to restart it where the effect was.
 final class InterferenceAudioEngine {
+    enum MorphProfile {
+        /// Radio static loop (`interferencia-radio`, presets).
+        case radio
+        /// One-shot flash clip (`flashinterference.m4a`) — morph timed to clip length.
+        case flash
+    }
+
     enum EngineError: LocalizedError {
         case unreadableAsset(String)
 
@@ -24,8 +31,10 @@ final class InterferenceAudioEngine {
         }
     }
 
-    /// Wall-clock morph length — stage Proximity Rise maps this to Cardphone’s 6 s shader timeline.
-    static var morphDuration: TimeInterval { Timeline.filterOpenEnd }
+    static var defaultMorphDuration: TimeInterval { Timeline.filterOpenEnd }
+
+    /// Active morph length (Flash ≈ 4 s, radio ≈ 3.95 s).
+    private(set) var morphDuration: TimeInterval = Timeline.filterOpenEnd
 
     enum Timeline {
         static let staticAttack: TimeInterval = 0.25
@@ -112,6 +121,8 @@ final class InterferenceAudioEngine {
     private var songStarted = false
     private var song2Started = false
     private var secondMorphStarted = false
+    private var morphProfile: MorphProfile = .radio
+    private var interferenceLoops = true
     /// Host time and file frame at which each song's current segment started playing.
     private var songAnchor: (time: CFTimeInterval, frame: AVAudioFramePosition)?
     private var song2Anchor: (time: CFTimeInterval, frame: AVAudioFramePosition)?
@@ -167,8 +178,11 @@ final class InterferenceAudioEngine {
         interferenceURL: URL,
         songData: Data,
         songFileTypeHint: String,
-        second: SecondStage? = nil
+        second: SecondStage? = nil,
+        profile: MorphProfile = .radio
     ) throws {
+        morphProfile = profile
+        interferenceLoops = profile != .flash
         stop()
         playbackVolume = Float(Prefs.fakePlaybackVolume)
         let ring = try Self.loadBuffer(ringtoneURL)
@@ -204,6 +218,10 @@ final class InterferenceAudioEngine {
             engine.connect(song2Player, to: song2EQ, format: file2.processingFormat)
             engine.connect(song2EQ, to: mixer, fromBus: 0, toBus: 4, format: file2.processingFormat)
         }
+
+        morphDuration = profile == .flash
+            ? Double(noise.frameLength) / noise.format.sampleRate
+            : Timeline.filterOpenEnd
 
         ringtoneBuffer = ring
         staticBuffer = noise
@@ -248,7 +266,7 @@ final class InterferenceAudioEngine {
         ringtonePlayer.play()
 
         staticPlayer.volume = 0
-        staticPlayer.scheduleBuffer(noise, at: nil, options: .loops, completionHandler: nil)
+        staticPlayer.scheduleBuffer(noise, at: nil, options: interferenceLoops ? .loops : [], completionHandler: nil)
 
         songPlayer.volume = 0
         scheduleSong(file, on: songPlayer, token: token, isSecond: false)
@@ -377,6 +395,9 @@ final class InterferenceAudioEngine {
         incomingStarted = false
         transitionStart = CACurrentMediaTime()
         next.interference.volume = 0
+        if !interferenceLoops, let buffer = bufferForInterferencePlayer(next.interference) {
+            next.interference.scheduleBuffer(buffer, at: nil, options: [], completionHandler: nil)
+        }
         next.interference.play()
         transitionTimer?.invalidate()
         let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in self?.tick() }
@@ -387,40 +408,47 @@ final class InterferenceAudioEngine {
     private func tick() {
         guard engine.isRunning, let morph else { return }
         let t = CACurrentMediaTime() - transitionStart
+        let ringFadeEnd = scaledT(Timeline.ringtoneFadeEnd)
+        let ringStop = scaledT(Timeline.ringtoneStop)
+        let staticAttack = scaledT(Timeline.staticAttack)
+        let songIn = scaledT(Timeline.songIn)
+        let songRamp = scaledT(Timeline.songInRamp)
+        let filterOpenStart = scaledT(Timeline.filterOpenStart)
+        let filterOpenEnd = morphDuration
 
         let interferenceGain: Float = morph.isSecond ? Level.interferenceSecond : Level.interference
-        morph.interference.volume = scaled(interferenceGain) * Self.staticEnvelope(t)
+        morph.interference.volume = scaled(interferenceGain) * staticEnvelope(t)
 
-        if t < Timeline.ringtoneFadeEnd {
-            let duckDB = Level.ringtoneDuckDB * Float(t / Timeline.ringtoneFadeEnd)
+        if t < ringFadeEnd {
+            let duckDB = Level.ringtoneDuckDB * Float(t / ringFadeEnd)
             morph.outgoing.volume = morph.outgoingLevel * powf(10, duckDB / 20)
-        } else if t < Timeline.ringtoneStop {
+        } else if t < ringStop {
             let ducked = morph.outgoingLevel * powf(10, Level.ringtoneDuckDB / 20)
-            morph.outgoing.volume = ducked * Float(1 - (t - Timeline.ringtoneFadeEnd) / (Timeline.ringtoneStop - Timeline.ringtoneFadeEnd))
+            morph.outgoing.volume = ducked * Float(1 - (t - ringFadeEnd) / (ringStop - ringFadeEnd))
         } else if morph.outgoing.isPlaying {
             morph.outgoing.stop()
         }
 
-        if t >= Timeline.staticAttack, let interferenceStarted = onInterference {
+        if t >= staticAttack, let interferenceStarted = onInterference {
             onInterference = nil
             interferenceStarted()
         }
 
-        if t >= Timeline.songIn {
+        if t >= songIn {
             if !incomingStarted {
                 incomingStarted = true
                 startIncomingSong(isSecond: morph.isSecond, player: morph.incoming)
             }
-            morph.incoming.volume = cleanSongVolume * Float(min(1, (t - Timeline.songIn) / Timeline.songInRamp))
+            morph.incoming.volume = cleanSongVolume * Float(min(1, (t - songIn) / songRamp))
         }
 
-        if t >= Timeline.filterOpenStart, t < Timeline.filterOpenEnd {
-            let p = Float((t - Timeline.filterOpenStart) / (Timeline.filterOpenEnd - Timeline.filterOpenStart))
+        if t >= filterOpenStart, t < filterOpenEnd {
+            let p = Float((t - filterOpenStart) / (filterOpenEnd - filterOpenStart))
             morph.incomingEQ.bands[0].frequency = Timeline.radioHighPassHz * powf(20 / Timeline.radioHighPassHz, p)
             morph.incomingEQ.bands[1].frequency = Timeline.radioLowPassHz * powf(20_000 / Timeline.radioLowPassHz, p)
         }
 
-        if t >= Timeline.filterOpenEnd {
+        if t >= filterOpenEnd {
             morph.incomingEQ.bypass = true
             morph.interference.stop()
             morph.incoming.volume = cleanSongVolume
@@ -487,7 +515,7 @@ final class InterferenceAudioEngine {
         guard let noise2 = static2Buffer, let file2 = song2File else { return }
         configureRadioFilter(song2EQ)
         static2Player.volume = 0
-        static2Player.scheduleBuffer(noise2, at: nil, options: .loops, completionHandler: nil)
+        static2Player.scheduleBuffer(noise2, at: nil, options: interferenceLoops ? .loops : [], completionHandler: nil)
         song2Player.volume = 0
         scheduleSong(file2, on: song2Player, token: token, isSecond: true)
     }
@@ -502,13 +530,25 @@ final class InterferenceAudioEngine {
         }
     }
 
-    private static func staticEnvelope(_ t: TimeInterval) -> Float {
-        if t < Timeline.staticAttack { return Float(t / Timeline.staticAttack) }
-        if t < Timeline.staticReleaseStart { return 1 }
-        if t < Timeline.staticReleaseEnd {
-            return Float(1 - (t - Timeline.staticReleaseStart) / (Timeline.staticReleaseEnd - Timeline.staticReleaseStart))
+    private func scaledT(_ t: TimeInterval) -> TimeInterval {
+        t * morphDuration / Timeline.filterOpenEnd
+    }
+
+    private func staticEnvelope(_ t: TimeInterval) -> Float {
+        let attack = scaledT(Timeline.staticAttack)
+        let releaseStart = scaledT(Timeline.staticReleaseStart)
+        let releaseEnd = scaledT(Timeline.staticReleaseEnd)
+        if t < attack { return Float(t / attack) }
+        if t < releaseStart { return 1 }
+        if t < releaseEnd {
+            return Float(1 - (t - releaseStart) / (releaseEnd - releaseStart))
         }
         return 0
+    }
+
+    private func bufferForInterferencePlayer(_ player: AVAudioPlayerNode) -> AVAudioPCMBuffer? {
+        if player === static2Player { return static2Buffer }
+        return staticBuffer
     }
 
     private func configureRadioFilter(_ eq: AVAudioUnitEQ) {

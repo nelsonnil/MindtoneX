@@ -10,6 +10,7 @@ final class StageProximityRippleHost: UIView {
     private var morphStart: CFTimeInterval?
     private var contentImage: CGImage?
     private var isDarkStage = true
+    var morphDuration: TimeInterval = InterferenceSettings.flashInterferenceDuration
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -108,7 +109,6 @@ final class StageProximityRippleHost: UIView {
     @objc private func step() {
         guard let start = morphStart, let renderer else { return }
         let elapsed = CACurrentMediaTime() - start
-        let morphDuration = InterferenceAudioEngine.morphDuration
         let t = min(Self.shaderDuration, elapsed * (Self.shaderDuration / morphDuration))
         renderer.render(time: t)
         if elapsed >= morphDuration + 0.15 {
