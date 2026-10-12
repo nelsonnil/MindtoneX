@@ -11,6 +11,7 @@ struct SongRingtoneModeBlock: View {
     @AppStorage(SpectatorSettings.Key.count) private var songCount = 1
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.card.rawValue
     @State private var showTestMode = false
+    @State private var showStagePreview = false
 
     private var inputMode: VoiceSettings.InputMode {
         let mode = VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .card
@@ -47,19 +48,38 @@ struct SongRingtoneModeBlock: View {
                     InterferencePresetPicker(selectionRaw: $presetID)
                 }
 
-                Button {
-                    model.pauseVoiceAndAudioForSetupUI(reason: "interference test")
-                    showTestMode = true
-                } label: {
-                    Label("Open test mode", systemImage: "hand.raised.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .foregroundStyle(OracleTheme.ink)
-                        .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                HStack(spacing: 10) {
+                    Button {
+                        model.pauseVoiceAndAudioForSetupUI(reason: "interference test")
+                        showTestMode = true
+                    } label: {
+                        Label("Test lab", systemImage: "hand.raised.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .foregroundStyle(OracleTheme.ink)
+                            .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Practice ringtone, open hand, interference, and song")
+
+                    Button {
+                        showStagePreview = true
+                    } label: {
+                        Label("Stage preview", systemImage: "photo.on.rectangle.angled")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .foregroundStyle(OracleTheme.textPrimary)
+                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .strokeBorder(OracleTheme.cardBorderHighlight, lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Preview the spectator wallpaper and interference static")
                 }
-                .buttonStyle(.plain)
-                .accessibilityHint("Practice ringtone, open hand, interference, and song")
 
                 Text(.init(twoSongsEnabled
                     ? "Perform: **hand 1** → interference → song 1; during the **first ~2 s of clean song 1** hand 2 is ignored; **after that**, open hand → interference 2 → song 2."
@@ -88,6 +108,9 @@ struct SongRingtoneModeBlock: View {
                 InterferenceTestView()
             }
             .environmentObject(model)
+        }
+        .fullScreenCover(isPresented: $showStagePreview) {
+            InterferenceStagePreviewSheet()
         }
     }
 

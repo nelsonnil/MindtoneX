@@ -3,10 +3,8 @@ import SwiftUI
 /// Copy for Inject / Elips / Custom API connection screens (song, caller word, Notes chip).
 enum SpectatorApiPerformTiming {
     static let settingsNote =
-        "**Perform timing:** Tap **Perform** on Home **before** the spectator searches. "
-        + "The **first poll** after Perform only records a **baseline** — whatever was already on Inject, Elips, or Custom **from earlier**. "
-        + "MindtoneX **locks** when the API shows a **new** song or word **after** Perform has started (usually within a few seconds, polls every ~2 s). "
-        + "A search done **before** Perform will **not** count as the prediction."
+        "**Perform timing:** On **Perform**, MindtoneX polls every ~2 s and **uses whatever song the API shows** (including a search done **before** Perform). "
+        + "If the spectator **changes** the search **during** Perform, the app **switches** to that new song for the ringtone and stage."
 }
 
 struct SpectatorApiPerformTimingNote: View {

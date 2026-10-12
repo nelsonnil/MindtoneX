@@ -19,9 +19,13 @@ enum SongSearchQueries {
             add("\(t) \(a)")
             add("\(a) \(t)")
         }
-        if !t.isEmpty { add(t) }
+        if !t.isEmpty {
+            add(t)
+            let stripped = stripLeadingArticles(t)
+            if !stripped.isEmpty { add(stripped) }
+        }
         if t.isEmpty, !a.isEmpty { add(a) }
-        return Array(out.prefix(5))
+        return Array(out.prefix(6))
     }
 
     static func retryVariants(title: String, artist: String) -> [String] {
@@ -46,11 +50,18 @@ enum SongSearchQueries {
     /// Raw utterance or note line with no structured title/artist.
     static func variants(fromRawQuery raw: String) -> [String] {
         let cleaned = CardTextMapper.clean(raw)
-        guard cleaned.count >= 2 else { return [] }
-        var out = variants(title: "", artist: "", rawQuery: cleaned)
-        let stripped = stripLeadingArticles(cleaned)
+        let framed = stripSongFraming(cleaned)
+        guard framed.count >= 2 || cleaned.count >= 2 else { return [] }
+        var out = variants(title: "", artist: "", rawQuery: framed.isEmpty ? cleaned : framed)
+        if framed.count >= 2, !out.contains(where: { ApiJSON.sameText($0, framed) }) {
+            out.insert(framed, at: 0)
+        }
+        let stripped = stripLeadingArticles(framed.isEmpty ? cleaned : framed)
         if stripped.count >= 2, !out.contains(where: { ApiJSON.sameText($0, stripped) }) {
             out.append(stripped)
+        }
+        if cleaned.count >= 2, !out.contains(where: { ApiJSON.sameText($0, cleaned) }) {
+            out.append(cleaned)
         }
         return Array(out.prefix(6))
     }
@@ -89,10 +100,44 @@ enum SongSearchQueries {
         var words = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             .split(separator: " ")
             .map(String.init)
-        while let first = words.first?.lowercased(), leadingArticles.contains(first) {
+        while let first = words.first.map(fold), leadingArticles.contains(first) {
             words.removeFirst()
         }
         return words.joined(separator: " ")
+    }
+
+    /// Drops spoken/written framing ("la canción", "the song") so a title-only query remains.
+    static func stripSongFraming(_ raw: String) -> String {
+        var words = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: " ")
+            .map(String.init)
+        let frames: [[String]] = [
+            ["la", "cancion", "se", "llama"],
+            ["the", "song", "is", "called"],
+            ["la", "cancion", "es"],
+            ["el", "tema", "es"],
+            ["mi", "cancion", "es"],
+            ["my", "song", "is"],
+            ["la", "cancion"],
+            ["una", "cancion"],
+            ["el", "tema"],
+            ["the", "song"],
+            ["cancion"],
+            ["song"],
+        ]
+        for frame in frames.sorted(by: { $0.count > $1.count }) {
+            guard words.count > frame.count else { continue }
+            let head = words.prefix(frame.count).map(fold)
+            if head == frame {
+                words.removeFirst(frame.count)
+                break
+            }
+        }
+        return stripLeadingArticles(words.joined(separator: " "))
+    }
+
+    private static func fold(_ s: String) -> String {
+        s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
     }
 
     private static let leadingArticles: Set<String> = [
@@ -118,7 +163,7 @@ enum SongSearchQueries {
 
 extension SongPick {
     func storeSearchQueries() -> [String] {
-        SongSearchQueries.variants(title: title, artist: artist, rawQuery: searchQuery)
+        SongSearchQueries.variants(title: title, artist: artist, rawQuery: filledSearchQuery)
     }
 
     func storeSearchRetryQueries() -> [String] {
@@ -126,6 +171,31 @@ extension SongPick {
     }
 
     var allStoreSearchQueries: [String] {
-        SongSearchQueries.allVariants(title: title, artist: artist, rawQuery: searchQuery)
+        SongSearchQueries.allVariants(title: title, artist: artist, rawQuery: filledSearchQuery)
+    }
+
+    /// Title (and artist when known) even if the model left `search_query` blank.
+    var filledSearchQuery: String {
+        SongSearchQueries.buildSearchQuery(title: title, artist: artist, raw: searchQuery)
+    }
+
+    var hasUsableTitle: Bool {
+        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.count >= 2 || filledSearchQuery.count >= 2
+    }
+
+    /// Title named without artist: store ranking picks the most popular recording.
+    var isTitleOnly: Bool {
+        artist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && title.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
+    }
+
+    func withFilledSearchQuery() -> SongPick {
+        var copy = self
+        copy.searchQuery = filledSearchQuery
+        if copy.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            copy.title = SongSearchQueries.stripSongFraming(copy.searchQuery)
+        }
+        return copy
     }
 }

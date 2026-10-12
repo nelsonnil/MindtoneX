@@ -86,7 +86,7 @@ enum PerformCopy {
         case .aiVoice:
             steps.append("The app listens while the spectator names a song (same \(lockSeconds)-second lock as above), then stops the microphone.")
         case .api:
-            steps.append("Ask the spectator to search a song in \(ApiSettings.provider.title). The app checks every \(Int(ApiSettings.pollInterval)) seconds and locks their search as soon as the preview is loaded.")
+            steps.append("Song input reads \(ApiSettings.provider.title) every \(Int(ApiSettings.pollInterval)) seconds: the **current** song on the API is used when you tap Perform, and any **new search during Perform** updates the ringtone and stage.")
         case .notes:
             steps.append("A white note opens instead. The song written in it is searched and loaded in the background.")
         case .card:

@@ -38,9 +38,9 @@ final class InterferenceAudioEngine {
         static let radioLowPassHz: Float = 3400
     }
 
-    /// Interference sits ~3 dB in front of ringtone and song; the master peak limiter keeps the sum clean.
+    /// Morph ducking + master peak limiter keep the ringtone→interference→song sum clean; ringtone runs at full app gain while looping.
     enum Level {
-        static let ringtone: Float = 0.72
+        static let ringtone: Float = 1.0
         static let interference: Float = 1.0
         static let song: Float = 0.85
         static let ringtoneDuckDB: Float = -15

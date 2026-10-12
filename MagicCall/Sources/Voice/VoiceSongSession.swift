@@ -69,6 +69,8 @@ final class VoiceSongSession: ObservableObject {
     private var secondTranscriptStart = 0
     private var secondPrefetchTask: Task<Void, Never>?
     private var pendingSecondPrefetch: SongPick?
+    /// Two-song: a later distinct title arrived while song 1 is still prefetching.
+    private var pendingSecondPick: SongPick?
 
     private init() {}
 
@@ -223,7 +225,14 @@ final class VoiceSongSession: ObservableObject {
         let secondSong = listeningForSecondSong
         let previous = secondSong ? secondCandidate : candidate
         let songTranscript = secondSong ? secondSpectatorTranscript : text
-        let songContext = secondSong ? secondSpectatorPromptContext : nil
+        let songContext: String?
+        if secondSong {
+            songContext = secondSpectatorPromptContext
+        } else if SpectatorSettings.isTwo {
+            songContext = Self.firstOfTwoPromptContext
+        } else {
+            songContext = nil
+        }
         isThinking = true
         let t0 = CACurrentMediaTime()
         let plan = VoiceListenPlan.current
@@ -252,6 +261,11 @@ final class VoiceSongSession: ObservableObject {
                         self.handleSecond(pick, ms: ms)
                     } else {
                         self.handle(pick, ms: ms)
+                        await self.pickSecondSongIfNamedInSameTranscript(
+                            fullText: text,
+                            gen: gen,
+                            lastIsFinal: self.lines.last?.isFinal == true
+                        )
                     }
                 }
                 if plan.callerName {
@@ -335,31 +349,39 @@ final class VoiceSongSession: ObservableObject {
 
     private func handle(_ pick: SongPick?, ms: Int) {
         guard state == .listening, !listeningForSecondSong else { return }
-        guard let pick, pick.hasSong, !pick.searchQuery.isEmpty else {
+        let resolved = resolvedSongPick(pick, transcript: transcriptText)
+        guard let resolved, resolved.hasSong, resolved.hasUsableTitle else {
             dlog("[VOICE] AI (\(ms) ms): no song chosen yet\(pick.map { " · \($0.reasoning)" } ?? "")")
             return
         }
-        guard pick.confidence >= VoiceSettings.minConfidence else {
-            dlog("[VOICE] AI (\(ms) ms): \(pick.label) ignored, confidence \(Self.percent(pick.confidence)) < \(Self.percent(VoiceSettings.minConfidence)) · \(pick.reasoning)")
+        let floor = resolved.isTitleOnly ? min(VoiceSettings.minConfidence, Self.titleOnlyConfidenceFloor) : VoiceSettings.minConfidence
+        guard resolved.confidence >= floor else {
+            dlog("[VOICE] AI (\(ms) ms): \(resolved.label) ignored, confidence \(Self.percent(resolved.confidence)) < \(Self.percent(floor)) · \(resolved.reasoning)")
             if context == .perform {
                 PerformUserLog.shared.log(
-                    "Voice · song ignored · «\(WordApiInputPanel.truncated(pick.label, max: 40))» · confidence \(Self.percent(pick.confidence)) below minimum"
+                    "Voice · song ignored · «\(WordApiInputPanel.truncated(resolved.label, max: 40))» · confidence \(Self.percent(resolved.confidence)) below minimum"
                 )
             }
             return
         }
-        if let current = candidate, current.key == pick.key {
-            candidate = pick
-            dlog("[VOICE] AI (\(ms) ms): same candidate \(pick.label) \(Self.percent(pick.confidence))")
+        if SpectatorSettings.isTwo, let current = candidate, current.key != resolved.key,
+           !Self.transcriptRetractsPreviousChoice(transcriptText) {
+            promoteFirstSongAndTakeSecond(first: current, second: resolved, ms: ms)
             return
         }
-        dlog("[VOICE] ★ candidate \(candidate?.label ?? "none") → \(pick.label) · \(Self.percent(pick.confidence)) · \(pick.reasoning) (\(ms) ms)")
-        candidate = pick
+        if let current = candidate, current.key == resolved.key {
+            candidate = resolved
+            dlog("[VOICE] AI (\(ms) ms): same candidate \(resolved.label) \(Self.percent(resolved.confidence))")
+            return
+        }
+        pendingSecondPick = nil
+        dlog("[VOICE] ★ candidate \(candidate?.label ?? "none") → \(resolved.label) · \(Self.percent(resolved.confidence)) · \(resolved.reasoning) (\(ms) ms)")
+        candidate = resolved
         prep = .preparing
         pendingCallLock = false
         AppModel.shared.dropPreviewForNewLookup()
         restartLockTimer()
-        prefetch(pick)
+        prefetch(resolved)
     }
 
     // MARK: Prefetch
@@ -393,6 +415,9 @@ final class VoiceSongSession: ObservableObject {
                     } else if self.pendingCallLock, let c = self.candidate {
                         self.pendingCallLock = false
                         self.lock(c, reason: "call/trigger deferred until prefetch ready", duringCall: true)
+                    } else if let second = self.pendingSecondPick, ok, let first = self.candidate {
+                        self.pendingSecondPick = nil
+                        self.promoteFirstSongAndTakeSecond(first: first, second: second, ms: 0)
                     }
                 }
             }
@@ -492,42 +517,54 @@ final class VoiceSongSession: ObservableObject {
             .joined(separator: "\n")
     }
 
+    private static let firstOfTwoPromptContext =
+        "Two-song mode. Return ONLY song 1: the first title the spectator settles on. "
+        + "If a later distinct title also appears, ignore it here (that is song 2). "
+        + "Last-commitment-wins applies only to a mind-change of song 1 («no, mejor X»), not to a second song. "
+        + "Title without artist is enough — infer the most popular recording."
+
     private var secondSpectatorPromptContext: String? {
-        guard let first = lockedPick else { return nil }
-        return "Two-song mode. Song 1 «\(first.label)» is already locked. "
-            + "This transcript is only for song 2 — the next distinct title the spectator settles on "
-            + "(same person or a second person). Never return «\(first.label)» again: "
-            + "if it is the only song mentioned, return has_song=false."
+        songTwoPromptContext(for: lockedPick)
+    }
+
+    private func songTwoPromptContext(for first: SongPick?) -> String? {
+        guard let first else { return nil }
+        return "Two-song mode. Song 1 «\(first.label)» is already chosen. "
+            + "Return song 2: the next distinct title (same person or a second person). "
+            + "Title without artist is enough — infer the most popular recording. "
+            + "Never return «\(first.label)» again: if it is the only song mentioned, return has_song=false."
     }
 
     private func handleSecond(_ pick: SongPick?, ms: Int) {
         guard state == .listening, listeningForSecondSong else { return }
-        guard let pick, pick.hasSong, !pick.searchQuery.isEmpty else {
+        let resolved = resolvedSongPick(pick, transcript: secondSpectatorTranscript)
+        guard let resolved, resolved.hasSong, resolved.hasUsableTitle else {
             dlog("[VOICE] AI (\(ms) ms): spectator 2 · no song yet\(pick.map { " · \($0.reasoning)" } ?? "")")
             return
         }
-        guard pick.confidence >= VoiceSettings.minConfidence else {
-            dlog("[VOICE] AI (\(ms) ms): spectator 2 · \(pick.label) ignored, confidence \(Self.percent(pick.confidence)) < \(Self.percent(VoiceSettings.minConfidence))")
+        let floor = resolved.isTitleOnly ? min(VoiceSettings.minConfidence, Self.titleOnlyConfidenceFloor) : VoiceSettings.minConfidence
+        guard resolved.confidence >= floor else {
+            dlog("[VOICE] AI (\(ms) ms): spectator 2 · \(resolved.label) ignored, confidence \(Self.percent(resolved.confidence)) < \(Self.percent(floor))")
             if context == .perform {
                 PerformUserLog.shared.log(
-                    "Voice · song 2 ignored · «\(WordApiInputPanel.truncated(pick.label, max: 40))» · confidence \(Self.percent(pick.confidence)) below minimum"
+                    "Voice · song 2 ignored · «\(WordApiInputPanel.truncated(resolved.label, max: 40))» · confidence \(Self.percent(resolved.confidence)) below minimum"
                 )
             }
             return
         }
-        if let first = lockedPick, first.key == pick.key {
-            dlog("[VOICE] AI (\(ms) ms): spectator 2 · same as song 1 (\(pick.label)) — ignored")
+        if let first = lockedPick, first.key == resolved.key {
+            dlog("[VOICE] AI (\(ms) ms): spectator 2 · same as song 1 (\(resolved.label)) — ignored")
             return
         }
-        if let current = secondCandidate, current.key == pick.key {
-            secondCandidate = pick
+        if let current = secondCandidate, current.key == resolved.key {
+            secondCandidate = resolved
             return
         }
-        dlog("[VOICE] ★ spectator 2 candidate \(secondCandidate?.label ?? "none") → \(pick.label) · \(Self.percent(pick.confidence)) · \(pick.reasoning) (\(ms) ms)")
-        secondCandidate = pick
+        dlog("[VOICE] ★ spectator 2 candidate \(secondCandidate?.label ?? "none") → \(resolved.label) · \(Self.percent(resolved.confidence)) · \(resolved.reasoning) (\(ms) ms)")
+        secondCandidate = resolved
         secondPrep = .preparing
         restartLockTimer()
-        prefetchSecond(pick)
+        prefetchSecond(resolved)
     }
 
     /// Song 2 loads next to song 1 (`SecondSpectatorSong`), never into the Home slot.
@@ -607,6 +644,65 @@ final class VoiceSongSession: ObservableObject {
         AppModel.shared.voiceDidLock(context: context, duringCall: duringCall)
     }
 
+    // MARK: Title-only + two-song helpers
+
+    private static let titleOnlyConfidenceFloor = 0.35
+    private static let retractCues = [
+        "no, mejor", "no mejor", "o no", "espera", "cambio", "la otra",
+        "actually", "wait", "better", "changed my mind", "change",
+    ]
+
+    private func resolvedSongPick(_ pick: SongPick?, transcript: String) -> SongPick? {
+        if let pick, pick.hasSong, pick.hasUsableTitle {
+            return pick.withFilledSearchQuery()
+        }
+        guard let guess = SongPicker.heuristic(transcript: transcript), guess.hasUsableTitle else {
+            return pick?.hasSong == true ? pick?.withFilledSearchQuery() : nil
+        }
+        return guess.withFilledSearchQuery()
+    }
+
+    private static func transcriptRetractsPreviousChoice(_ text: String) -> Bool {
+        let folded = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
+        return retractCues.contains(where: { folded.contains($0) })
+    }
+
+    private func promoteFirstSongAndTakeSecond(first: SongPick, second: SongPick, ms: Int) {
+        switch prep {
+        case .ready:
+            dlog("[VOICE] two songs · second title «\(second.label)» while song 1 ready — lock song 1 now")
+            lockFirstOfTwo(first, reason: "second title heard — lock song 1")
+            handleSecond(second, ms: ms)
+        case .preparing:
+            pendingSecondPick = second
+            dlog("[VOICE] two songs · second title «\(second.label)» queued until song 1 audio is ready")
+        default:
+            pendingSecondPick = nil
+            candidate = second
+            prep = .preparing
+            pendingCallLock = false
+            AppModel.shared.dropPreviewForNewLookup()
+            restartLockTimer()
+            prefetch(second)
+        }
+    }
+
+    private func pickSecondSongIfNamedInSameTranscript(fullText: String, gen: Int, lastIsFinal: Bool) async {
+        guard gen == generation, SpectatorSettings.isTwo, lastIsFinal else { return }
+        guard state == .listening, !listeningForSecondSong, let first = candidate else { return }
+        guard let context = songTwoPromptContext(for: first) else { return }
+        do {
+            let pick = try await SongPicker.pick(transcript: fullText, previous: nil, context: context)
+            guard gen == self.generation, self.state == .listening, !self.listeningForSecondSong else { return }
+            let resolved = resolvedSongPick(pick, transcript: fullText)
+            guard let resolved, resolved.hasSong, resolved.hasUsableTitle, resolved.key != first.key else { return }
+            dlog("[VOICE] two songs · same transcript also names song 2 «\(resolved.label)»")
+            promoteFirstSongAndTakeSecond(first: first, second: resolved, ms: 0)
+        } catch {
+            dlog("[VOICE] two songs · song 2 peek failed: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: Helpers
 
     private func stopListening() {
@@ -648,6 +744,7 @@ final class VoiceSongSession: ObservableObject {
         pendingSecondPrefetch = nil
         secondPrefetchTask?.cancel()
         secondPrefetchTask = nil
+        pendingSecondPick = nil
     }
 
     private func fail(_ message: String) {

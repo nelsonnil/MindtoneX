@@ -28,8 +28,6 @@ struct NotesPerformView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
 
-            HiddenVolumeView().frame(width: 1, height: 1)
-
             if model.showDebugOverlay {
                 DebugOverlay().transition(.opacity)
             }

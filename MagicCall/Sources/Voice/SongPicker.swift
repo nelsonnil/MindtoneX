@@ -54,21 +54,25 @@ enum SongPicker {
     Decide which song the SPECTATOR has finally chosen.
 
     Rules:
-    1. Ignore songs the magician mentions as examples, suggestions or hypotheticals ("por ejemplo", "como", "cualquiera, puede ser…", "no sé, tipo…", "for example", "like", "any song, even…"), songs in questions he asks, and songs mentioned while explaining the trick.
-    2. The choice is normally the answer right after the request ("¿qué canción?", "dime una canción", "name a song"). A confirmation ("sí, esa", "esa misma", "yes, that one") or the magician repeating it back ("¿Thriller? perfecto") confirms the previous answer.
-    3. Changes of mind: the LAST commitment wins ("Despacito… no, mejor Thriller" → Thriller; "o no, espera", "cambio", "actually", "better", "la otra"). If the spectator retracts without naming a new song, return has_song=false unless an earlier answer is clearly re-confirmed.
-    4. Return the official title and main artist with canonical spelling, in the song's original language.
-       **Title only (no artist said):** has_song=true when the spectator clearly names a song title. Infer the **most famous chart hit** for that title (e.g. "La Gasolina" / "Gasolina" → Daddy Yankee — Gasolina; "Bulería" alone → David Bisbal if that is the dominant hit in Spanish pop). Put the inferred artist in `artist` and use high confidence when the hit is unambiguous; medium confidence when several famous versions exist but one clearly dominates.
+    1. Ignore songs the magician mentions as examples, suggestions or hypotheticals ("por ejemplo", "como", "cualquiera, puede ser…", "no sé, tipo…", "for example", "like", "any song, even…"), songs in questions he asks, and songs mentioned while explaining the trick. A short phrase that is only a title is NOT an example.
+    2. The choice is normally the answer right after the request ("¿qué canción?", "dime una canción", "name a song"). Phrases like "la canción X", "cancion X", "the song X", "X" (a known title) ARE the spectator naming X — even with no artist, and even if there is no clear question/answer split.
+    3. A confirmation ("sí, esa", "esa misma", "yes, that one") or the magician repeating it back ("¿Thriller? perfecto") confirms the previous answer.
+    4. Changes of mind: the LAST commitment wins ("Despacito… no, mejor Thriller" → Thriller; "o no, espera", "cambio", "actually", "better", "la otra"). If the spectator retracts without naming a new song, return has_song=false unless an earlier answer is clearly re-confirmed.
+       Two-song mode (see Situation): a later DISTINCT title without a retraction is song 2 — keep returning song 1 until told otherwise.
+    5. Return the official title and main artist with canonical spelling, in the song's original language.
+       **Title only (no artist said) is a complete choice.** has_song=true. Infer the single **most popular / most famous recording** of that title (chart hit, not a cover, karaoke, tribute or lesser same-name song). Examples: "La Gasolina" / "Gasolina" / "la canción la gasolina" → Daddy Yankee — Gasolina; "Bulería" alone → David Bisbal — Bulería; "Thriller" → Michael Jackson; "Despacito" → Luis Fonsi. Put that artist in `artist`. If two groups share a similar title, pick the globally best-known version.
        If only an **artist** or a **lyric** is given (no title), pick that artist's most famous matching song only when reasonably clear, with lower confidence.
-    5. If no song has been chosen yet, return has_song=false with empty title, artist and search_query.
-    6. confidence (0 to 1) = how sure you are that this is the spectator's final choice AND that it is identified correctly. Do **not** withhold a lock only because the artist was not spoken — title-only with a clear famous hit should be ≥ 0.75.
-    7. search_query = text for a music store search. Prefer "Title Artist" when you inferred an artist; otherwise the canonical title alone (drop leading articles like "La"/"The" if the hit is known without them, e.g. "Gasolina Daddy Yankee" or "Gasolina").
-    8. reasoning: one short English sentence (max 25 words) saying who said what.
+    6. If no song has been chosen yet, return has_song=false with empty title, artist and search_query.
+    7. confidence (0 to 1) = how sure you are that this is the spectator's final choice. Do **not** lower confidence because the artist was not spoken. Title-only of a famous hit must be ≥ 0.85. Never return has_song=false only because the singer/group was omitted.
+    8. search_query = "Title Artist" using the inferred popular artist (e.g. "Gasolina Daddy Yankee"). Never leave search_query empty when has_song=true.
+    9. reasoning: one short English sentence (max 25 words) saying who said what.
 
     Examples:
     - "Piensa en una canción, la que quieras, por ejemplo Despacito o Yesterday. ¿Cuál? — Mmm… Thriller." → Thriller, Michael Jackson, high confidence.
-    - "Dime una canción. — La Gasolina." → Gasolina, Daddy Yankee, high confidence, search_query "Gasolina Daddy Yankee".
-    - "¿Cuál canción? — Bulería." → Bulería, David Bisbal, high confidence (famous Spanish hit).
+    - "la canción la gasolina" (no artist) → Gasolina, Daddy Yankee, ≥0.85, search_query "Gasolina Daddy Yankee".
+    - "Dime una canción. — La Gasolina." → Gasolina, Daddy Yankee, high confidence.
+    - "¿Cuál canción? — Bulería." → Bulería, David Bisbal, high confidence.
+    - "bisbal canción bulería" → Bulería, David Bisbal, high confidence.
     - "Dime una canción. — La Macarena. No, no, mejor Bohemian Rhapsody." → Bohemian Rhapsody, Queen.
     - "Any song you like, could be anything, Shakira, whatever. — Hmm, let me think…" → has_song=false.
     """
@@ -148,8 +152,10 @@ enum SongPicker {
     // MARK: Offline fallback (no API key)
 
     private static let commitCues = [
-        "mejor", "elijo", "escojo", "me quedo con", "la cancion es", "mi cancion es", "quiero", "pon", "ponme",
-        "i choose", "i pick", "my song is", "actually", "let's go with", "lets go with", "i'll go with", "ill go with",
+        "mejor", "elijo", "escojo", "me quedo con", "la cancion se llama", "la cancion es", "mi cancion es",
+        "la cancion", "una cancion", "cancion", "el tema es", "el tema", "quiero", "pon", "ponme",
+        "the song is called", "the song is", "the song", "i choose", "i pick", "my song is",
+        "actually", "let's go with", "lets go with", "i'll go with", "ill go with",
     ]
     private static let exampleCues = ["por ejemplo", "como ", "cualquiera", "puede ser", "for example", "like ", "any song", "anything"]
     private static let fillers: Set<String> = [
@@ -184,9 +190,9 @@ enum SongPicker {
         guard var text = candidate?.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters)) else { return nil }
         var words = text.split(separator: " ").map(String.init)
         while let first = words.first, fillers.contains(first) { words.removeFirst() }
-        text = words.joined(separator: " ")
+        text = SongSearchQueries.stripSongFraming(words.joined(separator: " "))
         guard text.count >= 3 else { return nil }
-        return SongPick(hasSong: true, title: text, artist: "", searchQuery: text, confidence: 0.6,
-                        reasoning: "Offline guess (no API key): last short answer\(bestCue.map { " after “\($0.cue)”" } ?? "").")
+        return SongPick(hasSong: true, title: text, artist: "", searchQuery: text, confidence: 0.7,
+                        reasoning: "Title-only guess: last short answer\(bestCue.map { " after “\($0.cue)”" } ?? "").")
     }
 }

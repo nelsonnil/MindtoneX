@@ -61,7 +61,6 @@ extension AppModel {
         }
         let input = VoiceSettings.inputMode
         dlog("══ PERFORM ══ input=\(input.title)")
-        let apiLiveWatchHandoff = ApiSongSession.shared.liveWatchBaselineForPerformHandoff()
         if findsSongDuringPerform {
             clearPerformSessionDisplayTrack()
             VoiceSongSession.shared.reset(reason: "new Perform")
@@ -78,15 +77,12 @@ extension AppModel {
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
             return
         }
-        pendingApiLiveWatchHandoff = apiLiveWatchHandoff
         runPerformWithWordContactPrep()
     }
 
     func performNowAfterWordContactPrep() {
         resetAutoSharePresentedFlag()
         let input = VoiceSettings.inputMode
-        let apiHandoff = pendingApiLiveWatchHandoff
-        pendingApiLiveWatchHandoff = nil
         if SpectatorSettings.isTwo, findsSongDuringPerform {
             SecondSpectatorSong.shared.beginWaiting(source: input.title, context: .perform)
         }
@@ -100,7 +96,7 @@ extension AppModel {
             arm(requireSong: false)
         case .api:
             arm(requireSong: false)
-            ApiSongSession.shared.start(context: .perform, liveWatchHandoff: apiHandoff)
+            ApiSongSession.shared.start(context: .perform)
         case .card:
             CardSongSession.shared.start(context: .perform)
             arm(requireSong: false)

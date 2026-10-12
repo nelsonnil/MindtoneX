@@ -13,6 +13,12 @@ struct MagicCallApp: App {
                 case .stage: StageView()
                 }
             }
+            // MPVolumeView must live in a window for programmatic media volume (Perform, interference test sheet, etc.).
+            .background {
+                HiddenVolumeView()
+                    .frame(width: 1, height: 1)
+                    .allowsHitTesting(false)
+            }
             .environmentObject(model)
             .environmentObject(DebugLog.shared)
             .onOpenURL { url in

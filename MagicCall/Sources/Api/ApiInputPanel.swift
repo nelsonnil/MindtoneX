@@ -87,8 +87,8 @@ struct ApiInputPanel: View {
                 .buttonStyle(.plain)
 
                 Text(twoSongsOnCall
-                    ? "On Perform, polls every \(Int(ApiSettings.pollInterval)) s — first **new** search locks **song 1**, the next new search locks **song 2**. Calls play song 1; **Interference ringtone** + second hand plays song 2."
-                    : "On Perform, polls every \(Int(ApiSettings.pollInterval)) s — first reading is the old search, the **next change** is their song.")
+                    ? "On Perform, polls every \(Int(ApiSettings.pollInterval)) s — **song 1** is whatever the API shows when Perform starts (or the first song that appears); the **next new** search locks **song 2**. Calls play song 1; **Interference ringtone** + second hand plays song 2."
+                    : "On Perform, polls every \(Int(ApiSettings.pollInterval)) s — uses the **current API song** right away; a **new search during Perform** replaces it.")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
             }

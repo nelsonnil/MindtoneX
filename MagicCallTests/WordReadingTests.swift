@@ -196,4 +196,37 @@ final class WordReadingTests: XCTestCase {
         let ranked = PreviewService.rank(tracks, for: "La Gasolina")
         XCTAssertEqual(ranked.first?.artist, "Daddy Yankee")
     }
+
+    func testStripSongFramingLaCancionLaGasolina() {
+        XCTAssertEqual(SongSearchQueries.stripSongFraming("la canción la gasolina"), "gasolina")
+        XCTAssertEqual(SongSearchQueries.stripSongFraming("La Gasolina"), "Gasolina")
+        XCTAssertEqual(SongSearchQueries.stripSongFraming("the song Thriller"), "Thriller")
+    }
+
+    func testHeuristicTitleOnlyGasolinaWithoutArtist() {
+        let pick = SongPicker.heuristic(transcript: "la cancion la gasolina")
+        XCTAssertEqual(pick?.hasSong, true)
+        XCTAssertTrue(pick?.title.localizedCaseInsensitiveContains("gasolina") == true)
+        XCTAssertEqual(pick?.artist, "")
+        XCTAssertTrue(pick?.allStoreSearchQueries.contains(where: { ApiJSON.sameText($0, "gasolina") }) == true)
+    }
+
+    func testCardAcceptsTitleOnlyLaGasolinaMatchesDaddyYankee() {
+        let pick = CardHandwritingPick(
+            hasSong: true,
+            title: "LA GASOLINA",
+            artist: "",
+            searchQuery: "LA GASOLINA",
+            confidence: 0.9,
+            reasoning: "fixture",
+            hasCallerWord: false,
+            callerWord: "",
+            hasNotesWord: false,
+            notesWord: ""
+        )
+        let yankee = PreviewTrack(title: "Gasolina", artist: "Daddy Yankee", album: nil, artworkURL: nil,
+                                  previewURL: URL(string: "https://example.com/a.m4a")!, source: .itunes)
+        XCTAssertTrue(pick.accepts(yankee))
+        XCTAssertTrue(pick.storeSearchQueries().contains(where: { ApiJSON.sameText($0, "Gasolina") || ApiJSON.sameText($0, "GASOLINA") }))
+    }
 }

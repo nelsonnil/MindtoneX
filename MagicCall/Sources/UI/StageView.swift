@@ -53,6 +53,10 @@ struct StageView: View {
             StageBackgroundView(maskStatusBar: maskStatusBar)
                 .ignoresSafeArea()
 
+            InterferenceVisualEffect(intensity: interference.phase.stageVisualIntensity)
+                .ignoresSafeArea()
+                .animation(.easeInOut(duration: 0.25), value: interference.phase)
+
             StageGestureLayer(
                 peekHoldEnabled: peekEnabled,
                 onPeekVisibility: { visible in
@@ -72,8 +76,6 @@ struct StageView: View {
                 )
                 .animation(.easeOut(duration: 0.12), value: peekVisible)
             }
-
-            HiddenVolumeView().frame(width: 1, height: 1)
 
             CardVolumeScanHost()
                 .frame(width: 44, height: 44)

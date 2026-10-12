@@ -511,8 +511,12 @@ final class CardSongSession: ObservableObject {
         let firstQueries: [String]
         let secondQueries: [String]
         if visionAnswered {
-            firstQueries = Self.uniqueQueries(firstPick.map { $0.storeSearchQueries() + $0.storeSearchRetryQueries() } ?? [])
-            secondQueries = Self.uniqueQueries(secondPick.map { $0.storeSearchQueries() + $0.storeSearchRetryQueries() } ?? [])
+            firstQueries = Self.uniqueQueries(firstPick.map {
+                SongSearchQueries.allVariants(title: $0.title, artist: $0.artist, rawQuery: $0.searchQuery)
+            } ?? [])
+            secondQueries = Self.uniqueQueries(secondPick.map {
+                SongSearchQueries.allVariants(title: $0.title, artist: $0.artist, rawQuery: $0.searchQuery)
+            } ?? [])
         } else {
             firstQueries = Self.uniqueQueries(CardTextMapper.songSearchVariants(from: local.song1))
             secondQueries = Self.uniqueQueries(CardTextMapper.songSearchVariants(from: local.song2))

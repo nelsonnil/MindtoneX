@@ -126,11 +126,12 @@ struct CardHandwritingPick: Equatable, Codable {
 
     func asSongPick() -> SongPick? {
         guard hasSong else { return nil }
-        let q = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        let q = SongSearchQueries.buildSearchQuery(title: title, artist: artist, raw: searchQuery)
         guard !q.isEmpty else { return nil }
         return SongPick(
             hasSong: true,
-            title: title,
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? SongSearchQueries.stripSongFraming(q) : title,
             artist: artist,
             searchQuery: q,
             confidence: confidence,
@@ -166,12 +167,27 @@ struct CardHandwritingPick: Equatable, Codable {
     /// Store hit plausibly matches what vision read (rejects unrelated top results such as another song by the artist).
     func accepts(_ track: PreviewTrack) -> Bool {
         let wantTitle = PreviewService.normalize(title)
-        guard wantTitle.count >= 3 else { return true }
+        let wantStripped = PreviewService.normalize(SongSearchQueries.stripLeadingArticles(title))
         let gotTitle = PreviewService.normalize(track.title)
-        if gotTitle.contains(wantTitle) || wantTitle.contains(gotTitle) { return true }
+        let gotStripped = PreviewService.normalize(SongSearchQueries.stripLeadingArticles(track.title))
+        let needle = wantStripped.count >= 3 ? wantStripped : wantTitle
+        guard needle.count >= 3 else { return true }
+        if Self.titlesOverlap(needle, gotTitle) || Self.titlesOverlap(needle, gotStripped)
+            || Self.titlesOverlap(wantTitle, gotTitle) || Self.titlesOverlap(wantTitle, gotStripped) {
+            return true
+        }
         let wantArtist = PreviewService.normalize(artist)
-        if !wantArtist.isEmpty, gotTitle.contains(wantArtist), wantTitle.count < 4 { return false }
-        return wantTitle.split(separator: " ").count <= 1
+        if wantArtist.isEmpty {
+            // Title-only card: trust the most popular store hit when the title token is present.
+            return needle.split(separator: " ").count <= 2
+        }
+        if gotTitle.contains(wantArtist), needle.count < 4 { return false }
+        return needle.split(separator: " ").count <= 1
+    }
+
+    private static func titlesOverlap(_ a: String, _ b: String) -> Bool {
+        guard a.count >= 3, b.count >= 3 else { return false }
+        return a.contains(b) || b.contains(a)
     }
 
     private static func callerLooksLikeSongFragment(_ caller: String, title: String, artist: String) -> Bool {
@@ -292,8 +308,8 @@ enum CardHandwritingPicker {
 
         \(CardOCRLayout.openAIVisionRules)
 
-        Fix handwriting/OCR (YOULSELF → Yourself). **Title only** on the card is valid — infer the most famous hit and artist when clear (e.g. LA GASOLINA → Gasolina, Daddy Yankee). If unreadable, has_song=false.
-        confidence 0–1. reasoning: one short English sentence (max 25 words).
+        Fix handwriting/OCR (YOULSELF → Yourself). **Title only** (no artist) is a complete song — has_song=true. Infer the **most popular recording** of that title (not a cover/karaoke). Examples: LA GASOLINA / GASOLINA → Gasolina, Daddy Yankee; BULERÍA → Bulería, David Bisbal; THRILLER → Thriller, Michael Jackson. search_query = "Title Artist". If unreadable, has_song=false.
+        confidence 0–1 (title-only famous hits ≥ 0.85). reasoning: one short English sentence (max 25 words).
         """
 
         let schema: [String: Any] = [
@@ -361,9 +377,9 @@ enum CardHandwritingPicker {
         \(callerRule)
         \(notesRule)
 
-        Fix handwriting/OCR (YOULSELF → Yourself). Add the main artist when the title is famous and unambiguous; otherwise leave artist empty. \
-        search_query_1 / search_query_2 = "Title Artist" (or the title alone). An unreadable song: has_song_N=false with empty strings. \
-        confidence 0–1 for the whole card. reasoning: one short English sentence (max 25 words).
+        Fix handwriting/OCR (YOULSELF → Yourself). **Title only is valid for each song** — has_song_N=true without an artist on the card. Infer the **most popular recording** (LA GASOLINA / GASOLINA → Daddy Yankee; BULERÍA → David Bisbal). If two artists share a similar title, pick the famous hit. \
+        search_query_1 / search_query_2 = "Title Artist" with that inferred artist; never leave them empty when has_song_N=true. An unreadable song: has_song_N=false with empty strings. \
+        confidence 0–1 for the whole card (title-only famous hits ≥ 0.85). reasoning: one short English sentence (max 25 words).
         """
 
         let schema: [String: Any] = [

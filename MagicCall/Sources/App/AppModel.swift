@@ -74,9 +74,6 @@ final class AppModel: ObservableObject {
     /// Prevents opening auto-share more than once per Perform.
     var autoSharePresentedThisPerform = false
 
-    /// Live watch baseline captured in `performNow()` before API session reset.
-    var pendingApiLiveWatchHandoff: ApiReading?
-
     @Published var wordSpectatorDialSheet = false
     @Published var wordKnownContactPicker = false
 
@@ -454,7 +451,7 @@ final class AppModel: ObservableObject {
         isAudible = false
         phase = .stage
         if usesCardInput {
-            // Needs `isArmed` (guard) and the stage's `HiddenVolumeView`, which mounts after `phase = .stage`.
+            // Needs `isArmed` (guard); app-root `HiddenVolumeView` mounts with the window (see `MagicCallApp`).
             primeCardVolumeScanHeadroom(reason: "Camera perform arm", entry: true)
         }
         Self.setScreenAwakeWhileInForeground(true)
@@ -1356,14 +1353,13 @@ final class AppModel: ObservableObject {
         applyFakePerformMediaVolumeBoost(reason: "songReady")
     }
 
-    /// Fake Ringtone: best-effort max media volume via hidden `MPVolumeView` (public API; slider hook undocumented).
+    /// Fake Ringtone: best-effort **device** media volume to 100 % via hidden `MPVolumeView` (app gain stays on **Playback volume**).
     func applyFakePerformMediaVolumeBoost(reason: String) {
         guard Prefs.boostMediaVolumeOnFakePerform else { return }
         ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
-        let target = Float(Prefs.fakePlaybackVolume)
         let before = SystemVolume.shared.outputVolume
-        SystemVolume.shared.set(target, label: "fake playback (\(reason))", sliderRetries: 5)
-        dlog("[VOLUME] Fake Perform (\(reason)) target=\(String(format: "%.2f", target)) before=\(String(format: "%.2f", before)) attached=\(SystemVolume.shared.isAttached)")
+        SystemVolume.shared.captureAndBoostToMaximum(sliderRetries: 12)
+        dlog("[VOLUME] Fake Perform (\(reason)) device→max before=\(String(format: "%.2f", before)) attached=\(SystemVolume.shared.isAttached)")
     }
 
     /// Same volume path as Perform `trigger`: **Playback volume** slider + optional system boost (interference test lab and ringtone).
@@ -1372,11 +1368,11 @@ final class AppModel: ObservableObject {
         applyFakePerformMediaVolumeBoost(reason: reason)
     }
 
-    /// Ruta 2: sube el volumen multimedia del sistema al 100 % al disparar (llamada o toque manual).
+    /// Al disparar (llamada o toque manual): sube el volumen **del dispositivo** al máximo; la ganancia del clip sigue en **Playback volume**.
     private func applySystemVolumeBoostForTrigger() {
         guard Prefs.boostSystemVolumeOnTrigger else { return }
         ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
-        SystemVolume.shared.set(Float(Prefs.fakePlaybackVolume), label: "fake trigger", sliderRetries: 5)
+        SystemVolume.shared.captureAndBoostToMaximum(sliderRetries: 12)
     }
 
 }

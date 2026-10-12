@@ -22,7 +22,7 @@ enum CardOCRLayout {
     /// One-line summary for Card input tips.
     static var lineAssignmentSummary: String {
         if songOnlyOnCard {
-            return "detect **song title + artist** anywhere on the card (line count flexible)"
+            return "detect **song title** (artist optional — most popular recording) anywhere on the card"
         }
         var parts = ["**top** = song (title and/or artist — one or two lines; OpenAI can merge if layout differs)"]
         if usesCallerLine { parts.append("**next line down** = caller name (one word)") }
@@ -34,9 +34,9 @@ enum CardOCRLayout {
     static var openAIVisionRules: String {
         if songOnlyOnCard {
             return """
-            **Song only:** Read the **entire card** for the song (OCR line count is irrelevant). Title alone is OK — infer the **most famous hit** and main artist when unambiguous (e.g. "GASOLINA" / "LA GASOLINA" → Daddy Yankee — Gasolina). \
+            **Song only:** Read the **entire card** for the song (OCR line count is irrelevant). Title alone is a complete choice — infer the **most popular recording** and main artist (e.g. "GASOLINA" / "LA GASOLINA" → Daddy Yankee — Gasolina; "BULERÍA" → David Bisbal). If two artists share a similar title, pick the famous hit. \
             One row ("EMINEM - LOSE YOURSELF") or two lines in any order — merge correctly. Ignore empty space. \
-            search_query = "Title Artist" when artist is known, else canonical title. has_caller_word=false, has_notes_word=false always.
+            search_query = "Title Artist" with the inferred artist. has_caller_word=false, has_notes_word=false always.
             """
         }
         var rules = """
@@ -60,7 +60,7 @@ enum CardOCRLayout {
         } else {
             rules += "\n\nNotes word: not used (has_notes_word=false)."
         }
-        rules += "\n\nsearch_query = \"Title Artist\" when both are on the card or the hit is famous and unambiguous; title alone is OK (e.g. \"Gasolina\" or \"Gasolina Daddy Yankee\"). Never duplicate artist."
+        rules += "\n\nsearch_query = \"Title Artist\". Title alone is enough — infer the most popular artist (e.g. \"Gasolina\" → \"Gasolina Daddy Yankee\"). Never duplicate artist."
         return rules
     }
 
@@ -71,7 +71,7 @@ enum CardOCRLayout {
             "Press **volume** when the card is in focus — snapshot + **OpenAI vision** (Voice token) or local OCR.",
         ]
         if songOnlyOnCard {
-            lines.append("**Song only:** Write **title and artist** anywhere on the card — one line (`ARTIST - TITLE`) or two lines; the app finds both.")
+            lines.append("**Song only:** Title and artist, or **title alone** — the app looks up the most popular recording (`GASOLINA` → Daddy Yankee). One line (`ARTIST - TITLE`) or two lines.")
         } else {
             lines.append("**Lines (top → bottom):** \(lineAssignmentSummary).")
             if usesCallerLine {
