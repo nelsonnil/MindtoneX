@@ -1,22 +1,24 @@
 import QuartzCore
 import UIKit
 
-/// Full-screen Cardphone «Proximity Rise» (`.ascent`) over the stage screenshot, timed to the flash interference clip.
+/// Full-screen Cardphone «Proximity Rise» (`.ascent`) over the stage screenshot. The 6 s choreography is played
+/// at the rate that lands the lens under the Dynamic Island when the flash clip ends; the whiteout tail then
+/// finishes over the incoming song and the host hides itself.
 final class StageProximityRippleHost: UIView {
-    static let shaderDuration: TimeInterval = 6.0
-
     private var renderer: ProximityRippleRenderer?
     private var displayLink: CADisplayLink?
     private var morphStart: CFTimeInterval?
     private var contentImage: CGImage?
     private var isDarkStage = true
     private var builtSize: CGSize = .zero
-    var morphDuration: TimeInterval = InterferenceSettings.flashInterferenceDuration
+    /// Seconds from the open hand to the lens reaching the top (flash clip length).
+    var riseDuration: TimeInterval = InterferenceSettings.flashInterferenceDuration
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         isUserInteractionEnabled = false
         backgroundColor = .clear
+        alpha = 0
     }
 
     @available(*, unavailable)
@@ -26,6 +28,8 @@ final class StageProximityRippleHost: UIView {
         displayLink?.invalidate()
     }
 
+    var isAnimating: Bool { morphStart != nil }
+
     func updateContent(_ image: CGImage?, isDark: Bool) {
         guard image !== contentImage || isDark != isDarkStage else { return }
         contentImage = image
@@ -34,25 +38,19 @@ final class StageProximityRippleHost: UIView {
         rebuildRendererIfNeeded()
     }
 
-    /// Lens starts at the bottom edge now and reaches the top after `morphDuration`.
     func beginMorph() {
         rebuildRendererIfNeeded()
+        guard let renderer else { return }
         morphStart = CACurrentMediaTime()
-        renderer?.render(time: 0)
+        renderer.render(time: 0)
+        alpha = 1
         startDisplayLink()
-    }
-
-    func endMorph() {
-        morphStart = nil
-        stopDisplayLink()
-        renderer?.render(time: Self.shaderDuration)
     }
 
     func stopAndClear() {
         morphStart = nil
         stopDisplayLink()
-        renderer?.layer.removeFromSuperlayer()
-        renderer = nil
+        alpha = 0
     }
 
     override func layoutSubviews() {
@@ -63,7 +61,7 @@ final class StageProximityRippleHost: UIView {
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window == nil {
-            stopDisplayLink()
+            stopAndClear()
         }
     }
 
@@ -74,21 +72,15 @@ final class StageProximityRippleHost: UIView {
             content: contentImage,
             bounds: bounds,
             dialFrame: bounds,
-            isDark: isDarkStage,
-            dynamicIslandNormalizedY: dynamicIslandNormalizedY
+            isDark: isDarkStage
         ) else {
+            dlogDebug("[INTERF] proximity rise · Metal renderer unavailable")
             return
         }
         renderer?.layer.removeFromSuperlayer()
         layer.addSublayer(built.layer)
         renderer = built
         builtSize = bounds.size
-    }
-
-    private var dynamicIslandNormalizedY: CGFloat {
-        guard bounds.height > 0 else { return 0.06 }
-        let topInset = window?.safeAreaInsets.top ?? 59
-        return max(0.04, min(0.12, (topInset * 0.5) / bounds.height))
     }
 
     private func startDisplayLink() {
@@ -105,10 +97,11 @@ final class StageProximityRippleHost: UIView {
 
     @objc private func step() {
         guard let start = morphStart, let renderer else { return }
-        let elapsed = CACurrentMediaTime() - start
-        renderer.render(time: min(Self.shaderDuration, elapsed * Self.shaderDuration / morphDuration))
-        if elapsed >= morphDuration {
-            endMorph()
+        let rate = ProximityRippleRenderer.arrivalTime / max(0.5, riseDuration)
+        let t = (CACurrentMediaTime() - start) * rate
+        renderer.render(time: min(ProximityRippleRenderer.duration, t))
+        if t >= ProximityRippleRenderer.duration {
+            stopAndClear()
         }
     }
 }

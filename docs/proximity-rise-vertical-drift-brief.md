@@ -76,28 +76,31 @@ Coordenadas **normalizadas** (como el resto): `center.x`, `center.y` ∈ [0,1] r
 
 ```swift
 case .ascent:
-    // X fijo: centro horizontal (Dynamic Island)
+    // Copiar drift al 100 % en radio/amp/rim/glow/whiteout; solo cambiar la trayectoria del centro.
+    let bottom = 0.88   // dentro de pantalla — NO usar 1.06 (el disco blanco queda fuera y “no se ve el círculo”)
+    let island = 0.06
     f.center = CGPoint(
         x: 0.5,
-        y: k(t, [(0, 1.06), (0.2, 1.06), (3.6, 0.06), (5.9, 0.06)], true)
+        y: k(t, [(0, bottom), (1.2, bottom), (3.8, island), (5.9, island)], true)
     )
-    // Radio y amplitud: misma “lente” que drift, ajustada al viaje más largo en Y
-    f.radius.x = k(t, [(0.15, 0), (0.8, 0.22), (2.8, 0.38), (3.6, 0.42)], true)
-    f.amp.x = k(t, [(0.15, 0), (0.9, 16), (3.2, 18), (4.0, 0)], true)
+    f.radius.x = k(t, [(0.15, 0), (1.2, 0.26), (3.8, 0.42)], true)
+    f.amp.x = k(t, [(0.15, 0), (1.0, 16), (3.4, 18), (4.0, 0)], true)
     f.trail = f.amp.x * 0.6
-    f.rim = k(t, [(0.15, 0), (0.7, 1), (3.4, 1), (4.0, 0)], true)
-    f.glow = k(t, [(0.3, 0), (1.2, 0.75), (3.4, 0.85), (4.0, 0)], true)
-    f.dim = k(t, [(0, 0), (0.9, dimPeak), (4.2, dimPeak), (5.8, 0)], true)
-    f.whiteout = k(t, [(3.5, 0), (4.2, 0.9), (5.9, 0)], true)
+    f.rim = k(t, [(0.15, 0), (0.7, 1), (3.6, 1), (4.0, 0)], true)
+    f.glow = k(t, [(0.3, 0), (1.4, 0.75), (3.6, 0.75), (4.0, 0)], true)
+    f.dim = k(t, [(0, 0), (1.0, dimPeak), (4.2, dimPeak), (5.8, 0)], true)
+    f.whiteout = k(t, [(3.7, 0), (4.3, 0.9), (5.9, 0)], true)
     f.hue = t * 0.35
 ```
 
 **Notas de diseño**
 
-- `y: 1.06` al inicio: el frente de onda **entra desde debajo** del borde inferior (equivalente a «aparece en la parte más baja»).
-- `y: 0.06` al final: alineado con earpiece / Dynamic Island (misma referencia que `height * 0.05` en Proximity Waves).
-- **Línea recta**: `center.x` siempre `0.5`; solo animar `center.y`. No usar keys laterales como en `drift` (`1.25`, `0.32`).
-- Interpolación `smooth: true` en Y mantiene suavidad; si Nelson quiere subida **constante**, usar `smooth: false` entre `(0.2, 1.06)` y `(3.6, 0.06)`.
+- **Réplica fiel de Drift:** mismos keyframes de `radius`, `amp`, `rim`, `glow`, `dim`, `whiteout` que `case .drift`; Drift espera **1,2 s** en el origen mientras crece el disco — aquí el origen es `(0.5, bottom)`.
+- `bottom = 0.88`: borde inferior visible (zona del home indicator). Con `y: 1.06` el núcleo blanco y gran parte del arco prismático están **debajo del viewport** → solo se nota un poco de distorsión, no el círculo.
+- `island = 0.06`: Dynamic Island / earpiece (como `height * 0.05` en Proximity Waves).
+- **Línea recta**: `center.x` siempre `0.5`; solo `center.y` de `bottom` → `island` entre **t = 1.2** y **t = 3.8** (igual que Drift mueve el centro entre 1.2 y 3.8).
+- **Otra app / imagen full-screen:** `dialFrame = bounds` al crear `ProximityRippleRenderer` (en Carphone CALL ya aplica para `realisticRippleAscent` en `buildRefraction`).
+- **DisplayLink obligatorio:** sin `startRefraction` / `CADisplayLink` que llame `render(time:)` cada frame, la capa Metal queda negra o estática — no basta con añadir el `CAMetalLayer`.
 
 ### 3) Dynamic Island / safe area (dispositivos reales)
 
@@ -183,4 +186,8 @@ Si la otra app **no** tiene `ProceduralGlitchView`, extraer solo `ProximityRippl
 
 ## Resumen para el agente implementador
 
-**Tarea:** Añadir variante `.ascent` en `ProximityRippleRenderer` con trayectoria `(0.5, 1.06) → (0.5, ~0.06)`, reutilizando shader y pipeline de Drift; registrar `realisticRippleAscent` en el enum de glitches; asegurar que el contenido sea **full-screen** cuando la fuente sea una imagen a pantalla completa (`dialFrame = bounds`). Ajustar `dynamicIslandNormalizedY` con `safeAreaInsets.top` si el host view tiene safe area válida.
+**Tarea:** Variante `.ascent` en `ProximityRippleRenderer` — trayectoria `(0.5, 0.88)` hold 0–1.2 s → sube a `(0.5, 0.06)` en t = 3.8; **misma coreografía numérica que `.drift`** en radio/amplitud/rim. Registrar `realisticRippleAscent` (`Proximity Rise` en galería). Full-screen: `dialFrame = bounds`. Verificar Metal + `CADisplayLink`.
+
+## Estado en Carphone CALL
+
+Implementado en el repo: `Proximity Rise` (`realistic_ripple_ascent`) en Settings → Glitch. Comparar lado a lado con **Proximity Drift** para validar el mismo “círculo” de luz; Rise debe nacer abajo y subir en vertical.

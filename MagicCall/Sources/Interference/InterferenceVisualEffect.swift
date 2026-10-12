@@ -6,11 +6,15 @@ import UIKit
 enum InterferenceStageSnapshot {
     @MainActor
     static func aspectFillCGImage(viewSize: CGSize) -> CGImage? {
-        guard let image = StageImageStore.load(), viewSize.width > 1, viewSize.height > 1 else { return nil }
+        guard viewSize.width > 1, viewSize.height > 1 else { return nil }
         let format = UIGraphicsImageRendererFormat()
         format.scale = UIScreen.main.scale
         let renderer = UIGraphicsImageRenderer(size: viewSize, format: format)
-        let drawn = renderer.image { _ in
+        let image = StageImageStore.load()
+        let drawn = renderer.image { context in
+            UIColor.black.setFill()
+            context.fill(CGRect(origin: .zero, size: viewSize))
+            guard let image else { return }
             let iw = image.size.width, ih = image.size.height
             let scale = max(viewSize.width / iw, viewSize.height / ih)
             let w = iw * scale, h = ih * scale
@@ -27,18 +31,19 @@ enum InterferenceStageSnapshot {
 
 // MARK: - Perform / preview overlay (Metal ascent)
 
+/// Each new `morphToken` starts one Proximity Rise; it plays to the end on its own unless `isActive` goes false.
 struct InterferenceStageRippleOverlay: View {
-    var isMorphing: Bool
+    var isActive: Bool
     var morphToken: Int
-    var morphDuration: TimeInterval = InterferenceSettings.flashInterferenceDuration
+    var riseDuration: TimeInterval = InterferenceSettings.flashInterferenceDuration
     @AppStorage(StageImageStore.revisionDefaultsKey) private var stageScreenshotRevision = ""
 
     var body: some View {
         GeometryReader { geo in
             InterferenceStageRippleRepresentable(
-                isMorphing: isMorphing,
+                isActive: isActive,
                 morphToken: morphToken,
-                morphDuration: morphDuration,
+                riseDuration: riseDuration,
                 viewSize: geo.size,
                 screenshotRevision: stageScreenshotRevision
             )
@@ -49,13 +54,17 @@ struct InterferenceStageRippleOverlay: View {
 }
 
 private struct InterferenceStageRippleRepresentable: UIViewRepresentable {
-    let isMorphing: Bool
+    let isActive: Bool
     let morphToken: Int
-    let morphDuration: TimeInterval
+    let riseDuration: TimeInterval
     let viewSize: CGSize
     let screenshotRevision: String
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator {
+        let coordinator = Coordinator()
+        coordinator.lastToken = morphToken
+        return coordinator
+    }
 
     func makeUIView(context: Context) -> StageProximityRippleHost {
         StageProximityRippleHost(frame: .zero)
@@ -70,15 +79,13 @@ private struct InterferenceStageRippleRepresentable: UIViewRepresentable {
             uiView.updateContent(image, isDark: InterferenceStageSnapshot.isDarkStageScreenshot())
         }
 
-        uiView.morphDuration = morphDuration
-        uiView.alpha = isMorphing ? 1 : 0
-        if isMorphing, morphToken != coordinator.lastToken {
+        uiView.riseDuration = riseDuration
+        if !isActive {
+            if uiView.isAnimating { uiView.stopAndClear() }
+        } else if morphToken != coordinator.lastToken {
             uiView.beginMorph()
-        } else if !isMorphing, coordinator.lastMorphing {
-            uiView.endMorph()
         }
         coordinator.lastToken = morphToken
-        coordinator.lastMorphing = isMorphing
     }
 
     static func dismantleUIView(_ uiView: StageProximityRippleHost, coordinator: Coordinator) {
@@ -89,7 +96,6 @@ private struct InterferenceStageRippleRepresentable: UIViewRepresentable {
         var contentSize: CGSize = .zero
         var contentRevision = ""
         var lastToken = 0
-        var lastMorphing = false
     }
 }
 
@@ -135,9 +141,8 @@ struct FlashInterferenceStagePreviewSheet: View {
                 .ignoresSafeArea()
 
             InterferenceStageRippleOverlay(
-                isMorphing: test.phase.showsProximityRipple,
-                morphToken: morphToken,
-                morphDuration: InterferenceSettings.flashInterferenceDuration
+                isActive: test.phase.isBusy,
+                morphToken: morphToken
             )
             .ignoresSafeArea()
 

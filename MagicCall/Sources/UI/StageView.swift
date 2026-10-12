@@ -57,9 +57,8 @@ struct StageView: View {
 
             if (InterferenceSettings.RingtoneMode(rawValue: ringtoneModeRaw) ?? .normal).showsProximityRippleOnStage {
                 InterferenceStageRippleOverlay(
-                    isMorphing: interference.phase.showsProximityRipple,
-                    morphToken: interferenceMorphToken,
-                    morphDuration: InterferenceSettings.flashInterferenceDuration
+                    isActive: interference.phase != .idle,
+                    morphToken: interferenceMorphToken
                 )
                 .ignoresSafeArea()
             }
@@ -106,8 +105,8 @@ struct StageView: View {
         .persistentSystemOverlays(.hidden)
         .animation(.easeInOut(duration: 0.2), value: model.showDebugOverlay)
         .animation(.easeInOut(duration: 0.2), value: prefersDarkStatusBarContent)
-        .onChange(of: interference.phase) { _, phase in
-            if phase.showsProximityRipple {
+        .onChange(of: interference.phase) { old, phase in
+            if phase.showsProximityRipple, !old.showsProximityRipple {
                 interferenceMorphToken += 1
             }
         }
