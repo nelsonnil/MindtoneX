@@ -31,8 +31,7 @@ final class ProximityRippleRenderer {
     init?(variant: Variant, content: CGImage?, bounds: CGRect, dialFrame: CGRect, isDark: Bool,
           dynamicIslandNormalizedY: CGFloat = 0.06) {
         guard let content, let shared = Self.shared, !bounds.isEmpty,
-              let texture = try? MTKTextureLoader(device: shared.device)
-                .newTexture(cgImage: content, options: [.SRGB: false, .textureUsage: MTLTextureUsage.shaderRead.rawValue])
+              let texture = Self.makeTexture(content, device: shared.device)
         else {
             return nil
         }
@@ -187,6 +186,33 @@ final class ProximityRippleRenderer {
         let device: MTLDevice
         let queue: MTLCommandQueue
         let pipeline: MTLRenderPipelineState
+    }
+
+    /// Redraws any bitmap (wide color, 16-bit, alpha-first…) into plain RGBA8 so upload never fails.
+    private static func makeTexture(_ image: CGImage, device: MTLDevice) -> MTLTexture? {
+        let width = image.width, height = image.height
+        guard width > 0, height > 0 else { return nil }
+        let bytesPerRow = width * 4
+        var pixels = [UInt8](repeating: 0, count: bytesPerRow * height)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { raw in
+            guard let context = CGContext(
+                data: raw.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: bytesPerRow,
+                space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .rgba8Unorm, width: width, height: height, mipmapped: false)
+        descriptor.usage = .shaderRead
+        guard let texture = device.makeTexture(descriptor: descriptor) else { return nil }
+        pixels.withUnsafeBytes { raw in
+            texture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0,
+                            withBytes: raw.baseAddress!, bytesPerRow: bytesPerRow)
+        }
+        return texture
     }
 
     /// Compiled from source at runtime so the effect needs no `.metal` build phase.

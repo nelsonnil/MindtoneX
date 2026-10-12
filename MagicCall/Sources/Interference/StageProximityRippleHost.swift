@@ -40,7 +40,11 @@ final class StageProximityRippleHost: UIView {
 
     func beginMorph() {
         rebuildRendererIfNeeded()
-        guard let renderer else { return }
+        guard let renderer else {
+            dlogDebug("[INTERF] proximity rise · no renderer (bounds \(bounds.size), image \(contentImage != nil))")
+            return
+        }
+        dlogDebug("[INTERF] proximity rise · start \(bounds.size) · rise \(String(format: "%.2f", riseDuration)) s")
         morphStart = CACurrentMediaTime()
         renderer.render(time: 0)
         alpha = 1

@@ -7,8 +7,11 @@ enum InterferenceStageSnapshot {
     @MainActor
     static func aspectFillCGImage(viewSize: CGSize) -> CGImage? {
         guard viewSize.width > 1, viewSize.height > 1 else { return nil }
+        // 8-bit sRGB: wide-color (16-bit float) bitmaps make MTKTextureLoader fail and the lens never draws.
         let format = UIGraphicsImageRendererFormat()
         format.scale = UIScreen.main.scale
+        format.preferredRange = .standard
+        format.opaque = true
         let renderer = UIGraphicsImageRenderer(size: viewSize, format: format)
         let image = StageImageStore.load()
         let drawn = renderer.image { context in
