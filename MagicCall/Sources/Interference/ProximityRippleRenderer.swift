@@ -14,9 +14,9 @@ final class ProximityRippleRenderer {
     /// Opacity of this hidden layer is animated 0 → 1 over the glitch, so the timeline follows the view's
     /// Core Animation clock (loop, once, frozen) without a separate time source.
     let driver = CALayer()
-    /// Full choreography length and the moment the lens reaches the Dynamic Island (Cardphone timing).
-    static let duration: Double = 6.0
+    /// Moment the lens reaches the Dynamic Island (Cardphone timing) and the end of its quick collapse there.
     static let arrivalTime: Double = 3.8
+    static let duration: Double = 4.1
     let layer = CAMetalLayer()
 
     private let variant: Variant
@@ -105,18 +105,19 @@ final class ProximityRippleRenderer {
         let dimPeak = isDark ? 0.2 : 0.35
         switch variant {
         case .ascent:
-            // Mirror drift timing; Y only. Bottom hold (0.88) keeps the white disc on-screen while it grows.
+            // Drift lens on a vertical path: whiteout flash on entry, then at the Dynamic Island the lens
+            // collapses quickly to nothing (no whiteout at the end).
             let bottom = 0.88
             let island = Double(dynamicIslandNormalizedY)
-            f.center = CGPoint(x: 0.5,
-                               y: k(t, [(0, bottom), (1.2, bottom), (Self.arrivalTime, island), (5.9, island)], true))
-            f.radius.x = k(t, [(0.15, 0), (1.2, 0.26), (3.8, 0.42)], true)
-            f.amp.x = k(t, [(0.15, 0), (1.0, 16), (3.4, 18), (4.0, 0)], true)
+            let arrival = Self.arrivalTime, end = Self.duration
+            f.center = CGPoint(x: 0.5, y: k(t, [(0, bottom), (1.2, bottom), (arrival, island), (end, island)], true))
+            f.radius.x = k(t, [(0.15, 0), (1.2, 0.26), (arrival, 0.42), (end, 0)], true)
+            f.amp.x = k(t, [(0.15, 0), (1.0, 16), (3.4, 18), (arrival, 18), (end, 0)], true)
             f.trail = f.amp.x * 0.6
-            f.rim = k(t, [(0.15, 0), (0.7, 1), (3.6, 1), (4.0, 0)], true)
-            f.glow = k(t, [(0.3, 0), (1.4, 0.75), (3.6, 0.75), (4.0, 0)], true)
-            f.dim = k(t, [(0, 0), (1.0, dimPeak), (4.2, dimPeak), (5.8, 0)], true)
-            f.whiteout = k(t, [(3.7, 0), (4.3, 0.9), (5.9, 0)], true)
+            f.rim = k(t, [(0.15, 0), (0.7, 1), (arrival, 1), (end, 0)], true)
+            f.glow = k(t, [(0.3, 0), (1.4, 0.75), (arrival, 0.75), (end, 0)], true)
+            f.dim = k(t, [(0, 0), (1.0, dimPeak), (arrival, dimPeak), (end, 0)], true)
+            f.whiteout = k(t, [(0.3, 0), (0.5, 0.9), (1.2, 0)], true)
             f.hue = t * 0.35
         }
         return f

@@ -52,7 +52,8 @@ final class InterferenceAudioEngine {
         /// Flash fades in fast while the ringtone fades out a little longer, so both overlap briefly.
         static let flashAttack: TimeInterval = 0.12
         static let flashRingtoneFade: TimeInterval = 0.45
-        static let flashSongCrossfade: TimeInterval = 0.45
+        /// Same length as the lens collapse at the top (`StageProximityRippleHost.collapseSeconds`).
+        static let flashSongCrossfade: TimeInterval = 0.3
     }
 
     /// Morph ducking + master peak limiter keep the ringtone→interference→song sum clean; ringtone runs at full app gain while looping.

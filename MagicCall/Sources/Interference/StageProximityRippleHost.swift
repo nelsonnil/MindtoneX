@@ -1,9 +1,8 @@
 import QuartzCore
 import UIKit
 
-/// Full-screen Cardphone «Proximity Rise» (`.ascent`) over the stage screenshot. The 6 s choreography is played
-/// at the rate that lands the lens under the Dynamic Island when the flash clip ends; the whiteout tail then
-/// finishes over the incoming song and the host hides itself.
+/// Full-screen Cardphone «Proximity Rise» (`.ascent`) over the stage screenshot, timed so the lens collapses
+/// under the Dynamic Island exactly as the flash clip ends and the song comes in.
 final class StageProximityRippleHost: UIView {
     private var renderer: ProximityRippleRenderer?
     private var displayLink: CADisplayLink?
@@ -11,7 +10,7 @@ final class StageProximityRippleHost: UIView {
     private var contentImage: CGImage?
     private var isDarkStage = true
     private var builtSize: CGSize = .zero
-    /// Seconds from the open hand to the lens reaching the top (flash clip length).
+    /// Seconds from the open hand until the lens has vanished at the top (flash clip length).
     var riseDuration: TimeInterval = InterferenceSettings.flashInterferenceDuration
 
     override init(frame: CGRect) {
@@ -108,22 +107,27 @@ final class StageProximityRippleHost: UIView {
         }
     }
 
-    /// Cardphone timeline position for real time since the open hand. The lens skips the empty first frames and
-    /// grows at the bottom at double speed, then the rise is stretched so it still reaches the top at `riseDuration`.
+    /// Timeline position for real time since the open hand: the lens skips the empty first frames and grows at
+    /// the bottom at double speed, rises, then collapses in `collapseSeconds` so it is gone at `riseDuration`.
     private func choreographyTime(elapsed: TimeInterval) -> Double {
-        let entry = Self.entryTime, hold = Self.holdEnd, arrival = ProximityRippleRenderer.arrivalTime
-        let baseRate = arrival / max(0.5, riseDuration)
-        let growSeconds = (hold - entry) / (baseRate * Self.growSpeedup)
+        let entry = Self.entryTime, hold = Self.holdEnd
+        let arrival = ProximityRippleRenderer.arrivalTime, end = ProximityRippleRenderer.duration
+        let total = max(1.5, riseDuration)
+        let growSeconds = (hold - entry) / (arrival / total * Self.growSpeedup)
+        let collapseStart = total - Self.collapseSeconds
         if elapsed < growSeconds {
             return entry + elapsed / growSeconds * (hold - entry)
         }
-        let riseSeconds = max(0.5, riseDuration - growSeconds)
-        let riseRate = (arrival - hold) / riseSeconds
-        return hold + (elapsed - growSeconds) * riseRate
+        if elapsed < collapseStart {
+            return hold + (elapsed - growSeconds) / (collapseStart - growSeconds) * (arrival - hold)
+        }
+        return arrival + (elapsed - collapseStart) / Self.collapseSeconds * (end - arrival)
     }
 
     /// First visible lens frame and the end of the bottom hold in the `.ascent` keys.
     private static let entryTime = 0.3
     private static let holdEnd = 1.2
     private static let growSpeedup = 2.0
+    /// Matches `InterferenceAudioEngine.Timeline.flashSongCrossfade`: the song comes in while the lens shrinks.
+    static let collapseSeconds: TimeInterval = 0.3
 }
