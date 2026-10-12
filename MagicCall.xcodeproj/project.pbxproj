@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0252A189382C473B6FAD70AB /* DebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6CC08F1371815B8ECC08D6 /* DebugLog.swift */; };
 		04589F2E27E1B78CBA422EB1 /* WordReadingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A539EED2B566EDCDB04C0CCE /* WordReadingTests.swift */; };
+		NOTES0001CAFE00000000001 /* NotesContactSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTES0001CAFE00000000002 /* NotesContactSettingsTests.swift */; };
 		086460104B68BB3C819E3FED /* HomeCollapsibleSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A21CCF1F7089541B6DC60FF /* HomeCollapsibleSection.swift */; };
 		09847F3CC0DD676AFA968694 /* OpenAIMissingKeySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63AA902A4202695EC209BF7 /* OpenAIMissingKeySheet.swift */; };
 		0B7939F9A17DDF66D8FA6ED4 /* CardInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10F1FAFEC4327EF1C05B2D5 /* CardInputPanel.swift */; };
@@ -289,6 +290,7 @@
 		A292077410CF73096E5CD7B8 /* CallerLabelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerLabelStore.swift; sourceTree = "<group>"; };
 		A2A7D6817DA44304F1D5ABC6 /* HeroLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroLogoView.swift; sourceTree = "<group>"; };
 		A539EED2B566EDCDB04C0CCE /* WordReadingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordReadingTests.swift; sourceTree = "<group>"; };
+		NOTES0001CAFE00000000002 /* NotesContactSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactSettingsTests.swift; sourceTree = "<group>"; };
 		A5E5E3E1B9AA9AAC9611103D /* NotesInputControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesInputControls.swift; sourceTree = "<group>"; };
 		A63AA902A4202695EC209BF7 /* OpenAIMissingKeySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIMissingKeySheet.swift; sourceTree = "<group>"; };
 		A744DA01C5B2EA22A5B55906 /* UIIllustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIIllustrations.swift; sourceTree = "<group>"; };
@@ -480,6 +482,7 @@
 			isa = PBXGroup;
 			children = (
 				EAD4759CD5E25C0EC1A7A20C /* ApiSongReadingTests.swift */,
+				NOTES0001CAFE00000000002 /* NotesContactSettingsTests.swift */,
 				A539EED2B566EDCDB04C0CCE /* WordReadingTests.swift */,
 			);
 			path = MagicCallTests;
@@ -961,6 +964,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DC429325C8865E752CF16D7A /* ApiSongReadingTests.swift in Sources */,
+				NOTES0001CAFE00000000001 /* NotesContactSettingsTests.swift in Sources */,
 				04589F2E27E1B78CBA422EB1 /* WordReadingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -176,6 +176,14 @@ final class NotesContactWordSession: ObservableObject {
             lastAppliedLabel = label
             state = .watching
             dlog("[NOTES-WORD] baseline «\(label)» (\(ms) ms)")
+            // Match Caller name: word already on the server at Perform start still updates Contacts.
+            lockedReading = reading
+            if NotesContactSettings.isContactNoteReadyForSave(lockedWord: label) {
+                let snippet = WordApiInputPanel.truncated(label, max: 32)
+                PerformUserLog.shared.log("Notes contact · word already at start «\(snippet)» → note applied; a new submission replaces it")
+                PerformLogReporter.logRecognition(.notesContact, value: label, via: NotesContactWordSettings.provider.title)
+                SpectatorWordContactService.applyContactNoteFromSettings(reason: "notes-word start")
+            }
             return
         }
 

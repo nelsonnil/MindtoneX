@@ -49,6 +49,15 @@ enum NotesContactSettings {
             .nilIfEmpty ?? token
         return template.replacingOccurrences(of: token, with: replacement)
     }
+
+    /// Avoid writing `{word}` literally when the Notes chip word is not locked yet.
+    static func isContactNoteReadyForSave(lockedWord: String?) -> Bool {
+        let template = storedNoteBody
+        guard !template.isEmpty else { return false }
+        let token = effectiveWordPlaceholder(in: template)
+        guard !token.isEmpty, template.contains(token) else { return true }
+        return !(lockedWord?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+    }
 }
 
 private extension String {

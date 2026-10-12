@@ -426,6 +426,7 @@ final class AppModel: ObservableObject {
             return
         }
         AlbumArtContactService.performStarted()
+        SpectatorWordContactService.clearPendingNoteApply()
         do {
             try audio.configureSession(preferIPhoneSpeaker: true)
         } catch {

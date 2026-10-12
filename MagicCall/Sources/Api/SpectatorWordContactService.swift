@@ -4,6 +4,8 @@ import Foundation
 /// Creates or renames Contacts for the Word API spectator phone (no Contacts UI during save).
 enum SpectatorWordContactService {
     private static let store = CNContactStore()
+    /// Unknown mode: note lock before the outgoing dial saved the spectator number.
+    @MainActor private static var pendingNoteApplyReason: String?
     @MainActor
     static func applyOnWordLock(word: String, reason: String) {
         guard WordApiSettings.saveWordAsContactEnabled else {
@@ -86,9 +88,9 @@ enum SpectatorWordContactService {
             PerformUserLog.shared.log("Contact not renamed · \(SpectatorContactFetch.saveFailureMessage(for: error))")
             return
         }
-        let note = performContactNote()
-        if !note.isEmpty {
-            await updateNoteForKnown(identifier: identifier, note: note, reason: reason)
+        if shouldWritePerformContactNote() {
+            let note = performContactNote()
+            await updateNoteForKnown(note: note, reason: reason)
         }
     }
 
@@ -105,8 +107,8 @@ enum SpectatorWordContactService {
             PerformUserLog.shared.log("Contact not saved · \(SpectatorContactFetch.saveFailureMessage(for: error))")
             return
         }
-        let note = performContactNote()
-        if !note.isEmpty {
+        if shouldWritePerformContactNote() {
+            let note = performContactNote()
             await updateNoteForPhone(phone: phone, note: note, reason: reason)
         }
     }
@@ -116,6 +118,28 @@ enum SpectatorWordContactService {
         NotesContactSettings.resolvedContactNote(
             lockedWord: NotesContactWordSession.shared.lockedReading?.label
         )
+    }
+
+    @MainActor
+    private static func shouldWritePerformContactNote() -> Bool {
+        guard WordApiSettings.notesContactTargetsCard else { return false }
+        return NotesContactSettings.isContactNoteReadyForSave(
+            lockedWord: NotesContactWordSession.shared.lockedReading?.label
+        )
+    }
+
+    /// Unknown: dial finished after a deferred Notes write (mirrors album art ordering).
+    @MainActor
+    static func spectatorNumberSavedForNotes() {
+        guard let reason = pendingNoteApplyReason else { return }
+        pendingNoteApplyReason = nil
+        dlog("[NOTES] perform order · number saved → applying deferred contact note")
+        applyContactNoteFromSettings(reason: reason)
+    }
+
+    @MainActor
+    static func clearPendingNoteApply() {
+        pendingNoteApplyReason = nil
     }
 
     /// `CNContactNoteKey` needs Apple's `com.apple.developer.contacts.notes` entitlement; without it every
@@ -395,24 +419,39 @@ enum SpectatorWordContactService {
     /// Refresh Contacts **Notes** when the Notes chip word locks (template + placeholder).
     @MainActor
     static func applyContactNoteFromSettings(reason: String) {
-        guard WordApiSettings.notesContactTargetsCard else { return }
-        let note = NotesContactSettings.resolvedContactNote(
-            lockedWord: NotesContactWordSession.shared.lockedReading?.label
-        )
-        guard !note.isEmpty || !NotesContactSettings.storedNoteBody.isEmpty else { return }
+        guard WordApiSettings.notesContactTargetsCard else {
+            dlogDebug("[NOTES] skip (\(reason)): empty note template")
+            return
+        }
+        let lockedWord = NotesContactWordSession.shared.lockedReading?.label
+        guard NotesContactSettings.isContactNoteReadyForSave(lockedWord: lockedWord) else {
+            dlogDebug("[NOTES] skip (\(reason)): waiting for Notes chip word")
+            return
+        }
+        let note = NotesContactSettings.resolvedContactNote(lockedWord: lockedWord)
+        guard !note.isEmpty else { return }
 
         switch WordApiSettings.contactMode {
         case .unknown:
-            guard let phone = WordApiSettings.spectatorContactPhoneE164String() else { return }
+            guard let phone = WordApiSettings.spectatorContactPhoneE164String() else {
+                pendingNoteApplyReason = reason
+                dlog("[NOTES] perform wait · Unknown has no dialed number yet → note applies once dial saves")
+                return
+            }
+            pendingNoteApplyReason = nil
             Task { await updateNoteForPhone(phone: phone, note: note, reason: reason) }
         case .known:
-            guard let id = WordApiSettings.knownContactIdentifier else { return }
-            Task { await updateNoteForKnown(identifier: id, note: note, reason: reason) }
+            pendingNoteApplyReason = nil
+            guard WordApiSettings.knownContactIdentifier != nil else {
+                dlog("[NOTES] skip (\(reason)): no known contact picked")
+                return
+            }
+            Task { await updateNoteForKnown(note: note, reason: reason) }
         }
     }
 
     @MainActor
-    private static func updateNoteForKnown(identifier: String, note: String, reason: String) async {
+    private static func updateNoteForKnown(note: String, reason: String) async {
         guard await ensureContactsAccess(reason: reason) else { return }
         do {
             let keys: [CNKeyDescriptor] = [
@@ -427,7 +466,8 @@ enum SpectatorWordContactService {
                 save.update(mutable)
                 try store.execute(save)
             }
-            dlog("[CONTACT] known note updated (\(reason))")
+            dlog("[NOTES] known contact note saved (\(reason)) · «\(WordApiInputPanel.truncated(note, max: 48))»")
+            PerformUserLog.shared.log("Contact note saved · «\(WordApiInputPanel.truncated(note, max: 40))»")
         } catch {
             logNoteSkipped(error, reason: reason)
         }
@@ -443,8 +483,17 @@ enum SpectatorWordContactService {
             ]
             let updated = try await SpectatorContactFetch.run { () -> Int in
                 let matches = try cards(withPhone: phone, keysToFetch: keys)
-                guard !matches.isEmpty else { return 0 }
                 let save = CNSaveRequest()
+                if matches.isEmpty {
+                    let contact = CNMutableContact()
+                    contact.phoneNumbers = [
+                        CNLabeledValue(label: CNLabelPhoneNumberMobile, value: CNPhoneNumber(stringValue: phone)),
+                    ]
+                    contact.note = note
+                    save.add(contact, toContainerWithIdentifier: store.defaultContainerIdentifier())
+                    try store.execute(save)
+                    return 1
+                }
                 for existing in matches {
                     let mutable = existing.mutableCopy() as! CNMutableContact
                     mutable.note = note
@@ -454,7 +503,8 @@ enum SpectatorWordContactService {
                 return matches.count
             }
             guard updated > 0 else { return }
-            dlog("[CONTACT] note updated (\(reason)) · \(note.prefix(40))…")
+            dlog("[NOTES] contact note saved (\(reason)) · \(updated) card(s) · «\(WordApiInputPanel.truncated(note, max: 48))»")
+            PerformUserLog.shared.log("Contact note saved · «\(WordApiInputPanel.truncated(note, max: 40))»")
         } catch {
             logNoteSkipped(error, reason: reason)
         }
