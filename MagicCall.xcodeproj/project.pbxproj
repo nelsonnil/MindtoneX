@@ -153,6 +153,8 @@
 		297D407748A90DF71B873446 /* InterferenceTestController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */; };
 		6C3F8D2AE5B4071F92D8BA13 /* InterferenceShowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2E7C19D4A3F60E81C7A9D2 /* InterferenceShowController.swift */; };
 		A1B2C3D4E5F60718293A4B5C /* InterferenceVisualEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F60718293A4B5C6D7E8F /* InterferenceVisualEffect.swift */; };
+		B2C3D4E5F60718293A4B5C6D /* ProximityRippleRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F60718293A4B5C6D7E8F9A /* ProximityRippleRenderer.swift */; };
+		C3D4E5F60718293A4B5C6D7E /* StageProximityRippleHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60718293A4B5C6D7E8F9A0B /* StageProximityRippleHost.swift */; };
 		478B9B5E4AE2277CB5DA8EB3 /* InterferenceRingtoneSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78CBD020F0C38AC0AB9039FA /* InterferenceRingtoneSettings.swift */; };
 		5C93B264A0C2525AA4578AFD /* InterferenceRingtone in Resources */ = {isa = PBXBuildFile; fileRef = 2329F42BD66BB2222F1CAB76 /* InterferenceRingtone */; };
 /* End PBXBuildFile section */
@@ -342,6 +344,8 @@
 		E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceTestController.swift; sourceTree = "<group>"; };
 		5B2E7C19D4A3F60E81C7A9D2 /* InterferenceShowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceShowController.swift; sourceTree = "<group>"; };
 		D4E5F60718293A4B5C6D7E8F /* InterferenceVisualEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceVisualEffect.swift; sourceTree = "<group>"; };
+		E5F60718293A4B5C6D7E8F9A /* ProximityRippleRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityRippleRenderer.swift; sourceTree = "<group>"; };
+		F60718293A4B5C6D7E8F9A0B /* StageProximityRippleHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageProximityRippleHost.swift; sourceTree = "<group>"; };
 		78CBD020F0C38AC0AB9039FA /* InterferenceRingtoneSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterferenceRingtoneSettings.swift; sourceTree = "<group>"; };
 		2329F42BD66BB2222F1CAB76 /* InterferenceRingtone */ = {isa = PBXFileReference; lastKnownFileType = folder; path = InterferenceRingtone; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -695,6 +699,8 @@
 				32809EF12DA386D52CCE77DD /* InterferenceSettings.swift */,
 				5B2E7C19D4A3F60E81C7A9D2 /* InterferenceShowController.swift */,
 				D4E5F60718293A4B5C6D7E8F /* InterferenceVisualEffect.swift */,
+				E5F60718293A4B5C6D7E8F9A /* ProximityRippleRenderer.swift */,
+				F60718293A4B5C6D7E8F9A0B /* StageProximityRippleHost.swift */,
 				E5C3FAF48932E1C7959A79A5 /* InterferenceTestController.swift */,
 			);
 			path = Interference;
@@ -831,6 +837,8 @@
 				297D407748A90DF71B873446 /* InterferenceTestController.swift in Sources */,
 				6C3F8D2AE5B4071F92D8BA13 /* InterferenceShowController.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* InterferenceVisualEffect.swift in Sources */,
+				B2C3D4E5F60718293A4B5C6D /* ProximityRippleRenderer.swift in Sources */,
+				C3D4E5F60718293A4B5C6D7E /* StageProximityRippleHost.swift in Sources */,
 				478B9B5E4AE2277CB5DA8EB3 /* InterferenceRingtoneSettings.swift in Sources */,
 				0C7DD1810B8A32E53E19A6EF /* AiVoiceInputPanel.swift in Sources */,
 				E35A7B10CDB728AE2BBC1BAA /* ApiInputPanel.swift in Sources */,

@@ -20,6 +20,7 @@ struct StageView: View {
     @AppStorage(PerformanceCues.PeekKey.anchorY) private var peekAnchorY = PerformanceCues.defaultPeekAnchorY
 
     @State private var peekVisible = false
+    @State private var interferenceMorphToken = 0
 
     private var hasStageScreenshot: Bool { StageImageStore.hasScreenshot }
 
@@ -53,9 +54,11 @@ struct StageView: View {
             StageBackgroundView(maskStatusBar: maskStatusBar)
                 .ignoresSafeArea()
 
-            InterferenceVisualEffect(intensity: interference.phase.stageVisualIntensity)
-                .ignoresSafeArea()
-                .animation(.easeInOut(duration: 0.25), value: interference.phase)
+            InterferenceStageRippleOverlay(
+                isMorphing: interference.phase.showsProximityRipple,
+                morphToken: interferenceMorphToken
+            )
+            .ignoresSafeArea()
 
             StageGestureLayer(
                 peekHoldEnabled: peekEnabled,
@@ -99,6 +102,11 @@ struct StageView: View {
         .persistentSystemOverlays(.hidden)
         .animation(.easeInOut(duration: 0.2), value: model.showDebugOverlay)
         .animation(.easeInOut(duration: 0.2), value: prefersDarkStatusBarContent)
+        .onChange(of: interference.phase) { _, phase in
+            if phase.showsProximityRipple {
+                interferenceMorphToken += 1
+            }
+        }
     }
 }
 

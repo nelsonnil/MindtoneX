@@ -24,6 +24,9 @@ final class InterferenceAudioEngine {
         }
     }
 
+    /// Wall-clock morph length — stage Proximity Rise maps this to Cardphone’s 6 s shader timeline.
+    static var morphDuration: TimeInterval { Timeline.filterOpenEnd }
+
     enum Timeline {
         static let staticAttack: TimeInterval = 0.25
         static let ringtoneFadeEnd: TimeInterval = 1.2
@@ -42,6 +45,8 @@ final class InterferenceAudioEngine {
     enum Level {
         static let ringtone: Float = 1.0
         static let interference: Float = 1.0
+        /// 2nd-hand static is often quieter in the master; keep it audible under the limiter.
+        static let interferenceSecond: Float = 1.42
         static let song: Float = 0.85
         static let ringtoneDuckDB: Float = -15
     }
@@ -383,7 +388,8 @@ final class InterferenceAudioEngine {
         guard engine.isRunning, let morph else { return }
         let t = CACurrentMediaTime() - transitionStart
 
-        morph.interference.volume = scaled(Level.interference) * Self.staticEnvelope(t)
+        let interferenceGain: Float = morph.isSecond ? Level.interferenceSecond : Level.interference
+        morph.interference.volume = scaled(interferenceGain) * Self.staticEnvelope(t)
 
         if t < Timeline.ringtoneFadeEnd {
             let duckDB = Level.ringtoneDuckDB * Float(t / Timeline.ringtoneFadeEnd)

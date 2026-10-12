@@ -1,91 +1,191 @@
 import SwiftUI
+import UIKit
 
-/// Full-screen TV-static overlay on the stage screenshot during interference morph (Perform + previews).
-struct InterferenceVisualEffect: View {
-    /// 0 = hidden, 1 = full static (matches audio morph peak).
-    var intensity: Double
+// MARK: - Stage image (aspect fill, matches StageBackgroundView)
+
+enum InterferenceStageSnapshot {
+    @MainActor
+    static func aspectFillCGImage(viewSize: CGSize) -> CGImage? {
+        guard let image = StageImageStore.load(), viewSize.width > 1, viewSize.height > 1 else { return nil }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        let renderer = UIGraphicsImageRenderer(size: viewSize, format: format)
+        let drawn = renderer.image { _ in
+            let iw = image.size.width, ih = image.size.height
+            let scale = max(viewSize.width / iw, viewSize.height / ih)
+            let w = iw * scale, h = ih * scale
+            image.draw(in: CGRect(x: (viewSize.width - w) / 2, y: (viewSize.height - h) / 2, width: w, height: h))
+        }
+        return drawn.cgImage
+    }
+
+    @MainActor
+    static func isDarkStageScreenshot() -> Bool {
+        (StageImageStore.statusBarLuminance() ?? 0) <= 0.179
+    }
+}
+
+// MARK: - Perform / test overlay (Metal ascent)
+
+struct InterferenceStageRippleOverlay: View {
+    var isMorphing: Bool
+    var morphToken: Int
+    @AppStorage(StageImageStore.revisionDefaultsKey) private var stageScreenshotRevision = ""
 
     var body: some View {
-        if intensity > 0.02 {
-            TimelineView(.animation(minimumInterval: 1 / 12, paused: false)) { timeline in
-                Canvas { context, size in
-                    let tick = Int(timeline.date.timeIntervalSinceReferenceDate * 12)
-                    let block: CGFloat = 5
-                    var y: CGFloat = 0
-                    while y < size.height {
-                        var x: CGFloat = 0
-                        while x < size.width {
-                            let ix = Int(x / block)
-                            let iy = Int(y / block)
-                            let hash = (ix &* 73856093) ^ (iy &* 19349663) ^ (tick &* 83492791)
-                            let n = Double(abs(hash % 1000)) / 1000
-                            let rect = CGRect(x: x, y: y, width: block, height: block)
-                            context.fill(
-                                Path(rect),
-                                with: .color(Color(white: n, opacity: 0.08 + n * 0.28))
-                            )
-                            x += block
-                        }
-                        y += block
-                    }
-                }
-            }
-            .opacity(min(1, max(0, intensity)) * 0.92)
-            .blendMode(.screen)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+        GeometryReader { geo in
+            InterferenceStageRippleRepresentable(
+                isMorphing: isMorphing,
+                morphToken: morphToken,
+                viewSize: geo.size,
+                screenshotRevision: stageScreenshotRevision
+            )
         }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct InterferenceStageRippleRepresentable: UIViewRepresentable {
+    let isMorphing: Bool
+    let morphToken: Int
+    let viewSize: CGSize
+    let screenshotRevision: String
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> StageProximityRippleHost {
+        let view = StageProximityRippleHost(frame: .zero)
+        context.coordinator.host = view
+        return view
+    }
+
+    func updateUIView(_ uiView: StageProximityRippleHost, context: Context) {
+        _ = screenshotRevision
+        let image = InterferenceStageSnapshot.aspectFillCGImage(viewSize: viewSize)
+        let isDark = MainActor.assumeIsolated { InterferenceStageSnapshot.isDarkStageScreenshot() }
+        uiView.updateContent(image, isDark: isDark)
+
+        uiView.alpha = isMorphing ? 1 : 0
+        if morphToken != context.coordinator.lastToken {
+            context.coordinator.lastToken = morphToken
+            if isMorphing {
+                uiView.beginMorph()
+            }
+        } else if isMorphing, context.coordinator.lastMorphing == false {
+            uiView.beginMorph()
+        } else if !isMorphing, context.coordinator.lastMorphing {
+            uiView.endMorph()
+        }
+        context.coordinator.lastMorphing = isMorphing
+    }
+
+    static func dismantleUIView(_ uiView: StageProximityRippleHost, coordinator: Coordinator) {
+        uiView.stopAndClear()
+    }
+
+    final class Coordinator {
+        weak var host: StageProximityRippleHost?
+        var lastToken = 0
+        var lastMorphing = false
     }
 }
 
 extension InterferenceShowController.Phase {
-    /// Stage overlay strength while the radio static is audible in Perform.
-    var stageVisualIntensity: Double {
+    var showsProximityRipple: Bool {
         switch self {
-        case .morph1, .morph2: return 1
-        default: return 0
+        case .morph1, .morph2: return true
+        default: return false
         }
     }
 }
 
 extension InterferenceTestController.Phase {
-    var stageVisualIntensity: Double {
+    var showsProximityRipple: Bool {
         switch self {
-        case .interference, .secondInterference: return 1
-        default: return 0
+        case .handDetected, .interference, .secondHandDetected, .secondInterference: return true
+        default: return false
         }
     }
 }
 
-/// What the spectator sees on the saved screenshot — static only, no peek or controls.
-struct InterferenceStagePreviewSheet: View {
+// MARK: - Full-screen rehearsal (no Perform, no phone call)
+
+struct InterferenceStageRehearsalSheet: View {
+    @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
-    @State private var demoIntensity: Double = 0
-    @State private var demoTask: Task<Void, Never>?
+    @AppStorage(InterferenceSettings.Key.ringtoneID) private var ringtoneID = InterferenceSettings.Ringtone.defaultValue.rawValue
+    @StateObject private var test = InterferenceTestController()
+    @State private var morphToken = 0
+    private var ringtone: InterferenceSettings.Ringtone {
+        InterferenceSettings.Ringtone(rawValue: ringtoneID) ?? .ringtone1
+    }
 
     var body: some View {
         ZStack {
             StageBackgroundView(maskStatusBar: maskStatusBar)
                 .ignoresSafeArea()
-            InterferenceVisualEffect(intensity: demoIntensity)
-                .ignoresSafeArea()
-                .animation(.easeInOut(duration: 0.25), value: demoIntensity)
 
-            VStack(spacing: 16) {
-                Spacer()
-                Text("Stage preview")
-                    .font(.headline)
+            InterferenceStageRippleOverlay(
+                isMorphing: test.phase.showsProximityRipple,
+                morphToken: morphToken
+            )
+            .ignoresSafeArea()
+
+            VStack {
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        test.stop()
+                        dismiss()
+                    }
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.9))
-                Text("Same wallpaper as Perform. Static appears during the interference morph — nothing else on screen for the audience.")
-                    .font(.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white.opacity(0.65))
-                    .padding(.horizontal, 28)
+                    .padding(12)
+                }
+                Spacer()
+                rehearsalChrome
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 28)
+            }
+        }
+        .persistentSystemOverlays(.hidden)
+        .preferredColorScheme(.dark)
+        .onAppear {
+            test.prefillSongs(model: model)
+        }
+        .onDisappear { test.stop() }
+        .onChange(of: test.phase) { _, phase in
+            if phase.showsProximityRipple {
+                morphToken += 1
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background, test.phase.isBusy {
+                test.stop(note: "Stopped because MindtoneX left the screen.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var rehearsalChrome: some View {
+        VStack(spacing: 10) {
+            Text("Stage preview")
+                .font(.headline)
+                .foregroundStyle(.white.opacity(0.92))
+            Text(rehearsalDetail)
+                .font(.caption)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.white.opacity(0.62))
+                .fixedSize(horizontal: false, vertical: true)
+
+            if test.phase == .idle || test.phase.isError {
                 Button {
-                    playMorphDemo()
+                    Task { await startRehearsal() }
                 } label: {
-                    Label("Play morph preview", systemImage: "waveform.path")
+                    Label("Start ringtone rehearsal", systemImage: "phone.arrow.down.left.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -93,32 +193,59 @@ struct InterferenceStagePreviewSheet: View {
                         .background(OracleTheme.goldGradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 24)
-                Button("Done") { dismiss() }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(OracleTheme.gold)
-                    .padding(.bottom, 24)
+            } else if test.phase.isBusy {
+                Button {
+                    test.stop()
+                } label: {
+                    Label("Stop", systemImage: "stop.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .foregroundStyle(OracleTheme.textPrimary)
+                        .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
             }
-        }
-        .persistentSystemOverlays(.hidden)
-        .preferredColorScheme(.dark)
-        .onDisappear {
-            demoTask?.cancel()
-            demoIntensity = 0
         }
     }
 
-    private func playMorphDemo() {
-        demoTask?.cancel()
-        demoTask = Task {
-            await MainActor.run {
-                withAnimation(.easeIn(duration: 0.25)) { demoIntensity = 1 }
-            }
-            try? await Task.sleep(for: .seconds(3.2))
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                withAnimation(.easeOut(duration: 0.7)) { demoIntensity = 0 }
-            }
+    private var rehearsalDetail: String {
+        if case .error(let message) = test.phase {
+            return message
+        }
+        switch test.phase {
+        case .idle:
+            return "Full stage wallpaper · ringtone · open hand · Proximity Rise (same Metal path as Cardphone). Uses your Home song\(SpectatorSettings.isTwo ? "s" : "") — set songs in **Test lab** first if needed."
+        case .playingRingtone:
+            return "Ringtone · hold an open hand above the front camera (green dot is normal)."
+        case .handDetected, .interference:
+            return "Interference morph · light rises toward Dynamic Island."
+        case .playingSong:
+            return test.waitingForSecondHand
+                ? "Song 1 · waiting for hand 2 · fingers \(test.fingersSeen)+"
+                : "Clean song 1."
+        case .secondHandDetected, .secondInterference:
+            return "Second interference morph · hand 2."
+        case .playingSecondSong:
+            return "Clean song 2."
+        default:
+            return "Starting…"
         }
     }
+
+    private func startRehearsal() async {
+        guard test.phase == .idle || test.phase.isError else { return }
+        model.pauseVoiceAndAudioForSetupUI(reason: "stage rehearsal")
+        await test.play(model: model, ringtone: ringtone)
+    }
 }
+
+private extension InterferenceTestController.Phase {
+    var isError: Bool {
+        if case .error = self { return true }
+        return false
+    }
+}
+
+/// Legacy name — opens full rehearsal (replaces static-only preview).
+typealias InterferenceStagePreviewSheet = InterferenceStageRehearsalSheet

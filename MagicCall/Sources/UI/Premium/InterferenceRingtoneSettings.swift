@@ -78,7 +78,7 @@ struct SongRingtoneModeBlock: View {
                             }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityHint("Preview the spectator wallpaper and interference static")
+                    .accessibilityHint("Full-screen stage rehearsal with ringtone, hand, and Proximity Rise visual")
                 }
 
                 Text(.init(twoSongsEnabled
@@ -110,7 +110,8 @@ struct SongRingtoneModeBlock: View {
             .environmentObject(model)
         }
         .fullScreenCover(isPresented: $showStagePreview) {
-            InterferenceStagePreviewSheet()
+            InterferenceStageRehearsalSheet()
+                .environmentObject(model)
         }
     }
 
