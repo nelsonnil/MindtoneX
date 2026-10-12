@@ -20,10 +20,10 @@ final class HandGestureDetector: NSObject {
     }
 
     static let requiredFingers = 4
-    static let holdSeconds: CFTimeInterval = 0.3
+    static let holdSeconds: CFTimeInterval = 0.15
     /// `start(requireClearFirst:)`: analysed frames without an open hand (~0.4 s) before a new hand may fire,
     /// so a hand still held over the phone from the previous trigger never counts twice.
-    static let clearFramesBeforeNextHand = 6
+    static let clearFramesBeforeNextHand = 12
 
     let session = AVCaptureSession()
 
@@ -193,7 +193,7 @@ extension HandGestureDetector: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard !fired else { return }
         frameIndex += 1
-        guard frameIndex % 2 == 0, let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        guard let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         // Front camera held in portrait: sensor frames are landscape, so Vision sees them rotated + mirrored.
         let width = CGFloat(CVPixelBufferGetWidth(pixels))
         let height = CGFloat(CVPixelBufferGetHeight(pixels))

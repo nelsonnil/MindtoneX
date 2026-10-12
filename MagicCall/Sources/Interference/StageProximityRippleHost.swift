@@ -46,7 +46,7 @@ final class StageProximityRippleHost: UIView {
         }
         dlogDebug("[INTERF] proximity rise · start \(bounds.size) · rise \(String(format: "%.2f", riseDuration)) s")
         morphStart = CACurrentMediaTime()
-        renderer.render(time: 0)
+        renderer.render(time: Self.entryTime)
         alpha = 1
         startDisplayLink()
     }
@@ -101,11 +101,29 @@ final class StageProximityRippleHost: UIView {
 
     @objc private func step() {
         guard let start = morphStart, let renderer else { return }
-        let rate = ProximityRippleRenderer.arrivalTime / max(0.5, riseDuration)
-        let t = (CACurrentMediaTime() - start) * rate
+        let t = choreographyTime(elapsed: CACurrentMediaTime() - start)
         renderer.render(time: min(ProximityRippleRenderer.duration, t))
         if t >= ProximityRippleRenderer.duration {
             stopAndClear()
         }
     }
+
+    /// Cardphone timeline position for real time since the open hand. The lens skips the empty first frames and
+    /// grows at the bottom at double speed, then the rise is stretched so it still reaches the top at `riseDuration`.
+    private func choreographyTime(elapsed: TimeInterval) -> Double {
+        let entry = Self.entryTime, hold = Self.holdEnd, arrival = ProximityRippleRenderer.arrivalTime
+        let baseRate = arrival / max(0.5, riseDuration)
+        let growSeconds = (hold - entry) / (baseRate * Self.growSpeedup)
+        if elapsed < growSeconds {
+            return entry + elapsed / growSeconds * (hold - entry)
+        }
+        let riseSeconds = max(0.5, riseDuration - growSeconds)
+        let riseRate = (arrival - hold) / riseSeconds
+        return hold + (elapsed - growSeconds) * riseRate
+    }
+
+    /// First visible lens frame and the end of the bottom hold in the `.ascent` keys.
+    private static let entryTime = 0.3
+    private static let holdEnd = 1.2
+    private static let growSpeedup = 2.0
 }

@@ -98,8 +98,8 @@ enum InterferenceSettings {
     static let interferenceResourceName = "interferencia-radio"
     /// Audio from `flashinterference.MOV` (~4 s) — Proximity Rise visual sync target.
     static let flashInterferenceResourceName = "flashinterference"
-    /// Matches bundled `flashinterference.m4a` (source MOV ~3.994 s).
-    static let flashInterferenceDuration: TimeInterval = 3.994
+    /// Matches bundled `flashinterference.m4a` (source MOV with its 0.43 s leading silence trimmed).
+    static let flashInterferenceDuration: TimeInterval = 3.564
 
     /// Two songs: the second open hand always uses this file (audio of `interferenciaradio2`).
     static let secondHandResourceName = "interferencia-audio2"

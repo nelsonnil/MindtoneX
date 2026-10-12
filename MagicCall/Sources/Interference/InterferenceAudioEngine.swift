@@ -49,7 +49,9 @@ final class InterferenceAudioEngine {
         static let radioHighPassHz: Float = 300
         static let radioLowPassHz: Float = 3400
         /// Flash: ringtone → flash clip crossfade, and flash tail → song crossfade.
-        static let flashAttack: TimeInterval = 0.35
+        /// Flash fades in fast while the ringtone fades out a little longer, so both overlap briefly.
+        static let flashAttack: TimeInterval = 0.12
+        static let flashRingtoneFade: TimeInterval = 0.45
         static let flashSongCrossfade: TimeInterval = 0.45
     }
 
@@ -474,12 +476,13 @@ final class InterferenceAudioEngine {
         let songIn = morphDuration - crossfade
         let gain = scaled(morph.isSecond ? Level.interferenceSecond : Level.interference)
 
-        var envelope = Float(min(1, t / attack))
+        var envelope = Float(sin(min(1, t / attack) * .pi / 2))
         if t > songIn { envelope *= Float(max(0, (morphDuration - t) / crossfade)) }
         morph.interference.volume = gain * envelope
 
-        if t < attack {
-            morph.outgoing.volume = morph.outgoingLevel * Float(1 - t / attack)
+        let ringFade = Timeline.flashRingtoneFade
+        if t < ringFade {
+            morph.outgoing.volume = morph.outgoingLevel * Float(cos(t / ringFade * .pi / 2))
         } else if morph.outgoing.isPlaying {
             morph.outgoing.stop()
         }
