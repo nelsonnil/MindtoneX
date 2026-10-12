@@ -116,57 +116,12 @@ struct CardHandwritingPick: Equatable, Codable {
     }
 
     func storeSearchQueries() -> [String] {
-        var out: [String] = []
-        func add(_ s: String) {
-            let q = CardTextMapper.clean(s)
-            guard q.count >= 2 else { return }
-            if !out.contains(where: { ApiJSON.sameText($0, q) }) { out.append(q) }
-        }
-        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let a = artist.trimmingCharacters(in: .whitespacesAndNewlines)
-        let built = Self.buildSearchQuery(title: t, artist: a, raw: searchQuery)
-        if !built.isEmpty { add(built) }
-        if !t.isEmpty, !a.isEmpty {
-            add("\(t) \(a)")
-            add("\(a) \(t)")
-        }
-        if !t.isEmpty { add(t) }
-        if t.isEmpty, !a.isEmpty { add(a) }
-        return Array(out.prefix(4))
+        SongSearchQueries.variants(title: title, artist: artist, rawQuery: searchQuery)
     }
 
     /// Second pass when the primary queries miss (simpler title, no feat./punctuation).
     func storeSearchRetryQueries() -> [String] {
-        var out: [String] = []
-        func add(_ s: String) {
-            let q = CardTextMapper.clean(s)
-            guard q.count >= 2 else { return }
-            if !out.contains(where: { ApiJSON.sameText($0, q) }) { out.append(q) }
-        }
-        let t = Self.simplifiedSongTitle(title)
-        let a = artist.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !t.isEmpty, !a.isEmpty {
-            add("\(t) \(a)")
-            add("\(a) \(t)")
-        }
-        if !t.isEmpty { add(t) }
-        return Array(out.prefix(3))
-    }
-
-    private static func simplifiedSongTitle(_ raw: String) -> String {
-        var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        let patterns = [
-            #"(?i)\s*[\(\[]\s*(feat\.?|ft\.?|featuring)[^\)\]]*[\)\]]"#,
-            #"(?i)\s*-\s*(remix|live|acoustic|radio edit|version).*$"#,
-        ]
-        for p in patterns {
-            if let re = try? NSRegularExpression(pattern: p) {
-                let range = NSRange(s.startIndex..<s.endIndex, in: s)
-                s = re.stringByReplacingMatches(in: s, range: range, withTemplate: "")
-            }
-        }
-        s = s.replacingOccurrences(of: "  ", with: " ")
-        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+        SongSearchQueries.retryVariants(title: title, artist: artist)
     }
 
     func asSongPick() -> SongPick? {

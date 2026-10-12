@@ -153,6 +153,39 @@ final class WordReadingTests: XCTestCase {
         XCTAssertTrue(all.contains(where: { ApiJSON.sameText($0, "Gasolina") }))
     }
 
+    func testCardHandwritingPickStoreQueriesMatchSongSearchQueries() {
+        var pick = CardHandwritingPick(
+            hasSong: true,
+            title: "Gasolina",
+            artist: "Daddy Yankee",
+            searchQuery: "Gasolina Daddy Yankee",
+            confidence: 0.9,
+            reasoning: "fixture",
+            hasCallerWord: false,
+            callerWord: "",
+            hasNotesWord: false,
+            notesWord: ""
+        )
+        XCTAssertEqual(
+            pick.storeSearchQueries(),
+            SongSearchQueries.variants(title: "Gasolina", artist: "Daddy Yankee", rawQuery: "Gasolina Daddy Yankee")
+        )
+        pick = CardHandwritingPick(
+            hasSong: true,
+            title: "La Gasolina",
+            artist: "",
+            searchQuery: "La Gasolina",
+            confidence: 0.85,
+            reasoning: "title only",
+            hasCallerWord: false,
+            callerWord: "",
+            hasNotesWord: false,
+            notesWord: ""
+        )
+        let queries = pick.storeSearchQueries() + pick.storeSearchRetryQueries()
+        XCTAssertTrue(queries.contains(where: { ApiJSON.sameText($0, "Gasolina") }))
+    }
+
     func testPreviewRankPrefersDaddyYankeeGasolinaForTitleOnlyQuery() {
         let tracks = [
             PreviewTrack(title: "Gasolina", artist: "Daddy Yankee", album: nil, artworkURL: nil,

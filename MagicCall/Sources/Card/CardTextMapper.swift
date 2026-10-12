@@ -29,13 +29,12 @@ enum CardTextMapper {
 
     /// Extra store search tries when OCR garbles handwriting (e.g. LOSE tURSeS → Lose Yourself).
     static func songSearchVariants(from raw: String) -> [String] {
-        var out: [String] = []
+        var out = SongSearchQueries.variants(fromRawQuery: raw)
         func add(_ s: String) {
             let q = clean(s)
             guard q.count >= 2 else { return }
             if !out.contains(where: { ApiJSON.sameText($0, q) }) { out.append(q) }
         }
-        add(raw)
         let cleanRaw = clean(raw)
         if let range = cleanRaw.range(of: " - ") {
             let artist = String(cleanRaw[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
