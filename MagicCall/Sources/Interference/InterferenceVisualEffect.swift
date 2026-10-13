@@ -123,9 +123,10 @@ extension InterferenceTestController.Phase {
 // MARK: - Flash interference stage preview
 
 /// Opens straight into the ringtone on the stage screenshot; an open hand plays the flash clip with the
-/// rising lens, then the picked song. No controls on screen; two-finger swipe down returns to Settings.
+/// rising lens, then the song of this call. A tap hangs up and rings the next call (song 2 with two songs).
+/// No controls on screen; two-finger swipe down returns to Settings.
 struct FlashInterferenceStagePreviewSheet: View {
-    let song: PreviewTrack
+    let songs: [PreviewTrack]
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
@@ -133,9 +134,31 @@ struct FlashInterferenceStagePreviewSheet: View {
     @AppStorage(InterferenceSettings.Key.ringtoneID) private var ringtoneID = InterferenceSettings.Ringtone.defaultValue.rawValue
     @StateObject private var test = InterferenceTestController()
     @State private var morphToken = 0
+    @State private var callIndex = 0
+    @State private var ringTask: Task<Void, Never>?
 
     private var ringtone: InterferenceSettings.Ringtone {
         InterferenceSettings.Ringtone(rawValue: ringtoneID) ?? .ringtone1
+    }
+
+    private func ring() {
+        guard !songs.isEmpty else { return }
+        let song = songs[min(callIndex, songs.count - 1)]
+        ringTask?.cancel()
+        ringTask = Task {
+            await test.play(model: model, ringtone: ringtone, overrideSong1: song, forcedMode: .flashInterference)
+        }
+    }
+
+    /// Only once the song is playing (or the run ended): ringing and the flash itself are never cut by a tap.
+    private func hangUpAndRingNext() {
+        switch test.phase {
+        case .playingSong, .playingSecondSong, .idle, .error: break
+        default: return
+        }
+        test.stop()
+        callIndex += 1
+        ring()
     }
 
     var body: some View {
@@ -153,9 +176,11 @@ struct FlashInterferenceStagePreviewSheet: View {
                 peekHoldEnabled: false,
                 onPeekVisibility: { _ in },
                 onTwoFingerSwipeDown: {
+                    ringTask?.cancel()
                     test.stop()
                     dismiss()
-                }
+                },
+                onSingleTap: hangUpAndRingNext
             )
             .ignoresSafeArea()
 
@@ -172,11 +197,14 @@ struct FlashInterferenceStagePreviewSheet: View {
         }
         .persistentSystemOverlays(.hidden)
         .preferredColorScheme(.dark)
-        .task {
+        .onAppear {
             model.pauseVoiceAndAudioForSetupUI(reason: "flash stage preview")
-            await test.play(model: model, ringtone: ringtone, overrideSong1: song, forcedMode: .flashInterference)
+            ring()
         }
-        .onDisappear { test.stop() }
+        .onDisappear {
+            ringTask?.cancel()
+            test.stop()
+        }
         .onChange(of: test.phase) { old, new in
             if new.showsProximityRipple, !old.showsProximityRipple { morphToken += 1 }
         }

@@ -28,6 +28,8 @@ final class InterferenceShowController: ObservableObject {
     /// iOS stopped the engine (configuration change) or a hand arrived while it was stopped:
     /// `AppModel` retriggers, which calls `reassert`.
     var onEngineLost: (@MainActor (String) -> Void)?
+    /// The open hand switched this call's ringtone to its song.
+    var onFirstHand: (@MainActor () -> Void)?
 
     private var audio: InterferenceAudioEngine?
     private let detector = HandGestureDetector()
@@ -217,6 +219,7 @@ final class InterferenceShowController: ObservableObject {
         detector.stop()
         firstHandAt = CACurrentMediaTime()
         phase = .morph1
+        onFirstHand?()
         PerformUserLog.shared.log("Interference · hand detected after \(String(format: "%.1f", firstHandAt - ringStartedAt)) s (\(source)) → song 1")
     }
 

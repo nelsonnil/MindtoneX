@@ -139,6 +139,7 @@ struct StageGestureLayer: UIViewRepresentable {
     var peekHoldEnabled: Bool
     let onPeekVisibility: (Bool) -> Void
     let onTwoFingerSwipeDown: () -> Void
+    var onSingleTap: (() -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -157,6 +158,9 @@ struct StageGestureLayer: UIViewRepresentable {
 
         view.addGestureRecognizer(peekHold)
         view.addGestureRecognizer(swipe)
+        if onSingleTap != nil {
+            view.addGestureRecognizer(UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.singleTap(_:))))
+        }
         context.coordinator.peekHoldRecognizer = peekHold
         return view
     }
@@ -165,13 +169,20 @@ struct StageGestureLayer: UIViewRepresentable {
         context.coordinator.peekHoldEnabled = peekHoldEnabled
         context.coordinator.onPeekVisibility = onPeekVisibility
         context.coordinator.onTwoFingerSwipeDown = onTwoFingerSwipeDown
+        context.coordinator.onSingleTap = onSingleTap
     }
 
     final class Coordinator: NSObject {
         var peekHoldEnabled = true
         var onPeekVisibility: (Bool) -> Void = { _ in }
         var onTwoFingerSwipeDown: () -> Void = {}
+        var onSingleTap: (() -> Void)?
         weak var peekHoldRecognizer: UILongPressGestureRecognizer?
+
+        @objc func singleTap(_ recognizer: UITapGestureRecognizer) {
+            guard recognizer.state == .ended else { return }
+            onSingleTap?()
+        }
 
         @objc func peekHold(_ recognizer: UILongPressGestureRecognizer) {
             guard peekHoldEnabled else { return }

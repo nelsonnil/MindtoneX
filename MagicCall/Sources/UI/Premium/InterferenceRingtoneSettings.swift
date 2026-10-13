@@ -13,6 +13,15 @@ struct SongRingtoneModeBlock: View {
     @State private var showTestMode = false
     @State private var showFlashStagePreview = false
     @State private var flashPreviewSong: PreviewTrack?
+    @State private var flashPreviewSong2: PreviewTrack?
+
+    /// Song 1, plus song 2 when 2 songs are on and both are picked.
+    private var flashPreviewSongs: [PreviewTrack] {
+        guard let flashPreviewSong else { return [] }
+        guard twoSongsEnabled else { return [flashPreviewSong] }
+        guard let flashPreviewSong2 else { return [] }
+        return [flashPreviewSong, flashPreviewSong2]
+    }
 
     private var inputMode: VoiceSettings.InputMode {
         let mode = VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .card
@@ -69,18 +78,37 @@ struct SongRingtoneModeBlock: View {
                     Text("Stage preview")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(OracleTheme.textPrimary)
+                    if twoSongsEnabled {
+                        Text("Song 1")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(OracleTheme.textSecondary)
+                    }
                     LibrarySongSearchBlock(
                         pickedTrackID: flashPreviewSong?.id,
                         onPick: { flashPreviewSong = $0 },
                         resultsPresentation: .sheet
                     )
+                    if twoSongsEnabled {
+                        Text("Song 2")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(OracleTheme.textSecondary)
+                        LibrarySongSearchBlock(
+                            pickedTrackID: flashPreviewSong2?.id,
+                            onPick: { flashPreviewSong2 = $0 },
+                            resultsPresentation: .sheet
+                        )
+                        Text("In the preview, tap the screen to hang up: the next call rings and the hand switches it to song 2.")
+                            .font(.caption2)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     Button {
-                        showFlashStagePreview = flashPreviewSong != nil
+                        showFlashStagePreview = !flashPreviewSongs.isEmpty
                     } label: {
                         flashStagePreviewLabel
                     }
                     .buttonStyle(.plain)
-                    .disabled(flashPreviewSong == nil)
+                    .disabled(flashPreviewSongs.isEmpty)
                     .accessibilityHint("Pick a song above, then preview ringtone, hand, flash sound, and rising light on your stage screenshot")
                 }
             }
@@ -113,8 +141,8 @@ struct SongRingtoneModeBlock: View {
             .environmentObject(model)
         }
         .fullScreenCover(isPresented: $showFlashStagePreview) {
-            if let flashPreviewSong {
-                FlashInterferenceStagePreviewSheet(song: flashPreviewSong)
+            if !flashPreviewSongs.isEmpty {
+                FlashInterferenceStagePreviewSheet(songs: flashPreviewSongs)
                     .environmentObject(model)
             }
         }
@@ -130,13 +158,13 @@ struct SongRingtoneModeBlock: View {
                 : "Ringtone → open hand → **radio interference** morphs into the song."
         case .flashInterference:
             return twoSongsEnabled
-                ? "Ringtone → **hand 1** → **flash interference** (light rises on stage) → song 1 → hand 2 → flash again → song 2."
+                ? "**Call 1:** ringtone → open hand → **flash interference** (light rises on stage) → **song 1**. Hang up. **Call 2:** ringtone → open hand → flash → **song 2**."
                 : "Ringtone → open hand → **flash interference** sound while the **Proximity Rise** light crosses your stage screenshot, then the song."
         }
     }
 
     private var flashStagePreviewLabel: some View {
-        let ready = flashPreviewSong != nil
+        let ready = !flashPreviewSongs.isEmpty
         return Label("Stage preview", systemImage: "photo.on.rectangle.angled")
             .font(.subheadline.weight(.semibold))
             .frame(maxWidth: .infinity)
@@ -162,7 +190,9 @@ struct SongRingtoneModeBlock: View {
                 ? "Perform: hand 1 → interference → song 1; after ~2 s of clean song 1, hand 2 → interference 2 → song 2."
                 : "Perform: Banner call style keeps the camera on; Back Tap or volume trigger can stand in for the hand."
         case .flashInterference:
-            return "Perform: same hand flow with **flash** audio (~4 s) and the rising light on the stage wallpaper."
+            return twoSongsEnabled
+                ? "Perform: both songs are found before the first call. The camera only watches for the hand while a call is ringing."
+                : "Perform: same hand flow with **flash** audio (~4 s) and the rising light on the stage wallpaper."
         }
     }
 

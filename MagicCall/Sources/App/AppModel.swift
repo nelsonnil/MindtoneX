@@ -58,6 +58,9 @@ final class AppModel: ObservableObject {
     private var hadCallWhileArmed = false
     /// Interference ringtone could not start for this call: stay on the normal ringtone until the call ends.
     private var interferenceFallbackThisCall = false
+    /// Flash interference with 2 songs: calls in this Perform where the hand already switched to a song.
+    /// The first such call plays song 1, every later call plays song 2.
+    private var flashHandCallsThisPerform = 0
     private(set) var performed = false
     private var currentAudio: (data: Data, hint: String)?
     private var auditionEndWork: DispatchWorkItem?
@@ -115,6 +118,9 @@ final class AppModel: ObservableObject {
         }
         interferenceShow.onEngineLost = { [weak self] reason in
             self?.interferenceEngineLost(reason)
+        }
+        interferenceShow.onFirstHand = { [weak self] in
+            self?.flashHandCallsThisPerform += 1
         }
         installObservers()
         Task { await previews.warmUp() }
@@ -446,6 +452,7 @@ final class AppModel: ObservableObject {
         hadCallWhileArmed = false
         autoTriggerCooldownUntil = 0
         interferenceFallbackThisCall = false
+        flashHandCallsThisPerform = 0
         startCallPolling()
         isArmed = true
         isAudible = false
@@ -489,6 +496,7 @@ final class AppModel: ObservableObject {
         resetVoicePerformance()
         interferenceShow.stop(reason: "disarm")
         interferenceFallbackThisCall = false
+        flashHandCallsThisPerform = 0
         audio.stop()
         audio.deactivateSession()
         isArmed = false
@@ -753,8 +761,22 @@ final class AppModel: ObservableObject {
             return true
         }
         guard let track = selected, let current = currentAudio else { return false }
+        var firstSong = InterferenceShowController.Song(data: current.data, fileTypeHint: current.hint, title: track.title)
         var secondSong: InterferenceShowController.Song?
-        if SpectatorSettings.isTwo {
+        if SpectatorSettings.isTwo, InterferenceSettings.mode == .flashInterference {
+            // One song per call: call 1 → song 1, the next calls → song 2 (each after its own open hand).
+            if flashHandCallsThisPerform > 0 {
+                let second = SecondSpectatorSong.shared
+                if second.isLocked, let track2 = second.track, let data2 = second.trackData {
+                    firstSong = InterferenceShowController.Song(data: data2, fileTypeHint: track2.fileTypeHint, title: track2.title)
+                    PerformUserLog.shared.log("Flash interference · call \(flashHandCallsThisPerform + 1) · song 2")
+                } else {
+                    PerformUserLog.shared.log("Flash interference · song 2 not ready · this call plays song 1 again")
+                }
+            } else {
+                PerformUserLog.shared.log("Flash interference · call 1 · song 1")
+            }
+        } else if SpectatorSettings.isTwo {
             let second = SecondSpectatorSong.shared
             if second.isLocked, let track2 = second.track, let data2 = second.trackData {
                 secondSong = InterferenceShowController.Song(data: data2, fileTypeHint: track2.fileTypeHint, title: track2.title)
@@ -763,7 +785,7 @@ final class AppModel: ObservableObject {
             }
         }
         let started = interferenceShow.start(
-            song1: InterferenceShowController.Song(data: current.data, fileTypeHint: current.hint, title: track.title),
+            song1: firstSong,
             song2: secondSong,
             configureSession: configure
         )
