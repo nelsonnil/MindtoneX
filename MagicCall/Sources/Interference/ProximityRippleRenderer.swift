@@ -111,7 +111,7 @@ final class ProximityRippleRenderer {
             let island = Double(dynamicIslandNormalizedY)
             let arrival = Self.arrivalTime, end = Self.duration
             f.center = CGPoint(x: 0.5, y: k(t, [(0, bottom), (1.2, bottom), (arrival, island), (end, island)], true))
-            f.radius.x = k(t, [(0.15, 0), (1.2, 0.26), (arrival, 0.42), (end, 0)], true)
+            f.radius.x = k(t, [(0.15, 0), (1.2, 0.23), (arrival, 0.37), (end, 0)], true)
             f.amp.x = k(t, [(0.15, 0), (1.0, 16), (3.4, 18), (arrival, 18), (end, 0)], true)
             f.trail = f.amp.x * 0.6
             f.rim = k(t, [(0.15, 0), (0.7, 1), (arrival, 1), (end, 0)], true)
