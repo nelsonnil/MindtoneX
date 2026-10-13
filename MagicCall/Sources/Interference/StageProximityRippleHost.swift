@@ -126,7 +126,7 @@ final class StageProximityRippleHost: UIView {
     }
 
     /// Where the lens stops and collapses, as a fraction of the screen height from the top.
-    private static let topStopNormalizedY: CGFloat = 0.18
+    private static let topStopNormalizedY: CGFloat = 0.24
     /// First visible lens frame and the end of the bottom hold in the `.ascent` keys.
     private static let entryTime = 0.3
     private static let holdEnd = 1.2

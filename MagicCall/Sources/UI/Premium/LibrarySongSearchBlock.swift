@@ -13,6 +13,11 @@ struct LibrarySongSearchBlock: View {
     @ObservedObject private var library = SongLibraryStore.shared
     @FocusState private var queryFocused: Bool
     @State private var showResultsSheet = false
+    /// `onPick` mode searches on its own, so several pickers (song 1 / song 2) and the Home song stay independent.
+    @State private var pickQuery = ""
+    @State private var pickResults: [PreviewTrack] = []
+    @State private var pickSearching = false
+    @State private var pickFailure: String?
 
     /// When set, matches scroll inside this fixed height instead of growing the parent.
     private let resultsHeight: CGFloat?
@@ -34,8 +39,31 @@ struct LibrarySongSearchBlock: View {
         self.resultsPresentation = resultsPresentation
     }
 
+    private var picking: Bool { onPick != nil }
+
+    private var queryBinding: Binding<String> {
+        picking ? $pickQuery : $model.query
+    }
+
+    private var results: [PreviewTrack] {
+        picking ? pickResults : model.results
+    }
+
+    private var isSearching: Bool {
+        picking ? pickSearching : model.loadState == .searching
+    }
+
+    private var failureMessage: String? {
+        if picking { return pickFailure }
+        if case .failed(let message) = model.loadState { return message }
+        return nil
+    }
+
     private var searchDisabled: Bool {
-        model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if picking {
+            return pickQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || pickSearching
+        }
+        return model.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || model.loadState == .searching
             || model.loadState == .downloading
     }
@@ -44,23 +72,23 @@ struct LibrarySongSearchBlock: View {
         VStack(alignment: .leading, spacing: 10) {
             searchFieldRow
 
-            if case .failed(let message) = model.loadState {
-                Label(message, systemImage: "exclamationmark.triangle.fill")
+            if let failureMessage {
+                Label(failureMessage, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(OracleTheme.coral)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if resultsPresentation == .inline, !model.results.isEmpty {
+            if resultsPresentation == .inline, !results.isEmpty {
                 matchesList
             }
 
-            if resultsPresentation == .sheet, !model.results.isEmpty {
+            if resultsPresentation == .sheet, !results.isEmpty {
                 Button {
                     showResultsSheet = true
                 } label: {
                     HStack {
-                        Text("\(model.results.count) match\(model.results.count == 1 ? "" : "es")")
+                        Text("\(results.count) match\(results.count == 1 ? "" : "es")")
                             .font(.subheadline.weight(.medium))
                         Spacer()
                         Text("View")
@@ -86,13 +114,13 @@ struct LibrarySongSearchBlock: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         searchFieldRow
-                        if case .failed(let message) = model.loadState {
-                            Label(message, systemImage: "exclamationmark.triangle.fill")
+                        if let failureMessage {
+                            Label(failureMessage, systemImage: "exclamationmark.triangle.fill")
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.coral)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        if model.results.isEmpty, model.loadState != .searching {
+                        if results.isEmpty, !isSearching {
                             Text("No matches yet — search by title and artist.")
                                 .font(.caption)
                                 .foregroundStyle(OracleTheme.textSecondary)
@@ -119,7 +147,7 @@ struct LibrarySongSearchBlock: View {
 
     private var searchFieldRow: some View {
         HStack(spacing: 8) {
-            TextField("Song title & artist", text: $model.query)
+            TextField("Song title & artist", text: queryBinding)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.search)
@@ -131,7 +159,7 @@ struct LibrarySongSearchBlock: View {
 
             Button(action: runSearch) {
                 Group {
-                    if model.loadState == .searching {
+                    if isSearching {
                         ProgressView()
                             .tint(Color(red: 0.12, green: 0.10, blue: 0.05))
                     } else {
@@ -155,7 +183,7 @@ struct LibrarySongSearchBlock: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(OracleTheme.textSecondary)
             VStack(spacing: 8) {
-                ForEach(Array(model.results.prefix(8))) { track in
+                ForEach(Array(results.prefix(8))) { track in
                     searchResultRow(track)
                 }
             }
@@ -167,12 +195,29 @@ struct LibrarySongSearchBlock: View {
         if resultsPresentation == .sheet {
             showResultsSheet = true
         }
-        Task { await model.searchForPicker() }
+        guard picking else {
+            Task { await model.searchForPicker() }
+            return
+        }
+        let q = pickQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return }
+        pickSearching = true
+        pickFailure = nil
+        pickResults = []
+        Task {
+            do {
+                let found = try await model.previews.search(q)
+                pickResults = found
+                pickFailure = found.isEmpty ? "No songs found — try different words" : nil
+            } catch {
+                pickFailure = error.localizedDescription
+            }
+            pickSearching = false
+        }
     }
 
     private func searchResultRow(_ track: PreviewTrack) -> some View {
         let favorited = library.isFavorite(track)
-        let picking = onPick != nil
         let isSelected = picking
             ? pickedTrackID == track.id
             : model.selected?.id == track.id && model.loadState == .ready

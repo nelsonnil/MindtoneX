@@ -97,7 +97,7 @@ struct SongRingtoneModeBlock: View {
                             onPick: { flashPreviewSong2 = $0 },
                             resultsPresentation: .sheet
                         )
-                        Text("In the preview, tap the screen to hang up: the next call rings and the hand switches it to song 2.")
+                        Text("In the preview, show the hand again during song 1 (after ~2 s) for song 2 — or tap the screen to hang up and ring the next call.")
                             .font(.caption2)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -158,7 +158,7 @@ struct SongRingtoneModeBlock: View {
                 : "Ringtone → open hand → **radio interference** morphs into the song."
         case .flashInterference:
             return twoSongsEnabled
-                ? "**Call 1:** ringtone → open hand → **flash interference** (light rises on stage) → **song 1**. Hang up. **Call 2:** ringtone → open hand → flash → **song 2**."
+                ? "Ringtone → open hand → **flash interference** (light rises on stage) → **song 1**. Then either a second hand during song 1, or hanging up and the next call's hand → flash → **song 2**."
                 : "Ringtone → open hand → **flash interference** sound while the **Proximity Rise** light crosses your stage screenshot, then the song."
         }
     }

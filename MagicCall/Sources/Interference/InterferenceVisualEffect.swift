@@ -143,10 +143,13 @@ struct FlashInterferenceStagePreviewSheet: View {
 
     private func ring() {
         guard !songs.isEmpty else { return }
+        // Call 1 carries song 2 too (second hand during song 1); later calls go straight to song 2.
         let song = songs[min(callIndex, songs.count - 1)]
+        let inCallSecond = callIndex == 0 && songs.count > 1 ? songs[1] : nil
         ringTask?.cancel()
         ringTask = Task {
-            await test.play(model: model, ringtone: ringtone, overrideSong1: song, forcedMode: .flashInterference)
+            await test.play(model: model, ringtone: ringtone, overrideSong1: song, overrideSong2: inCallSecond,
+                            forcedMode: .flashInterference)
         }
     }
 

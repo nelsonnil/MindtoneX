@@ -764,17 +764,23 @@ final class AppModel: ObservableObject {
         var firstSong = InterferenceShowController.Song(data: current.data, fileTypeHint: current.hint, title: track.title)
         var secondSong: InterferenceShowController.Song?
         if SpectatorSettings.isTwo, InterferenceSettings.mode == .flashInterference {
-            // One song per call: call 1 → song 1, the next calls → song 2 (each after its own open hand).
+            // Call 1: hand → song 1, and a second hand during song 1 → flash again → song 2.
+            // Later calls: hand → song 2 straight away.
+            let second = SecondSpectatorSong.shared
+            let song2Ready: InterferenceShowController.Song? = {
+                guard second.isLocked, let track2 = second.track, let data2 = second.trackData else { return nil }
+                return InterferenceShowController.Song(data: data2, fileTypeHint: track2.fileTypeHint, title: track2.title)
+            }()
             if flashHandCallsThisPerform > 0 {
-                let second = SecondSpectatorSong.shared
-                if second.isLocked, let track2 = second.track, let data2 = second.trackData {
-                    firstSong = InterferenceShowController.Song(data: data2, fileTypeHint: track2.fileTypeHint, title: track2.title)
+                if let song2Ready {
+                    firstSong = song2Ready
                     PerformUserLog.shared.log("Flash interference · call \(flashHandCallsThisPerform + 1) · song 2")
                 } else {
                     PerformUserLog.shared.log("Flash interference · song 2 not ready · this call plays song 1 again")
                 }
             } else {
-                PerformUserLog.shared.log("Flash interference · call 1 · song 1")
+                secondSong = song2Ready
+                PerformUserLog.shared.log("Flash interference · call 1 · song 1\(song2Ready == nil ? " · song 2 not ready" : " · hand 2 → song 2")")
             }
         } else if SpectatorSettings.isTwo {
             let second = SecondSpectatorSong.shared

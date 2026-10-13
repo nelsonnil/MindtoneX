@@ -136,6 +136,7 @@ final class InterferenceTestController: ObservableObject {
         model: AppModel,
         ringtone: InterferenceSettings.Ringtone,
         overrideSong1: PreviewTrack? = nil,
+        overrideSong2: PreviewTrack? = nil,
         forcedMode: InterferenceSettings.RingtoneMode? = nil
     ) async {
         guard !phase.isBusy else { return }
@@ -145,7 +146,7 @@ final class InterferenceTestController: ObservableObject {
         handDetectedAfter = nil
         secondHandDetectedAfter = nil
         fingersSeen = 0
-        let twoSpectators = overrideSong1 == nil && SpectatorSettings.isTwo
+        let twoSpectators = overrideSong1 == nil ? SpectatorSettings.isTwo : overrideSong2 != nil
         twoSpectatorRun = twoSpectators
         firstSongClean = false
         secondHandQueued = false
@@ -154,7 +155,10 @@ final class InterferenceTestController: ObservableObject {
 
         let first: PreviewTrack
         var second: PreviewTrack?
-        if twoSpectators {
+        if let overrideSong1, let overrideSong2 {
+            first = overrideSong1
+            second = overrideSong2
+        } else if twoSpectators {
             guard let pick1 = song1, let pick2 = song2 else {
                 fail("Pick Song 1 and Song 2 first.")
                 return
