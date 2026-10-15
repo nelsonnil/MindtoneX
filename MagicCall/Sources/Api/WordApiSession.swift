@@ -144,6 +144,12 @@ final class WordApiSession: ObservableObject {
         if had { dlog("[WORD] ↺ reset (\(reason))") }
     }
 
+    /// Perform: immediate poll after foreground (same as Song API).
+    func kickPerformPollIfNeeded() {
+        guard context == .perform, timer != nil else { return }
+        tick()
+    }
+
     private func tick() {
         guard timer != nil, !isRefreshing else { return }
         if context == .test, UIApplication.shared.applicationState == .background {

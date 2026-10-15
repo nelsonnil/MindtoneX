@@ -93,6 +93,7 @@ enum SongSearchQueries {
         }
         if !r.isEmpty, !ApiJSON.sameText(r, "\(a) \(a)") { return r }
         if !t.isEmpty { return a.isEmpty ? t : "\(t) \(a)" }
+        if !a.isEmpty { return a }
         return r
     }
 
@@ -190,10 +191,34 @@ extension SongPick {
             && title.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
     }
 
+    /// Singer/group named without a title: the store lookup picks their most popular song.
+    var isArtistOnly: Bool {
+        title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && artist.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
+    }
+
+    /// A specific title by the artist of an artist-only pick ("Shakira… Waka Waka") — same choice, not a new song.
+    func refines(_ artistOnly: SongPick) -> Bool {
+        guard artistOnly.isArtistOnly, !isArtistOnly else { return false }
+        let mine = PreviewService.normalize(artist)
+        let theirs = PreviewService.normalize(artistOnly.artist)
+        guard !mine.isEmpty, !theirs.isEmpty else { return false }
+        return mine.contains(theirs) || theirs.contains(mine)
+    }
+
+    /// Artist-only picks take the title/artist of the store hit actually loaded.
+    func filled(from track: PreviewTrack?) -> SongPick {
+        guard isArtistOnly, let track else { return self }
+        var copy = self
+        copy.title = track.title
+        copy.artist = track.artist
+        return copy
+    }
+
     func withFilledSearchQuery() -> SongPick {
         var copy = self
         copy.searchQuery = filledSearchQuery
-        if copy.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if copy.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !isArtistOnly {
             copy.title = SongSearchQueries.stripSongFraming(copy.searchQuery)
         }
         return copy

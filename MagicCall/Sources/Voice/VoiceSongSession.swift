@@ -354,7 +354,7 @@ final class VoiceSongSession: ObservableObject {
             dlog("[VOICE] AI (\(ms) ms): no song chosen yet\(pick.map { " · \($0.reasoning)" } ?? "")")
             return
         }
-        let floor = resolved.isTitleOnly ? min(VoiceSettings.minConfidence, Self.titleOnlyConfidenceFloor) : VoiceSettings.minConfidence
+        let floor = Self.confidenceFloor(for: resolved)
         guard resolved.confidence >= floor else {
             dlog("[VOICE] AI (\(ms) ms): \(resolved.label) ignored, confidence \(Self.percent(resolved.confidence)) < \(Self.percent(floor)) · \(resolved.reasoning)")
             if context == .perform {
@@ -365,6 +365,7 @@ final class VoiceSongSession: ObservableObject {
             return
         }
         if SpectatorSettings.isTwo, let current = candidate, current.key != resolved.key,
+           !resolved.refines(current),
            !Self.transcriptRetractsPreviousChoice(transcriptText) {
             promoteFirstSongAndTakeSecond(first: current, second: resolved, ms: ms)
             return
@@ -427,9 +428,15 @@ final class VoiceSongSession: ObservableObject {
 
     // MARK: Lock
 
+    /// Artist-only candidates wait longer so the spectator can still add a title.
+    private var activeLockDelay: Double {
+        let pick = listeningForSecondSong ? secondCandidate : candidate
+        return VoiceSettings.lockDelay + (pick?.isArtistOnly == true ? Self.artistOnlyExtraLockDelay : 0)
+    }
+
     private func restartLockTimer() {
         lockTimer?.invalidate()
-        let delay = VoiceSettings.lockDelay
+        let delay = activeLockDelay
         lockDeadline = Date().addingTimeInterval(delay)
         lockTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.lockTimerFired() }
@@ -448,7 +455,7 @@ final class VoiceSongSession: ObservableObject {
                 MainActor.assumeIsolated { self?.lockTimerFired() }
             }
         case .ready:
-            lock(c, reason: "\(Int(VoiceSettings.lockDelay)) s without changes", duringCall: false)
+            lock(c, reason: "\(Int(activeLockDelay)) s without changes", duringCall: false)
         default:
             lockDeadline = nil
         }
@@ -466,10 +473,9 @@ final class VoiceSongSession: ObservableObject {
         dlog("[VOICE] 🔒 locked \(pick.label) · \(Self.percent(pick.confidence)) · \(reason) · mic running=\(mic.isRunning)")
         if context == .perform {
             PerformanceCues.songLocked(source: "Voice")
-            let preview = AppModel.shared.selected?.previewURL.absoluteString
-                ?? AppModel.shared.lastReadyTrack?.previewURL.absoluteString
+            let loaded = AppModel.shared.selected ?? AppModel.shared.lastReadyTrack
             SongLibraryStore.shared.commitPerformSnapshot(
-                RecentPerformSnapshot(pick: pick, previewURL: preview)
+                RecentPerformSnapshot(pick: pick.filled(from: loaded), previewURL: loaded?.previewURL.absoluteString)
             )
             AppModel.shared.notePerformDisplayTrack()
         }
@@ -498,10 +504,9 @@ final class VoiceSongSession: ObservableObject {
         SecondSpectatorSong.shared.beginWaiting(source: "Voice", context: context == .perform ? .perform : .test)
         if context == .perform {
             PerformanceCues.songLocked(source: "Voice · song 1")
-            let preview = AppModel.shared.selected?.previewURL.absoluteString
-                ?? AppModel.shared.lastReadyTrack?.previewURL.absoluteString
+            let loaded = AppModel.shared.selected ?? AppModel.shared.lastReadyTrack
             SongLibraryStore.shared.commitPerformSnapshot(
-                RecentPerformSnapshot(pick: pick, previewURL: preview)
+                RecentPerformSnapshot(pick: pick.filled(from: loaded), previewURL: loaded?.previewURL.absoluteString)
             )
             AppModel.shared.notePerformDisplayTrack()
             PerformUserLog.shared.log("Voice · song 1 locked · listening for song 2")
@@ -521,7 +526,8 @@ final class VoiceSongSession: ObservableObject {
         "Two-song mode. Return ONLY song 1: the first title the spectator settles on. "
         + "If a later distinct title also appears, ignore it here (that is song 2). "
         + "Last-commitment-wins applies only to a mind-change of song 1 («no, mejor X»), not to a second song. "
-        + "Title without artist is enough — infer the most popular recording."
+        + "Title without artist is enough — infer the most popular recording. "
+        + "An artist alone is enough too (title empty); a title by that same artist right after it refines song 1, it is not song 2."
 
     private var secondSpectatorPromptContext: String? {
         songTwoPromptContext(for: lockedPick)
@@ -529,9 +535,13 @@ final class VoiceSongSession: ObservableObject {
 
     private func songTwoPromptContext(for first: SongPick?) -> String? {
         guard let first else { return nil }
+        let artistOnlyNote = first.isArtistOnly
+            ? "Song 1 was named by artist only («\(first.artist)»): a title by \(first.artist) is still song 1, not song 2. "
+            : ""
         return "Two-song mode. Song 1 «\(first.label)» is already chosen. "
+            + artistOnlyNote
             + "Return song 2: the next distinct title (same person or a second person). "
-            + "Title without artist is enough — infer the most popular recording. "
+            + "Title without artist is enough — infer the most popular recording. An artist alone is enough too (title empty). "
             + "Never return «\(first.label)» again: if it is the only song mentioned, return has_song=false."
     }
 
@@ -542,7 +552,7 @@ final class VoiceSongSession: ObservableObject {
             dlog("[VOICE] AI (\(ms) ms): spectator 2 · no song yet\(pick.map { " · \($0.reasoning)" } ?? "")")
             return
         }
-        let floor = resolved.isTitleOnly ? min(VoiceSettings.minConfidence, Self.titleOnlyConfidenceFloor) : VoiceSettings.minConfidence
+        let floor = Self.confidenceFloor(for: resolved)
         guard resolved.confidence >= floor else {
             dlog("[VOICE] AI (\(ms) ms): spectator 2 · \(resolved.label) ignored, confidence \(Self.percent(resolved.confidence)) < \(Self.percent(floor))")
             if context == .perform {
@@ -606,7 +616,7 @@ final class VoiceSongSession: ObservableObject {
                 MainActor.assumeIsolated { self?.lockTimerFired() }
             }
         case .ready:
-            lockSecond(c, reason: "\(Int(VoiceSettings.lockDelay)) s without changes", duringCall: false)
+            lockSecond(c, reason: "\(Int(activeLockDelay)) s without changes", duringCall: false)
         default:
             lockDeadline = nil
         }
@@ -647,6 +657,13 @@ final class VoiceSongSession: ObservableObject {
     // MARK: Title-only + two-song helpers
 
     private static let titleOnlyConfidenceFloor = 0.35
+    private static let artistOnlyExtraLockDelay = 2.0
+
+    private static func confidenceFloor(for pick: SongPick) -> Double {
+        pick.isTitleOnly || pick.isArtistOnly
+            ? min(VoiceSettings.minConfidence, titleOnlyConfidenceFloor)
+            : VoiceSettings.minConfidence
+    }
     private static let retractCues = [
         "no, mejor", "no mejor", "o no", "espera", "cambio", "la otra",
         "actually", "wait", "better", "changed my mind", "change",
@@ -695,7 +712,8 @@ final class VoiceSongSession: ObservableObject {
             let pick = try await SongPicker.pick(transcript: fullText, previous: nil, context: context)
             guard gen == self.generation, self.state == .listening, !self.listeningForSecondSong else { return }
             let resolved = resolvedSongPick(pick, transcript: fullText)
-            guard let resolved, resolved.hasSong, resolved.hasUsableTitle, resolved.key != first.key else { return }
+            guard let resolved, resolved.hasSong, resolved.hasUsableTitle, resolved.key != first.key,
+                  !resolved.refines(first) else { return }
             dlog("[VOICE] two songs · same transcript also names song 2 «\(resolved.label)»")
             promoteFirstSongAndTakeSecond(first: first, second: resolved, ms: 0)
         } catch {

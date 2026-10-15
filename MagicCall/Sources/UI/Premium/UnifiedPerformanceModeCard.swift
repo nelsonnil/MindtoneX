@@ -10,13 +10,15 @@ struct PerformanceCard: View {
 
     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
     @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
+    @AppStorage(Prefs.Key.autoStartPerformOnHome) private var autoStartPerformOnHome = false
     @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
     private var hasScreenshot: Bool { StageImageStore.hasScreenshot }
 
     private var performanceSummary: String {
         let shot = hasScreenshot ? "Screenshot set" : "Screenshot required"
         let share = autoShareOnSongLock ? "Auto-share on" : "Auto-share off"
-        return "\(shot) · Vol \(Int(fakePlaybackVolume * 100))% · \(share)"
+        let auto = autoStartPerformOnHome ? "Auto-Perform on" : "Auto-Perform off"
+        return "\(shot) · Vol \(Int(fakePlaybackVolume * 100))% · \(share) · \(auto)"
     }
 
     private var statusBarContentSelection: Binding<StageStatusBarContent> {
@@ -66,6 +68,19 @@ struct PerformanceCard: View {
                         Text("Only while performing: opens Use as Ringtone when Voice, Notes, API, or Card locks a song during Perform.")
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
+                    }
+                }
+                .tint(OracleTheme.gold)
+
+                Toggle(isOn: $autoStartPerformOnHome) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Open app straight into Perform")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(OracleTheme.textPrimary)
+                        Text("Opening MindtoneX shows the stage screenshot (or the Unknown dial pad) right away — same as tapping Perform. Only when you left the app on Home. Two-finger swipe down returns to Home. Requires a stage screenshot.")
+                            .font(.caption)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .tint(OracleTheme.gold)

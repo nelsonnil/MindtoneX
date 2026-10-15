@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import UIKit
 
 extension AppModel {
@@ -45,6 +46,7 @@ extension AppModel {
                 if let message = await VoiceOpenAIPreflight.checkBeforePerform() {
                     voiceOpenAIPreflightAlert = message
                     UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                    revertAutoPerformCoverIfIdle(reason: "OpenAI preflight failed")
                     return
                 }
                 performNow()
@@ -55,6 +57,7 @@ extension AppModel {
     }
 
     private func performNow() {
+        autoPerformAllowedOnNextForeground = false
         if isArmed {
             dlog("══ PERFORM ══ already armed → disarm and start fresh")
             disarm()
@@ -105,6 +108,132 @@ extension AppModel {
         case .manual:
             performFakeRingtone()
         }
+        reconcilePerformInputsAfterForeground(reason: "perform entered")
+    }
+
+    /// Same inputs as tapping **Perform** on Home: (re)start mic, API polls, and word polls after URL scheme or returning from background.
+    func reconcilePerformInputsAfterForeground(reason: String) {
+        guard isArmed else { return }
+
+        switch VoiceSettings.inputMode {
+        case .aiVoice:
+            let voice = VoiceSongSession.shared
+            if voice.context != .perform {
+                dlog("[APP] ↻ voice perform start [\(reason)]")
+                scheduleVoicePerformStart()
+            } else {
+                switch voice.state {
+                case .idle, .failed:
+                    dlog("[APP] ↻ voice mic restart [\(reason)]")
+                    scheduleVoicePerformStart()
+                case .starting, .listening, .locked:
+                    break
+                }
+            }
+        case .api:
+            let api = ApiSongSession.shared
+            if api.context != .perform {
+                ApiSongSession.shared.start(context: .perform)
+                dlog("[APP] ↻ song API perform start [\(reason)]")
+            } else if case .failed = api.state {
+                ApiSongSession.shared.start(context: .perform)
+                dlog("[APP] ↻ song API perform restart [\(reason)]")
+            } else if api.state == .connecting || api.state == .watching || (api.state == .locked && api.watchingSecondSong) {
+                api.kickPerformPollIfNeeded()
+            }
+        case .card:
+            let card = CardSongSession.shared
+            if card.context != .perform {
+                CardSongSession.shared.start(context: .perform)
+                dlog("[APP] ↻ card perform start [\(reason)]")
+            } else if case .failed = card.state {
+                CardSongSession.shared.start(context: .perform)
+                dlog("[APP] ↻ card perform restart [\(reason)]")
+            }
+        case .notes, .manual:
+            break
+        }
+
+        if WordApiSettings.callerLabelEnabled, WordApiSettings.hasWordEndpoint {
+            let word = WordApiSession.shared
+            if word.context != .perform {
+                startWordApiIfNeeded(context: .perform)
+            } else if case .failed = word.state {
+                startWordApiIfNeeded(context: .perform)
+            } else {
+                word.kickPerformPollIfNeeded()
+            }
+        }
+
+        if NotesContactWordSettings.isConfigured {
+            let notesWord = NotesContactWordSession.shared
+            if notesWord.context != .perform {
+                startNotesContactWordIfNeeded(context: .perform)
+            } else {
+                notesWord.kickPerformPollIfNeeded()
+            }
+        }
+    }
+
+    /// Toggle ON, idle on Home, and a stage screenshot — Perform would start cleanly.
+    var autoPerformOnOpenEligible: Bool {
+        Prefs.autoStartPerformOnHome && showsHomePerformSetupChrome && StageImageStore.hasScreenshot
+    }
+
+    /// Background from Home: swap to the stage (or Unknown dial) now so the iOS app snapshot never shows Home.
+    func prepareAutoPerformCoverForNextOpen() {
+        guard autoPerformOnOpenEligible else {
+            autoPerformAllowedOnNextForeground = false
+            return
+        }
+        autoPerformAllowedOnNextForeground = true
+        showPerformCover()
+        dlog("[PERFORM] auto-Perform on open · background → stage cover ready")
+    }
+
+    /// Stage screenshot (or Unknown dial) without animation, before Perform arms.
+    func showPerformCover() {
+        guard showsHomePerformSetupChrome, StageImageStore.hasScreenshot else { return }
+        autoPerformCoverShown = true
+        withTransaction(\.disablesAnimations, true) {
+            phase = .stage
+            if WordApiContactPerformGate.willPresentDial {
+                wordSpectatorDialSheet = true
+            }
+        }
+    }
+
+    /// Perform from a deep link: same as `tryAutoStartPerformOnOpen`, without the toggle.
+    func performFromURLBehindCover() {
+        withTransaction(\.disablesAnimations, true) {
+            perform()
+        }
+        revertAutoPerformCoverIfIdle(reason: "URL Perform did not arm")
+    }
+
+    /// Cold launch or return to foreground: start Perform immediately behind the cover.
+    func tryAutoStartPerformOnOpen(reason: String) {
+        guard Prefs.autoStartPerformOnHome, autoPerformAllowedOnNextForeground else { return }
+        guard !isArmed, !voiceOpenAIPreflightInProgress else { return }
+        guard !WordApiContactPerformGate.hasPendingPerform, !WordApiContactPerformGate.awaitingOutgoingEnd else { return }
+        autoPerformAllowedOnNextForeground = false
+        dlog("[PERFORM] auto-start on open (\(reason))")
+        withTransaction(\.disablesAnimations, true) {
+            perform()
+        }
+        revertAutoPerformCoverIfIdle(reason: "auto-start did not arm")
+    }
+
+    /// Back to Home when the auto cover is up but Perform did not start (missing key, preflight error, dial cancelled).
+    func revertAutoPerformCoverIfIdle(reason: String) {
+        guard autoPerformCoverShown else { return }
+        guard !isArmed, !voiceOpenAIPreflightInProgress else { return }
+        guard !wordSpectatorDialSheet, !wordKnownContactPicker else { return }
+        guard !WordApiContactPerformGate.hasPendingPerform, !WordApiContactPerformGate.awaitingOutgoingEnd else { return }
+        autoPerformCoverShown = false
+        guard phase == .stage else { return }
+        phase = .setup
+        dlog("[PERFORM] auto-Perform cover removed · \(reason)")
     }
 
     var canPerform: Bool {

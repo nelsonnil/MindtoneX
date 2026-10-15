@@ -7,6 +7,13 @@ enum WordApiContactPerformGate {
     private(set) static var dialedPhoneDigits = ""
     private static var pendingPerform: (() -> Void)?
 
+    static var hasPendingPerform: Bool { pendingPerform != nil }
+
+    /// Perform will open the Unknown dial pad before arming.
+    static var willPresentDial: Bool {
+        WordApiSettings.usesSharedSpectatorContact && WordApiSettings.contactMode == .unknown
+    }
+
     static func needsPreparation() -> Bool {
         guard WordApiSettings.usesSharedSpectatorContact else { return false }
         switch WordApiSettings.contactMode {

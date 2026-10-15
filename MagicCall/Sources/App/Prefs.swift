@@ -41,6 +41,8 @@ enum Prefs {
         static let performanceMode = "ui.performanceMode"
         /// When ON, present ringtone Share sheet as soon as the song locks during Perform.
         static let autoShareOnSongLock = "performance.autoShareOnSongLock"
+        /// When ON, opening the app (cold launch or back from background on Home) enters Perform directly.
+        static let autoStartPerformOnHome = "performance.autoStartPerformOnHome"
 
         /// One-time bump of legacy `clipSeconds` (e.g. 10) to `RingtoneLimits.exportMaxSeconds`.
         static let clipSecondsMigratedToExportMax = "audio.clipSecondsMigratedToExportMax"
@@ -126,6 +128,7 @@ enum Prefs {
             Key.ringtoneUseQuickLook: false,
             Key.performanceMode: PerformanceMode.fakeRingtone.rawValue,
             Key.autoShareOnSongLock: false,
+            Key.autoStartPerformOnHome: false,
         ])
         registerHomeSectionDefaults()
         NotesContactSettings.registerDefaults()
@@ -170,6 +173,7 @@ enum Prefs {
     }
 
     static var autoShareOnSongLock: Bool { d.bool(forKey: Key.autoShareOnSongLock) }
+    static var autoStartPerformOnHome: Bool { d.bool(forKey: Key.autoStartPerformOnHome) }
 
     static var noInterruptions: Bool { d.bool(forKey: Key.noInterruptions) }
     static var mixWithOthers: Bool { d.bool(forKey: Key.mixWithOthers) }

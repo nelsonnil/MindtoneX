@@ -124,6 +124,7 @@ actor PreviewService {
         if found.isEmpty {
             do { found = try await deezer(query) } catch { dlog("Deezer falló: \(error.localizedDescription)") }
         }
+        if let byArtist = Self.artistOnlyRanked(query: query, found: found) { return byArtist }
         let ranked = Self.rank(found, for: query)
         guard !ranked.isEmpty else { throw PreviewError.noResults(query) }
         return ranked
@@ -234,6 +235,39 @@ actor PreviewService {
         }
         dlog("Deezer: \(tracks.count) con preview en \(Self.ms(since: t0)) ms")
         return tracks
+    }
+
+    // MARK: Artist only
+
+    /// Query that is just a singer/group ("Shakira"): that artist's songs in store order (most popular first),
+    /// or nil for a normal query. Detected when most store hits have that exact main artist.
+    /// Deezer `/artist/{id}/top` is not used: it ranks current streams and mixes in other artists' tracks.
+    private static func artistOnlyRanked(query: String, found: [PreviewTrack]) -> [PreviewTrack]? {
+        let q = normalize(query)
+        let head = found.prefix(10)
+        guard q.count >= 2, !head.isEmpty else { return nil }
+        let headByArtist = head.filter { artistMatches($0.artist, q) }
+        guard Double(headByArtist.count) / Double(head.count) >= 0.6 else { return nil }
+        let byArtist = found.filter { track in
+            let hay = normalize(track.title)
+            return artistMatches(track.artist, q) && !suspiciousWords.contains { hay.contains($0) && !q.contains($0) }
+        }
+        var seen = Set<String>()
+        let out = (byArtist + found).filter { seen.insert(normalize($0.title + "|" + $0.artist)).inserted }
+        if let first = out.first {
+            dlog("Solo artista “\(query)” → más popular: \(first.title) — \(first.artist) [\(first.source.rawValue)]")
+        }
+        return out
+    }
+
+    /// Any credited artist ("J Balvin & Bad Bunny", "Shakira, Wyclef Jean") is exactly the query.
+    private static func artistMatches(_ artist: String, _ normalizedQuery: String) -> Bool {
+        let separators = [" & ", ", ", " x ", " X ", " feat. ", " feat ", " ft. ", " with ", " y ", " and "]
+        var names = [artist]
+        for sep in separators {
+            names = names.flatMap { $0.components(separatedBy: sep) }
+        }
+        return names.contains { normalize($0) == normalizedQuery }
     }
 
     // MARK: Ranking

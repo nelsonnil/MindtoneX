@@ -32,6 +32,7 @@ struct MagicCallApp: App {
                 if !WordApiContactPerformGate.awaitingOutgoingEnd {
                     WordApiContactPerformGate.cancelPendingPerform()
                 }
+                model.revertAutoPerformCoverIfIdle(reason: "dial dismissed")
             }) {
                 WordApiSpectatorDialSheet()
                     .environmentObject(model)
@@ -45,6 +46,10 @@ struct MagicCallApp: App {
             .onAppear {
                 AppModel.setScreenAwakeWhileInForeground(true)
             }
+            // Fires on cold launch too (scenePhase onChange does not report the initial `.active`).
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                model.tryAutoStartPerformOnOpen(reason: "app active")
+            }
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
                 case .active:
@@ -55,6 +60,7 @@ struct MagicCallApp: App {
                     dlog("scenePhase → background")
                     model.pauseVoiceAndAudioForSetupUI(reason: "scenePhase.background")
                     model.maintainArmedInBackgroundIfNeeded()
+                    model.prepareAutoPerformCoverForNextOpen()
                 case .inactive:
                     AppModel.setScreenAwakeWhileInForeground(true)
                     dlog("[APP] scenePhase → inactive")

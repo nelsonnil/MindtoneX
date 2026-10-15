@@ -15,7 +15,11 @@ struct SongPick: Equatable, Codable {
         case confidence, reasoning
     }
 
-    var label: String { artist.isEmpty ? title : "\(title) — \(artist)" }
+    var label: String {
+        if artist.isEmpty { return title }
+        if title.isEmpty { return artist }
+        return "\(title) — \(artist)"
+    }
 
     /// Same song regardless of casing, accents or punctuation.
     var key: String {
@@ -61,7 +65,9 @@ enum SongPicker {
        Two-song mode (see Situation): a later DISTINCT title without a retraction is song 2 — keep returning song 1 until told otherwise.
     5. Return the official title and main artist with canonical spelling, in the song's original language.
        **Title only (no artist said) is a complete choice.** has_song=true. Infer the single **most popular / most famous recording** of that title (chart hit, not a cover, karaoke, tribute or lesser same-name song). Examples: "La Gasolina" / "Gasolina" / "la canción la gasolina" → Daddy Yankee — Gasolina; "Bulería" alone → David Bisbal — Bulería; "Thriller" → Michael Jackson; "Despacito" → Luis Fonsi. Put that artist in `artist`. If two groups share a similar title, pick the globally best-known version.
-       If only an **artist** or a **lyric** is given (no title), pick that artist's most famous matching song only when reasonably clear, with lower confidence.
+       **Artist only (a singer or group, no title) is also a complete choice.** has_song=true, title="" (empty), artist = canonical artist name, search_query = the artist name. The app looks up that artist's most popular song itself — do NOT guess a title. Confidence as for any clear answer (≥ 0.8 when it is plainly the spectator's answer).
+       **Artist then title:** if a title by that same artist follows ("Shakira… Waka Waka", "de Queen, Bohemian Rhapsody"), it is ONE choice: return that title with the artist. This is a refinement, never a change of mind and never a second song.
+       If only a **lyric** is given (no title), pick the most famous matching song only when reasonably clear, with lower confidence.
     6. If no song has been chosen yet, return has_song=false with empty title, artist and search_query.
     7. confidence (0 to 1) = how sure you are that this is the spectator's final choice. Do **not** lower confidence because the artist was not spoken. Title-only of a famous hit must be ≥ 0.85. Never return has_song=false only because the singer/group was omitted.
     8. search_query = "Title Artist" using the inferred popular artist (e.g. "Gasolina Daddy Yankee"). Never leave search_query empty when has_song=true.
@@ -73,6 +79,8 @@ enum SongPicker {
     - "Dime una canción. — La Gasolina." → Gasolina, Daddy Yankee, high confidence.
     - "¿Cuál canción? — Bulería." → Bulería, David Bisbal, high confidence.
     - "bisbal canción bulería" → Bulería, David Bisbal, high confidence.
+    - "Dime una canción. — Una de Shakira." → title "", artist Shakira, search_query "Shakira", high confidence.
+    - "Dime una canción. — Shakira… la de Waka Waka." → Waka Waka (Esto Es Africa), Shakira.
     - "Dime una canción. — La Macarena. No, no, mejor Bohemian Rhapsody." → Bohemian Rhapsody, Queen.
     - "Any song you like, could be anything, Shakira, whatever. — Hmm, let me think…" → has_song=false.
     """

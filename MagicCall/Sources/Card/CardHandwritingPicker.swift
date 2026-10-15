@@ -128,9 +128,11 @@ struct CardHandwritingPick: Equatable, Codable {
         guard hasSong else { return nil }
         let q = SongSearchQueries.buildSearchQuery(title: title, artist: artist, raw: searchQuery)
         guard !q.isEmpty else { return nil }
+        let artistOnly = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !artist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         return SongPick(
             hasSong: true,
-            title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !artistOnly
                 ? SongSearchQueries.stripSongFraming(q) : title,
             artist: artist,
             searchQuery: q,
@@ -161,6 +163,7 @@ struct CardHandwritingPick: Equatable, Codable {
         }
         if !r.isEmpty, !ApiJSON.sameText(r, "\(a) \(a)") { return r }
         if !t.isEmpty { return a.isEmpty ? t : "\(t) \(a)" }
+        if !a.isEmpty { return a }
         return r
     }
 
@@ -308,7 +311,7 @@ enum CardHandwritingPicker {
 
         \(CardOCRLayout.openAIVisionRules)
 
-        Fix handwriting/OCR (YOULSELF → Yourself). **Title only** (no artist) is a complete song — has_song=true. Infer the **most popular recording** of that title (not a cover/karaoke). Examples: LA GASOLINA / GASOLINA → Gasolina, Daddy Yankee; BULERÍA → Bulería, David Bisbal; THRILLER → Thriller, Michael Jackson. search_query = "Title Artist". If unreadable, has_song=false.
+        Fix handwriting/OCR (YOULSELF → Yourself). **Title only** (no artist) is a complete song — has_song=true. Infer the **most popular recording** of that title (not a cover/karaoke). Examples: LA GASOLINA / GASOLINA → Gasolina, Daddy Yankee; BULERÍA → Bulería, David Bisbal; THRILLER → Thriller, Michael Jackson. search_query = "Title Artist". **Artist only** is complete too (title empty, see rule above). If unreadable, has_song=false.
         confidence 0–1 (title-only famous hits ≥ 0.85). reasoning: one short English sentence (max 25 words).
         """
 

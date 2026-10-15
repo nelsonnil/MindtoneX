@@ -127,6 +127,12 @@ final class ApiSongSession: ObservableObject {
 
     // MARK: Polling
 
+    /// Perform: immediate poll after foreground / URL handoff (timers may lag while backgrounded).
+    func kickPerformPollIfNeeded() {
+        guard context == .perform, timer != nil else { return }
+        tick()
+    }
+
     private func tick() {
         guard timer != nil, !isRefreshing else { return }
         if context == .test, UIApplication.shared.applicationState == .background {

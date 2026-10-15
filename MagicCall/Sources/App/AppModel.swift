@@ -76,6 +76,10 @@ final class AppModel: ObservableObject {
 
     /// Prevents opening auto-share more than once per Perform.
     var autoSharePresentedThisPerform = false
+    /// Auto-Perform on open: armed at cold launch or when leaving Home for background; cleared once Perform starts.
+    var autoPerformAllowedOnNextForeground = false
+    /// Stage (or Unknown dial) shown before Perform armed so the app opens without a Home frame.
+    var autoPerformCoverShown = false
 
     @Published var wordSpectatorDialSheet = false
     @Published var wordKnownContactPicker = false
@@ -123,6 +127,12 @@ final class AppModel: ObservableObject {
             self?.flashHandCallsThisPerform += 1
         }
         installObservers()
+        if autoPerformOnOpenEligible {
+            autoPerformAllowedOnNextForeground = true
+            autoPerformCoverShown = true
+            phase = .stage
+            dlog("[PERFORM] auto-Perform on open · cold launch → stage cover")
+        }
         Task { await previews.warmUp() }
         #if MAGIC_PRIVATE_PROBES
         if Prefs.darwinSignals { _ = PrivateProbes.darwinSignalsStart() }
@@ -457,6 +467,7 @@ final class AppModel: ObservableObject {
         isArmed = true
         isAudible = false
         phase = .stage
+        autoPerformCoverShown = false
         if usesCardInput {
             // Needs `isArmed` (guard); app-root `HiddenVolumeView` mounts with the window (see `MagicCallApp`).
             primeCardVolumeScanHeadroom(reason: "Camera perform arm", entry: true)
@@ -563,6 +574,7 @@ final class AppModel: ObservableObject {
     /// Home: stop Live watch, test mic/camera, and preview audio when leaving the foreground (sheets, background, Shortcuts handoff).
     func pauseVoiceAndAudioForSetupUI(reason: String) {
         guard phase == .setup, !isArmed else { return }
+        guard !voiceOpenAIPreflightInProgress else { return }
         // Does not cancel `albumArtContactWorkTask`.
         voicePerformTask?.cancel()
         voicePerformTask = nil
@@ -997,6 +1009,7 @@ final class AppModel: ObservableObject {
         }
         calls.reassertDelegate()
         syncOngoingIncomingCalls()
+        reconcilePerformInputsAfterForeground(reason: reason)
         dlog("[APP] ↻ re-armado [\(reason)] · \(audio.snapshot()) · CXCall=\(calls.describeCalls())")
     }
 

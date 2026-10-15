@@ -127,6 +127,11 @@ final class NotesContactWordSession: ObservableObject {
         if had { dlog("[NOTES-WORD] ↺ reset (\(reason))") }
     }
 
+    func kickPerformPollIfNeeded() {
+        guard context == .perform, timer != nil else { return }
+        tick()
+    }
+
     private func tick() {
         guard timer != nil, !isRefreshing else { return }
         isRefreshing = true
