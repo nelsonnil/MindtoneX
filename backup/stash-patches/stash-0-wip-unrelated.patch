@@ -1,0 +1,135 @@
+diff --git a/MagicCall/Sources/App/AppModel.swift b/MagicCall/Sources/App/AppModel.swift
+index 61e62e0..98ae274 100644
+--- a/MagicCall/Sources/App/AppModel.swift
++++ b/MagicCall/Sources/App/AppModel.swift
+@@ -73,6 +73,8 @@ final class AppModel: ObservableObject {
+ 
+     /// Prevents opening auto-share more than once per Perform.
+     var autoSharePresentedThisPerform = false
++    /// Reset when the app enters background; cleared when Perform starts (manual, URL, or auto).
++    var autoPerformAllowedOnNextForeground = true
+ 
+     /// Live watch baseline captured in `performNow()` before API session reset.
+     var pendingApiLiveWatchHandoff: ApiReading?
+diff --git a/MagicCall/Sources/App/MagicCallApp.swift b/MagicCall/Sources/App/MagicCallApp.swift
+index 201295e..5aa3a47 100644
+--- a/MagicCall/Sources/App/MagicCallApp.swift
++++ b/MagicCall/Sources/App/MagicCallApp.swift
+@@ -44,9 +44,14 @@ struct MagicCallApp: App {
+                 case .active:
+                     AppModel.setScreenAwakeWhileInForeground(true)
+                     model.refreshArmedState(reason: "scenePhase.active")
++                    Task { @MainActor in
++                        try? await Task.sleep(nanoseconds: 450_000_000)
++                        model.tryAutoStartPerformOnHomeOpen(reason: "app active")
++                    }
+                 case .background:
+                     AppModel.setScreenAwakeWhileInForeground(false)
+                     dlog("scenePhase → background")
++                    model.noteAppEnteredBackgroundForAutoPerform()
+                     model.pauseVoiceAndAudioForSetupUI(reason: "scenePhase.background")
+                     model.maintainArmedInBackgroundIfNeeded()
+                 case .inactive:
+diff --git a/MagicCall/Sources/App/Prefs.swift b/MagicCall/Sources/App/Prefs.swift
+index 5ce4722..a1447d7 100644
+--- a/MagicCall/Sources/App/Prefs.swift
++++ b/MagicCall/Sources/App/Prefs.swift
+@@ -41,6 +41,8 @@ enum Prefs {
+         static let performanceMode = "ui.performanceMode"
+         /// When ON, present ringtone Share sheet as soon as the song locks during Perform.
+         static let autoShareOnSongLock = "performance.autoShareOnSongLock"
++        /// When ON, opening the app to Home starts Perform once per foreground session (after background).
++        static let autoStartPerformOnHome = "performance.autoStartPerformOnHome"
+ 
+         /// One-time bump of legacy `clipSeconds` (e.g. 10) to `RingtoneLimits.exportMaxSeconds`.
+         static let clipSecondsMigratedToExportMax = "audio.clipSecondsMigratedToExportMax"
+@@ -126,6 +128,7 @@ enum Prefs {
+             Key.ringtoneUseQuickLook: false,
+             Key.performanceMode: PerformanceMode.fakeRingtone.rawValue,
+             Key.autoShareOnSongLock: false,
++            Key.autoStartPerformOnHome: false,
+         ])
+         registerHomeSectionDefaults()
+         NotesContactSettings.registerDefaults()
+@@ -170,6 +173,7 @@ enum Prefs {
+     }
+ 
+     static var autoShareOnSongLock: Bool { d.bool(forKey: Key.autoShareOnSongLock) }
++    static var autoStartPerformOnHome: Bool { d.bool(forKey: Key.autoStartPerformOnHome) }
+ 
+     static var noInterruptions: Bool { d.bool(forKey: Key.noInterruptions) }
+     static var mixWithOthers: Bool { d.bool(forKey: Key.mixWithOthers) }
+diff --git a/MagicCall/Sources/UI/Premium/UnifiedPerformanceModeCard.swift b/MagicCall/Sources/UI/Premium/UnifiedPerformanceModeCard.swift
+index 726b55e..73d878a 100644
+--- a/MagicCall/Sources/UI/Premium/UnifiedPerformanceModeCard.swift
++++ b/MagicCall/Sources/UI/Premium/UnifiedPerformanceModeCard.swift
+@@ -10,13 +10,15 @@ struct PerformanceCard: View {
+ 
+     @AppStorage(Prefs.Key.fakePlaybackVolume) private var fakePlaybackVolume = 1.0
+     @AppStorage(Prefs.Key.autoShareOnSongLock) private var autoShareOnSongLock = false
++    @AppStorage(Prefs.Key.autoStartPerformOnHome) private var autoStartPerformOnHome = false
+     @AppStorage(Prefs.Key.stageStatusBarContent) private var stageStatusBarContentRaw = StageStatusBarContent.automatic.rawValue
+     private var hasScreenshot: Bool { StageImageStore.hasScreenshot }
+ 
+     private var performanceSummary: String {
+         let shot = hasScreenshot ? "Screenshot set" : "Screenshot required"
+         let share = autoShareOnSongLock ? "Auto-share on" : "Auto-share off"
+-        return "\(shot) · Vol \(Int(fakePlaybackVolume * 100))% · \(share)"
++        let auto = autoStartPerformOnHome ? "Auto-Perform on" : "Auto-Perform off"
++        return "\(shot) · Vol \(Int(fakePlaybackVolume * 100))% · \(share) · \(auto)"
+     }
+ 
+     private var statusBarContentSelection: Binding<StageStatusBarContent> {
+@@ -70,6 +72,19 @@ struct PerformanceCard: View {
+                 }
+                 .tint(OracleTheme.gold)
+ 
++                Toggle(isOn: $autoStartPerformOnHome) {
++                    VStack(alignment: .leading, spacing: 4) {
++                        Text("Auto-start Perform when opening the app")
++                            .font(.subheadline.weight(.medium))
++                            .foregroundStyle(OracleTheme.textPrimary)
++                        Text("When you open MindtoneX to Home (after background or cold launch), enters Perform automatically — same as tapping Perform. Does not run again until you leave the app or send it to background. Requires a stage screenshot.")
++                            .font(.caption)
++                            .foregroundStyle(OracleTheme.textSecondary)
++                            .fixedSize(horizontal: false, vertical: true)
++                    }
++                }
++                .tint(OracleTheme.gold)
++
+                 performURLSchemeSection
+             }
+         }
+diff --git a/MagicCall/Sources/Voice/AppModel+Voice.swift b/MagicCall/Sources/Voice/AppModel+Voice.swift
+index 1853dd3..7fd5ba4 100644
+--- a/MagicCall/Sources/Voice/AppModel+Voice.swift
++++ b/MagicCall/Sources/Voice/AppModel+Voice.swift
+@@ -55,6 +55,7 @@ extension AppModel {
+     }
+ 
+     private func performNow() {
++        autoPerformAllowedOnNextForeground = false
+         if isArmed {
+             dlog("══ PERFORM ══ already armed → disarm and start fresh")
+             disarm()
+@@ -111,6 +112,20 @@ extension AppModel {
+         }
+     }
+ 
++    func noteAppEnteredBackgroundForAutoPerform() {
++        autoPerformAllowedOnNextForeground = true
++    }
++
++    /// Performance settings: start Perform when the app returns to Home (once per foreground visit).
++    func tryAutoStartPerformOnHomeOpen(reason: String) {
++        guard Prefs.autoStartPerformOnHome else { return }
++        guard autoPerformAllowedOnNextForeground else { return }
++        guard showsHomePerformSetupChrome else { return }
++        guard !voiceOpenAIPreflightInProgress else { return }
++        dlog("[PERFORM] auto-start on Home (\(reason))")
++        perform()
++    }
++
+     var canPerform: Bool {
+         let inputReady: Bool = switch VoiceSettings.inputMode {
+         case .aiVoice:

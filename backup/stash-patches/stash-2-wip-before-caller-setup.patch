@@ -1,0 +1,397 @@
+diff --git a/MagicCall/Sources/Audio/RingtoneAudioEngine.swift b/MagicCall/Sources/Audio/RingtoneAudioEngine.swift
+index a74e063..f325def 100644
+--- a/MagicCall/Sources/Audio/RingtoneAudioEngine.swift
++++ b/MagicCall/Sources/Audio/RingtoneAudioEngine.swift
+@@ -132,7 +132,6 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
+         p.currentTime = clipStart
+         let ok = p.play()
+         isAudible = false
+-        startTimer()
+         dlog("Standby en caliente: play()=\(ok)")
+     }
+ 
+@@ -186,7 +185,6 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
+                 let ok = p.play()
+                 dlog("[AUDIO] post-interruption standby play=\(ok)")
+             }
+-            startTimer()
+         }
+     }
+ 
+@@ -233,6 +231,7 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
+ 
+     // MARK: Bucle del clip
+ 
++    /// Solo mientras suena: en standby (volumen 0) el bucle no hace nada y despertaría el hilo principal ~33 veces/s.
+     private func startTimer() {
+         guard timer == nil else { return }
+         let t = Timer(timeInterval: 0.03, repeats: true) { [weak self] _ in self?.tick() }
+@@ -243,7 +242,11 @@ final class RingtoneAudioEngine: NSObject, AVAudioPlayerDelegate {
+     private func tick() {
+         guard let p = player, p.isPlaying else { return }
+         let now = p.currentTime
+-        if !isAudible { return }
++        guard isAudible else {
++            timer?.invalidate()
++            timer = nil
++            return
++        }
+         if now >= clipEnd - edgeFade && !fadingAtLoopEdge {
+             fadingAtLoopEdge = true
+             p.setVolume(0, fadeDuration: edgeFade)
+diff --git a/MagicCall/Sources/Card/CardCaptureService.swift b/MagicCall/Sources/Card/CardCaptureService.swift
+index f48e856..a9a5d85 100644
+--- a/MagicCall/Sources/Card/CardCaptureService.swift
++++ b/MagicCall/Sources/Card/CardCaptureService.swift
+@@ -96,17 +96,19 @@ final class CardCaptureService: NSObject {
+ 
+     func start() throws {
+         try configureIfNeeded()
+-        guard !session.isRunning else { return }
+         queue.async { [weak self] in
+-            self?.session.startRunning()
++            guard let self, !self.session.isRunning else { return }
++            self.session.startRunning()
+             dlog("[CARD] camera started")
+         }
+     }
+ 
++    /// Start/stop are both serialized on `queue`: checking `isRunning` on the caller's thread races the
++    /// async `startRunning()` and could leave the camera on after a quick start → stop.
+     func stop() {
+-        guard session.isRunning else { return }
+         queue.async { [weak self] in
+-            self?.session.stopRunning()
++            guard let self, self.session.isRunning else { return }
++            self.session.stopRunning()
+             dlog("[CARD] camera stopped")
+         }
+         frameLock.lock()
+diff --git a/MagicCall/Sources/CarphoneDial/PhoneKeyboard.swift b/MagicCall/Sources/CarphoneDial/PhoneKeyboard.swift
+index 373931a..e48e469 100644
+--- a/MagicCall/Sources/CarphoneDial/PhoneKeyboard.swift
++++ b/MagicCall/Sources/CarphoneDial/PhoneKeyboard.swift
+@@ -395,6 +395,7 @@ class PhoneKeyboard: UIView {
+             UserDefaults.standard.set(true, forKey: CarphoneDialKeys.backSpacePressed)
+             self.valueSelected = -1
+             self.timeElapsed = 0
++            self.timer?.invalidate()
+             self.timer = Timer.scheduledTimer(timeInterval: 1.0,
+                                               target: self,
+                                               selector: #selector(self.validateTime),
+@@ -549,7 +550,6 @@ class PhoneKeyboard: UIView {
+     }
+     
+     @objc func validateTime() {
+-        print(timeElapsed)
+         timeElapsed+=1
+     }
+     
+diff --git a/MagicCall/Sources/Perform/StagePeek.swift b/MagicCall/Sources/Perform/StagePeek.swift
+index 4d6ec5c..3093012 100644
+--- a/MagicCall/Sources/Perform/StagePeek.swift
++++ b/MagicCall/Sources/Perform/StagePeek.swift
+@@ -245,7 +245,6 @@ struct StagePeekLayoutPreview: View {
+ 
+ extension StageImageStore {
+     static func loadUIImage() -> UIImage? {
+-        guard hasScreenshot else { return nil }
+-        return UIImage(contentsOfFile: url.path)
++        load()
+     }
+ }
+diff --git a/MagicCall/Sources/UI/Premium/HeroLogoView.swift b/MagicCall/Sources/UI/Premium/HeroLogoView.swift
+index ff46536..1ca5480 100644
+--- a/MagicCall/Sources/UI/Premium/HeroLogoView.swift
++++ b/MagicCall/Sources/UI/Premium/HeroLogoView.swift
+@@ -5,11 +5,13 @@ struct HeroLogoView: View {
+ 
+     @State private var tapCount = 0
+     @State private var tapResetTask: Task<Void, Never>?
++    @Environment(\.accessibilityReduceMotion) private var reduceMotion
++    @ObservedObject private var ambient = AmbientMotion.shared
+ 
+     private let size: CGFloat = 80
+ 
+     var body: some View {
+-        TimelineView(.animation(minimumInterval: 1 / 24, paused: false)) { context in
++        TimelineView(.animation(minimumInterval: 1 / 24, paused: reduceMotion || ambient.isReduced)) { context in
+             let t = context.date.timeIntervalSinceReferenceDate
+             let breathe = 1 + 0.04 * sin(t * 1.4)
+             let orbit = t * 0.55
+@@ -18,8 +20,12 @@ struct HeroLogoView: View {
+                 ZStack {
+                     Circle()
+                         .fill(OracleTheme.deepIndigo.opacity(0.85))
+-                        .frame(width: size * 2.1 * breathe, height: size * 2.1 * breathe)
++                        .frame(width: size * 2.1, height: size * 2.1)
++                        .padding(88)
+                         .blur(radius: 44)
++                        .drawingGroup()
++                        .padding(-88)
++                        .scaleEffect(breathe)
+ 
+                     Circle()
+                         .stroke(
+@@ -35,6 +41,8 @@ struct HeroLogoView: View {
+                             lineWidth: 1.5
+                         )
+                         .frame(width: size * 1.35, height: size * 1.35)
++                        .padding(2)
++                        .drawingGroup()
+                         .rotationEffect(.degrees(orbit * 28))
+                         .opacity(0.85)
+ 
+@@ -42,6 +50,8 @@ struct HeroLogoView: View {
+                         .trim(from: 0, to: 0.42)
+                         .stroke(OracleTheme.gold.opacity(0.55), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                         .frame(width: size * 1.22, height: size * 1.22)
++                        .padding(2)
++                        .drawingGroup()
+                         .rotationEffect(.degrees(-orbit * 42))
+ 
+                     Image("HeroLogo")
+diff --git a/MagicCall/Sources/UI/Premium/MainShellView.swift b/MagicCall/Sources/UI/Premium/MainShellView.swift
+index 1ee4303..c8c2fd1 100644
+--- a/MagicCall/Sources/UI/Premium/MainShellView.swift
++++ b/MagicCall/Sources/UI/Premium/MainShellView.swift
+@@ -145,13 +145,14 @@ struct MainShellView: View {
+                         .fill(OracleTheme.goldGradient)
+                     if !performanceGuideOpened {
+                         Circle()
+-                            .strokeBorder(OracleTheme.gold.opacity(instructionsPulse ? 0.95 : 0.35), lineWidth: 2)
++                            .strokeBorder(OracleTheme.gold.opacity(0.95), lineWidth: 2)
++                            .drawingGroup()
+                             .scaleEffect(instructionsPulse ? 1.12 : 1.0)
+-                            .opacity(instructionsPulse ? 0.85 : 0.35)
++                            .opacity(instructionsPulse ? 0.85 : 0.13)
+                     }
+                 }
+             }
+-            .shadow(color: OracleTheme.gold.opacity(instructionsPulse ? 0.55 : 0.28), radius: instructionsPulse ? 14 : 8, y: 4)
++            .shadow(color: OracleTheme.gold.opacity(0.4), radius: 11, y: 4)
+             .clipShape(Circle())
+             .overlay(alignment: .topTrailing) {
+                 if !performanceGuideOpened {
+diff --git a/MagicCall/Sources/UI/Premium/OracleTheme.swift b/MagicCall/Sources/UI/Premium/OracleTheme.swift
+index dfa673c..480a1db 100644
+--- a/MagicCall/Sources/UI/Premium/OracleTheme.swift
++++ b/MagicCall/Sources/UI/Premium/OracleTheme.swift
+@@ -148,23 +148,60 @@ struct OracleBackdrop: View {
+             }
+             .frame(width: geo.size.width, height: geo.size.height)
+             .clipped()
++            .drawingGroup()
+         }
+         .ignoresSafeArea()
+     }
+ }
+ 
++/// Decorative Home motion only (never Perform): pauses under Low Power Mode or once the iPhone is already warm.
++@MainActor
++final class AmbientMotion: ObservableObject {
++    static let shared = AmbientMotion()
++
++    @Published private(set) var isReduced: Bool
++    private var observers: [NSObjectProtocol] = []
++
++    private init() {
++        isReduced = Self.shouldReduce()
++        let nc = NotificationCenter.default
++        for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
++            observers.append(nc.addObserver(forName: name, object: nil, queue: .main) { _ in
++                MainActor.assumeIsolated { AmbientMotion.shared.refresh() }
++            })
++        }
++    }
++
++    private func refresh() {
++        let reduce = Self.shouldReduce()
++        guard reduce != isReduced else { return }
++        isReduced = reduce
++        dlog("[UI] Home ambient motion \(reduce ? "paused" : "resumed") · thermal=\(ProcessInfo.processInfo.thermalState.rawValue) lowPower=\(ProcessInfo.processInfo.isLowPowerModeEnabled)")
++    }
++
++    private static func shouldReduce() -> Bool {
++        let info = ProcessInfo.processInfo
++        return info.isLowPowerModeEnabled || info.thermalState.rawValue >= ProcessInfo.ThermalState.fair.rawValue
++    }
++}
++
+ /// Static backdrop plus subtle ringtone-style ripples (transform/opacity only).
+ struct OracleAnimatedBackdrop: View {
++    @Environment(\.accessibilityReduceMotion) private var reduceMotion
++    @ObservedObject private var ambient = AmbientMotion.shared
++
++    private var paused: Bool { reduceMotion || ambient.isReduced }
++
+     var body: some View {
+         ZStack {
+             OracleBackdrop()
+-            TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
++            TimelineView(.animation(minimumInterval: 1 / 15, paused: paused)) { context in
+                 AuroraDriftLayer(date: context.date)
+             }
+             .allowsHitTesting(false)
+             TechGridOverlay()
+                 .allowsHitTesting(false)
+-            TimelineView(.animation(minimumInterval: 1 / 30, paused: false)) { context in
++            TimelineView(.animation(minimumInterval: 1 / 30, paused: paused)) { context in
+                 RingtoneRippleLayer(date: context.date)
+             }
+             .allowsHitTesting(false)
+@@ -172,6 +209,24 @@ struct OracleAnimatedBackdrop: View {
+     }
+ }
+ 
++/// Blurred ellipse rasterized once; callers move it with `offset` so the blur is not recomputed every frame.
++private struct RasterizedGlow: View {
++    let color: Color
++    let width: CGFloat
++    let height: CGFloat
++    let blur: CGFloat
++
++    var body: some View {
++        Ellipse()
++            .fill(color)
++            .frame(width: width, height: height)
++            .padding(blur * 2)
++            .blur(radius: blur)
++            .drawingGroup()
++            .padding(-blur * 2)
++    }
++}
++
+ /// Slow drifting color fields — depth without heavy GPU work.
+ private struct AuroraDriftLayer: View {
+     let date: Date
+@@ -183,22 +238,13 @@ private struct AuroraDriftLayer: View {
+             let w = geo.size.width
+             let h = geo.size.height
+             ZStack {
+-                Ellipse()
+-                    .fill(OracleTheme.indigo.opacity(0.22))
+-                    .frame(width: w * 1.1, height: h * 0.45)
+-                    .blur(radius: 70)
++                RasterizedGlow(color: OracleTheme.indigo.opacity(0.22), width: w * 1.1, height: h * 0.45, blur: 70)
+                     .offset(x: sin(t * 0.22) * w * 0.12, y: -h * 0.28 + cos(t * 0.18) * 24)
+ 
+-                Ellipse()
+-                    .fill(OracleTheme.gold.opacity(0.10))
+-                    .frame(width: w * 0.85, height: h * 0.35)
+-                    .blur(radius: 60)
++                RasterizedGlow(color: OracleTheme.gold.opacity(0.10), width: w * 0.85, height: h * 0.35, blur: 60)
+                     .offset(x: cos(t * 0.19) * w * 0.14, y: -h * 0.22 + sin(t * 0.21) * 20)
+ 
+-                Ellipse()
+-                    .fill(OracleTheme.deepPurple.opacity(0.18))
+-                    .frame(width: w * 0.9, height: h * 0.5)
+-                    .blur(radius: 80)
++                RasterizedGlow(color: OracleTheme.deepPurple.opacity(0.18), width: w * 0.9, height: h * 0.5, blur: 80)
+                     .offset(x: sin(t * 0.15 + 1) * w * 0.1, y: h * 0.05)
+             }
+         }
+@@ -242,6 +288,8 @@ private struct TechGridOverlay: View {
+ private struct RingtoneRippleLayer: View {
+     let date: Date
+ 
++    private static let maxScale: CGFloat = 1.5
++
+     private var phase: Double {
+         date.timeIntervalSinceReferenceDate
+     }
+@@ -255,6 +303,8 @@ private struct RingtoneRippleLayer: View {
+                     let t = (phase / 3.6 + Double(index) * 0.33).truncatingRemainder(dividingBy: 1)
+                     let scale = 0.55 + t * 0.95
+                     let opacity = (1 - t) * 0.22
++                    // Rasterized once at the largest ripple size and only scaled down; re-stroking the
++                    // gradient at every scale is CPU-bound (software path) on each frame.
+                     Circle()
+                         .stroke(
+                             LinearGradient(
+@@ -262,10 +312,12 @@ private struct RingtoneRippleLayer: View {
+                                 startPoint: .topLeading,
+                                 endPoint: .bottomTrailing
+                             ),
+-                            lineWidth: 1.2
++                            lineWidth: 1.2 * Self.maxScale
+                         )
+-                        .frame(width: base * 2, height: base * 2)
+-                        .scaleEffect(scale)
++                        .frame(width: base * 2 * Self.maxScale, height: base * 2 * Self.maxScale)
++                        .padding(2 * Self.maxScale)
++                        .drawingGroup()
++                        .scaleEffect(scale / Self.maxScale)
+                         .opacity(opacity)
+                         .position(center)
+                 }
+@@ -483,10 +535,14 @@ struct OraclePerformButton: View {
+     let action: () -> Void
+ 
+     @State private var pressed = false
++    @Environment(\.accessibilityReduceMotion) private var reduceMotion
++    @ObservedObject private var ambient = AmbientMotion.shared
++
++    private var pulsePaused: Bool { !emphasizeReady || disabled || reduceMotion || ambient.isReduced }
+ 
+     var body: some View {
+-        TimelineView(.animation(minimumInterval: 1 / 20, paused: !emphasizeReady || disabled)) { context in
+-            let pulse = emphasizeReady && !disabled
++        TimelineView(.animation(minimumInterval: 1 / 20, paused: pulsePaused)) { context in
++            let pulse = emphasizeReady && !disabled && !pulsePaused
+                 ? 0.5 + 0.5 * sin(context.date.timeIntervalSinceReferenceDate * 2.6)
+                 : 0.0
+             Button {
+@@ -510,7 +566,19 @@ struct OraclePerformButton: View {
+                     RoundedRectangle(cornerRadius: 17, style: .continuous)
+                         .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
+                 }
+-                .shadow(color: OracleTheme.gold.opacity(disabled ? 0 : (0.22 + 0.14 * pulse)), radius: 12 + 6 * pulse, y: 6)
++                .background {
++                    if !disabled {
++                        RoundedRectangle(cornerRadius: 17, style: .continuous)
++                            .fill(OracleTheme.gold.opacity(0.30))
++                            .padding(24)
++                            .blur(radius: 9)
++                            .drawingGroup()
++                            .padding(-24)
++                            .offset(y: 6)
++                            .opacity(pulse)
++                    }
++                }
++                .shadow(color: OracleTheme.gold.opacity(disabled ? 0 : 0.22), radius: 12, y: 6)
+                 .scaleEffect((pressed ? 0.98 : 1) * (1 + 0.012 * pulse))
+                 .opacity(disabled ? 0.45 : 1)
+             }
+diff --git a/MagicCall/Sources/UI/StageView.swift b/MagicCall/Sources/UI/StageView.swift
+index f2e6d8d..eff5980 100644
+--- a/MagicCall/Sources/UI/StageView.swift
++++ b/MagicCall/Sources/UI/StageView.swift
+@@ -185,7 +185,17 @@ enum StageImageStore {
+             .appendingPathComponent("stage-background.jpg")
+     }
+ 
+-    static func load() -> UIImage? { UIImage(contentsOfFile: url.path) }
++    /// Views call `load()` / `hasScreenshot` from `body`: keep one decoded instance per saved file
++    /// (a new `UIImage` per call is re-read and re-decoded at full resolution on every render).
++    private static var cachedImage: UIImage?
++    private static var cacheLoaded = false
++
++    static func load() -> UIImage? {
++        if cacheLoaded { return cachedImage }
++        cacheLoaded = true
++        cachedImage = UIImage(contentsOfFile: url.path).map { $0.preparingForDisplay() ?? $0 }
++        return cachedImage
++    }
+ 
+     static var hasScreenshot: Bool { load() != nil }
+ 
+@@ -195,6 +205,8 @@ enum StageImageStore {
+ 
+     static func save(_ data: Data) {
+         try? data.write(to: url, options: .atomic)
++        cachedImage = nil
++        cacheLoaded = false
+         UserDefaults.standard.removeObject(forKey: luminanceKey)
+         if let image = UIImage(data: data) {
+             let value = topLuminance(of: image)
