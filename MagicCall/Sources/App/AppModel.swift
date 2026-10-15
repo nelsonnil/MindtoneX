@@ -527,6 +527,93 @@ final class AppModel: ObservableObject {
         dlog("══ DESARMADO ══")
     }
 
+    /// Mid-perform input change. Same fresh session as leaving, picking another input, and pressing Perform,
+    /// without dropping to Home (the stage screenshot stays up; Notes opens itself when that input starts).
+    @discardableResult
+    func switchPerformInput(to mode: VoiceSettings.InputMode) -> Bool {
+        guard isArmed, phase == .stage else { return false }
+        guard switchPerformInputIsReady(mode) else {
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            dlog("[INPUT SWITCH] blocked · \(mode.title) not ready")
+            return false
+        }
+        let previous = VoiceSettings.inputMode
+        UserDefaults.standard.set(mode.rawValue, forKey: VoiceSettings.Key.inputMode)
+        dlog("[INPUT SWITCH] \(previous.title) → \(mode.title)")
+        PerformUserLog.shared.log("Input switch · \(previous.title) → \(mode.title)")
+
+        voicePerformTask?.cancel()
+        voicePerformTask = nil
+        audio.stop()
+        isAudible = false
+        interferenceShow.stop(reason: "input switch")
+        interferenceFallbackThisCall = false
+        flashHandCallsThisPerform = 0
+        cardVolumeHeadroomTask?.cancel()
+        cardVolumeHeadroomTask = nil
+        performed = false
+        hadCallWhileArmed = false
+        callSignalActive = false
+        incomingCallID = nil
+        incomingDetectedAt = 0
+
+        VoiceSongSession.shared.reset(reason: "input switch")
+        NotesSongSession.shared.reset(reason: "input switch")
+        ApiSongSession.shared.reset(reason: "input switch")
+        CardSongSession.shared.reset(reason: "input switch")
+        WordApiSession.shared.reset(reason: "input switch")
+        NotesContactWordSession.shared.reset(reason: "input switch")
+        SecondSpectatorSong.shared.reset(reason: "input switch")
+        clearPerformSessionDisplayTrack()
+        clearSongForNextPerformance()
+        resetAutoSharePresentedFlag()
+        AlbumArtContactService.performStarted()
+
+        if SpectatorSettings.isTwo {
+            SecondSpectatorSong.shared.beginWaiting(source: mode.title, context: .perform)
+        }
+
+        switch mode {
+        case .aiVoice:
+            VoiceAudioSession.recordCategoryActive = true
+            applyFakePerformMediaVolumeBoost(reason: "input switch")
+            scheduleVoicePerformStart()
+        case .notes:
+            applyFakePerformMediaVolumeBoost(reason: "input switch")
+            NotesSongSession.shared.start(context: .perform)
+        case .api:
+            applyFakePerformMediaVolumeBoost(reason: "input switch")
+            ApiSongSession.shared.start(context: .perform)
+        case .card:
+            cameraVolumeScanReadyAt = CACurrentMediaTime() + 0.55
+            CardSongSession.shared.start(context: .perform)
+            primeCardVolumeScanHeadroom(reason: "input switch", entry: true)
+            dlog("[CARD] input switch · camera idle until volume press")
+        case .manual:
+            break
+        }
+
+        startWordApiIfNeeded(context: .perform)
+        startNotesContactWordIfNeeded(context: .perform)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        return true
+    }
+
+    private func switchPerformInputIsReady(_ mode: VoiceSettings.InputMode) -> Bool {
+        switch mode {
+        case .aiVoice:
+            return VoiceSettings.isConfigured
+        case .notes:
+            return !NotesSettings.useAIPicker || VoiceSettings.isConfigured
+        case .api:
+            return ApiSettings.isConfigured
+        case .card:
+            return CardSettings.cameraAuthorized && VoiceSettings.isConfigured
+        case .manual:
+            return false
+        }
+    }
+
     func notePerformDisplayTrack() {
         if let track = selected ?? lastReadyTrack {
             performSessionDisplayTrack = track

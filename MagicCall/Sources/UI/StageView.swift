@@ -48,6 +48,7 @@ struct StageView: View {
             }
         }
         .overlay(alignment: .topTrailing) { PerformStatusDot() }
+        .overlay { PerformInputSwitchHost() }
     }
 
     private var callStage: some View {
@@ -151,6 +152,7 @@ struct StageGestureLayer: UIViewRepresentable {
         let peekHold = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.peekHold(_:)))
         peekHold.minimumPressDuration = 0.08
         peekHold.allowableMovement = 48
+        peekHold.delegate = context.coordinator
 
         let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipeDown(_:)))
         swipe.numberOfTouchesRequired = 2
@@ -172,7 +174,7 @@ struct StageGestureLayer: UIViewRepresentable {
         context.coordinator.onSingleTap = onSingleTap
     }
 
-    final class Coordinator: NSObject {
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         var peekHoldEnabled = true
         var onPeekVisibility: (Bool) -> Void = { _ in }
         var onTwoFingerSwipeDown: () -> Void = {}
@@ -182,6 +184,15 @@ struct StageGestureLayer: UIViewRepresentable {
         @objc func singleTap(_ recognizer: UITapGestureRecognizer) {
             guard recognizer.state == .ended else { return }
             onSingleTap?()
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard gestureRecognizer === peekHoldRecognizer, peekHoldEnabled, let window = gestureRecognizer.view?.window else {
+                return false
+            }
+            let point = window.convert(gestureRecognizer.location(in: window), to: nil)
+            let pad = PerformInputSwitchLayout.pad(in: UIScreen.main.bounds.size, keyboardTop: nil)
+            return !pad.contains(point)
         }
 
         @objc func peekHold(_ recognizer: UILongPressGestureRecognizer) {

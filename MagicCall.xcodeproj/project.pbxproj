@@ -99,6 +99,7 @@
 		A1527BE9FA2E86C4B75BAB86 /* NotesPerformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C269D939BB5F7D004EF20F /* NotesPerformView.swift */; };
 		A44853952E079252482E4F83 /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA922A0D263D3309553D389 /* Prefs.swift */; };
 		A4614B1A536192430CFD5A9C /* StageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3305BEFC5DE85E1D1E566060 /* StageView.swift */; };
+		F6D5B82C3E904B17C4F26D81 /* PerformInputSwitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C4A91B2D8F4A06B3E15C70 /* PerformInputSwitch.swift */; };
 		A83A9558500EF1F623A00951 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */; };
 		AA896F28F1DE55B5ADD30F50 /* CallerLabelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A292077410CF73096E5CD7B8 /* CallerLabelStore.swift */; };
 		AB7729E678C83A31F271AA5A /* CallDirectoryHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63692B7B6C9E86B8C5F94B05 /* CallDirectoryHandler.swift */; };
@@ -233,6 +234,7 @@
 		31F371D4729BE744EF07925E /* CardVolumeScanHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardVolumeScanHost.swift; sourceTree = "<group>"; };
 		32440B4086E44C2CF9A8EBB5 /* MagicCall-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MagicCall-Bridging-Header.h"; sourceTree = "<group>"; };
 		3305BEFC5DE85E1D1E566060 /* StageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageView.swift; sourceTree = "<group>"; };
+		E7C4A91B2D8F4A06B3E15C70 /* PerformInputSwitch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformInputSwitch.swift; sourceTree = "<group>"; };
 		3396A83176A5AA134A6619C9 /* CarphoneDialLocalizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = CarphoneDialLocalizable.xcstrings; sourceTree = "<group>"; };
 		37028B4E4611FABCF489AA86 /* NotesContactCallDetailPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesContactCallDetailPreview.swift; sourceTree = "<group>"; };
 		3706106600373AFBC0DCD995 /* WordApiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiSettingsView.swift; sourceTree = "<group>"; };
@@ -685,6 +687,7 @@
 				9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */,
 				4327EF1CCFA6B6427A4B0D85 /* SetupView.swift */,
 				3305BEFC5DE85E1D1E566060 /* StageView.swift */,
+				E7C4A91B2D8F4A06B3E15C70 /* PerformInputSwitch.swift */,
 				A744DA01C5B2EA22A5B55906 /* UIIllustrations.swift */,
 				F54C1553240FB204BB2CB06A /* Premium */,
 			);
@@ -942,6 +945,7 @@
 				FDBD89E4929DDF8542EDE8AA /* StagePeek.swift in Sources */,
 				2BBE66591F23BBBA5F62D153 /* StagePeekFeedbackSection.swift in Sources */,
 				A4614B1A536192430CFD5A9C /* StageView.swift in Sources */,
+				F6D5B82C3E904B17C4F26D81 /* PerformInputSwitch.swift in Sources */,
 				4C3EAD437CDD61E9E5E6DFE6 /* SystemVolume.swift in Sources */,
 				5AECCF1D9AC7A8C016CB4A8D /* Themes.swift in Sources */,
 				D62EC45272208FCF763FED85 /* UIIllustrations.swift in Sources */,
