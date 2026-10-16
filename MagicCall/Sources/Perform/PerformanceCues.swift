@@ -227,7 +227,7 @@ struct PerformStageStatusDots: View {
         if interferenceEnabled, interferenceSongCount == 2, !second.isLocked { return false }
         switch VoiceSettings.InputMode(rawValue: inputModeRaw) ?? .manual {
         case .aiVoice: return voice.state == .locked
-        case .api: return api.state == .locked
+        case .api: return api.state == .locked && api.performStageReadyDot
         case .card: return card.state == .locked
         case .notes, .manual: return true
         }

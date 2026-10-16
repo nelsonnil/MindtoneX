@@ -34,6 +34,8 @@ final class ApiSongSession: ObservableObject {
     /// Spectators = 2: song 1 is locked and polling continues until the next new search (song 2).
     @Published private(set) var watchingSecondSong = false
     @Published private(set) var secondLockedReading: ApiReading?
+    /// Stage status dot: false for the song already on the API when Perform starts; true after the next lock.
+    @Published private(set) var performStageReadyDot = false
 
     var isActive: Bool {
         switch state {
@@ -225,7 +227,7 @@ final class ApiSongSession: ObservableObject {
             guard reading.hasSong, reading.isNewSearch(comparedTo: locked) else { return }
             dlog("[API] ★ song changed during Perform (\(ms) ms): “\(locked.label)” → “\(reading.label)”")
             state = .loading(reading.label)
-            Task { await load(reading) }
+            Task { await load(reading, signalStageReadyDot: true) }
             return
         }
 
@@ -239,14 +241,15 @@ final class ApiSongSession: ObservableObject {
         }
 
         if baseline == nil { baseline = reading }
+        let signalDot = state == .watching
         dlog("[API] ★ using API song (\(ms) ms) poll #\(pollCount): “\(reading.label)”")
         state = .loading(reading.label)
-        Task { await load(reading) }
+        Task { await load(reading, signalStageReadyDot: signalDot) }
     }
 
     // MARK: Load & lock
 
-    private func load(_ reading: ApiReading) async {
+    private func load(_ reading: ApiReading, signalStageReadyDot: Bool = false) async {
         let gen = generation
         state = .loading(reading.label)
         notFound = nil
@@ -257,7 +260,7 @@ final class ApiSongSession: ObservableObject {
         let track = AppModel.shared.selected.map { "\($0.title) — \($0.artist)" } ?? "?"
         dlog("[API] lookup “\(reading.searchQuery)” → \(ok ? "ready: \(track)" : "not found") (\(PreviewService.ms(since: t0)) ms)")
         if ok {
-            lock(reading)
+            lock(reading, signalStageReadyDot: signalStageReadyDot)
         } else {
             notFound = reading.label
             state = .watching
@@ -267,7 +270,7 @@ final class ApiSongSession: ObservableObject {
         }
     }
 
-    private func lock(_ reading: ApiReading) {
+    private func lock(_ reading: ApiReading, signalStageReadyDot: Bool = false) {
         let watchSecond = SpectatorSettings.isTwo
         if context == .perform, !watchSecond, lockedReading != nil {
             AppModel.shared.resetAutoSharePresentedFlag()
@@ -281,6 +284,9 @@ final class ApiSongSession: ObservableObject {
         }
         lockedReading = reading
         state = .locked
+        if context == .perform {
+            performStageReadyDot = signalStageReadyDot
+        }
         dlog("[API] 🔒 locked “\(reading.label)” after \(pollCount) polls\(watchSecond ? " · song 1 of 2, still polling for spectator 2" : "")")
         if context == .perform {
             let snippet = WordApiInputPanel.truncated(reading.label, max: 44)
@@ -339,6 +345,9 @@ final class ApiSongSession: ObservableObject {
         stopPolling()
         watchingSecondSong = false
         secondLockedReading = reading
+        if context == .perform {
+            performStageReadyDot = true
+        }
         dlog("[API] 🔒 spectator 2 locked “\(reading.label)” after \(pollCount) polls")
         if context == .perform {
             let snippet = WordApiInputPanel.truncated(reading.label, max: 44)
@@ -369,6 +378,7 @@ final class ApiSongSession: ObservableObject {
         secondLockedReading = nil
         secondBaseline = nil
         secondLoading = false
+        performStageReadyDot = false
         ApiSongClient.resetPerformFetchDiagnostics()
     }
 
