@@ -42,7 +42,7 @@ final class SharePerformFlow: ObservableObject {
             Task { await VoiceSongSession.shared.start(context: .perform) }
         case .api:
             ApiSongSession.shared.start(context: .perform)
-        case .notes:
+        case .notes, .spotlight:
             NotesSongSession.shared.start(context: .perform)
         case .card:
             CardSongSession.shared.start(context: .perform)

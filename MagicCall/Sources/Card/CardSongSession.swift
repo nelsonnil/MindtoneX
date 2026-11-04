@@ -152,16 +152,18 @@ final class CardSongSession: ObservableObject {
         state = .scanning
         AppModel.shared.primeCardVolumeScanHeadroom(reason: "pre card scan")
         if context == .perform {
-            if VoiceSettings.apiKey != nil {
+            let engine = CardSettings.readingEngine
+            if engine == .openAI {
                 PerformUserLog.shared.log(
                     "Camera · snapshot + OpenAI (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)"
                 )
+            } else if engine == .automatic, VoiceSettings.apiKey != nil {
+                PerformUserLog.shared.log(
+                    "Camera · on-device OCR first · OpenAI fallback"
+                )
             } else {
                 PerformUserLog.shared.log(
-                    "Camera · OpenAI skipped (no API key — add under Performance settings)"
-                )
-                PerformUserLog.shared.log(
-                    "Camera · snapshot + local OCR (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)"
+                    "Camera · on-device OCR (~\(String(format: "%.1f", CardSettings.burstSeconds)) s)"
                 )
             }
         }
@@ -245,8 +247,10 @@ final class CardSongSession: ObservableObject {
         }
 
         guard gen == generation else { return }
+        let engine = CardSettings.readingEngine
+        let canUseOpenAI = engine.allowsOpenAI && VoiceSettings.apiKey != nil
 
-        if let buf = bestBuffer, VoiceSettings.apiKey == nil || CardImageEncoder.jpegData(from: buf) == nil {
+        if let buf = bestBuffer, !canUseOpenAI || CardImageEncoder.jpegData(from: buf) == nil {
             stopCaptureIfNeeded()
             if context == .perform, !snapshotCuePlayed {
                 snapshotCuePlayed = true
@@ -256,7 +260,7 @@ final class CardSongSession: ObservableObject {
 
         if SpectatorSettings.isTwo {
             var jpeg: Data?
-            if VoiceSettings.apiKey != nil, let buf = bestBuffer {
+            if canUseOpenAI, let buf = bestBuffer {
                 jpeg = CardImageEncoder.jpegData(from: buf)
             }
             stopCaptureIfNeeded()
@@ -269,13 +273,58 @@ final class CardSongSession: ObservableObject {
             return
         }
 
-        if VoiceSettings.apiKey != nil, bestBuffer == nil, context == .perform {
+        var nativeResolution: NativeResolution?
+        if engine != .openAI {
+            nativeResolution = await resolveOnDevice(
+                gen: gen,
+                frameTexts: frameTexts,
+                bestLineReadings: bestLineReadings
+            )
+            guard gen == generation else { return }
+            if let nativeResolution, nativeResolution.vote?.value ?? 0 >= 2 {
+                if let query = nativeResolution.query {
+                    _ = await AppModel.shared.prepareCardQuery(query)
+                    guard gen == generation else { return }
+                }
+                stopCaptureIfNeeded()
+                await handleScanOutcome(
+                    gen: gen,
+                    vote: nativeResolution.vote,
+                    query: nativeResolution.query,
+                    ocrSample: nativeResolution.sample,
+                    track: nativeResolution.track,
+                    ocrParse: nativeResolution.ocr
+                )
+                return
+            }
+            if engine == .onDevice || !canUseOpenAI {
+                if let query = nativeResolution?.query {
+                    _ = await AppModel.shared.prepareCardQuery(query)
+                    guard gen == generation else { return }
+                }
+                stopCaptureIfNeeded()
+                await handleScanOutcome(
+                    gen: gen,
+                    vote: nativeResolution?.vote,
+                    query: nativeResolution?.query,
+                    ocrSample: nativeResolution?.sample ?? "",
+                    track: nativeResolution?.track,
+                    ocrParse: nativeResolution?.ocr
+                )
+                return
+            }
+            if context == .perform {
+                PerformUserLog.shared.log("Camera · on-device OCR uncertain · asking OpenAI")
+            }
+        }
+
+        if canUseOpenAI, bestBuffer == nil, context == .perform {
             PerformUserLog.shared.log("Camera · OpenAI skipped · no snapshot frame")
         }
-        if VoiceSettings.apiKey != nil, let buf = bestBuffer, CardImageEncoder.jpegData(from: buf) == nil, context == .perform {
+        if canUseOpenAI, let buf = bestBuffer, CardImageEncoder.jpegData(from: buf) == nil, context == .perform {
             PerformUserLog.shared.log("Camera · OpenAI skipped · could not encode photo · local OCR")
         }
-        if VoiceSettings.apiKey != nil, let buf = bestBuffer, let jpeg = CardImageEncoder.jpegData(from: buf) {
+        if canUseOpenAI, let buf = bestBuffer, let jpeg = CardImageEncoder.jpegData(from: buf) {
             let hint = CardOCRProcessor.orderedLineTexts(from: bestLineReadings).joined(separator: "\n")
             stopCaptureIfNeeded()
             if context == .perform, !snapshotCuePlayed {
@@ -334,90 +383,108 @@ final class CardSongSession: ObservableObject {
             }
         }
 
+        if nativeResolution == nil {
+            nativeResolution = await resolveOnDevice(
+                gen: gen,
+                frameTexts: frameTexts,
+                bestLineReadings: bestLineReadings
+            )
+        }
+        guard gen == generation else { return }
+        if let query = nativeResolution?.query {
+            _ = await AppModel.shared.prepareCardQuery(query)
+            guard gen == generation else { return }
+        }
+        await handleScanOutcome(
+            gen: gen,
+            vote: nativeResolution?.vote,
+            query: nativeResolution?.query,
+            ocrSample: nativeResolution?.sample ?? "",
+            track: nativeResolution?.track,
+            ocrParse: nativeResolution?.ocr
+        )
+    }
+
+    private struct NativeResolution {
+        let vote: (key: String, value: Int)?
+        let query: String?
+        let sample: String
+        let track: PreviewTrack?
+        let ocr: CardOCRParse
+    }
+
+    private func resolveOnDevice(
+        gen: Int,
+        frameTexts: [[CardOCRReading]],
+        bestLineReadings: [CardOCRReading]
+    ) async -> NativeResolution {
         let texts = CardOCRProcessor.mergedText(from: frameTexts)
         let rawOrdered = CardOCRProcessor.orderedLineTexts(from: bestLineReadings)
         let orderedLines = CardLineParser.expandMergedOCRLines(rawOrdered)
         let ocr = CardLineParser.parse(orderedLines: orderedLines)
         if !orderedLines.isEmpty {
-            dlog("[CARD] lines top→bottom: \(orderedLines.joined(separator: " | "))")
+            dlog("[CARD] on-device lines top→bottom: \(orderedLines.joined(separator: " | "))")
         }
-        if context == .perform {
-            if orderedLines.isEmpty {
-                PerformUserLog.shared.log("Camera · OCR lines: (none — zero text recognized)")
-            } else {
-                PerformUserLog.shared.log("Camera · OCR lines: \(orderedLines.joined(separator: " | "))")
-            }
-            let l1 = ocr.songQuery.isEmpty ? "—" : WordApiInputPanel.truncated(ocr.songQuery, max: 28)
-            let l2 = ocr.callerLine.map { WordApiInputPanel.truncated($0, max: 24) } ?? "—"
-            let l3 = ocr.notesLine.map { WordApiInputPanel.truncated($0, max: 24) } ?? "—"
-            PerformUserLog.shared.log("Camera · OCR read · L1 «\(l1)» · L2 «\(l2)» · L3 «\(l3)»")
-            if ocr.songQuery.isEmpty {
-                PerformUserLog.shared.log("Camera · song line empty — caller/notes lines do not block song search")
-            }
-        }
-        guard gen == generation else { return }
 
         var queriesToTry = songSearchQueries(ocr: ocr, orderedLines: orderedLines, mergedTexts: texts)
-        for frame in frameTexts {
-            let frameLines = CardLineParser.expandMergedOCRLines(CardOCRProcessor.orderedLineTexts(from: frame))
-            let frameOcr = CardLineParser.parse(orderedLines: frameLines)
-            for q in songSearchQueries(ocr: frameOcr, orderedLines: frameLines, mergedTexts: []) where !queriesToTry.contains(where: { ApiJSON.sameText($0, q) }) {
-                queriesToTry.append(q)
+        let allFrames = [bestLineReadings] + frameTexts
+        for frame in allFrames {
+            for hypothesis in CardOCRProcessor.orderedLineHypotheses(from: frame) {
+                let lines = CardLineParser.expandMergedOCRLines(hypothesis)
+                let parsed = CardLineParser.parse(orderedLines: lines)
+                for query in songSearchQueries(ocr: parsed, orderedLines: lines, mergedTexts: [])
+                where !queriesToTry.contains(where: { ApiJSON.sameText($0, query) }) {
+                    queriesToTry.append(query)
+                }
             }
         }
-        dlog("[CARD] song queries (line 1 first): \(queriesToTry.joined(separator: " · "))")
+        queriesToTry = Array(queriesToTry.prefix(8))
+        dlog("[CARD] on-device song queries: \(queriesToTry.joined(separator: " · "))")
+
         if context == .perform {
+            let lines = orderedLines.isEmpty ? "(none)" : orderedLines.joined(separator: " | ")
+            PerformUserLog.shared.log("Camera · on-device OCR lines: \(lines)")
             if queriesToTry.isEmpty {
-                PerformUserLog.shared.log("Camera · song search skipped — no line-1 text (add OpenAI key for best read)")
-            } else {
-                PerformUserLog.shared.log("Camera · song search tries: \(queriesToTry.joined(separator: " · "))")
+                PerformUserLog.shared.log("Camera · on-device song search skipped — no song text")
             }
         }
 
         var votes: [String: Int] = [:]
         var queryByKey: [String: String] = [:]
         var trackByKey: [String: PreviewTrack] = [:]
-
         for query in queriesToTry {
-            guard query.count >= 2 else { continue }
-            let ok = await AppModel.shared.prepareCardQuery(query)
-            guard gen == generation else { return }
-            guard ok, let track = AppModel.shared.selected else {
-                dlog("[CARD] song try “\(query)” → no match")
-                if context == .perform {
-                    PerformUserLog.shared.log("Camera · song try «\(query)» → no match")
-                }
+            let tracks = try? await AppModel.shared.previews.search(query)
+            guard gen == generation else {
+                return NativeResolution(vote: nil, query: nil, sample: texts.first ?? "", track: nil, ocr: ocr)
+            }
+            guard let track = tracks?.first else { continue }
+            guard CardTextMapper.plausiblyMatches(query, track: track) else {
+                dlog("[CARD] on-device reject mismatch · «\(query)» → \(track.title) — \(track.artist)")
                 continue
             }
             let key = CardTextMapper.canonicalKey(from: track)
             votes[key, default: 0] += 1
             queryByKey[key] = query
             trackByKey[key] = track
-            dlog("[CARD] song try “\(query)” → \(track.title) — \(track.artist) (votes=\(votes[key] ?? 0))")
-            if context == .perform {
-                PerformUserLog.shared.log("Camera · song try «\(query)» → \(track.title) — \(track.artist)")
-            }
+            dlog("[CARD] on-device «\(query)» → \(track.title) — \(track.artist) (votes=\(votes[key] ?? 0))")
         }
 
-        let best = votes.max { $0.value < $1.value }
-        if context == .perform, let best {
-            let winner = trackByKey[best.key]
+        let best = votes.max { lhs, rhs in
+            lhs.value == rhs.value ? lhs.key > rhs.key : lhs.value < rhs.value
+        }
+        let query = best.flatMap { queryByKey[$0.key] }
+        let track = best.flatMap { trackByKey[$0.key] }
+        if context == .perform, let best, let track {
             PerformUserLog.shared.log(
-                "Card · song winner «\(queryByKey[best.key] ?? "?")» → \(winner?.title ?? "?") — \(winner?.artist ?? "?") (\(best.value) vote(s))"
+                "Camera · on-device winner → \(track.title) — \(track.artist) (\(best.value) vote(s))"
             )
         }
-        let sample = texts.first ?? ""
-        if let best, let winQuery = queryByKey[best.key] {
-            _ = await AppModel.shared.prepareCardQuery(winQuery)
-            guard gen == generation else { return }
-        }
-        await handleScanOutcome(
-            gen: gen,
+        return NativeResolution(
             vote: best,
-            query: best.flatMap { queryByKey[$0.key] },
-            ocrSample: sample,
-            track: best.flatMap { trackByKey[$0.key] },
-            ocrParse: ocr
+            query: query,
+            sample: texts.first ?? orderedLines.joined(separator: " "),
+            track: track,
+            ocr: ocr
         )
     }
 
@@ -508,6 +575,10 @@ final class CardSongSession: ObservableObject {
         // Vision's answer decides the layout; local OCR lines are only a fallback when vision did not answer
         // (its "line 2" may be song 1's artist).
         let local = CardLineParser.parseTwoSongs(orderedLines: hintLines)
+        let localHypotheses = CardOCRProcessor.orderedLineHypotheses(from: bestLineReadings)
+            .map { CardLineParser.parseTwoSongs(orderedLines: $0) }
+        let localSong1Candidates = ([local] + localHypotheses).map(\.song1)
+        let localSong2Candidates = ([local] + localHypotheses).map(\.song2)
         let firstQueries: [String]
         let secondQueries: [String]
         if visionAnswered {
@@ -518,8 +589,12 @@ final class CardSongSession: ObservableObject {
                 SongSearchQueries.allVariants(title: $0.title, artist: $0.artist, rawQuery: $0.searchQuery)
             } ?? [])
         } else {
-            firstQueries = Self.uniqueQueries(CardTextMapper.songSearchVariants(from: local.song1))
-            secondQueries = Self.uniqueQueries(CardTextMapper.songSearchVariants(from: local.song2))
+            firstQueries = Self.uniqueQueries(
+                ([local] + localHypotheses).flatMap { CardTextMapper.songSearchVariants(from: $0.song1) }
+            )
+            secondQueries = Self.uniqueQueries(
+                ([local] + localHypotheses).flatMap { CardTextMapper.songSearchVariants(from: $0.song2) }
+            )
         }
         if words == nil {
             words = CardOCRParse(songQuery: local.song1, callerLine: local.callerLine, notesLine: local.notesLine)
@@ -540,7 +615,12 @@ final class CardSongSession: ObservableObject {
                     queries: secondQueries,
                     source: "Camera · song 2",
                     context: lookupContext,
-                    accept: { track in pickForCheck?.accepts(track) ?? true }
+                    accept: { track in
+                        pickForCheck?.accepts(track)
+                            ?? localSong2Candidates.contains {
+                                CardTextMapper.plausiblyMatches($0, track: track)
+                            }
+                    }
                 )
             }
         }
@@ -555,7 +635,10 @@ final class CardSongSession: ObservableObject {
             for query in firstQueries {
                 let ok = await AppModel.shared.prepareCardQuery(query)
                 guard gen == generation else { return }
-                if ok, let track = AppModel.shared.selected {
+                if ok, let track = AppModel.shared.selected,
+                   localSong1Candidates.contains(where: {
+                       CardTextMapper.plausiblyMatches($0, track: track)
+                   }) {
                     match = (track, query, CardTextMapper.canonicalKey(from: track))
                     if context == .perform {
                         PerformUserLog.shared.log("Camera · song 1 «\(query)» → \(track.title) — \(track.artist)")

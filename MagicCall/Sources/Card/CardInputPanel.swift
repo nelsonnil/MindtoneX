@@ -4,6 +4,7 @@ struct CardInputPanel: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var session = CardSongSession.shared
     @AppStorage(CardSettings.Key.cameraFacing) private var cameraFacingRaw = CardSettings.defaultCameraFacing.rawValue
+    @AppStorage(CardSettings.Key.readingEngine) private var readingEngineRaw = CardSettings.defaultReadingEngine.rawValue
     @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
     @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
 
@@ -16,9 +17,31 @@ struct CardInputPanel: View {
         )
     }
 
+    private var readingEngine: Binding<CardSettings.ReadingEngine> {
+        Binding(
+            get: { CardSettings.ReadingEngine(rawValue: readingEngineRaw) ?? .automatic },
+            set: { readingEngineRaw = $0.rawValue }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             OracleEyebrow(text: "Camera · handwriting OCR")
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Card reader")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OracleTheme.textSecondary)
+                Picker("Card reader", selection: readingEngine) {
+                    ForEach(CardSettings.ReadingEngine.allCases) { engine in
+                        Text(engine.title).tag(engine)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Text(readingEngine.wrappedValue.detail)
+                    .font(.caption2)
+                    .foregroundStyle(OracleTheme.textSecondary)
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Camera for card")

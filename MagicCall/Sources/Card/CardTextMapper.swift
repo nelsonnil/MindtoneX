@@ -27,6 +27,61 @@ enum CardTextMapper {
         canonicalKey(title: track.title, artist: track.artist)
     }
 
+    /// Validates a store result against imperfect OCR. Each OCR token may contain a small
+    /// handwriting error, but unrelated popular results must not gain a vote.
+    static func plausiblyMatches(_ rawOCR: String, track: PreviewTrack) -> Bool {
+        let queryTokens = tokens(rawOCR).filter { $0.count >= 3 }
+        guard !queryTokens.isEmpty else { return false }
+        let titleTokens = tokens(track.title)
+        let artistTokens = tokens(track.artist)
+        let trackTokens = titleTokens + artistTokens
+        guard !trackTokens.isEmpty else { return false }
+
+        let similarities = queryTokens.map { query in
+            trackTokens.map { tokenSimilarity(query, $0) }.max() ?? 0
+        }
+        let average = similarities.reduce(0, +) / Double(similarities.count)
+        let strong = similarities.filter { $0 >= 0.72 }.count
+
+        // One handwritten word can be an artist (SHAKLRA → Shakira) or a famous title.
+        if queryTokens.count == 1 {
+            return (similarities.first ?? 0) >= 0.72
+        }
+        return average >= 0.64 && strong >= max(1, queryTokens.count - 1)
+    }
+
+    private static func tokens(_ raw: String) -> [String] {
+        PreviewService.normalize(raw).split(separator: " ").map(String.init)
+    }
+
+    /// Shared by store ranking (Notes typed input, Camera OCR validation).
+    static func tokenSimilarity(_ lhs: String, _ rhs: String) -> Double {
+        if lhs == rhs { return 1 }
+        if lhs.count >= 4, rhs.count >= 4, lhs.contains(rhs) || rhs.contains(lhs) { return 0.9 }
+        let distance = levenshtein(lhs, rhs)
+        return 1 - Double(distance) / Double(max(lhs.count, rhs.count, 1))
+    }
+
+    private static func levenshtein(_ lhs: String, _ rhs: String) -> Int {
+        let a = Array(lhs)
+        let b = Array(rhs)
+        if a.isEmpty { return b.count }
+        if b.isEmpty { return a.count }
+        var previous = Array(0...b.count)
+        for (i, ac) in a.enumerated() {
+            var current = [i + 1] + Array(repeating: 0, count: b.count)
+            for (j, bc) in b.enumerated() {
+                current[j + 1] = min(
+                    current[j] + 1,
+                    previous[j + 1] + 1,
+                    previous[j] + (ac == bc ? 0 : 1)
+                )
+            }
+            previous = current
+        }
+        return previous[b.count]
+    }
+
     /// Extra store search tries when OCR garbles handwriting (e.g. LOSE tURSeS → Lose Yourself).
     static func songSearchVariants(from raw: String) -> [String] {
         var out = SongSearchQueries.variants(fromRawQuery: raw)

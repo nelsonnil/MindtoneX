@@ -139,6 +139,34 @@ final class WordReadingTests: XCTestCase {
         XCTAssertTrue(queries.contains(where: { $0.caseInsensitiveCompare("Gasolina") == .orderedSame }))
     }
 
+    func testNotesLineVariantsSplitsArtistDashTitle() {
+        let queries = SongSearchQueries.notesLineVariants(from: "Daddy Yankee - Gasolina")
+        XCTAssertTrue(queries.contains(where: { ApiJSON.sameText($0, "Gasolina Daddy Yankee") }))
+        XCTAssertTrue(queries.contains(where: { ApiJSON.sameText($0, "Gasolina") }))
+        XCTAssertTrue(queries.contains(where: { ApiJSON.sameText($0, "Daddy Yankee") }))
+    }
+
+    func testNotesLineVariantsTitleDeArtist() {
+        let queries = SongSearchQueries.notesLineVariants(from: "Despacito de Luis Fonsi")
+        XCTAssertTrue(queries.contains(where: { ApiJSON.sameText($0, "Despacito Luis Fonsi") }))
+    }
+
+    func testNotesLineVariantsArtistOnlyIncludesRawName() {
+        let queries = SongSearchQueries.notesLineVariants(from: "Shakira")
+        XCTAssertTrue(queries.contains(where: { ApiJSON.sameText($0, "Shakira") }))
+    }
+
+    func testPreviewRankFuzzyTitleTypo() {
+        let tracks = [
+            PreviewTrack(title: "Gasolina", artist: "Daddy Yankee", album: nil, artworkURL: nil,
+                         previewURL: URL(string: "https://example.com/a.m4a")!, source: .itunes),
+            PreviewTrack(title: "Other Song", artist: "Someone Else", album: nil, artworkURL: nil,
+                         previewURL: URL(string: "https://example.com/b.m4a")!, source: .itunes),
+        ]
+        let ranked = PreviewService.rank(tracks, for: "Gasolna")
+        XCTAssertEqual(ranked.first?.title, "Gasolina")
+    }
+
     func testSongPickStoreQueriesTitleWithInferredArtist() {
         let pick = SongPick(
             hasSong: true,

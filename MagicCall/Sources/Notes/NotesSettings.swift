@@ -14,6 +14,12 @@ enum NotesSettings {
 
     private static var d: UserDefaults { .standard }
 
+    static func registerDefaults() {
+        d.register(defaults: [
+            Key.useAIPicker: false,
+        ])
+    }
+
     static var idleSearchEnabled: Bool { bool(Key.idleSearchEnabled, default: true) }
     static var idleDelay: Double {
         guard d.object(forKey: Key.idleDelay) != nil else { return defaultIdleDelay }
@@ -21,7 +27,7 @@ enum NotesSettings {
     }
     static var searchOnReturn: Bool { bool(Key.searchOnReturn, default: true) }
     /// With an OpenAI key, the AI reads the note and returns a clean “title artist” query.
-    static var useAIPicker: Bool { bool(Key.useAIPicker, default: true) }
+    static var useAIPicker: Bool { bool(Key.useAIPicker, default: false) }
 
     static let aiPickerOffText = "Off: uses the note text exactly as typed to find the song."
     static let aiPickerOnText = "On: cleans spelling and works out which song the spectator meant."

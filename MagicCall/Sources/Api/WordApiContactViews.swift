@@ -4,7 +4,6 @@ import SwiftUI
 
 struct WordApiSpectatorDialSheet: View {
     @EnvironmentObject private var model: AppModel
-    /// Always start blank — spectator dials fresh each Perform (saved only after outgoing call ends).
     @State private var phoneDraft = ""
     @State private var dialAppearanceToken = 0
 
@@ -25,11 +24,22 @@ struct WordApiSpectatorDialSheet: View {
         /// Phone dial follows **device** light/dark, not MindtoneX home chrome (`.preferredColorScheme(.dark)`).
         .preferredColorScheme(CarphoneDialSystemAppearance.preferredColorScheme)
         .id(dialAppearanceToken)
-        .onAppear { CarphoneDialSystemAppearance.startObservingSystemStyle() }
+        .onAppear {
+            CarphoneDialSystemAppearance.startObservingSystemStyle()
+            applyCarphoneHandoffDigitsIfNeeded()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .carphoneDialSystemStyleDidChange)) { _ in
             dialAppearanceToken += 1
         }
+        .onChange(of: model.carphoneHandoffDialDigits) { _, _ in
+            applyCarphoneHandoffDigitsIfNeeded()
+        }
         .interactiveDismissDisabled(WordApiContactPerformGate.awaitingOutgoingEnd)
+    }
+
+    private func applyCarphoneHandoffDigitsIfNeeded() {
+        guard phoneDraft.isEmpty, !model.carphoneHandoffDialDigits.isEmpty else { return }
+        phoneDraft = model.carphoneHandoffDialDigits
     }
 
     private func startCall() {
@@ -46,6 +56,37 @@ struct WordApiSpectatorDialSheet: View {
         guard !WordApiContactPerformGate.awaitingOutgoingEnd else { return }
         WordApiContactPerformGate.cancelPendingPerform()
         model.wordSpectatorDialSheet = false
+    }
+}
+
+/// Carphone CALL handoff: live Phone keypad on stage (Card / Voice / …) with the same digits as Carphone.
+struct CarphoneHandoffStageDialLayer: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var dialAppearanceToken = 0
+
+    private var dialBackground: Color {
+        CarphoneDialSystemAppearance.userInterfaceStyle == .dark ? Color.black : Color(uiColor: .systemBackground)
+    }
+
+    var body: some View {
+        ZStack {
+            dialBackground.ignoresSafeArea()
+            WordApiCarphoneDialHost(
+                phoneDigits: Binding(
+                    get: { model.carphoneHandoffDialDigits },
+                    set: { model.carphoneHandoffDialDigits = $0 }
+                ),
+                onCall: { },
+                onTwoFingerSwipeDown: { model.disarm() }
+            )
+            .ignoresSafeArea()
+        }
+        .preferredColorScheme(CarphoneDialSystemAppearance.preferredColorScheme)
+        .id(dialAppearanceToken)
+        .onAppear { CarphoneDialSystemAppearance.startObservingSystemStyle() }
+        .onReceive(NotificationCenter.default.publisher(for: .carphoneDialSystemStyleDidChange)) { _ in
+            dialAppearanceToken += 1
+        }
     }
 }
 

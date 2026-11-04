@@ -58,6 +58,7 @@ struct ReadinessStatusBar: View {
     @AppStorage(NotesSettings.Key.idleSearchEnabled) private var idleSearchEnabled = true
     @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
     @AppStorage(NotesSettings.Key.searchOnReturn) private var searchOnReturn = true
+    @AppStorage(StageImageStore.revisionDefaultsKey) private var stageScreenshotRevision = ""
 
     private enum Tone { case idle, working, ready, warning }
 
@@ -140,6 +141,12 @@ struct ReadinessStatusBar: View {
             case .connecting:
                 return Status(tone: .working, icon: "antenna.radiowaves.left.and.right", text: "Connecting to \(name)…")
             case .watching:
+                if api.waitingForElipsSong1Change {
+                    if let now = api.baseline ?? api.lastReading, now.hasSong {
+                        return Status(tone: .working, icon: "info.circle", text: "Elips start “\(WordApiInputPanel.truncated(now.label, max: 28))” · next change is song 1")
+                    }
+                    return Status(tone: .working, icon: "dot.radiowaves.left.and.right", text: "Elips · waiting for song 1’s search…")
+                }
                 return Status(tone: .working, icon: "dot.radiowaves.left.and.right", text: "Waiting for the spectator’s search…")
             case .loading(let label):
                 return Status(tone: .working, icon: "arrow.down.circle", text: "Found “\(label)” · loading…")
@@ -155,10 +162,22 @@ struct ReadinessStatusBar: View {
                 return Status(tone: .ready, icon: "link.circle.fill", text: "Ready · \(name) picks the song on Perform")
             }
         case .notes:
+            if OpenAIPerformRequirements.requiresKeyBeforePerform, !VoiceSettings.isConfigured {
+                return Status(
+                    tone: .warning,
+                    icon: "key.fill",
+                    text: "Notes — add OpenAI key for Interpret note, or turn it off"
+                )
+            }
             let when = [idleSearchEnabled ? "after \(NotesInputControls.format(idleDelay)) idle" : nil,
                         searchOnReturn ? "on Return" : nil].compactMap { $0 }
             let detail = when.isEmpty ? "searches on ✓ or call" : "searches \(when.joined(separator: " / "))"
             return Status(tone: .ready, icon: "note.text", text: "Ready · Notes \(detail)")
+        case .spotlight:
+            if SpotlightSettings.contactIdentifier == nil {
+                return Status(tone: .warning, icon: "person.crop.circle.badge.questionmark", text: "Spotlight — choose your contact")
+            }
+            return Status(tone: .ready, icon: "magnifyingglass", text: "Ready · swipe down on the home screen to open Spotlight")
         case .card:
             guard CardSettings.cameraAuthorized else {
                 return Status(tone: .warning, icon: "camera.fill", text: "Camera — allow access in Settings")
@@ -276,6 +295,7 @@ struct ReadinessStatusBar: View {
             Capsule().strokeBorder(Color.white.opacity(current.tone == .idle ? 0.10 : 0.18), lineWidth: 0.5)
         }
         .animation(.easeInOut(duration: 0.2), value: current.text)
+        .id(stageScreenshotRevision)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Status: \(current.text)")
     }

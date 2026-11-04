@@ -229,7 +229,7 @@ struct PerformStageStatusDots: View {
         case .aiVoice: return voice.state == .locked
         case .api: return api.state == .locked && api.performStageReadyDot
         case .card: return card.state == .locked
-        case .notes, .manual: return true
+        case .notes, .spotlight, .manual: return true
         }
     }
 

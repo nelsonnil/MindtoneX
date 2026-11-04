@@ -29,6 +29,20 @@ final class ApiSongReadingTests: XCTestCase {
         XCTAssertTrue(next.shouldLockPerformSong(comparedTo: baseline, previousPoll: previous))
     }
 
+    func testElipsPeekFieldParse() throws {
+        let json = #"{"word":"NERVOUS","count":2}"#.data(using: .utf8)!
+        guard let object = ApiJSON.object(from: json) else {
+            XCTFail("expected JSON object")
+            return
+        }
+        let field = "word"
+        guard let value = ApiJSON.value(in: object, path: field) else {
+            XCTFail("missing field")
+            return
+        }
+        XCTAssertEqual(ApiJSON.text(value), "NERVOUS")
+    }
+
     func testHandoffSnapshotMatchesSameArabicTitle() {
         let seed = ApiReading(count: 5, receiveCount: 9, title: "Eish Besho'ak", artist: "Fairuz", raw: "a")
         let poll = ApiReading(count: 5, receiveCount: 9, title: "Eish Besho'ak", artist: "Fairuz", raw: "a")

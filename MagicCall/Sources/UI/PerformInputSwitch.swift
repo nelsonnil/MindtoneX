@@ -5,7 +5,7 @@ import UIKit
 /// Bottom-left on the stage; the same pad sits just above the keyboard on Notes.
 enum PerformInputSwitchLayout {
     /// Bottom of the pad is the closest target for the thumb.
-    static let modes: [VoiceSettings.InputMode] = [.notes, .card, .api, .aiVoice]
+    static let modes: [VoiceSettings.InputMode] = [.notes, .spotlight, .card, .api, .aiVoice, .manual]
     /// Finger must travel this far after the hold before a release commits.
     static let commitTravel: CGFloat = 28
 
@@ -13,7 +13,7 @@ enum PerformInputSwitchLayout {
         let width = min(300, max(230, size.width * 0.70))
         let visibleBottom = min(size.height, keyboardTop ?? size.height)
         let available = visibleBottom - 12
-        let height = min(380, max(0, available))
+        let height = min(460, max(0, available))
         return CGRect(x: 0, y: visibleBottom - height, width: width, height: height)
     }
 

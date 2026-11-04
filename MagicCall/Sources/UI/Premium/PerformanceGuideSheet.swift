@@ -126,6 +126,7 @@ struct PerformanceGuideSheet: View {
                 lines: PerformInstructionsCopy.songInputVoice(lockSeconds: Int(VoiceSettings.lockDelay))
             )
             InstructionSubsection(title: "Notes", lines: PerformInstructionsCopy.songInputNotes)
+            InstructionSubsection(title: "Spotlight (contact search)", lines: PerformInstructionsCopy.songInputSpotlight)
             InstructionSubsection(title: "API", lines: PerformInstructionsCopy.songInputAPI)
 
             InstructionSubsection(

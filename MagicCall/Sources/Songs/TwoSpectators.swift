@@ -254,8 +254,13 @@ enum SpectatorCountBlock {
             return "Voice: song 1 locks as usual, then the mic keeps listening until song 2 locks. \(after)"
         case .notes:
             return "Notes: line 1 = song 1, line 2 = song 2 (one song per line). \(after)"
+        case .spotlight:
+            return "Spotlight: type song 1, a double space, then song 2 (e.g. “rihanna  michael jackson”). \(after)"
         case .api:
-            return "API: the first new search is song 1, the next new search is song 2; polling stops after song 2. \(after)"
+            if ApiSettings.provider == .elips {
+                return "Elips · 2 songs: the song already on the URL when Perform starts is not song 1. The next change is song 1; the change after that is song 2. \(after)"
+            }
+            return "API: the song already on the endpoint when Perform starts is song 1; the next new search is song 2. Polling stops after song 2. \(after)"
         }
     }
 }

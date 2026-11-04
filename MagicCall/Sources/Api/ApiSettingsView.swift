@@ -5,18 +5,34 @@ struct ApiSettingsView: View {
     @AppStorage(ApiSettings.Key.provider) private var providerRaw = ApiSettings.Provider.inject.rawValue
     @AppStorage(ApiSettings.Key.injectID) private var injectID = ""
     @AppStorage(ApiSettings.Key.elipsURL) private var elipsURL = ""
+    @AppStorage(ApiSettings.Key.elipsPeekEnabled) private var elipsPeekEnabled = false
+    @AppStorage(ApiSettings.Key.elipsPeekURL) private var elipsPeekURL = ""
+    @AppStorage(ApiSettings.Key.elipsPeekField) private var elipsPeekField = ApiSettings.defaultElipsPeekField
+    @AppStorage(ApiSettings.Key.elipsPeekHeaderName) private var elipsPeekHeaderName = ""
     @AppStorage(ApiSettings.Key.customURL) private var customURL = ""
     @AppStorage(ApiSettings.Key.customField) private var customField = ApiSettings.defaultCustomField
     @AppStorage(ApiSettings.Key.customHeaderName) private var customHeaderName = ""
     @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.manual.rawValue
     @ObservedObject private var session = ApiSongSession.shared
+    @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
+    @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
 
     @State private var headerDraft = ""
     @State private var savedHeaderHint: String?
+    @State private var elipsPeekExpanded = false
+    @State private var elipsPeekHeaderDraft = ""
+    @State private var elipsPeekHeaderHint: String?
+    @State private var elipsPeekTesting = false
+    @State private var elipsPeekTestResult: (ok: Bool, text: String)?
     @State private var testing = false
     @State private var testResult: (ok: Bool, text: String)?
 
     private var provider: ApiSettings.Provider { ApiSettings.Provider(rawValue: providerRaw) ?? .inject }
+    private var twoSongsOnCall: Bool { interferenceEnabled && interferenceSongCount == 2 }
+    private var songPerformTimingNote: String {
+        guard provider == .elips, twoSongsOnCall else { return SpectatorApiPerformTiming.settingsNote }
+        return SpectatorApiPerformTiming.elipsTwoSongsNote
+    }
 
     var body: some View {
         ScrollView {
@@ -34,7 +50,7 @@ struct ApiSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(OracleTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        SpectatorApiPerformTimingNote()
+                        SpectatorApiPerformTimingNote(note: songPerformTimingNote)
                     }
                 }
 
@@ -104,12 +120,25 @@ struct ApiSettingsView: View {
         .navigationTitle("API connection")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
-        .onAppear(perform: refreshHeader)
+        .onAppear {
+            refreshHeader()
+            refreshElipsPeekHeader()
+        }
         .onChange(of: providerRaw) { _, newValue in
             testResult = nil
+            elipsPeekTestResult = nil
             if session.isActive { session.stopTest() }
             dlog("[API] integration → \(ApiSettings.Provider(rawValue: newValue)?.title ?? newValue)")
         }
+        .onChange(of: elipsPeekEnabled) { _, _ in syncElipsPeekPolling() }
+        .onChange(of: elipsPeekURL) { _, _ in syncElipsPeekPolling() }
+        .onChange(of: elipsPeekField) { _, _ in syncElipsPeekPolling() }
+    }
+
+    private func syncElipsPeekPolling() {
+        elipsPeekTestResult = nil
+        guard session.isActive else { return }
+        ApiElipsPeekSession.shared.startIfNeeded(context: session.context)
     }
 
     private var introBlock: some View {
@@ -145,12 +174,107 @@ struct ApiSettingsView: View {
     private var elipsCard: some View {
         oracleCard {
             VStack(alignment: .leading, spacing: 10) {
-                OracleEyebrow(text: "Elips API URL")
+                OracleEyebrow(text: "Elips API URL (song)")
                 oracleField("https://pag.gg/…/api/…", text: $elipsURL)
                     .keyboardType(.URL)
-                Text("Copy the full API URL from the Elips app.")
+                Text("Copy the full **song** API URL from the Elips app. This endpoint drives the locked song during Perform.")
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if twoSongsOnCall {
+                    Text("**2 songs:** the song already on this URL when you enter Perform is only the starting point — it is not song 1. The next change is song 1; the change after that is song 2.")
+                        .font(.caption2)
+                        .foregroundStyle(OracleTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Divider().opacity(0.35)
+
+                DisclosureGroup(isExpanded: $elipsPeekExpanded) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle("Use peek text API", isOn: $elipsPeekEnabled)
+                            .font(.subheadline)
+                            .tint(OracleTheme.gold)
+
+                        Text("Optional second endpoint. While you **hold** the stage in Perform, MindtoneX shows this JSON field in peek (only if enabled and configured).")
+                            .font(.caption2)
+                            .foregroundStyle(OracleTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        OracleEyebrow(text: "Peek Custom API URL")
+                        oracleField("https://example.com/api/word", text: $elipsPeekURL)
+                            .keyboardType(.URL)
+
+                        HStack {
+                            Text("JSON field")
+                                .font(.subheadline)
+                                .foregroundStyle(OracleTheme.textPrimary)
+                            Spacer()
+                            TextField(ApiSettings.defaultElipsPeekField, text: $elipsPeekField)
+                                .multilineTextAlignment(.trailing)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .foregroundStyle(OracleTheme.textPrimary)
+                        }
+
+                        OracleEyebrow(text: "Peek auth (optional)")
+                        oracleField("Header name, e.g. Authorization", text: $elipsPeekHeaderName)
+                        if let hint = elipsPeekHeaderHint {
+                            HStack {
+                                Label("Value saved (\(hint))", systemImage: "checkmark.seal.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(OracleTheme.gold)
+                                Spacer()
+                                Button("Remove", role: .destructive) {
+                                    ApiSettings.saveElipsPeekHeaderValue(nil)
+                                    refreshElipsPeekHeader()
+                                }
+                                .font(.caption)
+                            }
+                        }
+                        SecureField(elipsPeekHeaderHint == nil ? "Header value" : "Replace value", text: $elipsPeekHeaderDraft)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .font(.subheadline)
+                            .padding(10)
+                            .background(Color.white.opacity(0.06))
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        Button("Save peek header value") {
+                            ApiSettings.saveElipsPeekHeaderValue(elipsPeekHeaderDraft)
+                            elipsPeekHeaderDraft = ""
+                            refreshElipsPeekHeader()
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(OracleTheme.gold)
+                        .disabled(elipsPeekHeaderDraft.trimmingCharacters(in: .whitespaces).isEmpty)
+
+                        Button {
+                            Task { await runElipsPeekTest() }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "eye")
+                                Text(elipsPeekTesting ? "Testing peek…" : "Test peek API")
+                                    .font(.caption.weight(.semibold))
+                                Spacer()
+                                if elipsPeekTesting { ProgressView().tint(OracleTheme.gold) }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(elipsPeekTesting || !ApiSettings.elipsPeekIsActive)
+
+                        if let elipsPeekTestResult {
+                            Text(elipsPeekTestResult.text)
+                                .font(.caption2)
+                                .foregroundStyle(elipsPeekTestResult.ok ? OracleTheme.gold : OracleTheme.coral)
+                                .textSelection(.enabled)
+                        }
+                    }
+                    .padding(.top, 6)
+                } label: {
+                    Label("Peek text · Custom API", systemImage: "eye")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(OracleTheme.textPrimary)
+                }
             }
         }
     }
@@ -240,6 +364,25 @@ struct ApiSettingsView: View {
 
     private func refreshHeader() {
         savedHeaderHint = ApiSettings.customHeaderValue.map { "…" + String($0.suffix(4)) }
+    }
+
+    private func refreshElipsPeekHeader() {
+        elipsPeekHeaderHint = ApiSettings.elipsPeekHeaderValue.map { "…" + String($0.suffix(4)) }
+    }
+
+    private func runElipsPeekTest() async {
+        elipsPeekTesting = true
+        defer { elipsPeekTesting = false }
+        do {
+            let text = try await ApiSongClient.fetchElipsPeekText()
+            if text.isEmpty {
+                elipsPeekTestResult = (true, "Connected · field is empty right now")
+            } else {
+                elipsPeekTestResult = (true, "Connected · peek text “\(text)”")
+            }
+        } catch {
+            elipsPeekTestResult = (false, "Failed: \(error.localizedDescription)")
+        }
     }
 
     private func runTest() async {

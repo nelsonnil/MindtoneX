@@ -8,6 +8,37 @@ enum CardSettings {
         static let maxScanRetries = "card.maxScanRetries"
         static let practiceTipsSeen = "card.practiceTipsSeen"
         static let cameraFacing = "card.cameraFacing"
+        static let readingEngine = "card.readingEngine"
+    }
+
+    enum ReadingEngine: String, CaseIterable, Identifiable {
+        case automatic
+        case openAI
+        case onDevice
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .automatic: return "Automatic"
+            case .openAI: return "OpenAI"
+            case .onDevice: return "On iPhone"
+            }
+        }
+
+        var detail: String {
+            switch self {
+            case .automatic:
+                return "Uses on-device OCR first for one song; OpenAI handles uncertain or two-song cards."
+            case .openAI:
+                return "Best for difficult handwriting and flexible layouts. Requires your API key."
+            case .onDevice:
+                return "Private and free. Uses Apple Vision plus iTunes/Deezer matching."
+            }
+        }
+
+        var allowsOpenAI: Bool { self != .onDevice }
+        var requiresOpenAI: Bool { self == .openAI }
     }
 
     enum CameraFacing: String, CaseIterable, Identifiable {
@@ -32,6 +63,7 @@ enum CardSettings {
     }
 
     static let defaultCameraFacing = CameraFacing.back
+    static let defaultReadingEngine = ReadingEngine.automatic
 
     /// On-device Vision OCR: device locale first, then English + Spanish (song titles are often EN/ES).
     static var visionRecognitionLanguages: [String] {
@@ -62,12 +94,18 @@ enum CardSettings {
             Key.burstSeconds: defaultBurstSeconds,
             Key.maxScanRetries: defaultMaxScanRetries,
             Key.cameraFacing: defaultCameraFacing.rawValue,
+            Key.readingEngine: defaultReadingEngine.rawValue,
         ])
     }
 
     static var cameraFacing: CameraFacing {
         get { CameraFacing(rawValue: d.string(forKey: Key.cameraFacing) ?? "") ?? defaultCameraFacing }
         set { d.set(newValue.rawValue, forKey: Key.cameraFacing) }
+    }
+
+    static var readingEngine: ReadingEngine {
+        get { ReadingEngine(rawValue: d.string(forKey: Key.readingEngine) ?? "") ?? defaultReadingEngine }
+        set { d.set(newValue.rawValue, forKey: Key.readingEngine) }
     }
 
     static var burstSeconds: Double {
@@ -96,6 +134,6 @@ enum CardSettings {
     }
 
     static func summary() -> String {
-        "burst=\(burstSeconds)s retries=\(maxScanRetries) facing=\(cameraFacing.rawValue) cam=\(cameraAuthorized ? "ok" : "denied")"
+        "engine=\(readingEngine.rawValue) burst=\(burstSeconds)s retries=\(maxScanRetries) facing=\(cameraFacing.rawValue) cam=\(cameraAuthorized ? "ok" : "denied")"
     }
 }

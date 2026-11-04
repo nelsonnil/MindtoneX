@@ -20,6 +20,7 @@ enum VoiceSettings {
         case notes
         case api
         case card
+        case spotlight
 
         var id: String { rawValue }
         var title: String {
@@ -29,6 +30,7 @@ enum VoiceSettings {
             case .notes: return "Notes"
             case .api: return "API"
             case .card: return "Camera"
+            case .spotlight: return "Spotlight"
             }
         }
 
@@ -39,8 +41,12 @@ enum VoiceSettings {
             case .notes: return "note.text"
             case .api: return "link"
             case .card: return "camera.fill"
+            case .spotlight: return "magnifyingglass"
             }
         }
+
+        /// Notes and Spotlight both type a song into `NotesSongSession`; only the Perform screen differs.
+        var usesNotesSession: Bool { self == .notes || self == .spotlight }
     }
 
     /// Speech engine (OpenAI only in UI; Apple on-device kept for legacy stored values).
@@ -86,7 +92,10 @@ enum VoiceSettings {
 
     static var inputMode: InputMode {
         let mode = InputMode(rawValue: d.string(forKey: Key.inputMode) ?? "") ?? .card
-        return mode == .manual ? .card : mode
+        if mode == .manual {
+            return CallerLabelStore.load().performArmed ? .manual : .card
+        }
+        return mode
     }
     static var engine: Engine {
         let raw = d.string(forKey: Key.engine) ?? ""

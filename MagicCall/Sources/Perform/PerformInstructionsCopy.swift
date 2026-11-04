@@ -18,14 +18,14 @@ enum PerformInstructionsCopy {
         "**Why:** MindtoneX keeps your **stage screenshot** and **in-app song playback** while the real call arrives. **Full Screen** takes over the phone, stops the show flow, and breaks **Interference ringtone** (front camera needs the app visible under the call UI).",
         "**Voicemail / ring time:** Turn **voicemail off** or set **more rings before pickup** (carrier settings, Phone → Voicemail, or your carrier’s app/code). If the call jumps to mailbox too fast, the audience may never hear the **in-app song** or **Interference** reveal — you need enough ring time while the banner is showing.",
         "**Keep the iPhone unlocked** with MindtoneX in **Perform** — do not switch apps or lock during the routine.",
-        "**Permissions (when you use the feature):** **Contacts** for Caller name / Album / Notes · **Microphone** for Voice · **Camera** for card OCR and Interference — grant in **Settings → MindtoneX** if iOS asks.",
+        "**Permissions (when you use the feature):** **Contacts** for Caller name / Album / Notes / Spotlight · **Microphone** for Voice · **Camera** for card OCR and Interference — grant in **Settings → MindtoneX** if iOS asks.",
     ]
 
     // MARK: - Core effect
 
     static let howTheTrickWorks: [String] = [
         "MindtoneX **does not replace the Phone app**. During **Perform**, your iPhone shows a **full-screen screenshot** of your Home (or Lock) screen while the app stays in the **foreground**.",
-        "You get the song ready using **Song input** (Voice, Camera, Notes, API, etc.). When a **real incoming call** arrives, the app **detects the call** and **plays that song** through the speaker at your **Playback volume** (set it high — many magicians use **100%**).",
+        "You get the song ready using **Song input** (Voice, Camera, Notes, Spotlight, API, etc.). When a **real incoming call** arrives, the app **detects the call** and **plays that song** through the speaker at your **Playback volume** (set it high — many magicians use **100%**).",
         "When the caller **hangs up**, playback **stops**. The screen stays on your screenshot until you exit Perform.",
         "**Why foreground + screenshot?** iOS only lets the app control audio reliably while MindtoneX is active and visible. The screenshot sells the idea that they are looking at a normal iPhone Home screen, not the app UI.",
         "**Song**, **Caller name**, and **Notes contact word** are **independent**. You can enable **one, two, or all three** for the same performance — each uses its own source (see below).",
@@ -41,7 +41,7 @@ enum PerformInstructionsCopy {
         "**OpenAI API key:** Same card — **one key** for **Song → Voice (AI)** and **Song → Camera** card vision (not two keys). Tap **Test** after pasting. Use the **info** icon for create-key and billing steps on platform.openai.com.",
         "**Incoming calls:** Set **Banner** on the iPhone (see **iPhone setup** above) — required for the show. **Silent mode** is your choice; the core effect is **in-app playback** when the call arrives, not changing the carrier ringtone unless you use the optional Share step on the **Song** tab.",
         "Do **not** lock the phone or switch apps during Perform — MindtoneX keeps the screen awake, but leaving the app stops the effect.",
-        "**Perform URL scheme:** Home → **Performance settings** → **Copy URL scheme** (`magiccall://start-perform`). Opening that link starts Perform like tapping the Perform button (Shortcuts, NFC, QR).",
+        "**Perform URL scheme:** Home → **Performance settings** → **Copy URL scheme** (`magiccall://start-perform`). Opening that link starts Perform like tapping the Perform button (Shortcuts, NFC, QR). Add songs: `magiccall://start-perform?song1=Title Artist&song2=Title Artist` — the app enters Perform, searches iTunes/Deezer, and preloads **song 1** (and **song 2** if Interference ringtone › **2 songs** is on). Caller name / Notes word inputs still run if enabled.",
     ]
 
     static func optionalRealRingtone(autoShareOn: Bool) -> [String] {
@@ -87,7 +87,9 @@ enum PerformInstructionsCopy {
         "**Camera:** two ALL CAPS title lines on one card — **top = song 1**, **bottom = song 2** — one **volume up** scan can read both.",
         "**Voice:** song 1 locks with the usual delay; the mic **keeps listening** until song 2 locks (same or another person).",
         "**Notes:** **line 1 = song 1**, **line 2 = song 2** (one title per line).",
-        "**API:** first **new** search after Perform starts → song 1; the **next new** search → song 2; polling stops after song 2 locks.",
+        "**Spotlight:** song 1, a **double space**, then song 2 in the search bar (e.g. `rihanna  michael jackson`).",
+        "**API (Inject / Custom):** the song already on the endpoint when Perform starts is **song 1** (or the first song that appears); the **next new** search is **song 2**. Polling stops after song 2 locks.",
+        "**Elips · 2 songs:** the song already on the Elips URL when you enter Perform is **not** song 1 — it is only what was already there. MindtoneX waits for a **change** (that is **song 1**), then another **change** (**song 2**).",
     ]
 
     static let interferenceRingtone: [String] = [
@@ -129,9 +131,20 @@ enum PerformInstructionsCopy {
         "**2 songs:** **line 1 = song 1**, **line 2 = song 2**. The incoming call plays song 1; **Interference ringtone** + second hand plays song 2.",
     ]
 
+    static let songInputSpotlight: [String] = [
+        "**Spotlight:** Perform shows your Home screen screenshot. **Swipe down with one finger** and a copy of the iOS Spotlight search opens with the real keyboard. Say you are looking for **your own contact** so they can call you.",
+        "Type the **song or artist**. Every key press shows one letter of **your contact’s name** in the search bar (e.g. `nelson suarez`), so the audience sees a normal contact search. Extra key presses after the last letter are still typed into the song, but nothing more appears.",
+        "Your contact appears small at the top (**Top Hit**). **Tap it** (or the blue arrow key) to open the real contact card with your number — **that tap is what searches the song**, exactly as typed. Nothing is searched while you type or if you close Spotlight.",
+        "Setup on the **Spotlight** card: **choose your contact**, optionally change the text shown in the search bar, pick the browser for Suggestions (Safari / Chrome / Google) and the **8 Siri Suggestions apps** — icons and Apple app names come from the App Store in your iPhone’s language.",
+        "Allow **Contacts** so the real card opens and your other contacts appear as matches while typing.",
+        "**2 songs:** type song 1, a **double space**, then song 2 — e.g. `rihanna  michael jackson`. Both are searched when you open your contact.",
+        "Tap an empty area to close Spotlight; close it before the **two-finger swipe down** that leaves Perform.",
+    ]
+
     static let songInputAPI: [String] = [
         "**API:** Spectator searches in Inject / Elips / your endpoint; MindtoneX polls every \(Int(ApiSettings.pollInterval)) s and locks when their search loads.",
-        "**2 songs:** first **new** search → song 1; **next new** search → song 2. Plain calls play song 1 only.",
+        "**2 songs (Inject / Custom):** the song on the API when Perform starts is song 1; the **next new** search is song 2. Plain calls play song 1 only.",
+        "**2 songs (Elips):** the song already in the URL is the starting point, **not** song 1. The **next change** is song 1; the **change after that** is song 2. The query MindtoneX makes as soon as Perform starts is only that starting point.",
         "Song API is **separate** from Caller name / Notes word URLs unless you reuse the same service on purpose.",
     ]
 

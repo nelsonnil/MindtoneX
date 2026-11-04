@@ -90,28 +90,67 @@ struct PerformanceCard: View {
         }
     }
 
-    @State private var copiedPerformURL = false
+    private enum PerformURLCopyKind: String {
+        case performOnly
+        case oneSong
+        case twoSongs
+    }
+
+    @State private var copiedPerformURLKind: PerformURLCopyKind?
 
     private var performURLSchemeSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Perform URL scheme")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(OracleTheme.textPrimary)
-            Text("Open this link from Shortcuts, NFC, or a QR code to enter **Perform** (same as tapping Perform on Home).")
+            Text("Open from Shortcuts, NFC, or a QR code. **`song1`** / **`song2`** search the catalog and preload audio before the call.")
                 .font(.caption)
                 .foregroundStyle(OracleTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(PerformURLScheme.urlString)
-                .font(.caption.monospaced())
+
+            performURLCopyRow(
+                kind: .performOnly,
+                title: "Perform only",
+                detail: "Same as tapping Perform on Home.",
+                url: PerformURLScheme.examplePerformOnlyURL
+            )
+            performURLCopyRow(
+                kind: .oneSong,
+                title: "One song (example)",
+                detail: "Preloads one track before the call.",
+                url: PerformURLScheme.exampleOneSongURL
+            )
+            performURLCopyRow(
+                kind: .twoSongs,
+                title: "Two songs (example)",
+                detail: "Preloads song 1 and song 2 (Interference › 2 songs).",
+                url: PerformURLScheme.exampleTwoSongsURL
+            )
+        }
+    }
+
+    private func performURLCopyRow(kind: PerformURLCopyKind, title: String, detail: String, url: String) -> some View {
+        let copied = copiedPerformURLKind == kind
+        return VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(OracleTheme.textPrimary)
+            Text(detail)
+                .font(.caption2)
+                .foregroundStyle(OracleTheme.textSecondary)
+            Text(url)
+                .font(.caption2.monospaced())
                 .foregroundStyle(OracleTheme.gold.opacity(0.95))
                 .textSelection(.enabled)
             Button {
-                UIPasteboard.general.string = PerformURLScheme.urlString
-                copiedPerformURL = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedPerformURL = false }
+                UIPasteboard.general.string = url
+                copiedPerformURLKind = kind
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    if copiedPerformURLKind == kind { copiedPerformURLKind = nil }
+                }
             } label: {
-                Label(copiedPerformURL ? "Copied" : "Copy URL scheme", systemImage: copiedPerformURL ? "checkmark" : "doc.on.doc")
-                    .font(.subheadline.weight(.semibold))
+                Label(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
+                    .font(.caption.weight(.semibold))
             }
             .buttonStyle(.bordered)
             .tint(OracleTheme.gold)

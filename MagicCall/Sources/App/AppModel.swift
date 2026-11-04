@@ -31,6 +31,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var isAudible = false
     @Published private(set) var timings = ""
     @Published var showDebugOverlay = false
+    /// Mid-perform Manual input: quick song search overlay after the input rail commits to Manual.
+    @Published var performManualQuickEntryPresented = false
     @Published private(set) var probeResults: [PrivateProbes.Result] = []
 
     let previews = PreviewService()
@@ -48,6 +50,36 @@ final class AppModel: ObservableObject {
     private var postSpectatorCallVolumeHeadroomTask: Task<Void, Never>?
     /// Ignore non-user volume **up** KVO briefly after Phone returns from Unknown outgoing call.
     private var postOutgoingSpectatorSuppressVolumeUpUntil: CFTimeInterval = 0
+
+    /// Deep link `magiccall://start-perform?song1=…&song2=…` — consumed when Perform arms.
+    private(set) var pendingPerformURLSongQueries: [String]?
+    private(set) var isLoadingPerformURLSongs = false
+    /// Song(s) loaded from URL; skip Voice/Camera/API song inputs for this Perform.
+    private(set) var performSongsPreloadedFromURL = false
+
+    func setPendingPerformURLSongQueries(_ queries: [String]?) {
+        pendingPerformURLSongQueries = queries
+    }
+
+    func takePendingPerformURLSongQueries() -> [String]? {
+        defer { pendingPerformURLSongQueries = nil }
+        guard let pendingPerformURLSongQueries, !pendingPerformURLSongQueries.isEmpty else { return nil }
+        return pendingPerformURLSongQueries
+    }
+
+    func resetPerformURLSongState() {
+        pendingPerformURLSongQueries = nil
+        isLoadingPerformURLSongs = false
+        performSongsPreloadedFromURL = false
+    }
+
+    func setPerformURLSongLoading(_ loading: Bool) {
+        isLoadingPerformURLSongs = loading
+    }
+
+    func markPerformSongsPreloadedFromURL() {
+        performSongsPreloadedFromURL = true
+    }
     private var postSpectatorCallScanHeadroomPending = false
     private var incomingCallID: UUID?
     private var incomingDetectedAt: CFTimeInterval = 0
@@ -83,6 +115,10 @@ final class AppModel: ObservableObject {
 
     @Published var wordSpectatorDialSheet = false
     @Published var wordKnownContactPicker = false
+    /// Digits copied from Carphone CALL (App Group handoff); editable on the live dial cover.
+    @Published var carphoneHandoffDialDigits = ""
+    /// Full-screen Carphone dial on stage (non-Unknown Perform inputs).
+    @Published var carphoneHandoffLiveDialVisible = false
 
     /// Stage, armed perform, Unknown dial, or Known contact picker — no OpenAI/status hints on screen.
     var isPerformTrickUIActive: Bool {
@@ -109,6 +145,7 @@ final class AppModel: ObservableObject {
         #endif
         Prefs.registerDefaults()
         VoiceSettings.registerDefaults()
+        NotesSettings.registerDefaults()
         CardSettings.registerDefaults()
         #if DEBUG
         DebugLog.shared.logDeviceHeader()
@@ -449,11 +486,7 @@ final class AppModel: ObservableObject {
             cameraVolumeScanReadyAt = CACurrentMediaTime() + 0.55
             dlog("[CARD] perform arm · media vol=\(String(format: "%.2f", SystemVolume.shared.outputVolume)) · scan unlocks in ~0.5s")
         } else {
-            applyFakePerformMediaVolumeBoost(reason: "arm")
-        }
-        if Prefs.forceMediaVolume {
-            ignoreVolumeChangesUntil = max(ignoreVolumeChangesUntil, CACurrentMediaTime() + 1.2)
-            SystemVolume.shared.set(Float(Prefs.mediaVolumeTarget), label: "stage target", sliderRetries: 5)
+            reinforcePerformOutputVolume(reason: "arm")
         }
         if Prefs.hotStandby { audio.startStandby() }
         calls.reassertDelegate()
@@ -501,6 +534,7 @@ final class AppModel: ObservableObject {
         voicePerformTask?.cancel()
         voicePerformTask = nil
         showDebugOverlay = false
+        performManualQuickEntryPresented = false
         performed = false
         hadCallWhileArmed = false
         isAudible = false
@@ -524,7 +558,13 @@ final class AppModel: ObservableObject {
         AlbumArtContactService.performEnded(reason: "disarm")
         AlbumArtContactService.restoreContactsAfterPerform(reason: "Perform disarm")
         SpectatorWordContactService.restoreContactsAfterPerform(reason: "Perform disarm")
+        clearCarphoneHandoffDialCover()
         dlog("══ DESARMADO ══")
+    }
+
+    func clearCarphoneHandoffDialCover() {
+        carphoneHandoffLiveDialVisible = false
+        carphoneHandoffDialDigits = ""
     }
 
     /// Mid-perform input change. Same fresh session as leaving, picking another input, and pressing Perform,
@@ -559,6 +599,7 @@ final class AppModel: ObservableObject {
 
         VoiceSongSession.shared.reset(reason: "input switch")
         NotesSongSession.shared.reset(reason: "input switch")
+        SpotlightSession.shared.reset()
         ApiSongSession.shared.reset(reason: "input switch")
         CardSongSession.shared.reset(reason: "input switch")
         WordApiSession.shared.reset(reason: "input switch")
@@ -576,13 +617,13 @@ final class AppModel: ObservableObject {
         switch mode {
         case .aiVoice:
             VoiceAudioSession.recordCategoryActive = true
-            applyFakePerformMediaVolumeBoost(reason: "input switch")
+            reinforcePerformOutputVolume(reason: "input switch")
             scheduleVoicePerformStart()
-        case .notes:
-            applyFakePerformMediaVolumeBoost(reason: "input switch")
+        case .notes, .spotlight:
+            reinforcePerformOutputVolume(reason: "input switch")
             NotesSongSession.shared.start(context: .perform)
         case .api:
-            applyFakePerformMediaVolumeBoost(reason: "input switch")
+            reinforcePerformOutputVolume(reason: "input switch")
             ApiSongSession.shared.start(context: .perform)
         case .card:
             cameraVolumeScanReadyAt = CACurrentMediaTime() + 0.55
@@ -590,7 +631,7 @@ final class AppModel: ObservableObject {
             primeCardVolumeScanHeadroom(reason: "input switch", entry: true)
             dlog("[CARD] input switch · camera idle until volume press")
         case .manual:
-            break
+            performManualQuickEntryPresented = true
         }
 
         startWordApiIfNeeded(context: .perform)
@@ -609,9 +650,13 @@ final class AppModel: ObservableObject {
             return ApiSettings.isConfigured
         case .card:
             return CardSettings.cameraAuthorized && VoiceSettings.isConfigured
-        case .manual:
-            return false
+        case .manual, .spotlight:
+            return true
         }
+    }
+
+    func dismissPerformManualQuickEntry() {
+        performManualQuickEntryPresented = false
     }
 
     func notePerformDisplayTrack() {
@@ -791,6 +836,7 @@ final class AppModel: ObservableObject {
         dlog("[TRIGGER] ▶︎ [\(source)] play=\(ok)\(sinceCall) · \(audio.snapshot())")
         if !ok { schedulePlayRetries(origin: source) }
         scheduleHealthChecks(label: source)
+        schedulePerformanceLoudnessRetries(origin: source)
     }
 
     /// Disparo automático (CXCall, interrupción, ruta, sondeo…).
@@ -902,6 +948,7 @@ final class AppModel: ObservableObject {
         isAudible = true
         dlog("[TRIGGER] ▶︎ [\(source)] interference ringtone · \(interferenceShow.snapshot())")
         scheduleHealthChecks(label: source)
+        schedulePerformanceLoudnessRetries(origin: source)
         return true
     }
 
@@ -917,8 +964,22 @@ final class AppModel: ObservableObject {
         for delay in [0.3, 1.0, 2.5, 5.0, 9.0] {
             onMain(after: delay) { [weak self] in
                 guard let self, self.isArmed else { return }
+                if self.isAudible, self.hasLikelyIncomingCallSignal() || self.callSignalActive {
+                    self.reinforcePerformOutputVolume(reason: "health+\(delay)s[\(label)]")
+                }
                 let interference = self.interferenceShow.isActive ? " · interference \(self.interferenceShow.snapshot())" : ""
                 dlog("   chequeo +\(delay)s [\(label)] \(self.audio.snapshot())\(interference)")
+            }
+        }
+    }
+
+    /// MPVolumeView applies volume asynchronously; retry boosts while the call is ringing and audio is active.
+    private func schedulePerformanceLoudnessRetries(origin: String) {
+        for delay in [0.18, 0.45, 1.0] {
+            onMain(after: delay) { [weak self] in
+                guard let self, self.isArmed, self.isAudible else { return }
+                guard self.hasLikelyIncomingCallSignal() || self.callSignalActive || origin.contains("toque") else { return }
+                self.reinforcePerformOutputVolume(reason: "\(origin).loudness+\(delay)s")
             }
         }
     }
@@ -1478,29 +1539,38 @@ final class AppModel: ObservableObject {
             primeCardVolumeScanHeadroom(reason: "songReady")
             return
         }
-        applyFakePerformMediaVolumeBoost(reason: "songReady")
+        reinforcePerformOutputVolume(reason: "songReady")
     }
 
     /// Fake Ringtone: best-effort **device** media volume to 100 % via hidden `MPVolumeView` (app gain stays on **Playback volume**).
     func applyFakePerformMediaVolumeBoost(reason: String) {
-        guard Prefs.boostMediaVolumeOnFakePerform else { return }
-        ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
-        let before = SystemVolume.shared.outputVolume
-        SystemVolume.shared.captureAndBoostToMaximum(sliderRetries: 12)
-        dlog("[VOLUME] Fake Perform (\(reason)) device→max before=\(String(format: "%.2f", before)) attached=\(SystemVolume.shared.isAttached)")
+        reinforcePerformOutputVolume(reason: reason)
     }
 
-    /// Same volume path as Perform `trigger`: **Playback volume** slider + optional system boost (interference test lab and ringtone).
+    /// Same volume path as Perform `trigger`: **Playback volume** slider + system media boost.
     func applyPerformancePlaybackVolume(reason: String) {
-        applySystemVolumeBoostForTrigger()
-        applyFakePerformMediaVolumeBoost(reason: reason)
+        reinforcePerformOutputVolume(reason: reason)
     }
 
-    /// Al disparar (llamada o toque manual): sube el volumen **del dispositivo** al máximo; la ganancia del clip sigue en **Playback volume**.
-    private func applySystemVolumeBoostForTrigger() {
-        guard Prefs.boostSystemVolumeOnTrigger else { return }
-        ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
-        SystemVolume.shared.captureAndBoostToMaximum(sliderRetries: 12)
+    /// Best-effort loud Perform: built-in speaker, device media at max, clip at **Playback volume**.
+    func reinforcePerformOutputVolume(reason: String) {
+        _ = RingtoneAudioEngine.applyBuiltInSpeakerOverride(reason: reason)
+        let needsBoost = !reason.contains("health") || SystemVolume.shared.isBelowMediaMaximum()
+        if needsBoost {
+            ignoreVolumeChangesUntil = CACurrentMediaTime() + 1.2
+            SystemVolume.shared.captureAndBoostToMaximum(sliderRetries: 16)
+            let vol = SystemVolume.shared.outputVolume
+            dlog("[VOLUME] reinforce (\(reason)) media=\(String(format: "%.2f", vol)) attached=\(SystemVolume.shared.isAttached) playback=\(Int(Prefs.fakePlaybackVolume * 100))%")
+        }
+        refreshPerformClipGainIfAudible(reason: reason)
+    }
+
+    /// Re-applies app clip gain after iOS or MPVolumeView changes (fake ringtone path only).
+    private func refreshPerformClipGainIfAudible(reason: String) {
+        guard isAudible, !interferenceShow.isActive, audio.isAudible, let player = audio.player else { return }
+        let level = Float(Prefs.fakePlaybackVolume)
+        player.volume = level
+        dlog("[VOLUME] clip gain \(String(format: "%.2f", level)) (\(reason))")
     }
 
 }

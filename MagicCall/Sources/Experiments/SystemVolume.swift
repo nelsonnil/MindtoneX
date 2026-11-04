@@ -51,6 +51,11 @@ final class SystemVolume {
     var isAtMediaVolumeCeiling: Bool { outputVolume >= Self.volumeCeilingThreshold }
     var isAtMediaVolumeFloor: Bool { outputVolume <= Self.volumeFloorThreshold }
 
+    /// True when programmatic boost should run again (Perform health checks / delayed retries).
+    func isBelowMediaMaximum(threshold: Float = 0.92) -> Bool {
+        outputVolume < threshold
+    }
+
     /// After a card scan trigger, restore a level that still leaves headroom if the user was at 100 %.
     func levelForCardScanVolumeRevert(prePress: Float) -> Float {
         if prePress >= Self.volumeCeilingThreshold { return Self.cardScanHeadroomLevel }

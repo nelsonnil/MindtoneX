@@ -47,6 +47,28 @@ enum SongSearchQueries {
         return Array(out.prefix(4))
     }
 
+    /// Spectator-typed Notes line: title, artist, both, or either — no OpenAI.
+    static func notesLineVariants(from raw: String) -> [String] {
+        let cleaned = CardTextMapper.clean(raw)
+        guard cleaned.count >= 2 else { return [] }
+        var seen = Set<String>()
+        var merged: [String] = []
+        func appendUnique(_ list: [String]) {
+            for q in list {
+                let key = PreviewService.normalize(q)
+                guard key.count >= 2, seen.insert(key).inserted else { continue }
+                merged.append(q)
+            }
+        }
+        appendUnique(variants(fromRawQuery: cleaned))
+        for pair in parsedTitleArtistPairs(from: cleaned) {
+            appendUnique(variants(title: pair.title, artist: pair.artist, rawQuery: cleaned))
+            appendUnique(retryVariants(title: pair.title, artist: pair.artist))
+        }
+        appendUnique(typoRelaxedQueries(from: cleaned))
+        return merged
+    }
+
     /// Raw utterance or note line with no structured title/artist.
     static func variants(fromRawQuery raw: String) -> [String] {
         let cleaned = CardTextMapper.clean(raw)
@@ -144,6 +166,66 @@ enum SongSearchQueries {
     private static let leadingArticles: Set<String> = [
         "la", "el", "los", "las", "le", "les", "the", "a", "an", "un", "una", "uno",
     ]
+
+    /// Splits common typed patterns ("Artist - Title", "Title by Artist", "Title de Artist").
+    private static func parsedTitleArtistPairs(from cleaned: String) -> [(title: String, artist: String)] {
+        var pairs: [(String, String)] = []
+        func add(_ title: String, _ artist: String) {
+            let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let a = artist.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard t.count >= 2, a.count >= 2 else { return }
+            pairs.append((t, a))
+        }
+        let dashSeparators = [" - ", " – ", " — ", " / "]
+        for sep in dashSeparators {
+            guard let range = cleaned.range(of: sep) else { continue }
+            let left = String(cleaned[..<range.lowerBound])
+            let right = String(cleaned[range.upperBound...])
+            add(left, right)
+            add(right, left)
+        }
+        let titleFirstSeparators = [" by ", " de ", " por ", " from "]
+        for sep in titleFirstSeparators {
+            guard let range = cleaned.range(of: sep, options: [.caseInsensitive, .diacriticInsensitive]) else { continue }
+            let title = String(cleaned[..<range.lowerBound])
+            let artist = String(cleaned[range.upperBound...])
+            add(title, artist)
+        }
+        return pairs
+    }
+
+    /// Light typo variants (adjacent swap / one deletion) for short typed lines.
+    private static func typoRelaxedQueries(from cleaned: String) -> [String] {
+        let words = PreviewService.normalize(cleaned).split(separator: " ").map(String.init)
+        guard !words.isEmpty, words.count <= 6 else { return [] }
+        var out: [String] = []
+        func addPhrase(_ phrase: String) {
+            let q = CardTextMapper.clean(phrase)
+            guard q.count >= 2 else { return }
+            if !out.contains(where: { ApiJSON.sameText($0, q) }) { out.append(q) }
+        }
+        for (i, word) in words.enumerated() where word.count >= 4 {
+            let chars = Array(word)
+            if chars.count >= 2 {
+                for j in 0..<(chars.count - 1) {
+                    var swapped = chars
+                    swapped.swapAt(j, j + 1)
+                    var w = words
+                    w[i] = String(swapped)
+                    addPhrase(w.joined(separator: " "))
+                }
+            }
+            for j in 0..<chars.count {
+                var dropped = chars
+                dropped.remove(at: j)
+                guard dropped.count >= 3 else { continue }
+                var w = words
+                w[i] = String(dropped)
+                addPhrase(w.joined(separator: " "))
+            }
+        }
+        return Array(out.prefix(10))
+    }
 
     private static func simplifiedSongTitle(_ raw: String) -> String {
         var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)

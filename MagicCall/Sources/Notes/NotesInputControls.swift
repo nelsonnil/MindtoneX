@@ -6,7 +6,7 @@ struct NotesInputControls: View {
     @AppStorage(NotesSettings.Key.idleSearchEnabled) private var idleSearchEnabled = true
     @AppStorage(NotesSettings.Key.idleDelay) private var idleDelay = NotesSettings.defaultIdleDelay
     @AppStorage(NotesSettings.Key.searchOnReturn) private var searchOnReturn = true
-    @AppStorage(NotesSettings.Key.useAIPicker) private var useAIPicker = true
+    @AppStorage(NotesSettings.Key.useAIPicker) private var useAIPicker = false
     @AppStorage(SpectatorSettings.Key.count) private var interferenceSongCount = 1
     @AppStorage(InterferenceSettings.Key.enabled) private var interferenceEnabled = false
 
@@ -33,8 +33,7 @@ struct NotesInputControls: View {
                 toggleRow("Search on Return", isOn: $searchOnReturn)
                 rowDivider
                 toggleRow("Interpret note", detail: NotesSettings.aiPickerExplanation(isOn: useAIPicker),
-                          isOn: $useAIPicker)
-                    .disabled(VoiceSettings.apiKey == nil)
+                          isOn: interpretNoteBinding)
             }
             .background(Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -53,6 +52,17 @@ struct NotesInputControls: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: idleSearchEnabled)
+    }
+
+    /// Off without a key; on requires OpenAI (Performance settings).
+    private var interpretNoteBinding: Binding<Bool> {
+        Binding(
+            get: { useAIPicker },
+            set: { newValue in
+                if newValue, VoiceSettings.apiKey == nil { return }
+                useAIPicker = newValue
+            }
+        )
     }
 
     private var footer: String {

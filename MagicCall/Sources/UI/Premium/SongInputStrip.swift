@@ -46,6 +46,7 @@ struct SongInputStrip: View {
                         inputChip("Voice", icon: "mic.fill", mode: .aiVoice)
                         inputChip("Notes", icon: "note.text", mode: .notes)
                         inputChip("API", icon: "link", mode: .api)
+                        inputChip("Spotlight", icon: "magnifyingglass", mode: .spotlight)
                     }
 
                     Group {
@@ -54,6 +55,8 @@ struct SongInputStrip: View {
                             AiVoiceInputPanel()
                         case .notes:
                             NotesInputControls()
+                        case .spotlight:
+                            SpotlightInputControls()
                         case .api:
                             ApiInputPanel()
                         case .card, .manual:

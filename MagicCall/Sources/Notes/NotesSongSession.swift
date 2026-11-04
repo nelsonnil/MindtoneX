@@ -32,6 +32,8 @@ final class NotesSongSession: ObservableObject {
     var isActive: Bool { state != .idle }
     var isLocked: Bool { state == .locked }
 
+    /// Spotlight: the song is searched only when the performer opens the contact card, exactly as typed.
+    private var commitOnly = false
     private var generation = 0
     private var idleTimer: Timer?
     private var searchTask: Task<Void, Never>?
@@ -48,6 +50,7 @@ final class NotesSongSession: ObservableObject {
     func start(context: Context) {
         reset(reason: "start")
         self.context = context
+        commitOnly = VoiceSettings.inputMode == .spotlight
         state = .writing
         if SpectatorSettings.isTwo {
             SecondSpectatorSong.shared.beginWaiting(source: "Notes", context: context == .perform ? .perform : .test)
@@ -82,7 +85,7 @@ final class NotesSongSession: ObservableObject {
         text = newText
         idleTimer?.invalidate()
         idleTimer = nil
-        guard !isLocked, NotesSettings.idleSearchEnabled else { return }
+        guard !isLocked, !commitOnly, NotesSettings.idleSearchEnabled else { return }
         let delay = NotesSettings.idleDelay
         idleTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.submit(reason: "idle \(Self.seconds(delay))") }
@@ -169,7 +172,7 @@ final class NotesSongSession: ObservableObject {
                 guard let self, gen == self.generation, let note = self.pendingText else { break }
                 self.pendingText = nil
                 let t0 = CACurrentMediaTime()
-                let queries = await Self.resolveSearchQueries(from: note)
+                let queries = await Self.resolveSearchQueries(from: note, allowAI: !self.commitOnly)
                 guard gen == self.generation else { break }
                 guard !queries.isEmpty else {
                     dlog("[NOTES] no song in note (\(PreviewService.ms(since: t0)) ms)")
@@ -239,8 +242,9 @@ final class NotesSongSession: ObservableObject {
         secondSearchTask?.cancel()
         let gen = generation
         let lookupContext: SecondSpectatorSong.Context = context == .perform ? .perform : .test
+        let allowAI = !commitOnly
         secondSearchTask = Task { [weak self] in
-            let queries = await NotesSongSession.resolveSearchQueries(from: line)
+            let queries = await NotesSongSession.resolveSearchQueries(from: line, allowAI: allowAI)
             guard let self, gen == self.generation, !Task.isCancelled else { return }
             guard !queries.isEmpty else { return }
             let track = await SecondSpectatorSong.shared.lookup(
@@ -271,8 +275,8 @@ final class NotesSongSession: ObservableObject {
     }
 
     /// AI (when a key is set and allowed) cleans up the note into title/artist; otherwise the note is the store query.
-    private static func resolveSearchQueries(from note: String) async -> [String] {
-        if NotesSettings.aiAvailable, let key = VoiceSettings.apiKey {
+    private static func resolveSearchQueries(from note: String, allowAI: Bool = true) async -> [String] {
+        if allowAI, NotesSettings.aiAvailable, let key = VoiceSettings.apiKey {
             let transcript = "The spectator wrote this in a notes app (typed, not spoken):\n\(note)"
             do {
                 let pick = try await SongPicker.openAI(transcript: transcript, previous: nil,
@@ -286,7 +290,7 @@ final class NotesSongSession: ObservableObject {
                 dlog("✗ [NOTES] AI failed: \(error.localizedDescription) — using the note as typed")
             }
         }
-        return SongSearchQueries.variants(fromRawQuery: oneLine(note, max: 100))
+        return SongSearchQueries.notesLineVariants(from: oneLine(note, max: 100))
     }
 
     static func oneLine(_ s: String, max: Int) -> String {

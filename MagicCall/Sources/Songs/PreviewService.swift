@@ -294,14 +294,29 @@ actor PreviewService {
         var seen = Set<String>()
         let scored = tracks.enumerated().map { index, track -> (PreviewTrack, Double) in
             let hay = normalize(track.title + " " + track.artist)
-            let hits = tokens.filter { hay.contains($0) }.count
-            var score = tokens.isEmpty ? 0 : Double(hits) / Double(max(tokens.count, 1)) * 10
+            let trackTokens = (normalize(track.title) + " " + normalize(track.artist))
+                .split(separator: " ")
+                .map(String.init)
+            let tokenScores = tokens.map { token -> Double in
+                if hay.contains(token) { return 1 }
+                guard token.count >= 3 else { return 0 }
+                let fuzzy = trackTokens.map { CardTextMapper.tokenSimilarity(token, $0) }.max() ?? 0
+                return fuzzy >= 0.72 ? fuzzy : 0
+            }
+            let hits = tokenScores.filter { $0 > 0 }.count
+            let fuzzySum = tokenScores.reduce(0, +)
+            var score = tokens.isEmpty ? 0 : (Double(hits) / Double(max(tokens.count, 1)) * 10) + fuzzySum * 0.5
             let titleNorm = normalize(track.title)
             if q.contains(titleNorm) || qStripped.contains(titleNorm) || titleNorm.contains(qStripped) {
                 score += 3
             }
-            if titleOnlyQuery, titleNorm == qStripped || titleNorm.contains(qStripped), qStripped.count >= 4 {
-                score += 4
+            if titleOnlyQuery {
+                if titleNorm == qStripped || titleNorm.contains(qStripped), qStripped.count >= 4 {
+                    score += 4
+                } else if qStripped.count >= 4 {
+                    let titleFuzzy = CardTextMapper.tokenSimilarity(qStripped, titleNorm)
+                    if titleFuzzy >= 0.78 { score += 3 }
+                }
             }
             for w in suspiciousWords where hay.contains(w) && !q.contains(w) { score -= 4 }
             score -= Double(index) * 0.35

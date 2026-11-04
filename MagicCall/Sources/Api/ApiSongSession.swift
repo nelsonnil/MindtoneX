@@ -4,8 +4,10 @@ import UIKit
 
 /// Polls the active API integration every `ApiSettings.pollInterval` seconds. During Perform, the
 /// first poll that shows a song locks it (including a search done before Perform). Polling keeps
-/// running; a new API search during Perform replaces that song. Test mode still waits for a
-/// change after an initial baseline.
+/// running; a new API search during Perform replaces that song.
+/// Elips with 2 songs is the exception: the song already on the URL is only the starting point.
+/// The next change locks song 1; the change after that locks song 2.
+/// Test mode still waits for a change after an initial baseline.
 @MainActor
 final class ApiSongSession: ObservableObject {
     static let shared = ApiSongSession()
@@ -36,6 +38,16 @@ final class ApiSongSession: ObservableObject {
     @Published private(set) var secondLockedReading: ApiReading?
     /// Stage status dot: false for the song already on the API when Perform starts; true after the next lock.
     @Published private(set) var performStageReadyDot = false
+
+    /// Elips + 2 songs on Perform: still on the URL’s starting song, waiting for the change that locks song 1.
+    var waitingForElipsSong1Change: Bool {
+        provider == .elips
+            && SpectatorSettings.isTwo
+            && context == .perform
+            && lockedReading == nil
+            && !watchingSecondSong
+            && (state == .watching || state == .connecting)
+    }
 
     var isActive: Bool {
         switch state {
@@ -82,6 +94,7 @@ final class ApiSongSession: ObservableObject {
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
         tick()
+        ApiElipsPeekSession.shared.startIfNeeded(context: context)
     }
 
     /// Test "Stop": stops polling, keeps the last reading on screen.
@@ -133,6 +146,7 @@ final class ApiSongSession: ObservableObject {
     func kickPerformPollIfNeeded() {
         guard context == .perform, timer != nil else { return }
         tick()
+        ApiElipsPeekSession.shared.kickPerformPollIfNeeded()
     }
 
     private func tick() {
@@ -212,24 +226,33 @@ final class ApiSongSession: ObservableObject {
 
     private func handlePerformPoll(_ reading: ApiReading, ms: Int) {
         let providerTitle = provider.title
-        if reading.hasSong {
-            let snippet = WordApiInputPanel.truncated(reading.label, max: 44)
-            PerformUserLog.shared.log("API · \(providerTitle) · poll #\(pollCount) · «\(snippet)» (\(ms) ms)")
-        } else {
-            PerformUserLog.shared.log("API · \(providerTitle) · poll #\(pollCount) · (no song yet) (\(ms) ms)")
+        let elipsTwoSongStart = provider == .elips && SpectatorSettings.isTwo && baseline == nil && state != .locked
+        if !elipsTwoSongStart {
+            if reading.hasSong {
+                let snippet = WordApiInputPanel.truncated(reading.label, max: 44)
+                PerformUserLog.shared.log("API · \(providerTitle) · poll #\(pollCount) · «\(snippet)» (\(ms) ms)")
+            } else {
+                PerformUserLog.shared.log("API · \(providerTitle) · poll #\(pollCount) · (no song yet) (\(ms) ms)")
+            }
         }
-
-        previousPollReading = reading
 
         if case .loading = state { return }
 
         if state == .locked, let locked = lockedReading {
+            previousPollReading = reading
             guard reading.hasSong, reading.isNewSearch(comparedTo: locked) else { return }
             dlog("[API] ★ song changed during Perform (\(ms) ms): “\(locked.label)” → “\(reading.label)”")
             state = .loading(reading.label)
             Task { await load(reading, signalStageReadyDot: true) }
             return
         }
+
+        if provider == .elips, SpectatorSettings.isTwo {
+            handleElipsTwoSongFirst(reading, ms: ms)
+            return
+        }
+
+        previousPollReading = reading
 
         guard reading.hasSong else {
             if baseline == nil {
@@ -245,6 +268,32 @@ final class ApiSongSession: ObservableObject {
         dlog("[API] ★ using API song (\(ms) ms) poll #\(pollCount): “\(reading.label)”")
         state = .loading(reading.label)
         Task { await load(reading, signalStageReadyDot: signalDot) }
+    }
+
+    /// Elips + 2 songs: the song already on the URL is the starting point, not song 1.
+    /// The next change locks song 1; `handleSecondSongPoll` then waits for song 2.
+    private func handleElipsTwoSongFirst(_ reading: ApiReading, ms: Int) {
+        guard let base = baseline else {
+            baseline = reading
+            previousPollReading = reading
+            state = .watching
+            if reading.hasSong {
+                let snippet = WordApiInputPanel.truncated(reading.label, max: 44)
+                dlog("[API] Elips 2 songs · URL song is the start (\(ms) ms): “\(reading.label)” — next change is song 1")
+                PerformUserLog.shared.log("API · Elips · song on the URL is the start · «\(snippet)» · waiting for song 1")
+            } else {
+                dlog("[API] Elips 2 songs (\(ms) ms): no song on the URL — the first search is song 1")
+                PerformUserLog.shared.log("API · Elips · no song on the URL yet · the first search is song 1")
+            }
+            return
+        }
+        let prior = previousPollReading
+        previousPollReading = reading
+        guard reading.shouldLockPerformSong(comparedTo: base, previousPoll: prior), reading.hasSong else { return }
+        dlog("[API] ★ Elips song 1 (\(ms) ms): “\(base.label)” → “\(reading.label)”")
+        baseline = reading
+        state = .loading(reading.label)
+        Task { await load(reading, signalStageReadyDot: true) }
     }
 
     // MARK: Load & lock
@@ -362,6 +411,7 @@ final class ApiSongSession: ObservableObject {
         timer?.invalidate()
         timer = nil
         isRefreshing = false
+        ApiElipsPeekSession.shared.stop()
     }
 
     private func clearState() {
@@ -380,6 +430,7 @@ final class ApiSongSession: ObservableObject {
         secondLoading = false
         performStageReadyDot = false
         ApiSongClient.resetPerformFetchDiagnostics()
+        ApiElipsPeekSession.shared.resetStoredReading()
     }
 
     private func fail(_ message: String) {

@@ -47,12 +47,21 @@ struct StagePeekLines: Equatable {
     static let missingValue = "— —"
 
     @MainActor
-    static func build(model: AppModel) -> StagePeekLines {
+    static func build(model: AppModel, elipsPeekRevision: String? = nil) -> StagePeekLines {
+        _ = elipsPeekRevision
         var rows: [Row] = []
         let twoSpectators = SpectatorSettings.isTwo
         rows.append(Row(id: "song", title: twoSpectators ? "Song 1" : "Song", value: songLine(model: model)))
         if twoSpectators {
             rows.append(Row(id: "song2", title: "Song 2", value: SecondSpectatorSong.shared.label ?? missingValue))
+        }
+        if VoiceSettings.inputMode == .spotlight {
+            let typed = SpotlightSession.shared.secret.trimmingCharacters(in: .whitespaces)
+            if !typed.isEmpty {
+                // Two songs are split by a double space, hard to see in a label.
+                let shown = typed.replacingOccurrences(of: " {2,}", with: "  ·  ", options: .regularExpression)
+                rows.append(Row(id: "spotlightTyped", title: "Typed", value: shown))
+            }
         }
         if InterferenceSettings.enabled {
             rows.append(Row(id: "interference", title: "Ringtone", value: model.interferenceShow.peekStatus))
@@ -64,6 +73,10 @@ struct StagePeekLines: Equatable {
 
         if notesContactLineActive {
             rows.append(Row(id: "notes", title: "Notes", value: notesLine()))
+        }
+
+        if ApiSettings.elipsPeekIsActive, let peekText = ApiElipsPeekSession.shared.displayText {
+            rows.append(Row(id: "elipsPeek", title: "Peek", value: peekText))
         }
 
         return StagePeekLines(rows: rows)
@@ -95,7 +108,7 @@ struct StagePeekLines: Equatable {
                let label = CardSongSession.shared.candidateLabel, !label.isEmpty {
                 return label
             }
-        case .notes:
+        case .notes, .spotlight:
             if NotesSongSession.shared.isLocked, let track = model.selected {
                 return "\(track.title) — \(track.artist)"
             }

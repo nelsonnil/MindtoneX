@@ -4,7 +4,7 @@ import UIKit
 
 extension AppModel {
     var usesVoiceInput: Bool { VoiceSettings.inputMode == .aiVoice }
-    var usesNotesInput: Bool { VoiceSettings.inputMode == .notes }
+    var usesNotesInput: Bool { VoiceSettings.inputMode.usesNotesSession }
     var usesApiInput: Bool { VoiceSettings.inputMode == .api }
     var usesCardInput: Bool { VoiceSettings.inputMode == .card }
     /// AI Voice, Notes, API and Card find the song during Perform, so each Perform starts with no song.
@@ -14,32 +14,39 @@ extension AppModel {
     var inputSupportsAutoShareOnSongLock: Bool {
         switch VoiceSettings.inputMode {
         case .manual: return false
-        case .aiVoice, .notes, .api, .card: return true
+        case .aiVoice, .notes, .spotlight, .api, .card: return true
         }
     }
 
     /// True when this Perform may play audio (locked or manual track loaded after reset).
     func hasSongLockedForCurrentPerform() -> Bool {
+        if performSongsPreloadedFromURL { return loadState == .ready }
         switch VoiceSettings.inputMode {
         case .aiVoice: return VoiceSongSession.shared.state == .locked
-        case .notes: return NotesSongSession.shared.isLocked
+        case .notes, .spotlight: return NotesSongSession.shared.isLocked
         case .api: return ApiSongSession.shared.state == .locked
         case .card: return CardSongSession.shared.isLocked
         case .manual: return loadState == .ready
         }
     }
 
+    var hasPendingPerformURLSongQueries: Bool {
+        pendingPerformURLSongQueries?.isEmpty == false
+    }
+
     /// Perform for all song inputs — enters stage/call audio directly (no Silent Shortcut preamble).
     func perform() {
         guard !voiceOpenAIPreflightInProgress else { return }
 
-        if OpenAIPerformRequirements.requiresKeyBeforePerform, !VoiceSettings.isConfigured {
+        let urlPreloadsSongs = hasPendingPerformURLSongQueries
+
+        if OpenAIPerformRequirements.requiresKeyBeforePerform, !VoiceSettings.isConfigured, !urlPreloadsSongs {
             openAIMissingKeySheet = true
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
             return
         }
 
-        if OpenAIPerformRequirements.requiresKeyBeforePerform {
+        if OpenAIPerformRequirements.requiresKeyBeforePerform, !urlPreloadsSongs {
             setVoiceOpenAIPreflightInProgress(true)
             Task {
                 defer { setVoiceOpenAIPreflightInProgress(false) }
@@ -85,6 +92,12 @@ extension AppModel {
 
     func performNowAfterWordContactPrep() {
         resetAutoSharePresentedFlag()
+
+        if let urlQueries = takePendingPerformURLSongQueries() {
+            beginPerformWithURLSongQueries(urlQueries)
+            return
+        }
+
         let input = VoiceSettings.inputMode
         if SpectatorSettings.isTwo, findsSongDuringPerform {
             SecondSpectatorSong.shared.beginWaiting(source: input.title, context: .perform)
@@ -94,7 +107,7 @@ extension AppModel {
             VoiceAudioSession.recordCategoryActive = true
             arm(requireSong: false)
             scheduleVoicePerformStart()
-        case .notes:
+        case .notes, .spotlight:
             NotesSongSession.shared.start(context: .perform)
             arm(requireSong: false)
         case .api:
@@ -114,6 +127,11 @@ extension AppModel {
     /// Same inputs as tapping **Perform** on Home: (re)start mic, API polls, and word polls after URL scheme or returning from background.
     func reconcilePerformInputsAfterForeground(reason: String) {
         guard isArmed else { return }
+
+        if performSongsPreloadedFromURL || isLoadingPerformURLSongs {
+            refreshWordInputsAfterForeground(reason: reason)
+            return
+        }
 
         switch VoiceSettings.inputMode {
         case .aiVoice:
@@ -150,10 +168,14 @@ extension AppModel {
                 CardSongSession.shared.start(context: .perform)
                 dlog("[APP] ↻ card perform restart [\(reason)]")
             }
-        case .notes, .manual:
+        case .notes, .spotlight, .manual:
             break
         }
 
+        refreshWordInputsAfterForeground(reason: reason)
+    }
+
+    private func refreshWordInputsAfterForeground(reason: String) {
         if WordApiSettings.callerLabelEnabled, WordApiSettings.hasWordEndpoint {
             let word = WordApiSession.shared
             if word.context != .perform {
@@ -173,6 +195,49 @@ extension AppModel {
                 notesWord.kickPerformPollIfNeeded()
             }
         }
+    }
+
+    private func beginPerformWithURLSongQueries(_ queries: [String]) {
+        if queries.count >= 2 {
+            UserDefaults.standard.set(2, forKey: SpectatorSettings.Key.count)
+            SecondSpectatorSong.shared.beginWaiting(source: "URL scheme", context: .perform)
+        }
+        startWordApiIfNeeded(context: .perform)
+        startNotesContactWordIfNeeded(context: .perform)
+        setPerformURLSongLoading(true)
+        Task {
+            defer { setPerformURLSongLoading(false) }
+            await loadAndArmPerformURLSongs(queries)
+        }
+    }
+
+    func loadAndArmPerformURLSongs(_ queries: [String]) async {
+        dlog("[URL] searching \(queries.count) song(s) for Perform")
+        let ok1 = await prepareSongFromQueries(SongSearchQueries.variants(fromRawQuery: queries[0]))
+        guard ok1 else {
+            PerformUserLog.shared.log("URL · song 1 not found · «\(WordApiInputPanel.truncated(queries[0], max: 48))»")
+            revertAutoPerformCoverIfIdle(reason: "URL song 1 not found")
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            return
+        }
+        markPerformSongsPreloadedFromURL()
+        notePerformDisplayTrack()
+        albumArtOnSongLockIfEnabled(source: "URL scheme")
+        autoShareOnSongLockIfEnabled(source: "URL scheme")
+
+        if queries.count >= 2 {
+            let variants = SongSearchQueries.variants(fromRawQuery: queries[1])
+            if await SecondSpectatorSong.shared.lookup(queries: variants, source: "URL scheme", context: .perform) != nil {
+                SecondSpectatorSong.shared.confirm(source: "URL scheme")
+            } else {
+                PerformUserLog.shared.log("URL · song 2 not found · «\(WordApiInputPanel.truncated(queries[1], max: 48))»")
+            }
+        }
+
+        arm(requireSong: true)
+        let s2 = SecondSpectatorSong.shared.label.map { " · song 2 · \($0)" } ?? ""
+        PerformUserLog.shared.log("URL · ready · \(selected?.title ?? "?")\(s2)")
+        reconcilePerformInputsAfterForeground(reason: "URL songs armed")
     }
 
     /// Toggle ON, idle on Home, and a stage screenshot — Perform would start cleanly.
@@ -201,6 +266,25 @@ extension AppModel {
                 wordSpectatorDialSheet = true
             }
         }
+    }
+
+    /// Carphone CALL → `magiccall://start-perform?from=cardphone`: show the same live dial digits before Perform arms.
+    func applyCarphoneVisualHandoff(_ payload: CarphoneMagicCallHandoffStore.Payload) {
+        let digits = CarphoneDialFormat.digitsOnly(payload.dialDigits)
+        carphoneHandoffDialDigits = digits
+        autoPerformCoverShown = true
+        withTransaction(\.disablesAnimations, true) {
+            if StageImageStore.hasScreenshot {
+                phase = .stage
+            }
+            if WordApiContactPerformGate.willPresentDial {
+                carphoneHandoffLiveDialVisible = false
+                wordSpectatorDialSheet = true
+            } else {
+                carphoneHandoffLiveDialVisible = !digits.isEmpty
+            }
+        }
+        dlog("[URL] Carphone handoff · \(digits.count) digit(s) · liveDial=\(carphoneHandoffLiveDialVisible) unknownSheet=\(wordSpectatorDialSheet)")
     }
 
     /// Perform from a deep link: same as `tryAutoStartPerformOnOpen`, without the toggle.
@@ -240,7 +324,7 @@ extension AppModel {
         let inputReady: Bool = switch VoiceSettings.inputMode {
         case .aiVoice:
             VoiceSettings.isConfigured
-        case .notes:
+        case .notes, .spotlight:
             !OpenAIPerformRequirements.requiresKeyBeforePerform || VoiceSettings.isConfigured
         case .api:
             ApiSettings.isConfigured
@@ -364,11 +448,13 @@ extension AppModel {
         recordRecentLoadedSongIfReady(reason: "leftPerform")
         VoiceSongSession.shared.reset(reason: "left Perform")
         NotesSongSession.shared.reset(reason: "left Perform")
+        SpotlightSession.shared.reset()
         ApiSongSession.shared.reset(reason: "left Perform")
         CardSongSession.shared.reset(reason: "left Perform")
         WordApiSession.shared.reset(reason: "left Perform")
         NotesContactWordSession.shared.reset(reason: "left Perform")
         SecondSpectatorSong.shared.abandon(reason: "left Perform")
+        resetPerformURLSongState()
         clearSongForNextPerformance()
     }
 

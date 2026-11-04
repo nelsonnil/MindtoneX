@@ -32,6 +32,8 @@ private final class SystemStyleProbe {
 
     private var window: UIWindow?
     private var host: UIViewController?
+    private var lastNotifiedStyle: UIUserInterfaceStyle?
+    private var didInstallDefaultsObserver = false
 
     var resolvedStyle: UIUserInterfaceStyle {
         ensureInstalled()
@@ -42,13 +44,15 @@ private final class SystemStyleProbe {
         case "Light":
             return .light
         default:
-            // Light appearance or Automatic while system is light — key absent. Do not read the probe window here:
-            // MindtoneX home forces dark and the probe inherits that trait even on a Light device.
-            return .light
+            // Automatic: follow the probe window (unspecified) so sunset / Control Center updates apply.
+            return host?.traitCollection.userInterfaceStyle ?? .light
         }
     }
 
     func refreshAfterForegroundOrTraitChange() {
+        let style = resolvedStyle
+        guard style != lastNotifiedStyle else { return }
+        lastNotifiedStyle = style
         NotificationCenter.default.post(name: .carphoneDialSystemStyleDidChange, object: nil)
     }
 
@@ -82,6 +86,26 @@ private final class SystemStyleProbe {
         ) { [weak self] _ in
             self?.refreshAfterForegroundOrTraitChange()
         }
+        center.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshAfterForegroundOrTraitChange()
+        }
+        installDefaultsObserverIfNeeded()
+    }
+
+    private func installDefaultsObserverIfNeeded() {
+        guard !didInstallDefaultsObserver else { return }
+        didInstallDefaultsObserver = true
+        NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshAfterForegroundOrTraitChange()
+        }
     }
 }
 
@@ -97,6 +121,11 @@ private final class StyleHostController: UIViewController {
                 controller.onStyleChange?()
             }
         }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        onStyleChange?()
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

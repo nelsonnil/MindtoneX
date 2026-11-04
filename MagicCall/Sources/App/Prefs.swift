@@ -1,6 +1,6 @@
 import Foundation
 
-/// Todos los interruptores de experimento. Las vistas usan @AppStorage con las mismas claves.
+/// UserDefaults keys for Perform audio, triggers, and internal tuning (no public Engine & lab screen).
 enum Prefs {
     enum Key {
         static let noInterruptions = "audio.noInterruptionsFromSystemAlerts"
@@ -10,11 +10,9 @@ enum Prefs {
         static let startOffset = "audio.startOffset"
         static let loopClip = "audio.loopClip"
         static let stopOnAnswer = "audio.stopOnAnswer"
-        static let forceMediaVolume = "audio.forceMediaVolume"
-        static let mediaVolumeTarget = "audio.mediaVolumeTarget"
-        static let boostSystemVolumeOnTrigger = "audio.boostSystemVolumeOnTrigger"
-        static let boostMediaVolumeOnFakePerform = "audio.boostMediaVolumeOnFakePerform"
         static let fakePlaybackVolume = "audio.fakePlaybackVolume"
+        /// One-time reset of hidden lab toggles (Engine & lab removed).
+        static let productionAudioDefaultsApplied = "audio.productionDefaultsRev1"
 
         static let attemptRingerMaxOnStage = "ringtone.attemptRingerMaxOnStage"
 
@@ -105,10 +103,6 @@ enum Prefs {
             Key.startOffset: 0.0,
             Key.loopClip: true,
             Key.stopOnAnswer: true,
-            Key.forceMediaVolume: false,
-            Key.mediaVolumeTarget: 0.8,
-            Key.boostSystemVolumeOnTrigger: true,
-            Key.boostMediaVolumeOnFakePerform: true,
             Key.fakePlaybackVolume: 1.0,
             Key.attemptRingerMaxOnStage: false,
             Key.autoTrigger: true,
@@ -119,7 +113,7 @@ enum Prefs {
             Key.storeCountry: "",
             Key.maskStatusBar: false,
             Key.stageStatusBarContent: StageStatusBarContent.automatic.rawValue,
-            Key.darwinSignals: true,
+            Key.darwinSignals: false,
             Key.toneIdentifierToTry: "system:Radar",
             Key.callKitCallerName: "Ana",
             Key.callKitDelay: 5.0,
@@ -137,6 +131,26 @@ enum Prefs {
         PerformanceCues.registerCueDefaults()
         migrateClipSecondsIfNeeded()
         migratePerformanceModeToSingleIfNeeded()
+        migrateProductionAudioDefaultsIfNeeded()
+    }
+
+    /// Clears legacy Engine & lab values that could cap media volume or weaken Perform audio.
+    private static func migrateProductionAudioDefaultsIfNeeded() {
+        guard !d.bool(forKey: Key.productionAudioDefaultsApplied) else { return }
+        d.removeObject(forKey: "audio.forceMediaVolume")
+        d.removeObject(forKey: "audio.mediaVolumeTarget")
+        d.removeObject(forKey: "audio.boostSystemVolumeOnTrigger")
+        d.removeObject(forKey: "audio.boostMediaVolumeOnFakePerform")
+        d.set(false, forKey: Key.mixWithOthers)
+        d.set(true, forKey: Key.hotStandby)
+        d.set(true, forKey: Key.autoTrigger)
+        d.set(true, forKey: Key.noInterruptions)
+        d.set(false, forKey: Key.diskCache)
+        d.set(false, forKey: Key.darwinSignals)
+        d.set(false, forKey: Key.tapTrigger)
+        d.set(false, forKey: Key.volumeButtonTrigger)
+        d.set(true, forKey: Key.productionAudioDefaultsApplied)
+        dlog("Migración: audio Perform (defaults de producción; lab eliminado)")
     }
 
     /// Former Phone Ringtone mode → single Performance + auto-share toggle.
@@ -185,10 +199,6 @@ enum Prefs {
     static var startOffset: Double { d.double(forKey: Key.startOffset) }
     static var loopClip: Bool { d.bool(forKey: Key.loopClip) }
     static var stopOnAnswer: Bool { d.bool(forKey: Key.stopOnAnswer) }
-    static var forceMediaVolume: Bool { d.bool(forKey: Key.forceMediaVolume) }
-    static var mediaVolumeTarget: Double { d.double(forKey: Key.mediaVolumeTarget) }
-    static var boostSystemVolumeOnTrigger: Bool { d.bool(forKey: Key.boostSystemVolumeOnTrigger) }
-    static var boostMediaVolumeOnFakePerform: Bool { d.bool(forKey: Key.boostMediaVolumeOnFakePerform) }
     static var fakePlaybackVolume: Double {
         let v = d.double(forKey: Key.fakePlaybackVolume)
         return v > 0 ? v : 1.0
@@ -213,8 +223,8 @@ enum Prefs {
             "hotStandby=\(hotStandby)",
             "clip=\(clipSeconds)s offset=\(startOffset)s loop=\(loopClip)",
             "stopOnAnswer=\(stopOnAnswer)",
-            "auto=\(autoTrigger) tap=\(tapTrigger) volBtn=\(volumeButtonTrigger)",
-            "forceVol=\(forceMediaVolume)(\(mediaVolumeTarget)) boostFakePerform=\(boostMediaVolumeOnFakePerform) boostOnTrigger=\(boostSystemVolumeOnTrigger)",
+            "auto=\(autoTrigger) volBtn=\(volumeButtonTrigger)",
+            "playbackVol=\(Int(fakePlaybackVolume * 100))%",
             "ringerMaxOnStage=\(attemptRingerMaxOnStage)",
             "diskCache=\(diskCache) deezer=\(deezerFallback) store=\(storeCountry.isEmpty ? "auto" : storeCountry)",
         ].joined(separator: " · ")

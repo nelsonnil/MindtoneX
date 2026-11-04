@@ -6,6 +6,9 @@ import UIKit
 struct StageView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var notes = NotesSongSession.shared
+    @ObservedObject private var elipsPeek = ApiElipsPeekSession.shared
+    @ObservedObject private var spotlight = SpotlightSession.shared
+    @AppStorage(VoiceSettings.Key.inputMode) private var inputModeRaw = VoiceSettings.InputMode.card.rawValue
     /// Keeps the peek's Ringtone line live while the interference ringtone runs.
     @ObservedObject private var interference = AppModel.shared.interferenceShow
     @AppStorage(Prefs.Key.maskStatusBar) private var maskStatusBar = false
@@ -25,6 +28,11 @@ struct StageView: View {
 
     private var hasStageScreenshot: Bool { StageImageStore.hasScreenshot }
 
+    /// Spotlight types into the Notes session but keeps the home screen stage instead of the Notes sheet.
+    private var spotlightStage: Bool {
+        notes.isActive && inputModeRaw == VoiceSettings.InputMode.spotlight.rawValue
+    }
+
     private var statusBarContentMode: StageStatusBarContent {
         StageStatusBarContent(rawValue: stageStatusBarContentRaw) ?? .automatic
     }
@@ -36,12 +44,13 @@ struct StageView: View {
     private var prefersDarkStatusBarContent: Bool {
         _ = stageStatusBarLuminance
         _ = stageScreenshotRevision
+        if spotlightStage, spotlight.reveal > 0.5 { return false }
         return statusBarContentMode.prefersDarkContent(hasScreenshot: hasStageScreenshot)
     }
 
     var body: some View {
         Group {
-            if notes.isActive {
+            if notes.isActive, !spotlightStage {
                 NotesPerformView()
             } else {
                 callStage
@@ -49,12 +58,23 @@ struct StageView: View {
         }
         .overlay(alignment: .topTrailing) { PerformStatusDot() }
         .overlay { PerformInputSwitchHost() }
+        .overlay {
+            if model.performManualQuickEntryPresented {
+                PerformManualQuickEntryOverlay()
+            }
+        }
     }
 
     private var callStage: some View {
         ZStack(alignment: .topLeading) {
-            StageBackgroundView(maskStatusBar: maskStatusBar)
-                .ignoresSafeArea()
+            if model.carphoneHandoffLiveDialVisible {
+                CarphoneHandoffStageDialLayer()
+                    .environmentObject(model)
+                    .ignoresSafeArea()
+            } else {
+                StageBackgroundView(maskStatusBar: maskStatusBar)
+                    .ignoresSafeArea()
+            }
 
             if (InterferenceSettings.RingtoneMode(rawValue: ringtoneModeRaw) ?? .normal).showsProximityRippleOnStage {
                 InterferenceStageRippleOverlay(
@@ -69,13 +89,24 @@ struct StageView: View {
                 onPeekVisibility: { visible in
                     peekVisible = visible
                 },
-                onTwoFingerSwipeDown: { model.disarm() }
+                onTwoFingerSwipeDown: { model.disarm() },
+                onSingleFingerPullDown: spotlightStage ? { state, translation, velocity in
+                    switch state {
+                    case .began, .changed: spotlight.drag(translation: translation)
+                    case .ended: spotlight.dragEnded(translation: translation, velocity: velocity)
+                    default: spotlight.dragEnded(translation: 0, velocity: 0)
+                    }
+                } : nil
             )
             .ignoresSafeArea()
 
+            if spotlightStage {
+                SpotlightPerformView()
+            }
+
             if peekEnabled, peekVisible {
                 StagePeekOverlay(
-                    lines: StagePeekLines.build(model: model),
+                    lines: StagePeekLines.build(model: model, elipsPeekRevision: elipsPeek.lastText),
                     fontSize: peekFontSize,
                     colorHex: peekColorHex,
                     anchorX: peekAnchorX,
@@ -141,6 +172,8 @@ struct StageGestureLayer: UIViewRepresentable {
     let onPeekVisibility: (Bool) -> Void
     let onTwoFingerSwipeDown: () -> Void
     var onSingleTap: (() -> Void)?
+    /// One-finger pull down (Spotlight): state, downward translation and velocity in points.
+    var onSingleFingerPullDown: ((UIGestureRecognizer.State, CGFloat, CGFloat) -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -158,8 +191,14 @@ struct StageGestureLayer: UIViewRepresentable {
         swipe.numberOfTouchesRequired = 2
         swipe.direction = .down
 
+        let pullDown = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.pullDown(_:)))
+        pullDown.maximumNumberOfTouches = 1
+        pullDown.delegate = context.coordinator
+
         view.addGestureRecognizer(peekHold)
         view.addGestureRecognizer(swipe)
+        view.addGestureRecognizer(pullDown)
+        context.coordinator.pullDownRecognizer = pullDown
         if onSingleTap != nil {
             view.addGestureRecognizer(UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.singleTap(_:))))
         }
@@ -172,6 +211,7 @@ struct StageGestureLayer: UIViewRepresentable {
         context.coordinator.onPeekVisibility = onPeekVisibility
         context.coordinator.onTwoFingerSwipeDown = onTwoFingerSwipeDown
         context.coordinator.onSingleTap = onSingleTap
+        context.coordinator.onSingleFingerPullDown = onSingleFingerPullDown
     }
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
@@ -179,14 +219,44 @@ struct StageGestureLayer: UIViewRepresentable {
         var onPeekVisibility: (Bool) -> Void = { _ in }
         var onTwoFingerSwipeDown: () -> Void = {}
         var onSingleTap: (() -> Void)?
+        var onSingleFingerPullDown: ((UIGestureRecognizer.State, CGFloat, CGFloat) -> Void)?
         weak var peekHoldRecognizer: UILongPressGestureRecognizer?
+        weak var pullDownRecognizer: UIPanGestureRecognizer?
+        private var pullingDown = false
 
         @objc func singleTap(_ recognizer: UITapGestureRecognizer) {
             guard recognizer.state == .ended else { return }
             onSingleTap?()
         }
 
+        @objc func pullDown(_ recognizer: UIPanGestureRecognizer) {
+            let translation = recognizer.translation(in: recognizer.view).y
+            let velocity = recognizer.velocity(in: recognizer.view).y
+            switch recognizer.state {
+            case .began:
+                pullingDown = true
+                onPeekVisibility(false)
+            case .ended, .cancelled, .failed:
+                pullingDown = false
+            default:
+                break
+            }
+            onSingleFingerPullDown?(recognizer.state, translation, velocity)
+        }
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
+        ) -> Bool {
+            gestureRecognizer === pullDownRecognizer || other === pullDownRecognizer
+        }
+
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            if let pan = gestureRecognizer as? UIPanGestureRecognizer, pan === pullDownRecognizer {
+                guard onSingleFingerPullDown != nil else { return false }
+                let velocity = pan.velocity(in: pan.view)
+                return velocity.y > abs(velocity.x)
+            }
             guard gestureRecognizer === peekHoldRecognizer, peekHoldEnabled, let window = gestureRecognizer.view?.window else {
                 return false
             }
@@ -199,7 +269,7 @@ struct StageGestureLayer: UIViewRepresentable {
             guard peekHoldEnabled else { return }
             switch recognizer.state {
             case .began, .changed:
-                onPeekVisibility(true)
+                onPeekVisibility(!pullingDown)
             case .ended, .cancelled, .failed:
                 onPeekVisibility(false)
             default:

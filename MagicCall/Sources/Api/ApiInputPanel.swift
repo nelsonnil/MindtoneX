@@ -86,11 +86,10 @@ struct ApiInputPanel: View {
                 }
                 .buttonStyle(.plain)
 
-                Text(twoSongsOnCall
-                    ? "On Perform, polls every \(Int(ApiSettings.pollInterval)) s — **song 1** is whatever the API shows when Perform starts (or the first song that appears); the **next new** search locks **song 2**. Calls play song 1; **Interference ringtone** + second hand plays song 2."
-                    : "On Perform, polls every \(Int(ApiSettings.pollInterval)) s — uses the **current API song** right away; a **new search during Perform** replaces it.")
+                Text(.init(performPollingNote))
                     .font(.caption2)
                     .foregroundStyle(OracleTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(14)
             .background(Color.white.opacity(0.04))
@@ -176,6 +175,17 @@ struct ApiInputPanel: View {
         }
     }
 
+    private var performPollingNote: String {
+        let every = Int(ApiSettings.pollInterval)
+        if twoSongsOnCall, provider == .elips {
+            return "On Perform, polls every \(every) s. **Elips · 2 songs:** the song already on the URL when you enter Perform is **not** song 1 — it is only the starting point. The **next change** locks **song 1**; the **change after that** locks **song 2**. Calls play song 1; **Interference ringtone** + second hand plays song 2."
+        }
+        if twoSongsOnCall {
+            return "On Perform, polls every \(every) s — **song 1** is whatever the API shows when Perform starts (or the first song that appears); the **next new** search locks **song 2**. Calls play song 1; **Interference ringtone** + second hand plays song 2."
+        }
+        return "On Perform, polls every \(every) s — uses the **current API song** right away; a **new search during Perform** replaces it."
+    }
+
     private var statusLine: (text: String, icon: String, warning: Bool)? {
         if session.isStruggling, session.isActive {
             return ("\(provider.title) not reachable: \(session.lastError ?? "network error") — retrying", "wifi.exclamationmark", true)
@@ -189,6 +199,12 @@ struct ApiInputPanel: View {
         case .watching:
             if let missed = session.notFound {
                 return ("No preview found for “\(missed)” — waiting for another search", "exclamationmark.magnifyingglass", true)
+            }
+            if session.waitingForElipsSong1Change {
+                if let now = session.baseline ?? session.lastReading, now.hasSong {
+                    return ("Song already on Elips (“\(now.label)”) is only the start — the next change is song 1", "info.circle", false)
+                }
+                return ("No song on the Elips URL yet — the first search is song 1", "dot.radiowaves.left.and.right", false)
             }
             var current = ""
             if let now = session.lastReading ?? session.baseline, now.hasSong { current = " · now “\(now.label)”" }

@@ -4,11 +4,13 @@ import Foundation
 enum OpenAIPerformRequirements {
     static var requiresKeyBeforePerform: Bool {
         switch VoiceSettings.inputMode {
-        case .aiVoice, .card:
+        case .aiVoice:
             return true
+        case .card:
+            return CardSettings.readingEngine.requiresOpenAI
         case .notes:
             return NotesSettings.useAIPicker
-        case .manual, .api:
+        case .manual, .api, .spotlight:
             return false
         }
     }

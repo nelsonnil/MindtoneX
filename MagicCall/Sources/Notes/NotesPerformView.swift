@@ -6,19 +6,23 @@ import UIKit
 /// The spectator writes; `NotesSongSession` looks the song up in the background.
 struct NotesPerformView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var session = NotesSongSession.shared
     static let gold = Color(red: 0.91, green: 0.73, blue: 0.02)
     static let goldUIColor = UIColor(red: 0.91, green: 0.73, blue: 0.02, alpha: 1)
 
+    private var isDark: Bool { colorScheme == .dark }
+
     var body: some View {
         ZStack {
-            Color.white.ignoresSafeArea()
+            (isDark ? Color.black : Color.white).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 topBar
 
                 NotesNativeTextView(
                     text: session.text,
+                    isDark: isDark,
                     onChange: { session.textChanged($0) },
                     onReturn: { session.returnPressed() },
                     onTwoFingerSwipeDown: { model.disarm() }
@@ -33,24 +37,33 @@ struct NotesPerformView: View {
             }
         }
         .statusBarHidden(false)
-        .preferredColorScheme(.light)
         .animation(.easeInOut(duration: 0.2), value: model.showDebugOverlay)
+        .animation(.easeInOut(duration: 0.2), value: colorScheme)
     }
 
     private var topBar: some View {
         HStack {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 24, weight: .regular))
-                .foregroundColor(.black)
-                .frame(width: 50, height: 50)
-                .background(Circle().fill(Color.white))
-                .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
-                .contentShape(Circle())
-                .onLongPressGesture(minimumDuration: 0.45) {
-                    dlog("[NOTES] long-press back → leave Perform")
-                    model.disarm()
+            Group {
+                if isDark {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 24, weight: .regular))
+                        .foregroundColor(Self.gold)
+                        .frame(width: 50, height: 50)
+                } else {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 24, weight: .regular))
+                        .foregroundColor(.black)
+                        .frame(width: 50, height: 50)
+                        .background(Circle().fill(Color.white))
+                        .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
                 }
-                .accessibilityLabel("Back")
+            }
+            .contentShape(Circle())
+            .onLongPressGesture(minimumDuration: 0.45) {
+                dlog("[NOTES] long-press back → leave Perform")
+                model.disarm()
+            }
+            .accessibilityLabel("Back")
 
             Spacer()
 
@@ -64,10 +77,10 @@ struct NotesPerformView: View {
                         .font(.system(size: 24, weight: .semibold))
                 }
             }
-            .foregroundColor(.black.opacity(0.62))
+            .foregroundColor(isDark ? .white.opacity(0.72) : .black.opacity(0.62))
             .frame(width: 112, height: 50)
-            .background(Capsule().fill(Color.white))
-            .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+            .background(Capsule().fill(isDark ? Color(white: 0.18) : Color.white))
+            .shadow(color: isDark ? .clear : .black.opacity(0.08), radius: 12, y: 4)
             .simultaneousGesture(TapGesture(count: 3).onEnded { model.showDebugOverlay.toggle() })
 
             Button {
@@ -75,10 +88,10 @@ struct NotesPerformView: View {
             } label: {
                 Image(systemName: "checkmark")
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(isDark ? .black : .white)
                     .frame(width: 50, height: 50)
                     .background(Circle().fill(Self.gold))
-                    .shadow(color: Self.gold.opacity(0.35), radius: 12, y: 4)
+                    .shadow(color: Self.gold.opacity(isDark ? 0.2 : 0.35), radius: 12, y: 4)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Done")
@@ -93,6 +106,7 @@ struct NotesPerformView: View {
 /// keyboard up 250 ms after appearing, re-focused on every update, no swipe-to-dismiss.
 struct NotesNativeTextView: UIViewRepresentable {
     let text: String
+    let isDark: Bool
     let onChange: (String) -> Void
     let onReturn: () -> Void
     let onTwoFingerSwipeDown: () -> Void
@@ -107,8 +121,7 @@ struct NotesNativeTextView: UIViewRepresentable {
         let view = AutoFocusTextView()
         view.backgroundColor = .clear
         view.font = .systemFont(ofSize: 22, weight: .regular)
-        view.textColor = .black
-        view.tintColor = NotesPerformView.goldUIColor
+        applyAppearance(to: view)
         view.autocorrectionType = .yes
         view.spellCheckingType = .yes
         view.keyboardDismissMode = .none
@@ -127,10 +140,18 @@ struct NotesNativeTextView: UIViewRepresentable {
 
     func updateUIView(_ uiView: AutoFocusTextView, context: Context) {
         context.coordinator.parent = self
+        applyAppearance(to: uiView)
         if uiView.text != text { uiView.text = text }
         if !uiView.isFirstResponder, uiView.window != nil {
             DispatchQueue.main.async { uiView.becomeFirstResponder() }
         }
+    }
+
+    private func applyAppearance(to view: UITextView) {
+        view.overrideUserInterfaceStyle = isDark ? .dark : .light
+        view.textColor = isDark ? .white : .black
+        view.tintColor = NotesPerformView.goldUIColor
+        view.keyboardAppearance = isDark ? .dark : .light
     }
 
     final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {

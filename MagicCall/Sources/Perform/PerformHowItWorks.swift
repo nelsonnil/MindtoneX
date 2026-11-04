@@ -89,6 +89,8 @@ enum PerformCopy {
             steps.append("Song input reads \(ApiSettings.provider.title) every \(Int(ApiSettings.pollInterval)) seconds: the **current** song on the API is used when you tap Perform, and any **new search during Perform** updates the ringtone and stage.")
         case .notes:
             steps.append("A white note opens instead. The song written in it is searched and loaded in the background.")
+        case .spotlight:
+            steps.append("Swipe down on the home screen to open Spotlight. The song you type is searched and loaded in the background while your contact’s name shows in the search bar.")
         case .card:
             steps.append("The back camera reads the card on **volume** (no screen touch). \(CardOCRLayout.lineAssignmentSummary). ALL CAPS on white card works best.")
         case .manual:

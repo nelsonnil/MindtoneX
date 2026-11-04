@@ -10,6 +10,11 @@ enum ApiSettings {
         static let customURL = "api.custom.url"
         static let customField = "api.custom.field"
         static let customHeaderName = "api.custom.headerName"
+        /// Optional second endpoint when song input is Elips — text shown on stage peek (hold finger).
+        static let elipsPeekEnabled = "api.elips.peek.enabled"
+        static let elipsPeekURL = "api.elips.peek.url"
+        static let elipsPeekField = "api.elips.peek.field"
+        static let elipsPeekHeaderName = "api.elips.peek.headerName"
     }
 
     enum Provider: String, CaseIterable, Identifiable {
@@ -30,7 +35,7 @@ enum ApiSettings {
             case .inject:
                 return "Enter your Inject ID. The app reads https://11z.co/_w/{ID}/selection; a new search changes its count/value and that value is used as the song title."
             case .elips:
-                return "Paste the full API URL from the Elips app (https://pag.gg/…/api/…). A new song (or artist) in the response is used as the song."
+                return "Paste the full **song** API URL from Elips (https://pag.gg/…). Optionally expand **Peek text · Custom API** for a second endpoint whose JSON field appears when you hold the stage in Perform."
             case .custom:
                 return "Any URL that returns a JSON object. Pick the field that holds the song title (e.g. song, value, data.title). A new value is used as the song."
             }
@@ -51,6 +56,32 @@ enum ApiSettings {
     static let defaultCustomField = "song"
     static var customField: String { trimmed(d.string(forKey: Key.customField) ?? defaultCustomField) }
     static var customHeaderName: String { trimmed(d.string(forKey: Key.customHeaderName)) }
+
+    static let defaultElipsPeekField = "word"
+    static var elipsPeekEnabled: Bool { d.bool(forKey: Key.elipsPeekEnabled) }
+    static var elipsPeekURL: String { trimmed(d.string(forKey: Key.elipsPeekURL)) }
+    static var elipsPeekField: String {
+        let f = trimmed(d.string(forKey: Key.elipsPeekField) ?? defaultElipsPeekField)
+        return f.isEmpty ? defaultElipsPeekField : f
+    }
+    static var elipsPeekHeaderName: String { trimmed(d.string(forKey: Key.elipsPeekHeaderName)) }
+
+    static var elipsPeekHeaderValue: String? {
+        let value = trimmed(Keychain.get(account: elipsPeekHeaderAccount))
+        return value.isEmpty ? nil : value
+    }
+
+    static func saveElipsPeekHeaderValue(_ value: String?) {
+        let clean = trimmed(value)
+        Keychain.set(clean.isEmpty ? nil : clean, account: elipsPeekHeaderAccount)
+    }
+
+    static func elipsPeekEndpoint() -> URL? { httpURL(elipsPeekURL) }
+
+    /// Elips song API + enabled, configured peek custom endpoint.
+    static var elipsPeekIsActive: Bool {
+        provider == .elips && elipsPeekEnabled && elipsPeekEndpoint() != nil && !elipsPeekField.isEmpty
+    }
 
     static var customHeaderValue: String? {
         let value = trimmed(Keychain.get(account: customHeaderAccount))
@@ -100,6 +131,7 @@ enum ApiSettings {
     }
 
     private static let customHeaderAccount = "customApi.headerValue"
+    private static let elipsPeekHeaderAccount = "api.elips.peek.headerValue"
 
     private static func httpURL(_ raw: String) -> URL? {
         guard let url = URL(string: raw), let scheme = url.scheme?.lowercased(),
@@ -233,6 +265,35 @@ enum ApiSongClient {
             if changed { lastPerformFetchSnapshot = snapshot }
         }
         return reading
+    }
+
+    /// Peek-only custom JSON field (Elips integration, second URL).
+    static func fetchElipsPeekText() async throws -> String {
+        guard ApiSettings.elipsPeekIsActive, var url = ApiSettings.elipsPeekEndpoint() else {
+            throw ClientError.notConfigured
+        }
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        var query = components?.queryItems ?? []
+        query.append(URLQueryItem(name: "mx", value: String(Int(Date().timeIntervalSince1970 * 1000))))
+        query.append(URLQueryItem(name: "_", value: UUID().uuidString))
+        components?.queryItems = query
+        if let busted = components?.url { url = busted }
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData,
+                                 timeoutInterval: ApiSettings.requestTimeout)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("no-cache", forHTTPHeaderField: "Pragma")
+        if !ApiSettings.elipsPeekHeaderName.isEmpty, let value = ApiSettings.elipsPeekHeaderValue {
+            request.setValue(value, forHTTPHeaderField: ApiSettings.elipsPeekHeaderName)
+        }
+        let (data, response) = try await session.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw ClientError.http(http.statusCode)
+        }
+        guard let object = ApiJSON.object(from: data) else { throw ClientError.notJSON }
+        let field = ApiSettings.elipsPeekField
+        guard let value = ApiJSON.value(in: object, path: field) else { throw ClientError.missingField(field) }
+        return ApiJSON.text(value)
     }
 
     typealias Provider = ApiSettings.Provider
