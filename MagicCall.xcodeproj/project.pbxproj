@@ -109,7 +109,6 @@
 		A44853952E079252482E4F83 /* Prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA922A0D263D3309553D389 /* Prefs.swift */; };
 		A4614B1A536192430CFD5A9C /* StageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3305BEFC5DE85E1D1E566060 /* StageView.swift */; };
 		A7C4E9012B8F4D6E9A1C3D5F /* PerformURLScheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D5F0123C904E7F0B2D4E6A /* PerformURLScheme.swift */; };
-		A83A9558500EF1F623A00951 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */; };
 		AA896F28F1DE55B5ADD30F50 /* CallerLabelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A292077410CF73096E5CD7B8 /* CallerLabelStore.swift */; };
 		AAC001CAFE000000000011 /* AlbumArtContactSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC001CAFE000000000001 /* AlbumArtContactSettings.swift */; };
 		AAC001CAFE000000000012 /* AlbumArtContactRestoreStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC001CAFE000000000002 /* AlbumArtContactRestoreStore.swift */; };
@@ -309,7 +308,6 @@
 		9CEDC4E44EB5BD0902967336 /* CallerNameSetupStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerNameSetupStatusView.swift; sourceTree = "<group>"; };
 		9DF757E75BDC637EE99AFAEE /* WordApiContactViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordApiContactViews.swift; sourceTree = "<group>"; };
 		9F359F96C587AA8BC184B11A /* CardOCRProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardOCRProcessor.swift; sourceTree = "<group>"; };
-		9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9FA2CF6BD397B91ACAF84FAD /* LiveTranscribers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTranscribers.swift; sourceTree = "<group>"; };
 		A292077410CF73096E5CD7B8 /* CallerLabelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerLabelStore.swift; sourceTree = "<group>"; };
 		A2A7D6817DA44304F1D5ABC6 /* HeroLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroLogoView.swift; sourceTree = "<group>"; };
@@ -753,7 +751,6 @@
 			children = (
 				B810F1343436DAAD6202B2E1 /* DebugLogView.swift */,
 				B61D2102F758F8505B68544E /* RingtoneDisguiseView.swift */,
-				9F397FA5E183D1BEAD1B8B9A /* SettingsView.swift */,
 				4327EF1CCFA6B6427A4B0D85 /* SetupView.swift */,
 				3305BEFC5DE85E1D1E566060 /* StageView.swift */,
 				E7C4A91B2D8F4A06B3E15C70 /* PerformInputSwitch.swift */,
@@ -987,7 +984,6 @@
 				4D745440E4E871C0E45D380E /* RingtoneDisguiseView.swift in Sources */,
 				B4ED244091544ED3F9E5F476 /* RingtoneExporter.swift in Sources */,
 				30CF1BD0AF300884CF55328D /* RingtoneSharePresenter.swift in Sources */,
-				A83A9558500EF1F623A00951 /* SettingsView.swift in Sources */,
 				CC20F35DDD0E7784082D0FD7 /* SetupView.swift in Sources */,
 				B2405E6BF1DE51476D97C69F /* SharePerformFlow.swift in Sources */,
 				1382BAB7BC9D069605252703 /* SilentShortcut.swift in Sources */,
